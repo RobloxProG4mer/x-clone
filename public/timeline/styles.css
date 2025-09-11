@@ -185,13 +185,13 @@ h1 {
 
         p {
           margin: 0px;
+            display: flex;
+            align-items: center;
+            gap: 2px;
 
           &.name {
             font-weight: 500;
             margin-bottom: -4px;
-            display: flex;
-            align-items: center;
-            gap: 2px;
           }
 
           &.username {

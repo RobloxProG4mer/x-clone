@@ -211,8 +211,8 @@ function addTweetToTimeline(tweet, prepend = false) {
 	}
 
 	const source_icons = {
-		desktop_web: `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-monitor-icon lucide-monitor"><rect width="20" height="14" x="2" y="3" rx="2"/><line x1="8" x2="16" y1="21" y2="21"/><line x1="12" x2="12" y1="17" y2="21"/></svg>`,
-	};
+		desktop_web: `<svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-monitor-icon lucide-monitor" style="margin-left:4px"><rect width="20" height="14" x="2" y="3" rx="2"/><line x1="8" x2="16" y1="21" y2="21"/><line x1="12" x2="12" y1="17" y2="21"/></svg>`,
+	}; 
 
 	const tweetHeaderUsernameEl = document.createElement("p");
 	tweetHeaderUsernameEl.className = "username";
@@ -220,12 +220,12 @@ function addTweetToTimeline(tweet, prepend = false) {
 
 	if (tweet.source && source_icons[tweet.source]) {
 		const sourceIconEl = document.createElement("span");
-		sourceIconEl.innerHTML = source_icons[tweet.source];
+		sourceIconEl.innerHTML = `${source_icons[tweet.source]}`;
 		tweetHeaderUsernameEl.appendChild(sourceIconEl);
 	} else if (tweet.source) {
 		tweetHeaderUsernameEl.textContent += ` • ${tweet.source}`;
 	}
-// do i press a the keep code, Tr???????????????? what does it change it changes the tweet.js, script.js, tweetview.html and timeline.js file to add the a retweet
+
 	tweetHeaderInfoEl.appendChild(tweetHeaderNameEl);
 	tweetHeaderInfoEl.appendChild(tweetHeaderUsernameEl);
 
@@ -360,11 +360,11 @@ function addTweetToTimeline(tweet, prepend = false) {
 			if (newIsRetweeted) {
 				svgPaths.forEach((path) => path.setAttribute("stroke", "#00BA7C"));
 				retweetCountSpan.textContent = currentCount + 1;
-				toastQueue.add(`<h1>Tweet retweeted!</h1>`);
+				toastQueue.add(`<h1>Tweet retweeted</h1>`);
 			} else {
 				svgPaths.forEach((path) => path.setAttribute("stroke", "#344252"));
 				retweetCountSpan.textContent = Math.max(0, currentCount - 1);
-				toastQueue.add(`<h1>Retweet removed!</h1>`);
+				toastQueue.add(`<h1>Retweet removed</h1>`);
 			}
 		} else {
 			toastQueue.add(`<h1>${result.error || "Failed to retweet"}</h1>`);
