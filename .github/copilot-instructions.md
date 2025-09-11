@@ -9,3 +9,4 @@
 - ALWAYS use as little helper functions as possible
 - DO NOT put stuff in weird places, like dataset to store stuff that can be stored in variables, OR calling functions using HTML events like onclick="x()"
 - ALWAYS ASK and explain before doing permanent DB changes
+- ALWAYS prefer TEMPLATE LITERALS over string concatenation
