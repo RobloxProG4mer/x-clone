@@ -113,7 +113,6 @@ const timeAgo = (date) => {
 		}
 
 		tweetButton.disabled = true;
-		tweetButton.textContent = "Tweeting...";
 
 		try {
 			const { error, tweet } = await (
@@ -137,14 +136,15 @@ const timeAgo = (date) => {
 				charCount.textContent = "0";
 				textarea.style.height = "25px";
 
-				addTweetToTimeline(tweet, true);
-
-				toastQueue.add(`<h1>Tweet posted successfully!</h1>`);
+				const el = addTweetToTimeline(tweet, true);
+				el.classList.add("created");
 
 				confetti(tweetButton, {
-					count: 30,
+					count: 40,
 					fade: true,
 				});
+
+				toastQueue.add(`<h1>Tweet posted successfully!</h1>`);
 			} else {
 				toastQueue.add(`<h1>${error || "Failed to post tweet"}</h1>`);
 			}
@@ -152,7 +152,6 @@ const timeAgo = (date) => {
 			toastQueue.add(`<h1>Network error. Please try again.</h1>`);
 		} finally {
 			tweetButton.disabled = false;
-			tweetButton.textContent = "Tweet";
 		}
 	});
 
@@ -249,6 +248,7 @@ function addTweetToTimeline(tweet, prepend = false) {
 	const tweetInteractionsLikeEl = document.createElement("button");
 	tweetInteractionsLikeEl.className = "engagement";
 	tweetInteractionsLikeEl.dataset.liked = tweet.liked_by_user;
+	tweetInteractionsLikeEl.style.setProperty("--color", "249, 25, 128");
 
 	tweetInteractionsLikeEl.innerHTML = `<svg
           width="19"
@@ -259,7 +259,7 @@ function addTweetToTimeline(tweet, prepend = false) {
         >
           <path
             d="M1.57852 7.51938C1.57854 6.63788 1.84594 5.77712 2.34542 5.05078C2.8449 4.32445 3.55296 3.76671 4.37607 3.45123C5.19918 3.13575 6.09863 3.07738 6.95561 3.28381C7.8126 3.49024 8.58681 3.95177 9.17599 4.60745C9.21749 4.65182 9.26766 4.68719 9.32339 4.71138C9.37912 4.73556 9.43922 4.74804 9.49997 4.74804C9.56073 4.74804 9.62083 4.73556 9.67656 4.71138C9.73229 4.68719 9.78246 4.65182 9.82396 4.60745C10.4113 3.94751 11.1857 3.4821 12.0441 3.27316C12.9024 3.06422 13.8041 3.12166 14.629 3.43783C15.4539 3.75401 16.163 4.31392 16.6619 5.04305C17.1607 5.77218 17.4256 6.63594 17.4214 7.51938C17.4214 9.33339 16.2332 10.688 15.045 11.8762L10.6945 16.0848C10.5469 16.2544 10.3649 16.3905 10.1607 16.4843C9.95638 16.5781 9.73448 16.6273 9.50971 16.6288C9.28494 16.6302 9.06243 16.5838 8.85698 16.4926C8.65153 16.4014 8.46783 16.2675 8.31809 16.0999L3.95496 11.8762C2.76674 10.688 1.57852 9.34131 1.57852 7.51938Z"
-            stroke="${tweet.liked_by_user ? "#F91980" : "var(--text-secondary)"}"
+            stroke="${tweet.liked_by_user ? "#F91980" : "currentColor"}"
             stroke-width="1.5"
             stroke-linecap="round"
             stroke-linejoin="round"
@@ -270,7 +270,8 @@ function addTweetToTimeline(tweet, prepend = false) {
 		e.preventDefault();
 		e.stopPropagation();
 
-		if (Math.random() < 0.0067) { // six seven :skull:
+		if (Math.random() < 0.0067) {
+			// six seven :skull:
 			confetti(tweetInteractionsLikeEl, {
 				count: 30,
 				fade: true,
@@ -299,7 +300,7 @@ function addTweetToTimeline(tweet, prepend = false) {
 				likeCountSpan.textContent = currentCount + 1;
 			} else {
 				svg.setAttribute("fill", "none");
-				svg.setAttribute("stroke", "var(--text-secondary)");
+				svg.setAttribute("stroke", "currentColor");
 				likeCountSpan.textContent = Math.max(0, currentCount - 1);
 			}
 		}
@@ -308,10 +309,9 @@ function addTweetToTimeline(tweet, prepend = false) {
 	const tweetInteractionsRetweetEl = document.createElement("button");
 	tweetInteractionsRetweetEl.className = "engagement";
 	tweetInteractionsRetweetEl.dataset.retweeted = tweet.retweeted_by_user;
+	tweetInteractionsRetweetEl.style.setProperty("--color", "0, 186, 124");
 
-	const retweetColor = tweet.retweeted_by_user
-		? "#00BA7C"
-		: "var(--text-secondary)";
+	const retweetColor = tweet.retweeted_by_user ? "#00BA7C" : "currentColor";
 
 	tweetInteractionsRetweetEl.innerHTML = `
             <svg
@@ -376,9 +376,7 @@ function addTweetToTimeline(tweet, prepend = false) {
 				retweetCountSpan.textContent = currentCount + 1;
 				toastQueue.add(`<h1>Tweet retweeted</h1>`);
 			} else {
-				svgPaths.forEach((path) =>
-					path.setAttribute("stroke", "var(--text-secondary)"),
-				);
+				svgPaths.forEach((path) => path.setAttribute("stroke", "currentColor"));
 				retweetCountSpan.textContent = Math.max(0, currentCount - 1);
 				toastQueue.add(`<h1>Retweet removed</h1>`);
 			}
@@ -389,6 +387,7 @@ function addTweetToTimeline(tweet, prepend = false) {
 
 	const tweetInteractionsReplyEl = document.createElement("button");
 	tweetInteractionsReplyEl.className = "engagement";
+	tweetInteractionsReplyEl.style.setProperty("--color", "17, 133, 254");
 	tweetInteractionsReplyEl.innerHTML = `<svg
           width="19"
           height="19"
@@ -398,7 +397,7 @@ function addTweetToTimeline(tweet, prepend = false) {
         >
           <path
             d="M3.795 12.25C3.88813 12.4849 3.90886 12.7423 3.85454 12.9891L3.18004 15.0728C3.1583 15.1784 3.16392 15.2879 3.19636 15.3908C3.2288 15.4937 3.28698 15.5866 3.36539 15.6607C3.4438 15.7348 3.53984 15.7876 3.6444 15.8142C3.74895 15.8408 3.85856 15.8402 3.96284 15.8125L6.1244 15.1804C6.35729 15.1342 6.59847 15.1544 6.82044 15.2387C8.17285 15.8703 9.70487 16.0039 11.1462 15.616C12.5875 15.2281 13.8455 14.3436 14.6983 13.1185C15.551 11.8935 15.9437 10.4066 15.807 8.92028C15.6703 7.43394 15.013 6.04363 13.9512 4.99466C12.8893 3.94569 11.4911 3.30546 10.0032 3.18694C8.51527 3.06842 7.03332 3.47921 5.81878 4.34685C4.60424 5.21449 3.73517 6.48321 3.3649 7.92917C2.99463 9.37513 3.14696 10.9054 3.795 12.25Z"
-            stroke="var(--text-secondary)"
+            stroke="currentColor"
             stroke-width="1.5"
             stroke-linecap="round"
             stroke-linejoin="round"
@@ -417,4 +416,14 @@ function addTweetToTimeline(tweet, prepend = false) {
 	} else {
 		tweetsContainer.appendChild(tweetEl);
 	}
+
+	return tweetEl;
 }
+
+window.onerror = (message, source, lineno, colno) => {
+	toastQueue.add(
+		`<h1>${message}</h1><p>at ${lineno}:${colno} in ${source}</p>`,
+	);
+
+	return false;
+};

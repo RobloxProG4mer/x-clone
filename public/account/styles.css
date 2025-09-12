@@ -94,6 +94,8 @@ label {
   font-size: 18px;
   pointer-events: none;
   user-select: none;
+  color: var(--text-placeholder);
+  font-weight: 350;
 }
 
 input#username {
@@ -241,12 +243,12 @@ input#username::placeholder {
   display: block;
   text-align: center;
   font-size: 13px;
-  color: rgb(89, 99, 112);
+  color: var(--text-secondary);
   user-select: none;
 }
 
 .claim .legal {
-  color: rgb(89, 99, 112);
+  color: var(--text-tertiary);
   display: block;
   margin-top: 6px;
 }

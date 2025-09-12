@@ -245,10 +245,22 @@ h1 {
   flex-direction: column;
   gap: 26px;
 
+  @starting-style {
+    .tweet.created {
+      opacity: 0;
+      filter: blur(1px);
+      transform: scale(1, 0.98);
+    }
+  }
+
   .tweet {
     display: flex;
     flex-direction: column;
     gap: 10px;
+    height: auto;
+    transform-origin: top;
+    transition: opacity 0.3s, filter 0.3s, transform 0.3s;
+    cursor: pointer;
 
     .tweet-header {
       display: flex;
@@ -332,6 +344,23 @@ h1 {
         display: flex;
         align-items: center;
         gap: 4px;
+        transition: color 0.3s;
+
+        svg {
+          transition: box-shadow 0.3s, color 0.3s, background-color 0.3s,
+            border-radius 0.3s;
+          box-shadow: 0 0 0 2px rgb(var(--color), 0);
+        }
+
+        &:hover {
+          color: rgb(var(--color));
+
+          svg {
+            border-radius: 500px;
+            background-color: rgb(var(--color), 0.2);
+            box-shadow: 0 0 0 4px rgb(var(--color), 0.2);
+          }
+        }
       }
     }
 

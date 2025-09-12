@@ -1,4 +1,5 @@
 @import url("../shared/variables.css");
+@import url("../shared/toasts.css");
 
 * {
   box-sizing: border-box;

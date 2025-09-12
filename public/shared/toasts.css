@@ -6,6 +6,7 @@
   gap: 1rem;
 
   max-height: 100vh;
+  z-index: 99999;
 }
 
 [data-toast="notification"] {
