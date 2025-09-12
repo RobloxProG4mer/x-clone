@@ -1,5 +1,3 @@
-/** biome-ignore-all lint/suspicious/noDocumentCookie: not available on older browsers */
-
 import toastQueue from "../../shared/toasts.js";
 import { authToken } from "./auth.js";
 import { useComposer } from "./composer.js";

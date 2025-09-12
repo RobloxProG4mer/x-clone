@@ -23,12 +23,12 @@ const getTweetWithThread = db.query(`
 
     SELECT p.*, tp.level + 1
     FROM posts p
-    JOIN thread_posts tp ON p.reply_to = tp.id
+    JOIN thread_posts tp ON tp.reply_to = p.id
     WHERE tp.level < 10
 )
 SELECT *
 FROM thread_posts
-ORDER BY level ASC, created_at ASC;
+ORDER BY level DESC, created_at ASC;
 `);
 
 const getTweetReplies = db.query(`

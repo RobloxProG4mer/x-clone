@@ -27,16 +27,9 @@ export default async function openTweet(
 		}
 	}
 
-	console.log(tweet, tweet.id)
-
 	switchPage("tweet", {
 		path: `/tweet/${tweet.id}`,
 		recoverState: async (page) => {
-			document.body.style.backgroundColor = "red";
-			setTimeout(() => {
-				document.body.style.backgroundColor = "";
-			}, 100);
-
 			page.innerHTML = `<a href="/" class="back-button">← Back</a>`;
 
 			page.querySelector(".back-button").addEventListener("click", (e) => {
@@ -82,6 +75,15 @@ export default async function openTweet(
 				);
 				return;
 			}
+
+			tweetEl.remove();
+
+			threadPostsCache.forEach((reply) => {
+				const postEl = createTweetElement(reply, {
+					clickToOpen: true,
+				});
+				composer.insertAdjacentElement("beforebegin", postEl);
+			});
 
 			repliesCache.forEach((reply) => {
 				const replyEl = createTweetElement(reply, {
