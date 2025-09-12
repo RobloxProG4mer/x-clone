@@ -7,16 +7,15 @@ import ratelimit from "../helpers/ratelimit.js";
 const JWT_SECRET = process.env.JWT_SECRET;
 
 const getUserByUsername = db.query("SELECT * FROM users WHERE username = ?");
-const getProfileByUserId = db.query("SELECT * FROM users WHERE id = ?");
 
 const updateProfile = db.query(`
   UPDATE users
-  SET name = ?
+  SET name = ?, bio = ?, location = ?, website = ?
   WHERE id = ?
 `);
 
 const getUserPosts = db.query(`
-  SELECT posts.*, users.username, users.name, users.verified 
+  SELECT posts.*, users.username, users.name as display_name, users.verified 
   FROM posts 
   JOIN users ON posts.user_id = users.id 
   WHERE posts.user_id = ? AND posts.reply_to IS NULL
@@ -33,13 +32,14 @@ const addFollow = db.query(`
 `);
 
 const removeFollow = db.query(`
-  DELETE FROM follows WHERE follower_id = ? AND following_id = ?
+	DELETE FROM follows WHERE follower_id = ? AND following_id = ?
 `);
 
 const getFollowCounts = db.query(`
-  SELECT 
-    (SELECT COUNT(*) FROM follows WHERE follower_id = ?) as following_count,
-    (SELECT COUNT(*) FROM follows WHERE following_id = ?) as follower_count
+	SELECT 
+		(SELECT COUNT(*) FROM follows WHERE follower_id = ?) AS following_count,
+		(SELECT COUNT(*) FROM follows WHERE following_id = ?) AS follower_count,
+		(SELECT COUNT(*) FROM posts WHERE user_id = ? AND reply_to IS NULL) AS post_count
 `);
 
 export default new Elysia({ prefix: "/profile" })
@@ -61,17 +61,15 @@ export default new Elysia({ prefix: "/profile" })
 				return { error: "User not found" };
 			}
 
-			const profile = getProfileByUserId.get(user.id);
-
-			if (!profile) {
-				return "404";
-			}
-
 			const posts = getUserPosts.all(user.id);
-			const counts = getFollowCounts.get(user.id, user.id);
+			const counts = getFollowCounts.get(user.id, user.id, user.id);
 
-			profile.following_count = counts.following_count;
-			profile.follower_count = counts.follower_count;
+			const profile = {
+				...user,
+				following_count: counts.following_count,
+				follower_count: counts.follower_count,
+				post_count: counts.post_count,
+			};
 
 			let isFollowing = false;
 			let isOwnProfile = false;
@@ -128,22 +126,34 @@ export default new Elysia({ prefix: "/profile" })
 				return { error: "You can only edit your own profile" };
 			}
 
-			const { name } = body;
+			const { display_name, bio, location, website } = body;
 
-			if (name && name.length > 50) {
-				return { error: "Name must be 50 characters or less" };
+			if (display_name && display_name.length > 50) {
+				return { error: "Display name must be 50 characters or less" };
 			}
 
-			let profile = getProfileByUserId.get(currentUser.id);
-
-			if (!profile) {
-				return "404";
-			} else {
-				updateProfile.run(name || profile.name, currentUser.id);
+			if (bio && bio.length > 160) {
+				return { error: "Bio must be 160 characters or less" };
 			}
 
-			profile = getProfileByUserId.get(currentUser.id);
-			return { success: true, profile };
+			if (location && location.length > 30) {
+				return { error: "Location must be 30 characters or less" };
+			}
+
+			if (website && website.length > 100) {
+				return { error: "Website must be 100 characters or less" };
+			}
+
+			updateProfile.run(
+				display_name || currentUser.name,
+				bio !== undefined ? bio : currentUser.bio,
+				location !== undefined ? location : currentUser.location,
+				website !== undefined ? website : currentUser.website,
+				currentUser.id,
+			);
+
+			const updatedUser = getUserByUsername.get(currentUser.username);
+			return { success: true, profile: updatedUser };
 		} catch (error) {
 			console.error("Profile update error:", error);
 			return { error: "Failed to update profile" };

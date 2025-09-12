@@ -10,7 +10,6 @@ const getUserByUsername = db.query("SELECT * FROM users WHERE username = ?");
 const getTweetById = db.query(`
   SELECT *
   FROM posts 
-  JOIN users ON posts.user_id = users.id 
   WHERE posts.id = ?
 `);
 
@@ -47,10 +46,6 @@ const createTweet = db.query(`
 
 const updatePostCounts = db.query(`
   UPDATE posts SET reply_count = reply_count + 1 WHERE id = ?
-`);
-
-const updateProfilePostCount = db.query(`
-  UPDATE users SET post_count = post_count + 1 WHERE id = ?
 `);
 
 const checkLikeExists = db.query(`
@@ -131,8 +126,6 @@ export default new Elysia({ prefix: "/tweets" })
 				updatePostCounts.run(reply_to);
 			}
 
-			updateProfilePostCount.run(user.id);
-
 			return {
 				success: true,
 				tweet: {
@@ -172,13 +165,13 @@ export default new Elysia({ prefix: "/tweets" })
 			...threadPosts.map((p) => p.id),
 			...replies.map((r) => r.id),
 		];
-		const placeholders = allPostIds.map(() => "?").join(",");
+		const postPlaceholders = allPostIds.map(() => "?").join(",");
 
 		const getUserLikesQuery = db.query(
-			`SELECT post_id FROM likes WHERE user_id = ? AND post_id IN (${placeholders})`,
+			`SELECT post_id FROM likes WHERE user_id = ? AND post_id IN (${postPlaceholders})`,
 		);
 		const getUserRetweetsQuery = db.query(
-			`SELECT post_id FROM retweets WHERE user_id = ? AND post_id IN (${placeholders})`,
+			`SELECT post_id FROM retweets WHERE user_id = ? AND post_id IN (${postPlaceholders})`,
 		);
 
 		const userLikes = getUserLikesQuery.all(currentUser.id, ...allPostIds);
@@ -203,14 +196,11 @@ export default new Elysia({ prefix: "/tweets" })
 			]),
 		];
 
-		let users = [];
-		if (allUserIds.length > 0) {
-			const placeholders = allUserIds.map(() => "?").join(",");
-			const getUsersQuery = db.query(
-				`SELECT * FROM users WHERE id IN (${placeholders})`,
-			);
-			users = getUsersQuery.all(...allUserIds);
-		}
+		const userPlaceholders = allUserIds.map(() => "?").join(",");
+		const getUsersQuery = db.query(
+			`SELECT * FROM users WHERE id IN (${userPlaceholders})`,
+		);
+		const users = getUsersQuery.all(...allUserIds);
 
 		const userMap = new Map(users.map((user) => [user.id, user]));
 

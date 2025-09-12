@@ -11,7 +11,13 @@ CREATE TABLE IF NOT EXISTS users (
   created_at TIMESTAMP DEFAULT (datetime('now')),
   name TEXT DEFAULT NULL, 
   avatar TEXT DEFAULT NULL, 
-  verified BOOLEAN DEFAULT FALSE
+  verified BOOLEAN DEFAULT FALSE,
+  bio TEXT DEFAULT NULL,
+  location TEXT DEFAULT NULL,
+  website TEXT DEFAULT NULL,
+  post_count INTEGER DEFAULT 0,
+  follower_count INTEGER DEFAULT 0,
+  following_count INTEGER DEFAULT 0
 );
 
 CREATE TABLE IF NOT EXISTS passkeys (

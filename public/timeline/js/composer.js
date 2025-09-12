@@ -71,7 +71,6 @@ export const useComposer = (element, callback, { replyTo = null } = {}) => {
 			textarea.style.height = "25px";
 
 			callback(tweet);
-
 			confetti(tweetButton, {
 				count: 40,
 				fade: true,

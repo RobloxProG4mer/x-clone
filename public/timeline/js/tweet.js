@@ -25,13 +25,13 @@ export default async function openTweet(
 			);
 			return;
 		}
-
-		console.log({ tweet, threadPostsCache, repliesCache });
 	}
+
+	console.log(tweet, tweet.id)
 
 	switchPage("tweet", {
 		path: `/tweet/${tweet.id}`,
-		recoverState: (page) => {
+		recoverState: async (page) => {
 			document.body.style.backgroundColor = "red";
 			setTimeout(() => {
 				document.body.style.backgroundColor = "";
@@ -49,15 +49,46 @@ export default async function openTweet(
 			});
 			page.appendChild(tweetEl);
 
-      const composer = createComposer({
-        placeholder: `Add a reply…`,
-        replyTo: tweet.id,
-        callback: (tweet) => {
-          openTweet(tweet);
-        },
-      });
+			const composer = createComposer({
+				placeholder: `Add a reply…`,
+				replyTo: tweet.id,
+				callback: (tweet) => {
+					const replyEl = createTweetElement(tweet, {
+						clickToOpen: true,
+					});
+					replyEl.classList.add("created");
 
-      page.appendChild(composer);
+					composer.insertAdjacentElement("afterend", replyEl);
+				},
+			});
+
+			page.appendChild(composer);
+
+			if (!threadPostsCache || !repliesCache) {
+				const apiOutput = await await (
+					await fetch(`/api/tweets/${tweet.id}`, {
+						headers: authToken ? { Authorization: `Bearer ${authToken}` } : {},
+					})
+				).json();
+				tweet = apiOutput.tweet;
+				threadPostsCache = apiOutput.threadPosts;
+				repliesCache = apiOutput.replies;
+			}
+
+			if (!tweet) {
+				switchPage("timeline");
+				toastQueue.add(
+					`<h1>Tweet not found</h1><p>It might have been deleted</p>`,
+				);
+				return;
+			}
+
+			repliesCache.forEach((reply) => {
+				const replyEl = createTweetElement(reply, {
+					clickToOpen: true,
+				});
+				page.appendChild(replyEl);
+			});
 		},
 	});
 }
