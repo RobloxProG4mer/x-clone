@@ -29,7 +29,11 @@ const timeAgo = (date) => {
 };
 
 (async () => {
-	if (!authToken) return document.getElementById("logout").click();
+	if (!authToken) {
+		document.cookie = "agree=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT";
+		window.location.href = "/";
+		return;
+	}
 
 	const response = await fetch("/api/auth/me", {
 		headers: { Authorization: `Bearer ${authToken}` },
@@ -216,6 +220,7 @@ function addTweetToTimeline(tweet, prepend = false) {
 
 	const source_icons = {
 		desktop_web: `<svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-monitor-icon lucide-monitor" style="margin-left:4px"><rect width="20" height="14" x="2" y="3" rx="2"/><line x1="8" x2="16" y1="21" y2="21"/><line x1="12" x2="12" y1="17" y2="21"/></svg>`,
+		mobile_web: `<svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-smartphone-icon lucide-smartphone" style="margin-left:4px"><rect width="14" height="20" x="5" y="2" rx="2" ry="2"/><path d="M12 18h.01"/></svg>`,
 	};
 
 	const tweetHeaderUsernameEl = document.createElement("p");
@@ -420,10 +425,22 @@ function addTweetToTimeline(tweet, prepend = false) {
 	return tweetEl;
 }
 
-window.onerror = (message, source, lineno, colno) => {
+window.onerror = (message, source, lineno, colno, error) => {
 	toastQueue.add(
-		`<h1>${message}</h1><p>at ${lineno}:${colno} in ${source}</p>`,
+		`<h1>${message}</h1><p>at ${lineno || "?"}:${colno || "?"} in ${source || "?"}</p>`,
 	);
 
 	return false;
+};
+
+window.onunhandledrejection = (event) => {
+	const reason = event.reason;
+
+	if (reason instanceof Error) {
+		toastQueue.add(
+			`<h1>${reason.message}</h1><p>at ${reason.lineNumber || "?"}:${reason.columnNumber || "?"} in ${reason.fileName || "?"}</p>`,
+		);
+	} else {
+		toastQueue.add(`<h1>${String(reason)}</h1><p>Error</p>`);
+	}
 };

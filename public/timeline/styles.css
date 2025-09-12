@@ -1,5 +1,5 @@
 body {
-  max-width: 500px;
+  max-width: 560px;
   margin: 4em auto;
   padding: 0 24px;
   overflow-y: scroll;
@@ -32,6 +32,7 @@ nav {
       width: 36px;
       height: 36px;
       border-radius: 50%;
+      font-size: 0px;
     }
   }
 
@@ -347,7 +348,7 @@ h1 {
         transition: color 0.3s;
 
         svg {
-          transition: box-shadow 0.3s, color 0.3s, background-color 0.3s,
+          transition: box-shadow 0.15s, color 0.15s, background-color 0.3s,
             border-radius 0.3s;
           box-shadow: 0 0 0 2px rgb(var(--color), 0);
         }

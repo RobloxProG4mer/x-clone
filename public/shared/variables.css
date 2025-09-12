@@ -94,6 +94,7 @@
   --toast-content-color: #cccccc;
 }
 
-.dark *, .dark {
+.dark *,
+.dark {
   scrollbar-color: #303339 transparent;
 }

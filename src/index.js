@@ -11,7 +11,6 @@ new Elysia()
 			: redirect("/account");
 	})
 	.get("/account", () => file("./public/account/index.html"))
-	.get("/tweet", () => file("./public/tweet.html"))
 	.get("/tweet/:id", () => file("./public/tweetview.html"))
 	.get("/profile/:username", () => file("./public/profile.html"))
 	.get("/settings", ({ redirect }) => redirect("/settings/main"))
