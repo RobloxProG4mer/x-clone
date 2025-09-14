@@ -8,7 +8,6 @@
 - reposts showing up in timeline
 - account dropdown actually being a dropdown with profile, bookmarks and sign out button
 - bookmarks
-- share button
 - gif picker
 - scheduling tweets
 - limiting replies

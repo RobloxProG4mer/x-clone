@@ -55,7 +55,16 @@ async function loadNotifications() {
 			})
 		).json();
 
-		currentNotifications = data.notifications || [];
+		// Fix tweet author property mapping for createTweetElement compatibility
+		const notifications = (data.notifications || []).map((notification) => {
+			if (notification.tweet?.user) {
+				notification.tweet.author = notification.tweet.user;
+				delete notification.tweet.user;
+			}
+			return notification;
+		});
+
+		currentNotifications = notifications;
 		renderNotifications();
 	} catch (error) {
 		console.error("Failed to load notifications:", error);
@@ -70,76 +79,25 @@ function renderNotifications() {
 	const listElement = document.getElementById("notificationsList");
 	if (!listElement) return;
 
+	// Clear existing content
+	listElement.innerHTML = "";
+
 	if (currentNotifications.length === 0) {
-		listElement.innerHTML =
-			'<div class="no-notifications">No notifications for now!</div>';
+		const noNotificationsEl = document.createElement("div");
+		noNotificationsEl.className = "no-notifications";
+		noNotificationsEl.textContent = "No notifications for now!";
+		listElement.appendChild(noNotificationsEl);
 		return;
 	}
 
-	listElement.innerHTML = currentNotifications
-		.map(createNotificationHTML)
-		.join("");
-
-	listElement.querySelectorAll(".notification-item").forEach((item) => {
-		item.addEventListener("click", async (e) => {
-			const notificationId = e.currentTarget.dataset.id;
-			const notificationType = e.currentTarget.dataset.type;
-			const relatedId = e.currentTarget.dataset.relatedId;
-
-			// Mark as read inline
-			if (authToken) {
-				try {
-					await fetch(`/api/notifications/${notificationId}/read`, {
-						method: "PATCH",
-						headers: { Authorization: `Bearer ${authToken}` },
-					});
-
-					const notification = currentNotifications.find(
-						(n) => n.id === notificationId,
-					);
-					if (notification) {
-						notification.read = true;
-						renderNotifications();
-						updateUnreadCount();
-					}
-				} catch (error) {
-					console.error("Failed to mark notification as read:", error);
-				}
-			}
-
-			// Handle navigation
-			if (!relatedId) return;
-
-			if (["like", "retweet", "reply", "quote"].includes(notificationType)) {
-				try {
-					const response = await fetch(`/api/tweets/${relatedId}`, {
-						headers: authToken ? { Authorization: `Bearer ${authToken}` } : {},
-					});
-
-					if (response.ok) {
-						const { openTweet } = await import("./tweet.js");
-						openTweet({ id: relatedId });
-					} else {
-						toastQueue.add(`<h1>Tweet not found</h1>`);
-					}
-				} catch (error) {
-					console.error("Failed to load tweet:", error);
-					toastQueue.add(`<h1>Failed to load tweet</h1>`);
-				}
-			} else if (notificationType === "follow") {
-				try {
-					const { default: openProfile } = await import("./profile.js");
-					openProfile(relatedId);
-				} catch (error) {
-					console.error("Failed to load profile:", error);
-					toastQueue.add(`<h1>Failed to load profile</h1>`);
-				}
-			}
-		});
+	// Create and append notification elements
+	currentNotifications.forEach((notification) => {
+		const notificationEl = createNotificationElement(notification);
+		listElement.appendChild(notificationEl);
 	});
 }
 
-function createNotificationHTML(notification) {
+function createNotificationElement(notification) {
 	const now = new Date();
 	const date = new Date(notification.created_at);
 	const diffInSeconds = Math.floor((now - date) / 1000);
@@ -188,10 +146,29 @@ function createNotificationHTML(notification) {
 		quote: "quote-icon",
 	};
 
-	const icon = icons[notification.type] || icons.like;
-	const iconClass = iconClasses[notification.type] || "follow-icon";
+	// Create main notification item element
+	const notificationEl = document.createElement("div");
+	notificationEl.className = `notification-item ${isUnread ? "unread" : ""}`;
+	notificationEl.dataset.id = notification.id;
+	notificationEl.dataset.type = notification.type;
+	notificationEl.dataset.relatedId = notification.related_id || "";
 
-	let tweetPreview = "";
+	// Create icon element
+	const iconEl = document.createElement("div");
+	iconEl.className = `notification-icon ${iconClasses[notification.type] || "follow-icon"}`;
+	iconEl.innerHTML = icons[notification.type] || icons.like;
+
+	// Create content element
+	const contentEl = document.createElement("div");
+	contentEl.className = "notification-content";
+
+	// Create content paragraph
+	const contentP = document.createElement("p");
+	contentP.innerHTML = `${notification.content} <span class="notification-time">• ${timeAgo}</span>`;
+
+	contentEl.appendChild(contentP);
+
+	// Add tweet preview if available
 	if (notification.tweet) {
 		if (notification.type === "reply") {
 			const tweetElement = createTweetElement(notification.tweet, {
@@ -200,27 +177,84 @@ function createNotificationHTML(notification) {
 				isTopReply: false,
 				size: "preview",
 			});
-			tweetPreview = `<div class="notification-tweet-preview">${tweetElement.outerHTML}</div>`;
+			const tweetPreviewEl = document.createElement("div");
+			tweetPreviewEl.className = "notification-tweet-preview";
+			tweetPreviewEl.appendChild(tweetElement);
+			contentEl.appendChild(tweetPreviewEl);
 		} else if (["like", "retweet", "quote"].includes(notification.type)) {
 			const tweetContent =
 				notification.tweet.content.length > 100
 					? `${notification.tweet.content.substring(0, 100)}...`
 					: notification.tweet.content;
-			tweetPreview = `<div class="notification-tweet-subtitle">${tweetContent.split("").join("").replaceAll("<", "&lt;").replaceAll(">", "&gt;")}</div>`;
+			const tweetSubtitleEl = document.createElement("div");
+			tweetSubtitleEl.className = "notification-tweet-subtitle";
+			tweetSubtitleEl.textContent = tweetContent;
+			contentEl.appendChild(tweetSubtitleEl);
 		}
 	}
 
-	return `
-		<div class="notification-item ${isUnread ? "unread" : ""}" data-id="${notification.id}" data-type="${notification.type}" data-related-id="${notification.related_id || ""}">
-			<div class="notification-icon ${iconClass}">
-				${icon}
-			</div>
-			<div class="notification-content">
-				<p>${notification.content} <span class="notification-time">• ${timeAgo}</span></p>
-				${tweetPreview}
-			</div>
-		</div>
-	`;
+	// Add click event listener
+	notificationEl.addEventListener("click", async (e) => {
+		const notificationId = e.currentTarget.dataset.id;
+		const notificationType = e.currentTarget.dataset.type;
+		const relatedId = e.currentTarget.dataset.relatedId;
+
+		// Mark as read inline
+		if (authToken) {
+			try {
+				await fetch(`/api/notifications/${notificationId}/read`, {
+					method: "PATCH",
+					headers: { Authorization: `Bearer ${authToken}` },
+				});
+
+				const notification = currentNotifications.find(
+					(n) => n.id === notificationId,
+				);
+				if (notification) {
+					notification.read = true;
+					renderNotifications();
+					updateUnreadCount();
+				}
+			} catch (error) {
+				console.error("Failed to mark notification as read:", error);
+			}
+		}
+
+		// Handle navigation
+		if (!relatedId) return;
+
+		if (["like", "retweet", "reply", "quote"].includes(notificationType)) {
+			try {
+				const response = await fetch(`/api/tweets/${relatedId}`, {
+					headers: authToken ? { Authorization: `Bearer ${authToken}` } : {},
+				});
+
+				if (response.ok) {
+					const { openTweet } = await import("./tweet.js");
+					openTweet({ id: relatedId });
+				} else {
+					toastQueue.add(`<h1>Tweet not found</h1>`);
+				}
+			} catch (error) {
+				console.error("Failed to load tweet:", error);
+				toastQueue.add(`<h1>Failed to load tweet</h1>`);
+			}
+		} else if (notificationType === "follow") {
+			try {
+				const { default: openProfile } = await import("./profile.js");
+				openProfile(relatedId);
+			} catch (error) {
+				console.error("Failed to load profile:", error);
+				toastQueue.add(`<h1>Failed to load profile</h1>`);
+			}
+		}
+	});
+
+	// Assemble the notification
+	notificationEl.appendChild(iconEl);
+	notificationEl.appendChild(contentEl);
+
+	return notificationEl;
 }
 
 async function markAllAsRead() {
