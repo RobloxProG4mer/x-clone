@@ -718,7 +718,11 @@ export const createTweetElement = (tweet, config = {}) => {
 		};
 
 		try {
-			if (navigator.share && navigator.canShare && navigator.canShare(shareData)) {
+			if (
+				navigator.share &&
+				navigator.canShare &&
+				navigator.canShare(shareData)
+			) {
 				await navigator.share(shareData);
 				toastQueue.add(`<h1>Tweet shared!</h1>`);
 			} else {
