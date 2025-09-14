@@ -1807,7 +1807,8 @@ h1 {
   }
 
   @keyframes pulse {
-    0%, 100% {
+    0%,
+    100% {
       opacity: 1;
     }
     50% {
@@ -1932,7 +1933,7 @@ h1 {
 
         &.like-icon {
           background-color: rgba(220, 38, 127, 0.1);
-          
+
           svg {
             color: #dc267f;
             fill: #dc267f;
@@ -1941,7 +1942,7 @@ h1 {
 
         &.retweet-icon {
           background-color: rgba(0, 186, 124, 0.1);
-          
+
           svg {
             color: #00ba7c;
           }
@@ -1949,7 +1950,7 @@ h1 {
 
         &.reply-icon {
           background-color: rgba(29, 155, 240, 0.1);
-          
+
           svg {
             color: #1d9bf0;
           }
@@ -1957,7 +1958,7 @@ h1 {
 
         &.follow-icon {
           background-color: rgba(17, 133, 254, 0.1);
-          
+
           svg {
             color: var(--primary);
           }
@@ -1965,7 +1966,7 @@ h1 {
 
         &.quote-icon {
           background-color: rgba(0, 186, 124, 0.1);
-          
+
           svg {
             color: #00ba7c;
           }

@@ -335,17 +335,18 @@ const updateCharCounts = () => {
 
 const updateEditAvatarDisplay = () => {
 	if (!currentProfile) return;
-	
+
 	const { profile } = currentProfile;
 	const avatarImg = document.getElementById("edit-current-avatar");
 	const removeBtn = document.getElementById("edit-remove-avatar");
-	
+
 	if (avatarImg) {
-		const avatarSrc = profile.avatar || `https://unavatar.io/${profile.username}`;
+		const avatarSrc =
+			profile.avatar || `https://unavatar.io/${profile.username}`;
 		avatarImg.src = avatarSrc;
 		avatarImg.alt = profile.name || profile.username;
 	}
-	
+
 	if (removeBtn) {
 		removeBtn.style.display = profile.avatar ? "inline-block" : "none";
 	}
