@@ -40,6 +40,26 @@ const getPollVoters = db.query(`
   LIMIT 10
 `);
 
+const getAttachmentsByPostId = db.query(`
+  SELECT * FROM attachments WHERE post_id = ?
+`);
+
+const getQuotedTweet = db.query(`
+  SELECT posts.*, users.username, users.name, users.avatar, users.verified
+  FROM posts
+  JOIN users ON posts.user_id = users.id
+  WHERE posts.id = ?
+`);
+
+const getTopReply = db.query(`
+  SELECT posts.*, users.username, users.name, users.avatar, users.verified
+  FROM posts
+  JOIN users ON posts.user_id = users.id
+  WHERE posts.reply_to = ?
+  ORDER BY posts.like_count DESC
+  LIMIT 1
+`);
+
 const getPollDataForTweet = (tweetId, userId) => {
 	const poll = getPollByPostId.get(tweetId);
 	if (!poll) return null;
@@ -61,6 +81,46 @@ const getPollDataForTweet = (tweetId, userId) => {
 		userVote: userVote?.option_id || null,
 		isExpired,
 		voters,
+	};
+};
+
+const getTweetAttachments = (tweetId) => {
+	return getAttachmentsByPostId.all(tweetId);
+};
+
+const getQuotedTweetData = (quoteTweetId, userId) => {
+	if (!quoteTweetId) return null;
+	
+	const quotedTweet = getQuotedTweet.get(quoteTweetId);
+	if (!quotedTweet) return null;
+	
+	return {
+		...quotedTweet,
+		author: {
+			username: quotedTweet.username,
+			name: quotedTweet.name,
+			avatar: quotedTweet.avatar,
+			verified: quotedTweet.verified || false,
+		},
+		poll: getPollDataForTweet(quotedTweet.id, userId),
+		attachments: getTweetAttachments(quotedTweet.id),
+	};
+};
+
+const getTopReplyData = (tweetId, userId) => {
+	const topReply = getTopReply.get(tweetId);
+	if (!topReply) return null;
+	
+	return {
+		...topReply,
+		author: {
+			username: topReply.username,
+			name: topReply.name,
+			avatar: topReply.avatar,
+			verified: topReply.verified || false,
+		},
+		poll: getPollDataForTweet(topReply.id, userId),
+		quoted_tweet: getQuotedTweetData(topReply.quote_tweet_id, userId),
 	};
 };
 
@@ -124,13 +184,22 @@ export default new Elysia({ prefix: "/timeline" })
 			userRetweets.map((retweet) => retweet.post_id),
 		);
 
-		const timeline = posts.map((post) => ({
-			...post,
-			author: userMap[post.user_id],
-			liked_by_user: userLikedPosts.has(post.id),
-			retweeted_by_user: userRetweetedPosts.has(post.id),
-			poll: getPollDataForTweet(post.id, user.id),
-		}));
+		const timeline = posts.map((post) => {
+			const topReply = getTopReplyData(post.id, user.id);
+			const shouldShowTopReply = topReply && post.like_count > 0 && 
+				(topReply.like_count / post.like_count) >= 0.8;
+			
+			return {
+				...post,
+				author: userMap[post.user_id],
+				liked_by_user: userLikedPosts.has(post.id),
+				retweeted_by_user: userRetweetedPosts.has(post.id),
+				poll: getPollDataForTweet(post.id, user.id),
+				quoted_tweet: getQuotedTweetData(post.quote_tweet_id, user.id),
+				top_reply: shouldShowTopReply ? topReply : null,
+				attachments: getTweetAttachments(post.id),
+			};
+		});
 
 		return { timeline };
 	});

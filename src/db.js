@@ -50,13 +50,16 @@ CREATE TABLE IF NOT EXISTS posts (
   content TEXT NOT NULL,
   reply_to TEXT,
   poll_id TEXT,
+  quote_tweet_id TEXT,
   created_at TIMESTAMP DEFAULT (datetime('now')),
   like_count INTEGER DEFAULT 0,
   reply_count INTEGER DEFAULT 0,
   retweet_count INTEGER DEFAULT 0,
+  quote_count INTEGER DEFAULT 0,
   source TEXT DEFAULT NULL,
   FOREIGN KEY (user_id) REFERENCES users(id),
-  FOREIGN KEY (poll_id) REFERENCES polls(id)
+  FOREIGN KEY (poll_id) REFERENCES polls(id),
+  FOREIGN KEY (quote_tweet_id) REFERENCES posts(id)
 );
 
 CREATE TABLE IF NOT EXISTS likes (
@@ -108,6 +111,18 @@ CREATE TABLE IF NOT EXISTS poll_votes (
   FOREIGN KEY (poll_id) REFERENCES polls(id),
   FOREIGN KEY (option_id) REFERENCES poll_options(id),
   UNIQUE(user_id, poll_id)
+);
+
+CREATE TABLE IF NOT EXISTS attachments (
+  id TEXT PRIMARY KEY,
+  post_id TEXT NOT NULL,
+  file_hash TEXT NOT NULL,
+  file_name TEXT NOT NULL,
+  file_type TEXT NOT NULL,
+  file_size INTEGER NOT NULL,
+  file_url TEXT NOT NULL,
+  created_at TIMESTAMP DEFAULT (datetime('now')),
+  FOREIGN KEY (post_id) REFERENCES posts(id)
 );`);
 
 export default db;

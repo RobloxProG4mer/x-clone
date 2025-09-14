@@ -217,6 +217,9 @@ h1 {
             font-weight: 500;
             cursor: pointer;
             transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 6px;
 
             &:hover {
               background-color: var(--primary);
@@ -225,6 +228,11 @@ h1 {
 
             &:active {
               transform: scale(0.98);
+            }
+
+            svg {
+              width: 16px;
+              height: 16px;
             }
           }
         }
@@ -272,223 +280,164 @@ h1 {
       }
     }
   }
-}
 
-.tweet-poll {
-  overflow: hidden;
-
-  .poll-options {
-    display: flex;
-    flex-direction: column;
-  }
-
-  .poll-option {
-    position: relative;
-    padding: 8px 16px;
-    border: 1px solid var(--primary);
-    margin-bottom: 5px;
-    border-radius: 100px;
-    transition: background-color 0.2s, opacity 0.2s, transform 0.2s;
-
-    &:not(.voted):not(.expired):hover {
-      background-color: rgba(var(--primary-rgb), 0.1);
-    }
-
-    &:not(.voted):not(.expired):active {
-      opacity: 0.8;
-      transform: scale(0.98);
-    }
-
-    &.voted,
-    &.expired {
-      cursor: default;
-    }
-
-    .poll-option-bar {
-      position: absolute;
-      top: 0;
-      left: 0;
-      height: 100%;
-      background-color: rgba(var(--primary-rgb), 0.2);
-      transition: width 0.3s ease;
-      border-radius: inherit;
-    }
-
-    &.voted .poll-option-bar {
-      background-color: rgba(var(--primary-rgb), 0.4);
-    }
-
-    .poll-option-content {
-      position: relative;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      z-index: 1;
-
-      .poll-option-text {
-        font-size: 15px;
-        color: var(--primary);
-        text-align: center;
-        font-weight: 500;
-        width: 100%;
-      }
-
-      .poll-option-percentage {
-        font-size: 14px;
-        font-weight: 600;
-        color: var(--text-primary);
-      }
-    }
-  }
-
-  &:has(.voted) {
-    .poll-option:not(.voted) {
-      border-color: var(--border-tertiary);
-    }
-
-    .poll-option-text {
-      text-align: left !important;
-      font-weight: 400 !important;
-      color: var(--text-primary) !important;
-    }
-  }
-
-  .poll-meta {
-    padding-top: 12px;
-    padding-bottom: 6px;
+  #poll-container {
+    margin: 16px 0;
+    padding: 10px;
+    border: 1px solid var(--border-primary);
+    border-radius: 12px;
     background-color: var(--bg-secondary);
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    font-size: 14px;
-    color: var(--text-secondary);
+    transition: opacity 0.2s, transform 0.2s;
 
-    .poll-votes-container {
+    @starting-style {
+      & {
+        opacity: 0;
+        transform: scale(0.95);
+        transform-origin: left bottom;
+      }
+    }
+
+    .poll-options {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      margin-bottom: 12px;
+    }
+
+    .poll-option {
       display: flex;
       align-items: center;
       gap: 8px;
 
-      .voter-avatars {
-        display: flex;
-
-        .voter-avatar {
-          width: 20px;
-          height: 20px;
-          border-radius: 50%;
-          border: 2px solid var(--bg-secondary);
-          margin-left: -6px;
-          position: relative;
-        }
-
-        .voter-avatar:first-child {
-          margin-left: 0;
-        }
-      }
-
-      .poll-votes-text {
+      input {
+        flex: 1;
+        padding: 8px 12px;
+        border: 1px solid var(--border-primary);
+        border-radius: 7px;
+        font-family: inherit;
+        font-size: 14px;
+        background-color: var(--bg-primary);
         color: var(--text-primary);
+
+        &:focus {
+          outline: none;
+          border-color: var(--primary);
+        }
       }
+
+      .remove-option {
+        background-color: transparent;
+        color: black;
+        border: none;
+        padding: 0px;
+        cursor: pointer;
+        font-size: 16px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        line-height: 1;
+
+        &:hover {
+          opacity: 0.8;
+        }
+      }
+    }
+
+    .poll-settings {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 14px;
+
+      label {
+        color: var(--text-secondary);
+      }
+
+      select {
+        padding: 6px 8px;
+        border: 1px solid var(--border-primary);
+        border-radius: 6px;
+        background-color: var(--bg-primary);
+        color: var(--text-primary);
+        font-family: inherit;
+        font-size: 14px;
+
+        &:focus {
+          outline: none;
+          border-color: var(--primary);
+        }
+      }
+    }
+  }
+
+  #add-poll-option {
+    background-color: transparent;
+    color: var(--primary);
+    border: 1px solid var(--primary);
+    border-radius: 8px;
+    padding: 8px 12px;
+    font-family: inherit;
+    font-size: 14px;
+    cursor: pointer;
+    width: 100%;
+    margin-bottom: 12px;
+    transition: background-color 0.2s, transform 0.2s;
+
+    &:hover {
+      background-color: rgba(var(--primary-rgb), 0.1);
+    }
+
+    &:active {
+      transform: scale(0.98);
     }
   }
 }
 
-#poll-container {
-  margin: 16px 0;
-  padding: 16px;
-  border: 1px solid var(--border-primary);
-  border-radius: 12px;
-  background-color: var(--bg-secondary);
-}
-
-#poll-container .poll-options {
+/* Attachment Preview Styles */
+#attachment-preview {
   display: flex;
-  flex-direction: column;
+  flex-wrap: wrap;
   gap: 8px;
-  margin-bottom: 12px;
-}
+  margin-top: 12px;
 
-#poll-container .poll-option {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
+  .attachment-preview-item {
+    position: relative;
+    border-radius: 12px;
+    overflow: hidden;
+    max-width: 150px;
+    border: 1px solid var(--border-primary);
 
-#poll-container .poll-option input {
-  flex: 1;
-  padding: 8px 12px;
-  border: 1px solid var(--border-primary);
-  border-radius: 8px;
-  font-family: inherit;
-  font-size: 14px;
-  background-color: var(--bg-primary);
-  color: var(--text-primary);
-}
+    img,
+    video {
+      width: 100%;
+      height: auto;
+      max-height: 150px;
+      object-fit: cover;
+      display: block;
+    }
 
-#poll-container .poll-option input:focus {
-  outline: none;
-  border-color: var(--primary);
-}
+    .remove-attachment {
+      position: absolute;
+      top: 4px;
+      right: 4px;
+      background: rgba(0, 0, 0, 0.7);
+      color: white;
+      border: none;
+      border-radius: 50%;
+      width: 24px;
+      height: 24px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      font-size: 16px;
+      line-height: 1;
 
-#poll-container .poll-option .remove-option {
-  background-color: var(--error-color);
-  color: white;
-  border: none;
-  border-radius: 50%;
-  width: 24px;
-  height: 24px;
-  cursor: pointer;
-  font-size: 16px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  line-height: 1;
-}
-
-#poll-container .poll-option .remove-option:hover {
-  opacity: 0.8;
-}
-
-#add-poll-option {
-  background-color: transparent;
-  color: var(--primary);
-  border: 1px dashed var(--primary);
-  border-radius: 8px;
-  padding: 8px 12px;
-  font-family: inherit;
-  font-size: 14px;
-  cursor: pointer;
-  width: 100%;
-  margin-bottom: 12px;
-}
-
-#add-poll-option:hover {
-  background-color: rgba(var(--primary-rgb), 0.1);
-}
-
-#poll-container .poll-settings {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  font-size: 14px;
-}
-
-#poll-container .poll-settings label {
-  color: var(--text-secondary);
-}
-
-#poll-container .poll-settings select {
-  padding: 6px 8px;
-  border: 1px solid var(--border-primary);
-  border-radius: 6px;
-  background-color: var(--bg-primary);
-  color: var(--text-primary);
-  font-family: inherit;
-  font-size: 14px;
-}
-
-#poll-container .poll-settings select:focus {
-  outline: none;
-  border-color: var(--primary);
+      &:hover {
+        background: rgba(0, 0, 0, 0.9);
+      }
+    }
+  }
 }
 
 .timeline {
@@ -513,7 +462,7 @@ h1 {
 .tweet {
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 12px;
   height: auto;
   transform-origin: top;
   transition: opacity 0.3s, filter 0.3s, transform 0.3s;
@@ -522,8 +471,7 @@ h1 {
     cursor: pointer;
 
     &:active {
-      transform: scale(1, 0.995);
-      transform-origin: center;
+      transition: opacity 0.15s; /* Tr Happies Wow am very happy Why is cursor stuck Tr Happies */
       opacity: 0.7;
     }
   }
@@ -596,7 +544,7 @@ h1 {
 
   .tweet-interactions {
     display: flex;
-    gap: 12px;
+    gap: 15px;
     user-select: none;
 
     button {
@@ -627,6 +575,197 @@ h1 {
           box-shadow: 0 0 0 4px rgb(var(--color), 0.2);
         }
       }
+
+      &.engagement {
+        transition: all 0.2s ease;
+
+        &:active {
+          transform: scale(0.95);
+        }
+      }
+    }
+  }
+
+  .tweet-attachments {
+    margin-top: 12px;
+    border-radius: 16px;
+    overflow: hidden;
+    border: 1px solid var(--border-primary);
+
+    .tweet-attachment {
+      width: 100%;
+
+      img,
+      video {
+        width: 100%;
+        height: auto;
+        max-height: 500px;
+        object-fit: cover;
+        display: block;
+      }
+
+      &:not(:last-child) {
+        border-bottom: 1px solid var(--border-primary);
+      }
+    }
+
+    &:has(.tweet-attachment:nth-child(2)) {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1px;
+      background-color: var(--border-primary);
+
+      .tweet-attachment {
+        border: none;
+
+        img,
+        video {
+          height: 200px;
+        }
+      }
+    }
+
+    &:has(.tweet-attachment:nth-child(3)) {
+      grid-template-areas:
+        "first second"
+        "first third";
+
+      .tweet-attachment:first-child {
+        grid-area: first;
+
+        img,
+        video {
+          height: 100%;
+          min-height: 200px;
+        }
+      }
+    }
+
+    &:has(.tweet-attachment:nth-child(4)) {
+      grid-template-columns: 1fr 1fr;
+      grid-template-rows: 1fr 1fr;
+
+      .tweet-attachment img,
+      .tweet-attachment video {
+        height: 150px;
+      }
+    }
+  }
+
+  .tweet-poll {
+    overflow: hidden;
+
+    .poll-options {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .poll-option {
+      position: relative;
+      padding: 8px 16px;
+      border: 1px solid var(--primary);
+      margin-bottom: 5px;
+      border-radius: 100px;
+      transition: background-color 0.2s, opacity 0.2s, transform 0.2s;
+
+      &:not(.voted):not(.expired):hover {
+        background-color: rgba(var(--primary-rgb), 0.1);
+      }
+
+      &:not(.voted):not(.expired):active {
+        opacity: 0.8;
+        transform: scale(0.98);
+      }
+
+      &.voted,
+      &.expired {
+        cursor: default;
+      }
+
+      .poll-option-bar {
+        position: absolute;
+        top: 0;
+        left: 0;
+        height: 100%;
+        background-color: rgba(var(--primary-rgb), 0.2);
+        transition: width 0.3s ease;
+        border-radius: inherit;
+      }
+
+      &.voted .poll-option-bar {
+        background-color: rgba(var(--primary-rgb), 0.4);
+      }
+
+      .poll-option-content {
+        position: relative;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        z-index: 1;
+
+        .poll-option-text {
+          font-size: 15px;
+          color: var(--primary);
+          text-align: center;
+          font-weight: 500;
+          width: 100%;
+        }
+
+        .poll-option-percentage {
+          font-size: 14px;
+          font-weight: 600;
+          color: var(--text-primary);
+        }
+      }
+    }
+
+    &:has(.voted) {
+      .poll-option:not(.voted) {
+        border-color: var(--border-tertiary);
+      }
+
+      .poll-option-text {
+        text-align: left !important;
+        font-weight: 400 !important;
+        color: var(--text-primary) !important;
+      }
+    }
+
+    .poll-meta {
+      padding-top: 12px;
+      padding-bottom: 6px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 14px;
+      color: var(--text-secondary);
+
+      .poll-votes-container {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+
+        .voter-avatars {
+          display: flex;
+
+          .voter-avatar {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            border: 2px solid var(--bg-secondary);
+            margin-left: -6px;
+            position: relative;
+          }
+
+          .voter-avatar:first-child {
+            margin-left: 0;
+          }
+        }
+
+        .poll-votes-text {
+          color: var(--text-primary);
+        }
+      }
     }
   }
 
@@ -637,6 +776,7 @@ h1 {
 
     .tweet {
       padding: 4px 0px;
+
       .tweet-header {
         img {
           width: 26px;
@@ -1041,5 +1181,393 @@ h1 {
     gap: 12px;
     justify-content: flex-end;
     margin-top: 24px;
+  }
+}
+
+.quoted-tweet {
+  border: 1px solid var(--border-primary);
+  border-radius: 12px;
+  padding: 12px;
+  background-color: var(--bg-secondary);
+  cursor: pointer;
+  transition: background-color 0.2s, border-color 0.2s;
+  position: relative;
+
+  &:hover {
+    background-color: var(--bg-secondary);
+    border-color: var(--border-secondary);
+  }
+
+  .quoted-tweet-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 8px;
+
+    img {
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+    }
+
+    .quoted-tweet-header-info {
+      display: flex;
+      flex-direction: column;
+      line-height: 1.2;
+
+      .quoted-author-name {
+        font-weight: 600;
+        font-size: 14px;
+        color: var(--text-primary);
+      }
+
+      .quoted-author-username {
+        font-size: 12px;
+        color: var(--text-secondary);
+      }
+    }
+  }
+
+  .quoted-tweet-content {
+    font-size: 14px;
+    line-height: 1.4;
+    color: var(--text-primary);
+    margin: 0;
+  }
+}
+
+.composer-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  transition: opacity 0.25s;
+
+  @starting-style {
+    & {
+      opacity: 0;
+    }
+  }
+
+  .modal {
+    position: relative;
+  }
+
+  .modal-close {
+    position: absolute;
+    top: -10px;
+    right: -10px;
+    background: var(--bg-primary);
+    border: 1px solid var(--border-primary);
+    border-radius: 50%;
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    color: var(--text-secondary);
+    transition: background-color 0.2s, color 0.2s;
+    z-index: 1001;
+
+    &:hover {
+      background-color: var(--bg-secondary);
+      color: var(--text-primary);
+    }
+  }
+
+  .compose-tweet {
+    background: var(--bg-primary);
+    border-radius: 12px;
+    padding: 20px;
+    max-width: 500px;
+    width: 90%;
+    max-height: 80vh;
+    overflow-y: auto;
+    transition: transform 0.25s;
+
+    @starting-style {
+      & {
+        transform: scale(0.95);
+      }
+    }
+  }
+}
+
+/* Quoted Tweet Preview in Composer */
+.quoted-tweet-preview {
+  border: 1px solid var(--border-primary);
+  border-radius: 8px;
+  padding: 12px;
+  margin: 12px 0;
+  background-color: var(--bg-secondary);
+
+  .quoted-tweet-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 8px;
+
+    img {
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+    }
+
+    div {
+      display: flex;
+      flex-direction: column;
+      line-height: 1.2;
+
+      .quoted-author-name {
+        font-weight: 600;
+        font-size: 14px;
+        color: var(--text-primary);
+      }
+
+      .quoted-author-username {
+        font-size: 12px;
+        color: var(--text-secondary);
+      }
+    }
+  }
+
+  .quoted-tweet-content {
+    font-size: 14px;
+    line-height: 1.4;
+    color: var(--text-primary);
+    margin: 0;
+  }
+
+  @media (max-width: 768px) {
+    padding: 8px;
+    margin: 8px 0;
+
+    .quoted-tweet-header {
+      gap: 6px;
+
+      img {
+        width: 18px;
+        height: 18px;
+      }
+
+      div {
+        .quoted-author-name {
+          font-size: 13px;
+        }
+
+        .quoted-author-username {
+          font-size: 11px;
+        }
+      }
+    }
+
+    .quoted-tweet-content {
+      font-size: 13px;
+    }
+  }
+}
+
+/* Top Reply Styles */
+.tweet.top-reply {
+  margin-top: 16px;
+  margin-left: 20px;
+  padding: 12px;
+  padding-left: 16px;
+  border-left: 3px solid var(--primary);
+  background-color: rgba(var(--primary-rgb), 0.05);
+  border-radius: 0 12px 12px 0;
+  position: relative;
+
+  &::before {
+    content: "";
+    position: absolute;
+    top: -16px;
+    left: -3px;
+    width: 2px;
+    height: 16px;
+    background-color: var(--border-primary);
+  }
+
+  .tweet-header img {
+    width: 32px;
+    height: 32px;
+  }
+
+  .tweet-content {
+    font-size: 14px;
+  }
+
+  .tweet-interactions {
+    gap: 8px;
+
+    button {
+      font-size: 13px;
+
+      svg {
+        width: 16px;
+        height: 16px;
+      }
+    }
+  }
+
+  @media (max-width: 768px) {
+    margin-left: 12px;
+    padding-left: 12px;
+  }
+}
+
+.reply-indicator {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 8px;
+  font-size: 12px;
+  color: var(--text-secondary);
+  font-weight: 500;
+
+  svg {
+    width: 14px;
+    height: 14px;
+    opacity: 0.7;
+    color: var(--primary);
+  }
+
+  span {
+    font-weight: 500;
+  }
+}
+
+.composer-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+
+  .modal {
+    background: var(--bg-primary);
+    border-radius: 12px;
+    max-width: 500px;
+    width: 90%;
+    max-height: 80vh;
+    overflow-y: auto;
+
+    .compose-tweet {
+      border: none;
+      background: transparent;
+      width: 100%;
+      margin-bottom: 0px;
+    }
+  }
+}
+
+/* Tr Happies  Happiness. Happy. Happier. Happiest. */
+.tweet-preview {
+  border: 1px solid var(--border-primary);
+  border-radius: 12px;
+  padding: 12px;
+  background-color: var(--bg-secondary);
+  cursor: pointer;
+  transition: background-color 0.2s, border-color 0.2s;
+  position: relative;
+
+  &:hover {
+    background-color: var(--bg-secondary);
+    border-color: var(--border-secondary);
+  }
+
+  .tweet-header {
+    img {
+      width: 20px;
+      height: 20px;
+    }
+
+    .tweet-header-info {
+      font-size: 13px;
+
+      p.name {
+        font-size: 14px;
+        margin-bottom: -2px;
+      }
+
+      p.username {
+        font-size: 12px;
+      }
+    }
+  }
+
+  .tweet-content {
+    font-size: 14px;
+    line-height: 1.4;
+    margin-top: 8px;
+  }
+
+  .quoted-tweet {
+    margin-top: 8px;
+    padding: 8px;
+    border-radius: 8px;
+  }
+
+  .tweet-poll {
+    margin-top: 8px;
+
+    .poll-option {
+      padding: 6px 12px;
+      margin-bottom: 4px;
+
+      .poll-option-content {
+        .poll-option-text {
+          font-size: 13px;
+        }
+
+        .poll-option-percentage {
+          font-size: 12px;
+        }
+      }
+    }
+
+    .poll-meta {
+      font-size: 12px;
+      padding-top: 8px;
+
+      .voter-avatars .voter-avatar {
+        width: 16px;
+        height: 16px;
+      }
+    }
+  }
+}
+
+/* Retweet Indicator Styles */
+.retweet-indicator {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 12px;
+  font-size: 13px;
+  color: var(--text-secondary);
+  font-weight: 500;
+
+  svg {
+    width: 16px;
+    height: 16px;
+    opacity: 0.7;
+    color: var(--text-secondary);
+  }
+
+  span {
+    font-weight: 500;
   }
 }

@@ -1,5 +1,6 @@
 import confetti from "../../shared/confetti.js";
 import toastQueue from "../../shared/toasts.js";
+import createPopup from "../../shared/popup.js";
 import { authToken } from "./auth.js";
 import openTweet from "./tweet.js";
 
@@ -198,9 +199,26 @@ const updatePollDisplay = (pollElement, poll) => {
 	metaContainer.appendChild(pollTimeEl);
 };
 
-export const createTweetElement = (tweet, { clickToOpen = true } = {}) => {
+export const createTweetElement = (tweet, config = {}) => {
+	if (!tweet || !tweet.author) {
+		console.error("Invalid tweet object provided to createTweetElement");
+		return document.createElement("div");
+	}
+
+	const {
+		clickToOpen = true,
+		showTopReply = false,
+		isTopReply = false,
+		size = "normal",
+	} = config;
+
 	const tweetEl = document.createElement("div");
-	tweetEl.className = "tweet";
+	tweetEl.className = isTopReply ? "tweet top-reply" : "tweet";
+	
+	if (size === "preview") {
+		tweetEl.classList.add("tweet-preview");
+		tweetEl.style.pointerEvents = "none";
+	}
 
 	const tweetHeaderEl = document.createElement("div");
 	tweetHeaderEl.className = "tweet-header";
@@ -208,7 +226,7 @@ export const createTweetElement = (tweet, { clickToOpen = true } = {}) => {
 	const tweetHeaderAvatarEl = document.createElement("img");
 	tweetHeaderAvatarEl.src =
 		tweet.author.avatar || `https://unavatar.io/${tweet.author.username}`;
-	tweetHeaderAvatarEl.alt = tweet.author.display_name || tweet.author.username;
+	tweetHeaderAvatarEl.alt = tweet.author.name || tweet.author.username;
 	tweetHeaderAvatarEl.loading = "lazy";
 
 	tweetHeaderEl.appendChild(tweetHeaderAvatarEl);
@@ -297,6 +315,60 @@ export const createTweetElement = (tweet, { clickToOpen = true } = {}) => {
 		}
 	}
 
+	// Display attachments
+	if (tweet.attachments && tweet.attachments.length > 0) {
+		const attachmentsEl = document.createElement("div");
+		attachmentsEl.className = "tweet-attachments";
+
+		tweet.attachments.forEach(attachment => {
+			const attachmentEl = document.createElement("div");
+			attachmentEl.className = "tweet-attachment";
+
+			if (attachment.file_type.startsWith("image/")) {
+				attachmentEl.innerHTML = `<img src="${attachment.file_url}" alt="${attachment.file_name}" loading="lazy" />`;
+			} else if (attachment.file_type === "video/mp4") {
+				attachmentEl.innerHTML = `<video src="${attachment.file_url}" controls></video>`;
+			}
+
+			attachmentsEl.appendChild(attachmentEl);
+		});
+
+		tweetEl.appendChild(attachmentsEl);
+	}
+
+	if (tweet.quoted_tweet) {
+		const quotedTweetEl = createTweetElement(tweet.quoted_tweet, {
+			clickToOpen: true,
+			showTopReply: false,
+			isTopReply: false,
+			size: "preview"
+		});
+
+		tweetEl.appendChild(quotedTweetEl);
+	}
+
+	// Show top reply if available and in timeline
+	if (tweet.top_reply && showTopReply) {
+		const topReplyEl = createTweetElement(tweet.top_reply, {
+			clickToOpen: true,
+			showTopReply: false,
+			isTopReply: true,
+		});
+
+		// Add reply indicator
+		const replyIndicator = document.createElement("div");
+		replyIndicator.className = "reply-indicator";
+		replyIndicator.innerHTML = `
+			<svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+				<path d="M7 12L12 7L7 2" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+			</svg>
+			<span>Replying to @${tweet.author.username}</span>
+		`;
+		topReplyEl.insertBefore(replyIndicator, topReplyEl.firstChild);
+
+		tweetEl.appendChild(topReplyEl);
+	}
+
 	const tweetInteractionsEl = document.createElement("div");
 	tweetInteractionsEl.className = "tweet-interactions";
 
@@ -325,39 +397,46 @@ export const createTweetElement = (tweet, { clickToOpen = true } = {}) => {
 		e.preventDefault();
 		e.stopPropagation();
 
-		if (Math.random() < 0.0067) {
-			// six seven :skull:
-			confetti(tweetInteractionsLikeEl, {
-				count: 30,
-				fade: true,
-			});
-		}
-
-		const response = await fetch(`/api/tweets/${tweet.id}/like`, {
-			method: "POST",
-			headers: { Authorization: `Bearer ${authToken}` },
-		});
-
-		const result = await response.json();
-
-		if (result.success) {
-			const newIsLiked = result.liked;
-			tweetInteractionsLikeEl.dataset.liked = newIsLiked;
-
-			const svg = tweetInteractionsLikeEl.querySelector("svg path");
-			const likeCountSpan =
-				tweetInteractionsLikeEl.querySelector(".like-count");
-			const currentCount = parseInt(likeCountSpan.textContent);
-
-			if (newIsLiked) {
-				svg.setAttribute("fill", "#F91980");
-				svg.setAttribute("stroke", "#F91980");
-				likeCountSpan.textContent = currentCount + 1;
-			} else {
-				svg.setAttribute("fill", "none");
-				svg.setAttribute("stroke", "currentColor");
-				likeCountSpan.textContent = Math.max(0, currentCount - 1);
+		try {
+			if (Math.random() < 0.0067) {
+				// six seven :skull:
+				confetti(tweetInteractionsLikeEl, {
+					count: 30,
+					fade: true,
+				});
 			}
+
+			const response = await fetch(`/api/tweets/${tweet.id}/like`, {
+				method: "POST",
+				headers: { Authorization: `Bearer ${authToken}` },
+			});
+
+			const result = await response.json();
+
+			if (result.success) {
+				const newIsLiked = result.liked;
+				tweetInteractionsLikeEl.dataset.liked = newIsLiked;
+
+				const svg = tweetInteractionsLikeEl.querySelector("svg path");
+				const likeCountSpan =
+					tweetInteractionsLikeEl.querySelector(".like-count");
+				const currentCount = parseInt(likeCountSpan.textContent);
+
+				if (newIsLiked) {
+					svg.setAttribute("fill", "#F91980");
+					svg.setAttribute("stroke", "#F91980");
+					likeCountSpan.textContent = currentCount + 1;
+				} else {
+					svg.setAttribute("fill", "none");
+					svg.setAttribute("stroke", "currentColor");
+					likeCountSpan.textContent = Math.max(0, currentCount - 1);
+				}
+			} else {
+				toastQueue.add(`<h1>${result.error || "Failed to like tweet"}</h1>`);
+			}
+		} catch (error) {
+			console.error("Error liking tweet:", error);
+			toastQueue.add(`<h1>Network error. Please try again.</h1>`);
 		}
 	});
 
@@ -410,34 +489,99 @@ export const createTweetElement = (tweet, { clickToOpen = true } = {}) => {
 		e.preventDefault();
 		e.stopPropagation();
 
-		const response = await fetch(`/api/tweets/${tweet.id}/retweet`, {
-			method: "POST",
-			headers: { Authorization: `Bearer ${authToken}` },
-		});
+		createPopup({
+			triggerElement: tweetInteractionsRetweetEl,
+			onRetweet: async () => {
+				try {
+					const response = await fetch(`/api/tweets/${tweet.id}/retweet`, {
+						method: "POST",
+						headers: { Authorization: `Bearer ${authToken}` },
+					});
 
-		const result = await response.json();
+					const result = await response.json();
 
-		if (result.success) {
-			const newIsRetweeted = result.retweeted;
-			tweetInteractionsRetweetEl.dataset.retweeted = newIsRetweeted;
+					if (result.success) {
+						const newIsRetweeted = result.retweeted;
+						tweetInteractionsRetweetEl.dataset.retweeted = newIsRetweeted;
 
-			const svgPaths = tweetInteractionsRetweetEl.querySelectorAll("svg path");
-			const retweetCountSpan =
-				tweetInteractionsRetweetEl.querySelector(".retweet-count");
-			const currentCount = parseInt(retweetCountSpan.textContent);
+						const svgPaths = tweetInteractionsRetweetEl.querySelectorAll("svg path");
+						const retweetCountSpan = tweetInteractionsRetweetEl.querySelector(".retweet-count");
+						const currentCount = parseInt(retweetCountSpan.textContent);
 
-			if (newIsRetweeted) {
-				svgPaths.forEach((path) => path.setAttribute("stroke", "#00BA7C"));
-				retweetCountSpan.textContent = currentCount + 1;
-				toastQueue.add(`<h1>Tweet retweeted</h1>`);
-			} else {
-				svgPaths.forEach((path) => path.setAttribute("stroke", "currentColor"));
-				retweetCountSpan.textContent = Math.max(0, currentCount - 1);
-				toastQueue.add(`<h1>Retweet removed</h1>`);
+						if (newIsRetweeted) {
+							svgPaths.forEach((path) => path.setAttribute("stroke", "#00BA7C"));
+							retweetCountSpan.textContent = currentCount + 1;
+							toastQueue.add(`<h1>Tweet retweeted</h1>`);
+						} else {
+							svgPaths.forEach((path) => path.setAttribute("stroke", "currentColor"));
+							retweetCountSpan.textContent = Math.max(0, currentCount - 1);
+							toastQueue.add(`<h1>Retweet removed</h1>`);
+						}
+					} else {
+						toastQueue.add(`<h1>${result.error || "Failed to retweet"}</h1>`);
+					}
+				} catch (error) {
+					console.error("Error retweeting:", error);
+					toastQueue.add(`<h1>Network error. Please try again.</h1>`);
+				}
+			},
+			onQuote: async () => {
+				try {
+					const { createComposer } = await import("./composer.js");
+
+					const composer = await createComposer({
+						placeholder: "Add your thoughts about this tweet...",
+						quoteTweet: tweet,
+						callback: async (newTweet) => {
+							try {
+								addTweetToTimeline(newTweet, true).classList.add("created");
+								toastQueue.add(`<h1>Quote tweet posted!</h1>`);
+								overlay.remove();
+							} catch (error) {
+								console.error("Error adding quote tweet to timeline:", error);
+								toastQueue.add(`<h1>Error posting quote tweet</h1>`);
+								overlay.remove();
+							}
+						},
+					});
+
+					const overlay = document.createElement("div");
+					overlay.className = "composer-overlay";
+
+					const modal = document.createElement("div");
+					modal.classList.add("modal");
+
+					// Add close button with Lucide X icon
+					const closeButton = document.createElement("button");
+					closeButton.className = "modal-close";
+					closeButton.type = "button";
+					closeButton.innerHTML = `
+						<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+							<line x1="18" y1="6" x2="6" y2="18"></line>
+							<line x1="6" y1="6" x2="18" y2="18"></line>
+						</svg>
+					`;
+
+					closeButton.addEventListener("click", () => {
+						overlay.remove();
+					});
+
+					modal.appendChild(closeButton);
+					modal.appendChild(composer);
+					overlay.appendChild(modal);
+					document.body.appendChild(overlay);
+
+					overlay.addEventListener("click", (e) => {
+						if (e.target === overlay) {
+							overlay.remove();
+						}
+					});
+				} catch (error) {
+					console.error("Error creating quote composer:", error);
+					toastQueue.add(`<h1>Error opening quote composer</h1>`);
+				}
 			}
-		} else {
-			toastQueue.add(`<h1>${result.error || "Failed to retweet"}</h1>`);
-		}
+		});
 	});
 
 	const tweetInteractionsReplyEl = document.createElement("button");
@@ -463,7 +607,10 @@ export const createTweetElement = (tweet, { clickToOpen = true } = {}) => {
 	tweetInteractionsEl.appendChild(tweetInteractionsRetweetEl);
 	tweetInteractionsEl.appendChild(tweetInteractionsReplyEl);
 
-	tweetEl.appendChild(tweetInteractionsEl);
+	// Hide interactions for preview tweets
+	if (size !== "preview") {
+		tweetEl.appendChild(tweetInteractionsEl);
+	}
 
 	if (clickToOpen) {
 		tweetEl.classList.add("clickable");
@@ -477,9 +624,22 @@ export const createTweetElement = (tweet, { clickToOpen = true } = {}) => {
 };
 
 export const addTweetToTimeline = (tweet, prepend = false) => {
-	const tweetEl = createTweetElement(tweet);
+	if (!tweet) {
+		console.error("No tweet provided to addTweetToTimeline");
+		return null;
+	}
+
+	const tweetEl = createTweetElement(tweet, {
+		clickToOpen: true,
+		showTopReply: true,
+	});
 
 	const tweetsContainer = document.querySelector(".tweets");
+	if (!tweetsContainer) {
+		console.error("Tweets container not found");
+		return null;
+	}
+
 	if (prepend) {
 		tweetsContainer.insertBefore(tweetEl, tweetsContainer.firstChild);
 	} else {

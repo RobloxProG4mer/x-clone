@@ -1,5 +1,5 @@
 import { jwt } from "@elysiajs/jwt";
-import { Elysia } from "elysia";
+import { Elysia, file } from "elysia";
 import { rateLimit } from "elysia-rate-limit";
 import db from "./../db.js";
 import ratelimit from "../helpers/ratelimit.js";
@@ -14,8 +14,14 @@ const updateProfile = db.query(`
   WHERE id = ?
 `);
 
+const updateAvatar = db.query(`
+  UPDATE users
+  SET avatar = ?
+  WHERE id = ?
+`);
+
 const getUserReplies = db.query(`
-  SELECT posts.*, users.username, users.name as display_name, users.verified 
+  SELECT posts.*, users.username, users.name, users.verified 
   FROM posts 
   JOIN users ON posts.user_id = users.id 
   WHERE posts.user_id = ? AND posts.reply_to IS NOT NULL
@@ -24,12 +30,24 @@ const getUserReplies = db.query(`
 `);
 
 const getUserPosts = db.query(`
-  SELECT posts.*, users.username, users.name as display_name, users.verified 
+  SELECT posts.*, users.username, users.name, users.avatar, users.verified
   FROM posts 
   JOIN users ON posts.user_id = users.id 
   WHERE posts.user_id = ? AND posts.reply_to IS NULL
-  ORDER BY posts.created_at DESC 
-  LIMIT 20
+  ORDER BY posts.created_at DESC
+`);
+
+const getUserRetweets = db.query(`
+  SELECT 
+    original_posts.*,
+    original_users.username, original_users.name, original_users.avatar, original_users.verified,
+    retweets.created_at as retweet_created_at,
+    retweets.post_id as original_post_id
+  FROM retweets
+  JOIN posts original_posts ON retweets.post_id = original_posts.id
+  JOIN users original_users ON original_posts.user_id = original_users.id
+  WHERE retweets.user_id = ?
+  ORDER BY retweets.created_at DESC
 `);
 
 const getFollowStatus = db.query(`
@@ -76,6 +94,17 @@ const getPollVoters = db.query(`
   LIMIT 10
 `);
 
+const getQuotedTweet = db.query(`
+  SELECT posts.*, users.username, users.name, users.avatar, users.verified
+  FROM posts
+  JOIN users ON posts.user_id = users.id
+  WHERE posts.id = ?
+`);
+
+const getAttachmentsByPostId = db.query(`
+  SELECT * FROM attachments WHERE post_id = ?
+`);
+
 const getPollDataForTweet = (tweetId, userId) => {
 	const poll = getPollByPostId.get(tweetId);
 	if (!poll) return null;
@@ -100,6 +129,29 @@ const getPollDataForTweet = (tweetId, userId) => {
 	};
 };
 
+const getTweetAttachments = (tweetId) => {
+	return getAttachmentsByPostId.all(tweetId);
+};
+
+const getQuotedTweetData = (quoteTweetId, userId) => {
+	if (!quoteTweetId) return null;
+
+	const quotedTweet = getQuotedTweet.get(quoteTweetId);
+	if (!quotedTweet) return null;
+
+	return {
+		...quotedTweet,
+		author: {
+			username: quotedTweet.username,
+			name: quotedTweet.name,
+			avatar: quotedTweet.avatar,
+			verified: quotedTweet.verified || false,
+		},
+		poll: getPollDataForTweet(quotedTweet.id, userId),
+		attachments: getTweetAttachments(quotedTweet.id),
+	};
+};
+
 export default new Elysia({ prefix: "/profile" })
 	.use(jwt({ name: "jwt", secret: JWT_SECRET }))
 	.use(
@@ -119,7 +171,7 @@ export default new Elysia({ prefix: "/profile" })
 				return { error: "User not found" };
 			}
 
-			const posts = getUserPosts.all(user.id);
+			const posts = getUserPostsAndRetweets.all(user.id, user.id);
 			const counts = getFollowCounts.get(user.id, user.id, user.id);
 
 			const profile = {
@@ -161,6 +213,8 @@ export default new Elysia({ prefix: "/profile" })
 			const postsWithPolls = posts.map((post) => ({
 				...post,
 				poll: getPollDataForTweet(post.id, currentUserId),
+				quoted_tweet: getQuotedTweetData(post.quote_tweet_id, currentUserId),
+				attachments: getTweetAttachments(post.id),
 			}));
 
 			return {
@@ -209,9 +263,9 @@ export default new Elysia({ prefix: "/profile" })
 				return { error: "You can only edit your own profile" };
 			}
 
-			const { display_name, bio, location, website } = body;
+			const { name, bio, location, website } = body;
 
-			if (display_name && display_name.length > 50) {
+			if (name && name.length > 50) {
 				return { error: "Display name must be 50 characters or less" };
 			}
 
@@ -228,7 +282,7 @@ export default new Elysia({ prefix: "/profile" })
 			}
 
 			updateProfile.run(
-				display_name || currentUser.name,
+				name || currentUser.name,
 				bio !== undefined ? bio : currentUser.bio,
 				location !== undefined ? location : currentUser.location,
 				website !== undefined ? website : currentUser.website,
@@ -302,4 +356,106 @@ export default new Elysia({ prefix: "/profile" })
 			console.error("Unfollow error:", error);
 			return { error: "Failed to unfollow user" };
 		}
+	})
+	.post("/:username/avatar", async ({ params, jwt, headers, body }) => {
+		const authorization = headers.authorization;
+		if (!authorization) return { error: "Authentication required" };
+
+		try {
+			const payload = await jwt.verify(authorization.replace("Bearer ", ""));
+			if (!payload) return { error: "Invalid token" };
+
+			const currentUser = getUserByUsername.get(payload.username);
+			if (!currentUser) return { error: "User not found" };
+
+			const { username } = params;
+			if (currentUser.username !== username) {
+				return { error: "You can only update your own avatar" };
+			}
+
+			const { avatar } = body;
+			if (!avatar || !avatar.stream) {
+				return { error: "Avatar file is required" };
+			}
+
+			const allowedTypes = [
+				"image/jpeg",
+				"image/jpg",
+				"image/png",
+				"image/gif",
+				"image/webp",
+			];
+			if (!allowedTypes.includes(avatar.type)) {
+				return {
+					error:
+						"Invalid file type. Please upload a JPEG, PNG, GIF, or WebP image.",
+				};
+			}
+
+			if (avatar.size > 5 * 1024 * 1024) {
+				return {
+					error: "File too large. Please upload an image smaller than 5MB.",
+				};
+			}
+
+			const uploadsDir = "./.data/uploads/avatars";
+
+			const fileExtension = avatar.name.split(".").pop();
+			const fileName = `${currentUser.id}-${Date.now()}.${fileExtension}`;
+			const filePath = `${uploadsDir}/${fileName}`;
+
+			const arrayBuffer = await avatar.arrayBuffer();
+			await Bun.write(filePath, arrayBuffer);
+
+			const avatarUrl = `/api/avatars/${fileName}`;
+			updateAvatar.run(avatarUrl, currentUser.id);
+
+			const updatedUser = getUserByUsername.get(currentUser.username);
+			return { success: true, avatar: updatedUser.avatar };
+		} catch (error) {
+			console.error("Avatar upload error:", error);
+			return { error: "Failed to upload avatar" };
+		}
+	})
+	.delete("/:username/avatar", async ({ params, jwt, headers }) => {
+		const authorization = headers.authorization;
+		if (!authorization) return { error: "Authentication required" };
+
+		try {
+			const payload = await jwt.verify(authorization.replace("Bearer ", ""));
+			if (!payload) return { error: "Invalid token" };
+
+			const currentUser = getUserByUsername.get(payload.username);
+			if (!currentUser) return { error: "User not found" };
+
+			const { username } = params;
+			if (currentUser.username !== username) {
+				return { error: "You can only update your own avatar" };
+			}
+
+			// Remove avatar from database
+			updateAvatar.run(null, currentUser.id);
+
+			return { success: true };
+		} catch (error) {
+			console.error("Avatar removal error:", error);
+			return { error: "Failed to remove avatar" };
+		}
 	});
+
+export const avatarRoutes = new Elysia({ prefix: "/avatars" }).get(
+	"/:filename",
+	({ params }) => {
+		const { filename } = params;
+
+		if (!/^[a-zA-Z0-9\-.]+$/.test(filename)) {
+			return new Response("Invalid filename", { status: 400 });
+		}
+		if (filename.includes("..")) {
+			return new Response("Invalid filename", { status: 400 });
+		}
+
+		const filePath = `./.data/uploads/avatars/${filename}`;
+		return file(filePath);
+	},
+);

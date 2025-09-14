@@ -18,3 +18,5 @@
 - for fetching tweets, first fetch the tweet, then the profile. NEVER use joins for tweet+authors
 - DO NOT set a content-type if the body is empty
 - PREFER using background-color instead of background
+- ALWAYS use NESTED CSS
+- DO NOT run bun run src/index.js, it's already running.

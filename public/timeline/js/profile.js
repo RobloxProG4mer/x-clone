@@ -98,6 +98,9 @@ const renderPosts = async (posts, isReplies = false) => {
 			liked_by_user: post.liked_by_user || false,
 			retweeted_by_user: post.retweeted_by_user || false,
 			source: post.source,
+			poll: post.poll,
+			quoted_tweet: post.quoted_tweet,
+			attachments: post.attachments,
 			author: {
 				username: post.username,
 				name: authorProfile?.name || post.username,
@@ -106,7 +109,26 @@ const renderPosts = async (posts, isReplies = false) => {
 			},
 		};
 
-		const tweetElement = createTweetElement(transformedPost);
+		const tweetElement = createTweetElement(transformedPost, {
+			clickToOpen: true,
+		});
+
+		// Add retweet indicator if this is a retweet
+		if (post.content_type === 'retweet') {
+			const retweetIndicator = document.createElement("div");
+			retweetIndicator.className = "retweet-indicator";
+			retweetIndicator.innerHTML = `
+				<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+					<path d="M17 1l4 4-4 4"></path>
+					<path d="M3 11V9a4 4 0 0 1 4-4h14"></path>
+					<path d="M7 23l-4-4 4-4"></path>
+					<path d="M21 13v2a4 4 0 0 1-4 4H3"></path>
+				</svg>
+				<span>${currentProfile?.profile?.name || currentProfile?.profile?.username} retweeted</span>
+			`;
+			tweetElement.insertBefore(retweetIndicator, tweetElement.firstChild);
+		}
+
 		container.appendChild(tweetElement);
 	}
 };
@@ -309,7 +331,7 @@ const saveProfile = async (event) => {
 	}
 
 	const formData = {
-		display_name: document.getElementById("editDisplayName").value.trim(),
+		name: document.getElementById("editDisplayName").value.trim(),
 		bio: document.getElementById("editBio").value.trim(),
 		location: document.getElementById("editLocation").value.trim(),
 		website: document.getElementById("editWebsite").value.trim(),

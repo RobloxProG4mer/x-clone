@@ -39,9 +39,30 @@ const getTweetReplies = db.query(`
 `);
 
 const createTweet = db.query(`
-	INSERT INTO posts (id, user_id, content, reply_to, source, poll_id) 
-  VALUES (?, ?, ?, ?, ?, ?)
+	INSERT INTO posts (id, user_id, content, reply_to, source, poll_id, quote_tweet_id) 
+  VALUES (?, ?, ?, ?, ?, ?, ?)
 	RETURNING *
+`);
+
+const saveAttachment = db.query(`
+  INSERT INTO attachments (id, post_id, file_hash, file_name, file_type, file_size, file_url)
+  VALUES (?, ?, ?, ?, ?, ?, ?)
+  RETURNING *
+`);
+
+const getAttachmentsByPostId = db.query(`
+  SELECT * FROM attachments WHERE post_id = ?
+`);
+
+const updateQuoteCount = db.query(`
+  UPDATE posts SET quote_count = quote_count + ? WHERE id = ?
+`);
+
+const getQuotedTweet = db.query(`
+  SELECT posts.*, users.username, users.name, users.avatar, users.verified
+  FROM posts
+  JOIN users ON posts.user_id = users.id
+  WHERE posts.id = ?
 `);
 
 const createPoll = db.query(`
@@ -114,6 +135,29 @@ const getPollDataForTweet = (tweetId, userId) => {
 	};
 };
 
+const getTweetAttachments = (tweetId) => {
+	return getAttachmentsByPostId.all(tweetId);
+};
+
+const getQuotedTweetData = (quoteTweetId, userId) => {
+	if (!quoteTweetId) return null;
+
+	const quotedTweet = getQuotedTweet.get(quoteTweetId);
+	if (!quotedTweet) return null;
+
+	return {
+		...quotedTweet,
+		author: {
+			username: quotedTweet.username,
+			name: quotedTweet.name,
+			avatar: quotedTweet.avatar,
+			verified: quotedTweet.verified || false,
+		},
+		poll: getPollDataForTweet(quotedTweet.id, userId),
+		attachments: getTweetAttachments(quotedTweet.id),
+	};
+};
+
 const updatePostCounts = db.query(`
   UPDATE posts SET reply_count = reply_count + 1 WHERE id = ?
 `);
@@ -171,7 +215,7 @@ export default new Elysia({ prefix: "/tweets" })
 			const user = getUserByUsername.get(payload.username);
 			if (!user) return { error: "User not found" };
 
-			const { content, reply_to, source, poll } = body;
+			const { content, reply_to, source, poll, quote_tweet_id, files } = body;
 			const tweetContent = content;
 
 			if (!tweetContent || tweetContent.trim().length === 0) {
@@ -226,9 +270,31 @@ export default new Elysia({ prefix: "/tweets" })
 				reply_to || null,
 				source || null,
 				pollId,
+				quote_tweet_id || null,
 			);
 			if (reply_to) {
 				updatePostCounts.run(reply_to);
+			}
+			if (quote_tweet_id) {
+				updateQuoteCount.run(1, quote_tweet_id);
+			}
+
+			// Handle file attachments if provided
+			const attachments = [];
+			if (files && Array.isArray(files)) {
+				files.forEach(file => {
+					const attachmentId = Bun.randomUUIDv7();
+					const attachment = saveAttachment.get(
+						attachmentId,
+						tweetId,
+						file.hash,
+						file.name,
+						file.type,
+						file.size,
+						file.url
+					);
+					attachments.push(attachment);
+				});
 			}
 
 			return {
@@ -236,6 +302,10 @@ export default new Elysia({ prefix: "/tweets" })
 				tweet: {
 					...tweet,
 					author: user,
+					liked_by_user: false,
+					retweeted_by_user: false,
+					poll: getPollDataForTweet(tweet.id, user.id),
+					attachments: attachments,
 				},
 			};
 		} catch (error) {
@@ -315,6 +385,8 @@ export default new Elysia({ prefix: "/tweets" })
 			retweeted_by_user: retweetedPosts.has(post.id),
 			author: userMap.get(post.user_id),
 			poll: getPollDataForTweet(post.id, currentUser.id),
+			quoted_tweet: getQuotedTweetData(post.quote_tweet_id, currentUser.id),
+			attachments: getTweetAttachments(post.id),
 		}));
 
 		const processedReplies = replies.map((reply) => ({
@@ -323,6 +395,8 @@ export default new Elysia({ prefix: "/tweets" })
 			retweeted_by_user: retweetedPosts.has(reply.id),
 			author: userMap.get(reply.user_id),
 			poll: getPollDataForTweet(reply.id, currentUser.id),
+			quoted_tweet: getQuotedTweetData(reply.quote_tweet_id, currentUser.id),
+			attachments: getTweetAttachments(reply.id),
 		}));
 
 		return {
@@ -330,6 +404,8 @@ export default new Elysia({ prefix: "/tweets" })
 				...tweet,
 				author: userMap.get(tweet.user_id),
 				poll: getPollDataForTweet(tweet.id, currentUser.id),
+				quoted_tweet: getQuotedTweetData(tweet.quote_tweet_id, currentUser.id),
+				attachments: getTweetAttachments(tweet.id),
 			},
 			threadPosts: processedThreadPosts,
 			replies: processedReplies,

@@ -14,6 +14,10 @@ const elements = {
 	addPasskeyBtn: document.getElementById("addPasskey"),
 	passkeyStatus: document.getElementById("passkeyStatus"),
 	passkeyList: document.getElementById("passkeyList"),
+	currentAvatar: document.getElementById("current-avatar"),
+	avatarUpload: document.getElementById("avatar-upload"),
+	changeAvatar: document.getElementById("change-avatar"),
+	removeAvatar: document.getElementById("remove-avatar"),
 };
 
 let authToken = null;
@@ -62,6 +66,10 @@ function showUserInfo(user) {
 	document.querySelector(".tagline").innerText = "Manage your account";
 	elements.loginForm.style.display = "none";
 	elements.userInfo.style.display = "block";
+
+	// Set avatar
+	updateAvatarDisplay();
+
 	loadPasskeys(user.passkeys);
 }
 
@@ -78,6 +86,124 @@ function showLoginForm() {
 function setButtonsDisabled(disabled) {
 	elements.register.disabled = disabled;
 	elements.login.disabled = disabled;
+}
+
+function updateAvatarDisplay() {
+	if (currentUser) {
+		const avatarSrc =
+			currentUser.avatar || `https://unavatar.io/${currentUser.username}`;
+		elements.currentAvatar.src = avatarSrc;
+		elements.removeAvatar.style.display = currentUser.avatar
+			? "inline-block"
+			: "none";
+	}
+}
+
+async function handleAvatarUpload(file) {
+	if (!file) return;
+
+	// Validate file size (5MB max)
+	if (file.size > 5 * 1024 * 1024) {
+		toastQueue.add(
+			`<h1>File too large</h1><p>Please choose an image smaller than 5MB.</p>`,
+		);
+		return;
+	}
+
+	// Validate file type
+	const allowedTypes = [
+		"image/jpeg",
+		"image/jpg",
+		"image/png",
+		"image/gif",
+		"image/webp",
+	];
+	if (!allowedTypes.includes(file.type)) {
+		toastQueue.add(
+			`<h1>Invalid file type</h1><p>Please upload a JPEG, PNG, GIF, or WebP image.</p>`,
+		);
+		return;
+	}
+
+	elements.changeAvatar.disabled = true;
+	elements.changeAvatar.textContent = "Uploading...";
+
+	try {
+		const formData = new FormData();
+		formData.append("avatar", file);
+
+		const response = await fetch(
+			`/api/profile/${currentUser.username}/avatar`,
+			{
+				method: "POST",
+				headers: {
+					Authorization: `Bearer ${authToken}`,
+				},
+				body: formData,
+			},
+		);
+
+		const result = await response.json();
+
+		if (result.success) {
+			currentUser.avatar = result.avatar;
+			updateAvatarDisplay();
+			toastQueue.add(
+				`<h1>Avatar updated!</h1><p>Your profile picture has been changed.</p>`,
+			);
+		} else {
+			toastQueue.add(
+				`<h1>Upload failed</h1><p>${result.error || "Failed to upload avatar"}</p>`,
+			);
+		}
+	} catch (error) {
+		console.error("Avatar upload error:", error);
+		toastQueue.add(
+			`<h1>Network error</h1><p>Failed to upload avatar. Please try again.</p>`,
+		);
+	} finally {
+		elements.changeAvatar.disabled = false;
+		elements.changeAvatar.textContent = "Change Avatar";
+	}
+}
+
+async function handleAvatarRemoval() {
+	elements.removeAvatar.disabled = true;
+	elements.removeAvatar.textContent = "Removing...";
+
+	try {
+		const response = await fetch(
+			`/api/profile/${currentUser.username}/avatar`,
+			{
+				method: "DELETE",
+				headers: {
+					Authorization: `Bearer ${authToken}`,
+				},
+			},
+		);
+
+		const result = await response.json();
+
+		if (result.success) {
+			currentUser.avatar = null;
+			updateAvatarDisplay();
+			toastQueue.add(
+				`<h1>Avatar removed</h1><p>Your profile picture has been reset to default.</p>`,
+			);
+		} else {
+			toastQueue.add(
+				`<h1>Failed to remove avatar</h1><p>${result.error || "An error occurred"}</p>`,
+			);
+		}
+	} catch (error) {
+		console.error("Avatar removal error:", error);
+		toastQueue.add(
+			`<h1>Network error</h1><p>Failed to remove avatar. Please try again.</p>`,
+		);
+	} finally {
+		elements.removeAvatar.disabled = false;
+		elements.removeAvatar.textContent = "Remove Avatar";
+	}
 }
 
 async function handleRegistration() {
@@ -464,6 +590,21 @@ elements.logout.addEventListener("click", () => {
 	showLoginForm();
 	cookieStore.delete("agree");
 });
+
+// Avatar upload event listeners
+elements.changeAvatar?.addEventListener("click", () => {
+	elements.avatarUpload.click();
+});
+
+elements.avatarUpload?.addEventListener("change", (e) => {
+	const file = e.target.files[0];
+	if (file) {
+		handleAvatarUpload(file);
+	}
+	e.target.value = ""; // Reset input
+});
+
+elements.removeAvatar?.addEventListener("click", handleAvatarRemoval);
 
 elements.username.addEventListener("keypress", (e) => {
 	if (e.key === "Enter") handleRegistration();
