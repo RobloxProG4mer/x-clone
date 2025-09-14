@@ -41,7 +41,9 @@ let _user;
 	document.getElementById("settingsLink").addEventListener("click", (e) => {
 		e.preventDefault();
 		document.getElementById("accountDropdown").style.display = "none";
-		window.location.href = "/settings/main";
+		import("./settings.js").then(({ openSettings }) => {
+			openSettings("main");
+		});
 	});
 
 	document.getElementById("signOutLink").addEventListener("click", (e) => {

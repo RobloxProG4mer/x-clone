@@ -5,6 +5,7 @@ import showPage, { addRoute } from "./pages.js";
 import { addTweetToTimeline } from "./tweets.js";
 import "./profile.js";
 import "./notifications.js";
+import "./settings.js";
 
 window.onerror = (message, source, lineno, colno) => {
 	toastQueue.add(

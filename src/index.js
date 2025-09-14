@@ -13,7 +13,11 @@ new Elysia()
 	})
 	.get("/profile/:username", () => file("./public/profile.html"))
 	.get("/settings", ({ redirect }) => redirect("/settings/main"))
-	.get("/settings/:section", () => file("./public/settings.html"))
+	.get("/settings/:section", ({ cookie, redirect }) => {
+		return cookie.agree?.value === "yes"
+			? file("./public/timeline/index.html")
+			: redirect("/account");
+	})
 	.get("/legal", () => file("./public/legal.html"))
 	.get("*", ({ cookie, redirect }) => {
 		return cookie.agree?.value === "yes"

@@ -3,17 +3,26 @@ const pages = {
 	tweet: document.querySelector(".tweetPage"),
 	profile: document.querySelector(".profile"),
 	notifications: document.querySelector(".notifications"),
+	settings: null, // Will be created dynamically by settings.js
 };
 const states = {};
 
 function showPage(page, recoverState = () => {}) {
 	Object.values(pages).forEach((p) => {
-		p.style.display = "none";
+		if (p) p.style.display = "none";
 	});
 
 	if (pages[page]) {
 		pages[page].style.display = "flex";
 		recoverState(pages[page]);
+	} else if (page === "settings") {
+		// Settings page will be created dynamically
+		const settingsElement = document.querySelector(".settings");
+		if (settingsElement) {
+			pages.settings = settingsElement;
+			settingsElement.style.display = "flex";
+			recoverState(settingsElement);
+		}
 	}
 
 	return pages[page];
