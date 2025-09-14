@@ -129,6 +129,7 @@ const getTopReplyData = (tweetId, userId) => {
 		},
 		poll: getPollDataForTweet(topReply.id, userId),
 		quoted_tweet: getQuotedTweetData(topReply.quote_tweet_id, userId),
+		attachments: getTweetAttachments(topReply.id),
 	};
 };
 

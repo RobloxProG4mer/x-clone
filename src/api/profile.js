@@ -442,8 +442,8 @@ export default new Elysia({ prefix: "/profile" })
 			addNotification(
 				targetUser.id,
 				"follow",
-				`${currentUser.name || currentUser.username} started following you`,
-				currentUser.id,
+				`@${currentUser.username} started following you`,
+				currentUser.username,
 			);
 
 			return { success: true };

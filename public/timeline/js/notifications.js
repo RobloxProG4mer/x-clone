@@ -160,16 +160,8 @@ async function handleNotificationClick(notificationId, type, relatedId) {
 		}
 	} else if (type === "follow") {
 		try {
-			const response = await fetch(`/api/profile/${relatedId}`, {
-				headers: { Authorization: `Bearer ${authToken}` },
-			});
-
-			if (response.ok) {
-				const { default: openProfile } = await import("./profile.js");
-				openProfile(relatedId);
-			} else {
-				toastQueue.add(`<h1>Profile not found</h1>`);
-			}
+			const { default: openProfile } = await import("./profile.js");
+			openProfile(relatedId); // relatedId is now the username directly
 		} catch (error) {
 			console.error("Failed to load profile:", error);
 			toastQueue.add(`<h1>Failed to load profile</h1>`);

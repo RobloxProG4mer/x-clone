@@ -12,7 +12,8 @@ let currentPosts = [];
 let currentReplies = [];
 let currentUsername = null;
 
-const escapeHTML = (str) => str.split("").join("").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+const escapeHTML = (str) =>
+	str ? str.split("").join("").replace(/</g, "&lt;").replace(/>/g, "&gt;") : "";
 
 export default async function openProfile(username) {
 	currentUsername = username;

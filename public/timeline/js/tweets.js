@@ -4,32 +4,37 @@ import toastQueue from "../../shared/toasts.js";
 import { authToken } from "./auth.js";
 import openTweet from "./tweet.js";
 
-// Utility function to linkify text content
+const escapeHtml = (str) =>
+	str
+		.replace(/&/g, "&amp;")
+		.replace(/</g, "&lt;")
+		.replace(/>/g, "&gt;")
+		.replace(/"/g, "&quot;")
+		.replace(/'/g, "&#39;");
+
 const linkifyText = (text) => {
-	// URL regex
 	const urlRegex = /(https?:\/\/[^\s]+)/g;
-	// Mention regex (@username)
 	const mentionRegex = /@([a-zA-Z0-9_]+)/g;
 
-	const linkedText = text
-		// First handle URLs
-		.replace(urlRegex, (url) => {
-			const cleanUrl = url.replace(/[.,!?;:]$/, ""); // Remove trailing punctuation
-			const trailingPunc = url.slice(cleanUrl.length);
-			try {
-				const hostname = new URL(cleanUrl).hostname;
-				return `<a href="${cleanUrl}" target="_blank" rel="noopener noreferrer" class="tweet-link">${hostname}</a>${trailingPunc}`;
-			} catch {
-				return `<a href="${cleanUrl}" target="_blank" rel="noopener noreferrer" class="tweet-link">${cleanUrl}</a>${trailingPunc}`;
-			}
-		})
-		// Then handle mentions
-		.replace(
-			mentionRegex,
-			'<a href="#" class="tweet-mention" data-username="$1">@$1</a>',
-		);
+	let safeText = escapeHtml(text);
 
-	return linkedText;
+	safeText = safeText.replace(urlRegex, (url) => {
+		const cleanUrl = url.replace(/[.,!?;:]$/, "");
+		const trailingPunc = url.slice(cleanUrl.length);
+		try {
+			const hostname = new URL(cleanUrl).hostname;
+			return `<a href="${cleanUrl}" target="_blank" rel="noopener noreferrer" class="tweet-link">${hostname}</a>${trailingPunc}`;
+		} catch {
+			return `<a href="${cleanUrl}" target="_blank" rel="noopener noreferrer" class="tweet-link">${cleanUrl}</a>${trailingPunc}`;
+		}
+	});
+
+	safeText = safeText.replace(
+		mentionRegex,
+		'<a href="#" class="tweet-mention" data-username="$1">@$1</a>',
+	);
+
+	return safeText;
 };
 
 const timeAgo = (date) => {
@@ -245,9 +250,7 @@ export const createTweetElement = (tweet, config = {}) => {
 
 	if (size === "preview") {
 		tweetEl.classList.add("tweet-preview");
-		// Don't add pointer-events: none for quoted tweets - we want them clickable
-		// Just add cursor pointer to indicate it's clickable
-		tweetEl.style.cursor = "pointer";
+		tweetEl.classList.add("clickable");
 	}
 
 	const tweetHeaderEl = document.createElement("div");
@@ -343,7 +346,6 @@ export const createTweetElement = (tweet, config = {}) => {
 	tweetContentEl.className = "tweet-content";
 	tweetContentEl.innerHTML = linkifyText(tweet.content);
 
-	// Add click handlers for mentions
 	tweetContentEl.addEventListener("click", (e) => {
 		if (e.target.classList.contains("tweet-mention")) {
 			e.preventDefault();
@@ -606,7 +608,6 @@ export const createTweetElement = (tweet, config = {}) => {
 					const modal = document.createElement("div");
 					modal.classList.add("modal");
 
-					// Add close button with Lucide X icon
 					const closeButton = document.createElement("button");
 					closeButton.className = "modal-close";
 					closeButton.type = "button";
