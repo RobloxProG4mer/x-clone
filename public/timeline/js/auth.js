@@ -23,9 +23,7 @@ let _user;
 	_user = user;
 	document.querySelector(".account img").src =
 		user.avatar || `https://unavatar.io/${user.username}`;
-	document.querySelector("#compose-avatar").src =
-		user.avatar || `https://unavatar.io/${user.username}`;
-	document.querySelector(".account").addEventListener("click", (e) => {
+	document.querySelector(".account").addEventListener("click", () => {
 		window.location.href = `/account`;
 	});
 

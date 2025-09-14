@@ -1,6 +1,6 @@
 import toastQueue from "../../shared/toasts.js";
 import { authToken } from "./auth.js";
-import { useComposer } from "./composer.js";
+import { createComposer } from "./composer.js";
 import showPage, { addRoute } from "./pages.js";
 import { addTweetToTimeline } from "./tweets.js";
 import "./profile.js"; // Import to register profile routes
@@ -39,11 +39,16 @@ window.onunhandledrejection = (event) => {
 	timeline.forEach((tweet) => {
 		addTweetToTimeline(tweet, false);
 	});
-})();
 
-useComposer(document.querySelector(".compose-tweet"), (tweet) => {
-	addTweetToTimeline(tweet, true).classList.add("created");
-});
+	// Create and add the composer
+	const composer = await createComposer({
+		callback: (tweet) => {
+			addTweetToTimeline(tweet, true).classList.add("created");
+		},
+	});
+
+	document.querySelector("#composer-container").appendChild(composer);
+})();
 
 addRoute(
 	(pathname) => pathname === "/",

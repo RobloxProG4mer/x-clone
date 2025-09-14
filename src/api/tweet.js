@@ -39,10 +39,80 @@ const getTweetReplies = db.query(`
 `);
 
 const createTweet = db.query(`
-  INSERT INTO posts (id, user_id, content, reply_to, source) 
-  VALUES (?, ?, ?, ?, ?)
+	INSERT INTO posts (id, user_id, content, reply_to, source, poll_id) 
+  VALUES (?, ?, ?, ?, ?, ?)
 	RETURNING *
 `);
+
+const createPoll = db.query(`
+  INSERT INTO polls (id, post_id, expires_at)
+  VALUES (?, ?, ?)
+  RETURNING *
+`);
+
+const createPollOption = db.query(`
+  INSERT INTO poll_options (id, poll_id, option_text, option_order)
+  VALUES (?, ?, ?, ?)
+  RETURNING *
+`);
+
+const getPollByPostId = db.query(`
+  SELECT * FROM polls WHERE post_id = ?
+`);
+
+const getPollOptions = db.query(`
+  SELECT * FROM poll_options WHERE poll_id = ? ORDER BY option_order ASC
+`);
+
+const getUserPollVote = db.query(`
+  SELECT option_id FROM poll_votes WHERE user_id = ? AND poll_id = ?
+`);
+
+const castPollVote = db.query(`
+  INSERT OR REPLACE INTO poll_votes (id, user_id, poll_id, option_id)
+  VALUES (?, ?, ?, ?)
+`);
+
+const updateOptionVoteCount = db.query(`
+  UPDATE poll_options SET vote_count = vote_count + ? WHERE id = ?
+`);
+
+const getTotalPollVotes = db.query(`
+  SELECT SUM(vote_count) as total FROM poll_options WHERE poll_id = ?
+`);
+
+const getPollVoters = db.query(`
+  SELECT DISTINCT users.username, users.name, users.avatar, users.verified
+  FROM poll_votes 
+  JOIN users ON poll_votes.user_id = users.id 
+  WHERE poll_votes.poll_id = ?
+  ORDER BY poll_votes.created_at DESC
+  LIMIT 10
+`);
+
+const getPollDataForTweet = (tweetId, userId) => {
+	const poll = getPollByPostId.get(tweetId);
+	if (!poll) return null;
+
+	const options = getPollOptions.all(poll.id);
+	const totalVotes = getTotalPollVotes.get(poll.id)?.total || 0;
+	const userVote = userId ? getUserPollVote.get(userId, poll.id) : null;
+	const isExpired = new Date() > new Date(poll.expires_at);
+	const voters = getPollVoters.all(poll.id);
+
+	return {
+		...poll,
+		options: options.map((option) => ({
+			...option,
+			percentage:
+				totalVotes > 0 ? Math.round((option.vote_count / totalVotes) * 100) : 0,
+		})),
+		totalVotes,
+		userVote: userVote?.option_id || null,
+		isExpired,
+		voters,
+	};
+};
 
 const updatePostCounts = db.query(`
   UPDATE posts SET reply_count = reply_count + 1 WHERE id = ?
@@ -101,7 +171,7 @@ export default new Elysia({ prefix: "/tweets" })
 			const user = getUserByUsername.get(payload.username);
 			if (!user) return { error: "User not found" };
 
-			const { content, reply_to, source } = body;
+			const { content, reply_to, source, poll } = body;
 			const tweetContent = content;
 
 			if (!tweetContent || tweetContent.trim().length === 0) {
@@ -112,7 +182,42 @@ export default new Elysia({ prefix: "/tweets" })
 				return { error: "Tweet content must be 400 characters or less" };
 			}
 
+			if (
+				poll &&
+				(!poll.options || poll.options.length < 2 || poll.options.length > 4)
+			) {
+				return { error: "Poll must have between 2 and 4 options" };
+			}
+
+			if (
+				poll?.options?.some((option) => !option.trim() || option.length > 100)
+			) {
+				return { error: "Poll options must be 1-100 characters long" };
+			}
+
+			if (
+				poll &&
+				(!poll.duration || poll.duration < 5 || poll.duration > 10080)
+			) {
+				return { error: "Poll duration must be between 5 minutes and 7 days" };
+			}
+
 			const tweetId = Bun.randomUUIDv7();
+			let pollId = null;
+
+			if (poll) {
+				pollId = Bun.randomUUIDv7();
+				const expiresAt = new Date(
+					Date.now() + poll.duration * 60 * 1000,
+				).toISOString();
+
+				createPoll.run(pollId, tweetId, expiresAt);
+
+				poll.options.forEach((option, index) => {
+					const optionId = Bun.randomUUIDv7();
+					createPollOption.run(optionId, pollId, option.trim(), index);
+				});
+			}
 
 			const tweet = createTweet.get(
 				tweetId,
@@ -120,8 +225,8 @@ export default new Elysia({ prefix: "/tweets" })
 				tweetContent.trim(),
 				reply_to || null,
 				source || null,
+				pollId,
 			);
-
 			if (reply_to) {
 				updatePostCounts.run(reply_to);
 			}
@@ -209,6 +314,7 @@ export default new Elysia({ prefix: "/tweets" })
 			liked_by_user: likedPosts.has(post.id),
 			retweeted_by_user: retweetedPosts.has(post.id),
 			author: userMap.get(post.user_id),
+			poll: getPollDataForTweet(post.id, currentUser.id),
 		}));
 
 		const processedReplies = replies.map((reply) => ({
@@ -216,12 +322,14 @@ export default new Elysia({ prefix: "/tweets" })
 			liked_by_user: likedPosts.has(reply.id),
 			retweeted_by_user: retweetedPosts.has(reply.id),
 			author: userMap.get(reply.user_id),
+			poll: getPollDataForTweet(reply.id, currentUser.id),
 		}));
 
 		return {
 			tweet: {
 				...tweet,
 				author: userMap.get(tweet.user_id),
+				poll: getPollDataForTweet(tweet.id, currentUser.id),
 			},
 			threadPosts: processedThreadPosts,
 			replies: processedReplies,
@@ -286,5 +394,67 @@ export default new Elysia({ prefix: "/tweets" })
 		} catch (error) {
 			console.error("Retweet toggle error:", error);
 			return { error: "Failed to toggle retweet" };
+		}
+	})
+	.post("/:id/poll/vote", async ({ jwt, headers, params, body }) => {
+		const authorization = headers.authorization;
+		if (!authorization) return { error: "Authentication required" };
+
+		try {
+			const payload = await jwt.verify(authorization.replace("Bearer ", ""));
+			if (!payload) return { error: "Invalid token" };
+
+			const user = getUserByUsername.get(payload.username);
+			if (!user) return { error: "User not found" };
+
+			const { id: tweetId } = params;
+			const { optionId } = body;
+
+			if (!optionId) {
+				return { error: "Option ID is required" };
+			}
+
+			const poll = getPollByPostId.get(tweetId);
+			if (!poll) {
+				return { error: "Poll not found" };
+			}
+
+			if (new Date() > new Date(poll.expires_at)) {
+				return { error: "Poll has expired" };
+			}
+
+			const existingVote = getUserPollVote.get(user.id, poll.id);
+			const voteId = Bun.randomUUIDv7();
+
+			if (existingVote?.option_id) {
+				updateOptionVoteCount.run(-1, existingVote.option_id);
+			}
+
+			castPollVote.run(voteId, user.id, poll.id, optionId);
+			updateOptionVoteCount.run(1, optionId);
+
+			const options = getPollOptions.all(poll.id);
+			const totalVotes = getTotalPollVotes.get(poll.id)?.total || 0;
+			const voters = getPollVoters.all(poll.id);
+
+			return {
+				success: true,
+				poll: {
+					...poll,
+					options: options.map((option) => ({
+						...option,
+						percentage:
+							totalVotes > 0
+								? Math.round((option.vote_count / totalVotes) * 100)
+								: 0,
+					})),
+					totalVotes,
+					userVote: optionId,
+					voters,
+				},
+			};
+		} catch (error) {
+			console.error("Poll vote error:", error);
+			return { error: "Failed to vote on poll" };
 		}
 	});

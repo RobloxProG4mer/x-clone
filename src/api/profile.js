@@ -51,6 +51,55 @@ const getFollowCounts = db.query(`
 		(SELECT COUNT(*) FROM posts WHERE user_id = ? AND reply_to IS NULL) AS post_count
 `);
 
+const getPollByPostId = db.query(`
+  SELECT * FROM polls WHERE post_id = ?
+`);
+
+const getPollOptions = db.query(`
+  SELECT * FROM poll_options WHERE poll_id = ? ORDER BY option_order ASC
+`);
+
+const getUserPollVote = db.query(`
+  SELECT option_id FROM poll_votes WHERE user_id = ? AND poll_id = ?
+`);
+
+const getTotalPollVotes = db.query(`
+  SELECT SUM(vote_count) as total FROM poll_options WHERE poll_id = ?
+`);
+
+const getPollVoters = db.query(`
+  SELECT DISTINCT users.username, users.name, users.avatar, users.verified
+  FROM poll_votes 
+  JOIN users ON poll_votes.user_id = users.id 
+  WHERE poll_votes.poll_id = ?
+  ORDER BY poll_votes.created_at DESC
+  LIMIT 10
+`);
+
+const getPollDataForTweet = (tweetId, userId) => {
+	const poll = getPollByPostId.get(tweetId);
+	if (!poll) return null;
+
+	const options = getPollOptions.all(poll.id);
+	const totalVotes = getTotalPollVotes.get(poll.id)?.total || 0;
+	const userVote = userId ? getUserPollVote.get(userId, poll.id) : null;
+	const isExpired = new Date() > new Date(poll.expires_at);
+	const voters = getPollVoters.all(poll.id);
+
+	return {
+		...poll,
+		options: options.map((option) => ({
+			...option,
+			percentage:
+				totalVotes > 0 ? Math.round((option.vote_count / totalVotes) * 100) : 0,
+		})),
+		totalVotes,
+		userVote: userVote?.option_id || null,
+		isExpired,
+		voters,
+	};
+};
+
 export default new Elysia({ prefix: "/profile" })
 	.use(jwt({ name: "jwt", secret: JWT_SECRET }))
 	.use(
@@ -82,6 +131,7 @@ export default new Elysia({ prefix: "/profile" })
 
 			let isFollowing = false;
 			let isOwnProfile = false;
+			let currentUserId = null;
 
 			const authorization = headers.authorization;
 			if (authorization) {
@@ -92,6 +142,7 @@ export default new Elysia({ prefix: "/profile" })
 					if (payload) {
 						const currentUser = getUserByUsername.get(payload.username);
 						if (currentUser) {
+							currentUserId = currentUser.id;
 							isOwnProfile = currentUser.id === user.id;
 							if (!isOwnProfile) {
 								const followStatus = getFollowStatus.get(
@@ -107,9 +158,14 @@ export default new Elysia({ prefix: "/profile" })
 				}
 			}
 
+			const postsWithPolls = posts.map((post) => ({
+				...post,
+				poll: getPollDataForTweet(post.id, currentUserId),
+			}));
+
 			return {
 				profile,
-				posts,
+				posts: postsWithPolls,
 				isFollowing,
 				isOwnProfile,
 			};

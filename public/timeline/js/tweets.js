@@ -21,6 +21,183 @@ const timeAgo = (date) => {
 	return `${d}/${m}/${y}`;
 };
 
+const formatTimeRemaining = (expiresAt) => {
+	const now = new Date();
+	const expires = new Date(expiresAt);
+	const diff = expires - now;
+
+	if (diff <= 0) return "Ended";
+
+	const minutes = Math.floor(diff / (1000 * 60));
+	const hours = Math.floor(diff / (1000 * 60 * 60));
+	const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+
+	if (days > 0) return `${days}d left`;
+	if (hours > 0) return `${hours}h left`;
+	return `${minutes}m left`;
+};
+
+const createPollElement = (poll, tweet) => {
+	if (!poll) return null;
+
+	const pollEl = document.createElement("div");
+	pollEl.className = "tweet-poll";
+
+	const pollOptionsEl = document.createElement("div");
+	pollOptionsEl.className = "poll-options";
+
+	poll.options.forEach((option) => {
+		const optionEl = document.createElement("div");
+		optionEl.className = `poll-option ${poll.userVote === option.id ? "voted" : ""} ${poll.isExpired ? "expired" : ""}`;
+
+		if (poll.isExpired || poll.userVote) {
+			optionEl.innerHTML = `
+				<div class="poll-option-bar" style="width: ${option.percentage}%"></div>
+				<div class="poll-option-content">
+					<span class="poll-option-text">${option.option_text}</span>
+					<span class="poll-option-percentage">${option.percentage}%</span>
+				</div>
+			`;
+		} else {
+			optionEl.innerHTML = `
+				<div class="poll-option-content">
+					<span class="poll-option-text">${option.option_text}</span>
+				</div>
+			`;
+			optionEl.style.cursor = "pointer";
+			optionEl.addEventListener("click", () =>
+				votePoll(tweet.id, option.id, pollEl),
+			);
+		}
+
+		pollOptionsEl.appendChild(optionEl);
+	});
+
+	const pollMetaEl = document.createElement("div");
+	pollMetaEl.className = "poll-meta";
+
+	const pollVotesEl = document.createElement("div");
+	pollVotesEl.className = "poll-votes-container";
+
+	if (poll.voters && poll.voters.length > 0) {
+		const voterAvatarsEl = document.createElement("div");
+		voterAvatarsEl.className = "voter-avatars";
+
+		poll.voters.slice(0, 3).forEach((voter, index) => {
+			const avatarEl = document.createElement("img");
+			avatarEl.className = "voter-avatar";
+			avatarEl.src = voter.avatar || `https://unavatar.io/${voter.username}`;
+			avatarEl.alt = voter.name || voter.username;
+			avatarEl.title = voter.name || voter.username;
+			avatarEl.style.zIndex = poll.voters.length - index;
+			voterAvatarsEl.appendChild(avatarEl);
+		});
+
+		pollVotesEl.appendChild(voterAvatarsEl);
+	}
+
+	const votesTextEl = document.createElement("span");
+	votesTextEl.className = "poll-votes-text";
+	votesTextEl.textContent = `${poll.totalVotes} vote${poll.totalVotes !== 1 ? "s" : ""}`;
+	pollVotesEl.appendChild(votesTextEl);
+
+	const pollTimeEl = document.createElement("span");
+	pollTimeEl.className = "poll-time";
+	pollTimeEl.textContent = formatTimeRemaining(poll.expires_at);
+
+	pollMetaEl.appendChild(pollVotesEl);
+	pollMetaEl.appendChild(pollTimeEl);
+
+	pollEl.appendChild(pollOptionsEl);
+	pollEl.appendChild(pollMetaEl);
+
+	return pollEl;
+};
+
+const votePoll = async (tweetId, optionId, pollElement) => {
+	try {
+		const response = await fetch(`/api/tweets/${tweetId}/poll/vote`, {
+			method: "POST",
+			headers: {
+				"Content-Type": "application/json",
+				Authorization: `Bearer ${authToken}`,
+			},
+			body: JSON.stringify({ optionId }),
+		});
+
+		const result = await response.json();
+
+		if (result.success) {
+			updatePollDisplay(pollElement, result.poll);
+			toastQueue.add(`<h1>Vote recorded!</h1>`);
+		} else {
+			toastQueue.add(`<h1>${result.error || "Failed to vote"}</h1>`);
+		}
+	} catch (error) {
+		console.error("Vote error:", error);
+		toastQueue.add(`<h1>Network error. Please try again.</h1>`);
+	}
+};
+
+const updatePollDisplay = (pollElement, poll) => {
+	const optionsContainer = pollElement.querySelector(".poll-options");
+	const metaContainer = pollElement.querySelector(".poll-meta");
+
+	optionsContainer.innerHTML = "";
+
+	poll.options.forEach((option) => {
+		const optionEl = document.createElement("div");
+		optionEl.className = `poll-option voted ${poll.isExpired ? "expired" : ""}`;
+		optionEl.innerHTML = `
+			<div class="poll-option-bar" style="width: ${option.percentage}%"></div>
+			<div class="poll-option-content">
+				<span class="poll-option-text">${option.option_text}</span>
+				<span class="poll-option-percentage">${option.percentage}%</span>
+			</div>
+		`;
+
+		if (option.id === poll.userVote) {
+			optionEl.classList.add("user-voted");
+		}
+
+		optionsContainer.appendChild(optionEl);
+	});
+
+	metaContainer.innerHTML = "";
+
+	const pollVotesEl = document.createElement("div");
+	pollVotesEl.className = "poll-votes-container";
+
+	if (poll.voters && poll.voters.length > 0) {
+		const voterAvatarsEl = document.createElement("div");
+		voterAvatarsEl.className = "voter-avatars";
+
+		poll.voters.slice(0, 3).forEach((voter, index) => {
+			const avatarEl = document.createElement("img");
+			avatarEl.className = "voter-avatar";
+			avatarEl.src = voter.avatar || `https://unavatar.io/${voter.username}`;
+			avatarEl.alt = voter.name || voter.username;
+			avatarEl.title = voter.name || voter.username;
+			avatarEl.style.zIndex = poll.voters.length - index;
+			voterAvatarsEl.appendChild(avatarEl);
+		});
+
+		pollVotesEl.appendChild(voterAvatarsEl);
+	}
+
+	const votesTextEl = document.createElement("span");
+	votesTextEl.className = "poll-votes-text";
+	votesTextEl.textContent = `${poll.totalVotes} vote${poll.totalVotes !== 1 ? "s" : ""}`;
+	pollVotesEl.appendChild(votesTextEl);
+
+	const pollTimeEl = document.createElement("span");
+	pollTimeEl.className = "poll-time";
+	pollTimeEl.textContent = formatTimeRemaining(poll.expires_at);
+
+	metaContainer.appendChild(pollVotesEl);
+	metaContainer.appendChild(pollTimeEl);
+};
+
 export const createTweetElement = (tweet, { clickToOpen = true } = {}) => {
 	const tweetEl = document.createElement("div");
 	tweetEl.className = "tweet";
@@ -112,6 +289,13 @@ export const createTweetElement = (tweet, { clickToOpen = true } = {}) => {
 	tweetContentEl.textContent = tweet.content;
 
 	tweetEl.appendChild(tweetContentEl);
+
+	if (tweet.poll) {
+		const pollEl = createPollElement(tweet.poll, tweet);
+		if (pollEl) {
+			tweetEl.appendChild(pollEl);
+		}
+	}
 
 	const tweetInteractionsEl = document.createElement("div");
 	tweetInteractionsEl.className = "tweet-interactions";

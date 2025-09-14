@@ -6,8 +6,14 @@ export const useComposer = (element, callback, { replyTo = null } = {}) => {
 	const textarea = element.querySelector("#tweet-textarea");
 	const charCount = element.querySelector("#char-count");
 	const tweetButton = element.querySelector("#tweet-button");
+	const pollToggle = element.querySelector("#poll-toggle");
+	const pollContainer = element.querySelector("#poll-container");
+	const addPollOptionBtn = element.querySelector("#add-poll-option");
+	const pollDuration = element.querySelector("#poll-duration");
 
-	textarea.addEventListener("input", () => {
+	let pollEnabled = false;
+
+	const updateCharacterCount = () => {
 		const length = textarea.value.length;
 		charCount.textContent = length;
 
@@ -18,7 +24,56 @@ export const useComposer = (element, callback, { replyTo = null } = {}) => {
 			charCount.parentElement.id = "";
 			tweetButton.disabled = length === 0;
 		}
-	});
+	};
+
+	const addPollOption = (text = "") => {
+		if (!pollContainer) return;
+		const optionIndex = pollContainer.querySelectorAll(".poll-option").length;
+		if (optionIndex >= 4) return;
+
+		const optionDiv = document.createElement("div");
+		optionDiv.className = "poll-option";
+		optionDiv.innerHTML = `
+			<input type="text" placeholder="Choice ${optionIndex + 1}" maxlength="100" value="${text}">
+			${optionIndex >= 2 ? '<button type="button" class="remove-option">×</button>' : ""}
+		`;
+
+		pollContainer.querySelector(".poll-options").appendChild(optionDiv);
+
+		if (optionDiv.querySelector(".remove-option")) {
+			optionDiv
+				.querySelector(".remove-option")
+				.addEventListener("click", () => {
+					optionDiv.remove();
+					updateAddOptionButton();
+				});
+		}
+
+		updateAddOptionButton();
+	};
+
+	const updateAddOptionButton = () => {
+		if (!pollContainer || !addPollOptionBtn) return;
+		const optionCount = pollContainer.querySelectorAll(".poll-option").length;
+		addPollOptionBtn.style.display = optionCount >= 4 ? "none" : "block";
+	};
+
+	const togglePoll = () => {
+		if (!pollContainer || !pollToggle) return;
+		pollEnabled = !pollEnabled;
+		pollContainer.style.display = pollEnabled ? "block" : "none";
+		pollToggle.textContent = pollEnabled ? "Remove poll" : "Add poll";
+
+		if (
+			pollEnabled &&
+			pollContainer.querySelectorAll(".poll-option").length === 0
+		) {
+			addPollOption();
+			addPollOption();
+		}
+	};
+
+	textarea.addEventListener("input", updateCharacterCount);
 
 	textarea.addEventListener("input", () => {
 		textarea.style.height = `${Math.max(textarea.scrollHeight, 25)}px`;
@@ -30,17 +85,60 @@ export const useComposer = (element, callback, { replyTo = null } = {}) => {
 		}
 	});
 
+	if (pollToggle) {
+		pollToggle.addEventListener("click", togglePoll);
+	}
+
+	if (addPollOptionBtn) {
+		addPollOptionBtn.addEventListener("click", () => addPollOption());
+	}
+
 	tweetButton.addEventListener("click", async () => {
 		const content = textarea.value.trim();
 
 		if (!content || content.length > 400) {
-			toastQueue.add(`<h1>Invalid tweet</h1><p>Make sure your tweet is 1 to 400 characters long.</p>`);
+			toastQueue.add(
+				`<h1>Invalid tweet</h1><p>Make sure your tweet is 1 to 400 characters long.</p>`,
+			);
 			return;
+		}
+
+		let poll = null;
+		if (pollEnabled && pollContainer && pollDuration) {
+			const pollOptions = Array.from(
+				pollContainer.querySelectorAll(".poll-option input"),
+			)
+				.map((input) => input.value.trim())
+				.filter((value) => value.length > 0);
+
+			if (pollOptions.length < 2) {
+				toastQueue.add(
+					`<h1>Invalid poll</h1><p>Please provide at least 2 poll options.</p>`,
+				);
+				return;
+			}
+
+			poll = {
+				options: pollOptions,
+				duration: parseInt(pollDuration.value),
+			};
 		}
 
 		tweetButton.disabled = true;
 
 		try {
+			const requestBody = {
+				content,
+				reply_to: replyTo,
+				source: /Mobi|Android|iPhone|iPad|iPod/i.test(navigator.userAgent)
+					? "mobile_web"
+					: "desktop_web",
+			};
+
+			if (poll) {
+				requestBody.poll = poll;
+			}
+
 			const { error, tweet } = await (
 				await fetch("/api/tweets/", {
 					method: "POST",
@@ -48,13 +146,7 @@ export const useComposer = (element, callback, { replyTo = null } = {}) => {
 						"Content-Type": "application/json",
 						Authorization: `Bearer ${authToken}`,
 					},
-					body: JSON.stringify({
-						content,
-						reply_to: replyTo,
-						source: /Mobi|Android|iPhone|iPad|iPod/i.test(navigator.userAgent)
-							? "mobile_web"
-							: "desktop_web",
-					}),
+					body: JSON.stringify(requestBody),
 				})
 			).json();
 
@@ -66,6 +158,13 @@ export const useComposer = (element, callback, { replyTo = null } = {}) => {
 			textarea.value = "";
 			charCount.textContent = "0";
 			textarea.style.height = "25px";
+
+			if (pollEnabled && pollContainer) {
+				pollContainer
+					.querySelectorAll(".poll-option")
+					.forEach((option) => option.remove());
+				togglePoll();
+			}
 
 			callback(tweet);
 
@@ -107,11 +206,34 @@ export const createComposer = async ({
           <img src="" alt="Your avatar" id="compose-avatar">
           <div class="compose-input">
             <textarea placeholder="What's happening?" maxlength="400" id="tweet-textarea"></textarea>
-            <div class="compose-footer">
-              <div class="character-counter" id="">
-              <span id="char-count">0</span>/400
+            <div id="poll-container" style="display: none;">
+              <div class="poll-options"></div>
+              <button type="button" id="add-poll-option">Add another option</button>
+              <div class="poll-settings">
+                <label for="poll-duration">Poll duration:</label>
+                <select id="poll-duration">
+                  <option value="5">5 minutes</option>
+                  <option value="15">15 minutes</option>
+                  <option value="30">30 minutes</option>
+                  <option value="60">1 hour</option>
+                  <option value="360">6 hours</option>
+                  <option value="720">12 hours</option>
+                  <option value="1440" selected>1 day</option>
+                  <option value="4320">3 days</option>
+                  <option value="10080">7 days</option>
+                </select>
+              </div>
             </div>
-              <button id="tweet-button" disabled="">Tweet</button>
+            <div class="compose-footer">
+              <div class="compose-actions">
+                <button type="button" id="poll-toggle">Add poll</button>
+              </div>
+              <div class="compose-submit">
+                <div class="character-counter" id="">
+                  <span id="char-count">0</span>/400
+                </div>
+                <button id="tweet-button" disabled="">Tweet</button>
+              </div>
             </div>
           </div>
         </div>`;

@@ -66,25 +66,7 @@
         <a href="javascript:">Following</a>
       </h1>
 
-      <div class="compose-tweet">
-        <div class="compose-header">
-          <img src="" alt="Your avatar" id="compose-avatar" />
-          <div class="compose-input">
-            <textarea
-              placeholder="What's happening?"
-              maxlength="400"
-              id="tweet-textarea"
-            ></textarea>
-            <div class="compose-footer">
-              <!-- prettier-ignore -->
-              <div class="character-counter">
-              <span id="char-count">0</span>/400
-            </div>
-              <button id="tweet-button" disabled>Tweet</button>
-            </div>
-          </div>
-        </div>
-      </div>
+      <div id="composer-container"></div>
 
       <div class="tweets"></div>
     </div>
@@ -93,7 +75,23 @@
 
     <div class="profile">
       <div class="profile-header">
-          <a href="/" class="back-button"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-arrow-left-icon lucide-arrow-left"><path d="m12 19-7-7 7-7"/><path d="M19 12H5"/></svg></a>
+        <a href="/" class="back-button">
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            width="24"
+            height="24"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2.25"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            class="lucide lucide-arrow-left-icon lucide-arrow-left"
+          >
+            <path d="m12 19-7-7 7-7" />
+            <path d="M19 12H5" />
+          </svg>
+        </a>
         <div class="profile-header-info">
           <h1 id="profileHeaderName">Profile</h1>
           <p class="post-count" id="profileHeaderPostCount">0 posts</p>
