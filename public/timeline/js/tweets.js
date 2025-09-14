@@ -185,7 +185,7 @@ const updatePollDisplay = (pollElement, poll) => {
 		optionEl.innerHTML = `
 			<div class="poll-option-bar" style="width: ${option.percentage}%"></div>
 			<div class="poll-option-content">
-				<span class="poll-option-text">${option.option_text}</span>
+				<span class="poll-option-text">${option.option_text.replaceAll("<", "&lt;").replaceAll(">", "&gt;")}</span>
 				<span class="poll-option-percentage">${option.percentage}%</span>
 			</div>
 		`;

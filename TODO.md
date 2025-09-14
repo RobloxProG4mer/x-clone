@@ -1,10 +1,10 @@
+- SUSPENSIONS
 - fix weird vibecoded code
 - SEARCH
 - deleting tweets
 - hashtags
 - blocking
 - fix followings/followers modal
-- fix tweet reply previews in notifications (`Invalid tweet object provided to createTweetElement`)
 - reposts showing up in timeline
 - account dropdown actually being a dropdown with profile, bookmarks and sign out button
 - bookmarks
@@ -18,10 +18,13 @@
 - verification system
 - changing handles
 - see who liked, retweeted or quoted a tweet
-- db indexes for speed (after everything is done)
 - encrypted DMs
 - deleting account
-- @HappyRobot bot
 - admin dashboard
 - private accounts
 - markdown formatting in tweets
+
+## others
+
+- @HappyRobot bot
+- db indexes for speed (after everything is done)
