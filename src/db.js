@@ -18,7 +18,8 @@ CREATE TABLE IF NOT EXISTS users (
   banner TEXT DEFAULT NULL,
   post_count INTEGER DEFAULT 0,
   follower_count INTEGER DEFAULT 0,
-  following_count INTEGER DEFAULT 0
+  following_count INTEGER DEFAULT 0,
+  password_hash TEXT DEFAULT NULL
 );
 
 CREATE TABLE IF NOT EXISTS passkeys (

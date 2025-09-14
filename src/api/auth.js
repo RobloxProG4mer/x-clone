@@ -561,4 +561,101 @@ export default new Elysia({
 		} catch (error) {
 			return { error: error.message };
 		}
+	})
+	.post("/register-with-password", async ({ body, jwt }) => {
+		try {
+			const { username, password } = body;
+
+			if (!username || !password) {
+				return { error: "Username and password are required" };
+			}
+
+			if (username.length < 3 || username.length > 20) {
+				return { error: "Username must be between 3 and 20 characters" };
+			}
+
+			if (!/^[a-z0-9_]+$/.test(username)) {
+				return {
+					error:
+						"Username can only contain lowercase letters, numbers, and underscores",
+				};
+			}
+
+			if (password.length < 6) {
+				return { error: "Password must be at least 6 characters long" };
+			}
+
+			const existingUser = getUserByUsername(username);
+			if (existingUser) {
+				return { error: "Username is already taken" };
+			}
+
+			const passwordHash = await Bun.password.hash(password);
+			const userId = Bun.randomUUIDv7();
+
+			const user = db
+				.query(
+					"INSERT INTO users (id, username, password_hash) VALUES (?, ?, ?) RETURNING *",
+				)
+				.get(userId, username, passwordHash);
+
+			const token = await jwt.sign({ username: user.username });
+
+			return {
+				success: true,
+				user,
+				token,
+			};
+		} catch (error) {
+			console.error("Password registration error:", error);
+			return { error: "Failed to create account" };
+		}
+	})
+	.post("/basic-login", async ({ body, jwt }) => {
+		try {
+			const { username, password } = body;
+
+			if (!username || !password) {
+				return { error: "Username and password are required" };
+			}
+
+			const user = getUserByUsername(username);
+			if (!user || !user.password_hash) {
+				return { error: "Invalid username or password" };
+			}
+
+			const isValidPassword = await Bun.password.verify(
+				password,
+				user.password_hash,
+			);
+			if (!isValidPassword) {
+				return { error: "Invalid username or password" };
+			}
+
+			const token = await jwt.sign({ username: user.username });
+
+			const passkeys = db
+				.query(
+					`SELECT cred_id, created_at, last_used, transports, backup_eligible, name 
+					FROM passkeys WHERE internal_user_id = ? 
+					ORDER BY created_at DESC`,
+				)
+				.all(user.id);
+
+			return {
+				token,
+				user,
+				passkeys: passkeys.map((passkey) => ({
+					id: passkey.cred_id,
+					createdAt: passkey.created_at,
+					lastUsed: passkey.last_used,
+					transports: JSON.parse(passkey.transports || "[]"),
+					backupEligible: passkey.backup_eligible,
+					name: passkey.name || `Passkey ${passkey.cred_id.slice(0, 8)}...`,
+				})),
+			};
+		} catch (error) {
+			console.error("Basic login error:", error);
+			return { error: "Login failed" };
+		}
 	});

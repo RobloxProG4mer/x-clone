@@ -39,7 +39,8 @@ const linkifyText = (text) => {
 
 const timeAgo = (date) => {
 	const now = new Date();
-	const seconds = Math.floor((now - new Date(date)) / 1000);
+	const dateObj = new Date(date);
+	const seconds = Math.floor((now - dateObj) / 1000);
 
 	if (seconds < 60) return `${seconds}s`;
 	if (seconds < 3600) return `${Math.floor(seconds / 60)}m`;
@@ -47,11 +48,11 @@ const timeAgo = (date) => {
 	if (seconds < 604800) return `${Math.floor(seconds / 86400)}d`;
 	if (seconds < 2419200) return `${Math.floor(seconds / 604800)}w`;
 
-	const d = date.getDate().toString().padStart(2, "0");
-	const m = (date.getMonth() + 1).toString().padStart(2, "0");
-	const y = date.getFullYear().toString().slice(-2);
+	const d = dateObj.getDate().toString().padStart(2, "0");
+	const m = (dateObj.getMonth() + 1).toString().padStart(2, "0");
+	const y = dateObj.getFullYear().toString().slice(-2);
 
-	if (date.getFullYear() === now.getFullYear()) return `${d}/${m}`;
+	if (dateObj.getFullYear() === now.getFullYear()) return `${d}/${m}`;
 	return `${d}/${m}/${y}`;
 };
 
@@ -398,28 +399,6 @@ export const createTweetElement = (tweet, config = {}) => {
 		tweetEl.appendChild(quotedTweetEl);
 	}
 
-	// Show top reply if available and in timeline
-	if (tweet.top_reply && showTopReply) {
-		const topReplyEl = createTweetElement(tweet.top_reply, {
-			clickToOpen: true,
-			showTopReply: false,
-			isTopReply: true,
-		});
-
-		// Add reply indicator
-		const replyIndicator = document.createElement("div");
-		replyIndicator.className = "reply-indicator";
-		replyIndicator.innerHTML = `
-			<svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
-				<path d="M7 12L12 7L7 2" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-			</svg>
-			<span>Replying to @${tweet.author.username}</span>
-		`;
-		topReplyEl.insertBefore(replyIndicator, topReplyEl.firstChild);
-
-		tweetEl.appendChild(topReplyEl);
-	}
-
 	const tweetInteractionsEl = document.createElement("div");
 	tweetInteractionsEl.className = "tweet-interactions";
 
@@ -746,20 +725,37 @@ export const createTweetElement = (tweet, config = {}) => {
 	tweetInteractionsEl.appendChild(tweetInteractionsReplyEl);
 	tweetInteractionsEl.appendChild(tweetInteractionsShareEl);
 
-	// Hide interactions for preview tweets
 	if (size !== "preview") {
 		tweetEl.appendChild(tweetInteractionsEl);
+	}
+	if (tweet.top_reply && showTopReply) {
+		const topReplyEl = createTweetElement(tweet.top_reply, {
+			clickToOpen: true,
+			showTopReply: false,
+			isTopReply: true,
+		});
+
+		// Add reply indicator
+		const replyIndicator = document.createElement("div");
+		replyIndicator.className = "reply-indicator";
+		replyIndicator.innerHTML = `
+			<svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+				<path d="M7 12L12 7L7 2" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+			</svg>
+			<span>Replying to @${tweet.author.username}</span>
+		`;
+		topReplyEl.insertBefore(replyIndicator, topReplyEl.firstChild);
+
+		tweetEl.appendChild(topReplyEl);
 	}
 
 	if (clickToOpen) {
 		tweetEl.classList.add("clickable");
 
 		tweetEl.addEventListener("click", (e) => {
-			// Prevent opening if clicking on interactive elements
 			if (e.target.closest("button, a, .engagement")) {
 				return;
 			}
-			// For preview tweets, stop propagation to prevent opening parent tweet
 			if (size === "preview") {
 				e.stopPropagation();
 			}

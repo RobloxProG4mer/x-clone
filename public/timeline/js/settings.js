@@ -1,10 +1,25 @@
 import showPage, { addRoute } from "./pages.js";
 
-// Create settings page elements dynamically
+const settingsPages = [
+	{ key: "main", title: "Main", content: () => `
+        h
+        ` },
+	{ key: "other", title: "Other", content: () => `
+        h
+        ` },
+];
+
 const createSettingsPage = () => {
 	const settingsContainer = document.createElement("div");
 	settingsContainer.className = "settings";
 	settingsContainer.style.display = "none";
+
+	const sidebarButtons = settingsPages
+		.map(
+			(page) =>
+				`<button class="settings-tab-btn${page.key === "main" ? " active" : ""}" data-tab="${page.key}">${page.title}</button>`,
+		)
+		.join("");
 
 	settingsContainer.innerHTML = `
 		<div class="settings-header">
@@ -21,16 +36,12 @@ const createSettingsPage = () => {
 
 		<div class="settings-body">
 			<div class="settings-sidebar">
-				<button class="settings-tab-btn active" data-tab="main">Main</button>
-				<button class="settings-tab-btn" data-tab="other">Other</button>
+				${sidebarButtons}
 			</div>
-			<div class="settings-content" id="settings-content">
-				<!-- Content will be dynamically populated -->
-			</div>
+			<div class="settings-content" id="settings-content"></div>
 		</div>
 	`;
 
-	// Add CSS styles
 	const style = document.createElement("style");
 	style.textContent = `
 		.settings {
@@ -118,112 +129,18 @@ const createSettingsPage = () => {
 			flex: 1;
 		}
 
-		.settings-section {
-			margin-bottom: 32px;
-		}
-
-		.settings-section h2 {
-			margin: 0 0 16px 0;
-			font-size: 20px;
-			font-weight: 600;
-			color: var(--text-primary);
-		}
-
-		.settings-section p {
-			margin: 0 0 16px 0;
-			color: var(--text-secondary);
-			line-height: 1.5;
-		}
-
-		.setting-item {
-			display: flex;
-			align-items: center;
-			justify-content: space-between;
-			padding: 16px 0;
-			border-bottom: 1px solid var(--border-primary);
-		}
-
-		.setting-item:last-child {
-			border-bottom: none;
-		}
-
-		.setting-info {
-			flex: 1;
-		}
-
-		.setting-title {
-			font-weight: 500;
-			color: var(--text-primary);
-			margin: 0 0 4px 0;
-		}
-
-		.setting-description {
-			font-size: 14px;
-			color: var(--text-secondary);
-			margin: 0;
-		}
-
-		.setting-control {
-			margin-left: 16px;
-		}
-
-		.switch {
-			position: relative;
-			display: inline-block;
-			width: 44px;
-			height: 24px;
-		}
-
-		.switch input {
-			opacity: 0;
-			width: 0;
-			height: 0;
-		}
-
-		.slider {
-			position: absolute;
-			cursor: pointer;
-			top: 0;
-			left: 0;
-			right: 0;
-			bottom: 0;
-			background-color: var(--border-primary);
-			transition: .4s;
-			border-radius: 24px;
-		}
-
-		.slider:before {
-			position: absolute;
-			content: "";
-			height: 18px;
-			width: 18px;
-			left: 3px;
-			bottom: 3px;
-			background-color: white;
-			transition: .4s;
-			border-radius: 50%;
-		}
-
-		input:checked + .slider {
-			background-color: var(--primary);
-		}
-
-		input:checked + .slider:before {
-			transform: translateX(20px);
-		}
-
 		@media (max-width: 768px) {
 			.settings-body {
 				flex-direction: column;
 			}
-			
+
 			.settings-sidebar {
 				width: 100%;
 				display: flex;
 				overflow-x: auto;
 				gap: 8px;
 			}
-			
+
 			.settings-tab-btn {
 				white-space: nowrap;
 				margin-bottom: 0;
@@ -237,128 +154,8 @@ const createSettingsPage = () => {
 	return settingsContainer;
 };
 
-// Settings tab content
-const settingsTabs = {
-	main: {
-		title: "Main Settings",
-		content: () => `
-			<div class="settings-section">
-				<h2>Appearance</h2>
-				<div class="setting-item">
-					<div class="setting-info">
-						<div class="setting-title">Dark mode</div>
-						<div class="setting-description">Switch between light and dark themes</div>
-					</div>
-					<div class="setting-control">
-						<label class="switch">
-							<input type="checkbox" id="dark-mode-toggle">
-							<span class="slider"></span>
-						</label>
-					</div>
-				</div>
-			</div>
-
-			<div class="settings-section">
-				<h2>Privacy</h2>
-				<div class="setting-item">
-					<div class="setting-info">
-						<div class="setting-title">Private account</div>
-						<div class="setting-description">Only approved followers can see your tweets</div>
-					</div>
-					<div class="setting-control">
-						<label class="switch">
-							<input type="checkbox" id="private-account-toggle">
-							<span class="slider"></span>
-						</label>
-					</div>
-				</div>
-				<div class="setting-item">
-					<div class="setting-info">
-						<div class="setting-title">Show activity status</div>
-						<div class="setting-description">Let others see when you're active</div>
-					</div>
-					<div class="setting-control">
-						<label class="switch">
-							<input type="checkbox" id="activity-status-toggle" checked>
-							<span class="slider"></span>
-						</label>
-					</div>
-				</div>
-			</div>
-
-			<div class="settings-section">
-				<h2>Notifications</h2>
-				<div class="setting-item">
-					<div class="setting-info">
-						<div class="setting-title">Push notifications</div>
-						<div class="setting-description">Receive notifications for new activity</div>
-					</div>
-					<div class="setting-control">
-						<label class="switch">
-							<input type="checkbox" id="push-notifications-toggle" checked>
-							<span class="slider"></span>
-						</label>
-					</div>
-				</div>
-				<div class="setting-item">
-					<div class="setting-info">
-						<div class="setting-title">Email notifications</div>
-						<div class="setting-description">Receive email updates about your account</div>
-					</div>
-					<div class="setting-control">
-						<label class="switch">
-							<input type="checkbox" id="email-notifications-toggle">
-							<span class="slider"></span>
-						</label>
-					</div>
-				</div>
-			</div>
-		`,
-	},
-	other: {
-		title: "Other Settings",
-		content: () => `
-			<div class="settings-section">
-				<h2>Account</h2>
-				<div class="setting-item">
-					<div class="setting-info">
-						<div class="setting-title">Two-factor authentication</div>
-						<div class="setting-description">Add an extra layer of security to your account</div>
-					</div>
-					<div class="setting-control">
-						<button class="btn secondary">Enable</button>
-					</div>
-				</div>
-				<div class="setting-item">
-					<div class="setting-info">
-						<div class="setting-title">Download data</div>
-						<div class="setting-description">Download a copy of your tweetapus data</div>
-					</div>
-					<div class="setting-control">
-						<button class="btn secondary">Download</button>
-					</div>
-				</div>
-			</div>
-
-			<div class="settings-section">
-				<h2>Danger Zone</h2>
-				<div class="setting-item">
-					<div class="setting-info">
-						<div class="setting-title">Deactivate account</div>
-						<div class="setting-description">Temporarily disable your account</div>
-					</div>
-					<div class="setting-control">
-						<button class="btn secondary" style="color: #dc3545; border-color: #dc3545;">Deactivate</button>
-					</div>
-				</div>
-			</div>
-		`,
-	},
-};
-
 let settingsPage;
 
-// Initialize settings page
 const initializeSettings = () => {
 	if (!settingsPage) {
 		settingsPage = createSettingsPage();
@@ -367,9 +164,13 @@ const initializeSettings = () => {
 	const contentArea = settingsPage.querySelector("#settings-content");
 	const tabButtons = settingsPage.querySelectorAll(".settings-tab-btn");
 
-	// Tab switching functionality
 	const switchTab = (tabKey) => {
-		// Update active tab button
+		const page = settingsPages.find((p) => p.key === tabKey);
+		if (!page) {
+			window.location.href = "/settings/main";
+			return;
+		}
+
 		tabButtons.forEach((btn) => {
 			if (btn.dataset.tab === tabKey) {
 				btn.classList.add("active");
@@ -378,70 +179,35 @@ const initializeSettings = () => {
 			}
 		});
 
-		// Update content
-		const tab = settingsTabs[tabKey];
-		if (tab) {
-			contentArea.innerHTML = tab.content();
+		contentArea.innerHTML = page.content();
 
-			// Initialize any interactive elements
-			initializeSettingsControls();
-		}
-
-		// Update URL
 		const newPath = `/settings/${tabKey}`;
 		if (window.location.pathname !== newPath) {
 			window.history.pushState(null, null, newPath);
 		}
 	};
 
-	// Add click listeners to tab buttons
 	tabButtons.forEach((btn) => {
 		btn.addEventListener("click", () => {
 			switchTab(btn.dataset.tab);
 		});
 	});
 
-	// Back button functionality
 	const backButton = settingsPage.querySelector(".back-button");
 	backButton.addEventListener("click", (e) => {
 		e.preventDefault();
 		showPage("timeline", { path: "/" });
 	});
 
-	// Handle initial tab based on URL
 	const pathParts = window.location.pathname.split("/");
 	let initialTab = pathParts[2];
-	if (!initialTab || !settingsTabs[initialTab]) {
+	if (!initialTab || !settingsPages.find((p) => p.key === initialTab)) {
 		initialTab = "main";
+		window.history.replaceState(null, null, "/settings/main");
 	}
 	switchTab(initialTab);
 };
 
-// Initialize interactive controls
-const initializeSettingsControls = () => {
-	// Dark mode toggle
-	const darkModeToggle = document.getElementById("dark-mode-toggle");
-	if (darkModeToggle) {
-		// Set initial state based on current theme
-		darkModeToggle.checked =
-			document.body.classList.contains("dark-mode") ||
-			document.documentElement.getAttribute("data-theme") === "dark";
-
-		darkModeToggle.addEventListener("change", (e) => {
-			// This would integrate with the existing dark mode system
-			if (e.target.checked) {
-				document.documentElement.setAttribute("data-theme", "dark");
-			} else {
-				document.documentElement.setAttribute("data-theme", "light");
-			}
-		});
-	}
-
-	// Other setting controls could be initialized here
-	// For now, they're just UI elements without backend integration
-};
-
-// Export function to open settings
 export const openSettings = (section = "main") => {
 	const page = showPage("settings", {
 		path: `/settings/${section}`,
@@ -456,17 +222,12 @@ export const openSettings = (section = "main") => {
 	return settingsPage;
 };
 
-// Add route handlers
 addRoute(
 	(pathname) => pathname.startsWith("/settings"),
 	(pathname) => {
 		const pathParts = pathname.split("/");
 		const section = pathParts[2] || "main";
-		openSettings(section);
+		const validSection = settingsPages.find((p) => p.key === section);
+		openSettings(validSection ? section : "main");
 	},
 );
-
-// Make sure the settings page is available in the pages object
-if (typeof window !== "undefined") {
-	// This will be handled by the pages.js module
-}

@@ -2,6 +2,24 @@ export const authToken = localStorage.getItem("authToken");
 
 let _user;
 
+const closeDropdown = (dropdown) => {
+	if (!dropdown) return;
+	dropdown.classList.remove("open");
+	const onTransitionEnd = (ev) => {
+		if (ev.propertyName === "opacity") {
+			dropdown.style.display = "none";
+			dropdown.removeEventListener("transitionend", onTransitionEnd);
+		}
+	};
+	const fallback = setTimeout(() => {
+		if (getComputedStyle(dropdown).opacity === "0") {
+			dropdown.style.display = "none";
+		}
+		clearTimeout(fallback);
+	}, 300);
+	dropdown.addEventListener("transitionend", onTransitionEnd);
+};
+
 (async () => {
 	if (!authToken) {
 		cookieStore.delete("agree");
@@ -24,15 +42,25 @@ let _user;
 	document.querySelector(".account img").src =
 		user.avatar || `https://unavatar.io/${user.username}`;
 	document.querySelector(".account").addEventListener("click", (e) => {
+		e.stopPropagation();
 		e.preventDefault();
 		const dropdown = document.getElementById("accountDropdown");
-		dropdown.style.display =
-			dropdown.style.display === "none" ? "block" : "none";
+		if (!dropdown.classList.contains("open")) {
+			// make visible so animation can run
+			dropdown.style.display = "block";
+			// force reflow so transition picks up the change
+			void dropdown.offsetHeight;
+			dropdown.classList.add("open");
+		} else {
+			closeDropdown(dropdown);
+		}
 	});
 
+	// menu links should close the dropdown and perform actions
 	document.getElementById("myProfileLink").addEventListener("click", (e) => {
 		e.preventDefault();
-		document.getElementById("accountDropdown").style.display = "none";
+		const dropdown = document.getElementById("accountDropdown");
+		closeDropdown(dropdown);
 		import("./profile.js").then(({ default: openProfile }) => {
 			openProfile(_user.username);
 		});
@@ -40,7 +68,8 @@ let _user;
 
 	document.getElementById("settingsLink").addEventListener("click", (e) => {
 		e.preventDefault();
-		document.getElementById("accountDropdown").style.display = "none";
+		const dropdown = document.getElementById("accountDropdown");
+		closeDropdown(dropdown);
 		import("./settings.js").then(({ openSettings }) => {
 			openSettings("main");
 		});
@@ -48,7 +77,8 @@ let _user;
 
 	document.getElementById("signOutLink").addEventListener("click", (e) => {
 		e.preventDefault();
-		document.getElementById("accountDropdown").style.display = "none";
+		const dropdown = document.getElementById("accountDropdown");
+		closeDropdown(dropdown);
 		localStorage.removeItem("authToken");
 		window.location.href = "/";
 	});
@@ -56,8 +86,9 @@ let _user;
 	document.addEventListener("click", (e) => {
 		const accountBtn = document.querySelector(".account");
 		const dropdown = document.getElementById("accountDropdown");
+		if (!dropdown) return;
 		if (!accountBtn.contains(e.target) && !dropdown.contains(e.target)) {
-			dropdown.style.display = "none";
+			closeDropdown(dropdown);
 		}
 	});
 

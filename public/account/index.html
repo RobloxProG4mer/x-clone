@@ -66,21 +66,67 @@
     <p class="tagline">Twitter, but better</p>
 
     <div id="login-form">
-      <button class="btn primary" id="login">Sign in with passkey</button>
-
-      <div class="divider">Don't have an account yet?</div>
-
-      <label for="username">Username</label>
-      <div class="username-wrapper">
-        <span inert>@</span>
-        <input
-          type="text"
-          id="username"
-          placeholder="choose a username"
-          maxlength="40"
-        />
+      <!-- Tab Navigation -->
+      <div class="tab-navigation">
+        <button class="tab-btn active" data-tab="login">Log In</button>
+        <button class="tab-btn" data-tab="create">Create Account</button>
       </div>
-      <button class="btn secondary" id="register">Create account</button>
+
+      <!-- Login Tab -->
+      <div id="login-tab" class="tab-content active">
+        <button class="btn primary" id="login">Sign in with passkey</button>
+        <button class="btn secondary" id="basicLoginLink">
+          Sign in with password
+        </button>
+      </div>
+
+      <!-- Create Account Tab -->
+      <div id="create-tab" class="tab-content">
+        <label for="username">Username</label>
+        <div class="username-wrapper">
+          <span inert>@</span>
+          <input
+            type="text"
+            id="username"
+            placeholder="choose a username"
+            maxlength="40"
+          />
+        </div>
+
+        <div class="account-type-selection">
+          <div class="account-type-option">
+            <input
+              type="radio"
+              id="passkeyAccount"
+              name="accountType"
+              value="passkey"
+              checked
+            />
+            <label for="passkeyAccount">Passkey</label>
+          </div>
+          <div class="account-type-option">
+            <input
+              type="radio"
+              id="passwordAccount"
+              name="accountType"
+              value="password"
+            />
+            <label for="passwordAccount">Password</label>
+          </div>
+        </div>
+
+        <div id="passwordFields" style="display: none">
+          <label for="password">Password</label>
+          <input
+            type="password"
+            id="password"
+            placeholder="choose a password"
+            minlength="6"
+          />
+        </div>
+
+        <button class="btn secondary" id="register">Create account</button>
+      </div>
 
       <p class="claim">
         Claim your username in a few seconds,
@@ -98,12 +144,197 @@
 
         <button class="dark-toggle btn secondary">Toggle dark mode</button>
 
+        <h2>Account Settings</h2>
+
+        <div class="setting-item">
+          <button class="btn secondary" id="changeUsernameBtn">
+            Change Username
+          </button>
+        </div>
+
+        <div class="setting-item">
+          <button class="btn secondary" id="changePasswordBtn">
+            Change Password
+          </button>
+        </div>
+
+        <div class="setting-item">
+          <button class="btn danger" id="deleteAccountBtn">
+            Delete Account
+          </button>
+        </div>
+
         <h2>Passkeys</h2>
         <button class="btn primary" id="addPasskey">Add passkey</button>
         <div id="passkeyList"></div>
       </div>
 
       <button class="btn secondary" id="logout">Sign out</button>
+    </div>
+
+    <div id="basicLoginModal" class="modal" style="display: none">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h2>Password Login</h2>
+          <button class="close-btn" id="closeBasicLoginModal">&times;</button>
+        </div>
+        <div class="modal-body">
+          <form id="basicLoginForm">
+            <div class="form-group">
+              <label for="basicUsername">Username</label>
+              <input type="text" id="basicUsername" required />
+            </div>
+            <div class="form-group">
+              <label for="basicPassword">Password</label>
+              <input type="password" id="basicPassword" required />
+            </div>
+            <div class="form-actions">
+              <button type="button" class="btn secondary" id="cancelBasicLogin">
+                Cancel
+              </button>
+              <button type="submit" class="btn primary">Sign In</button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+
+    <!-- Change Username Modal -->
+    <div id="changeUsernameModal" class="modal" style="display: none">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h2>Change Username</h2>
+          <button class="close-btn" id="closeUsernameModal">&times;</button>
+        </div>
+        <div class="modal-body">
+          <form id="changeUsernameForm">
+            <div class="form-group">
+              <label for="newUsername">New Username</label>
+              <div class="username-wrapper">
+                <span inert>@</span>
+                <input
+                  type="text"
+                  id="newUsername"
+                  placeholder="new username"
+                  required
+                />
+              </div>
+              <small>
+                Username must be 3-20 characters and contain only letters,
+                numbers, and underscores.
+              </small>
+            </div>
+            <div class="form-actions">
+              <button
+                type="button"
+                class="btn secondary"
+                id="cancelUsernameChange"
+              >
+                Cancel
+              </button>
+              <button type="submit" class="btn primary">Change Username</button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+
+    <!-- Delete Account Modal -->
+    <div id="deleteAccountModal" class="modal" style="display: none">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h2>Delete Account</h2>
+          <button class="close-btn" id="closeDeleteModal">&times;</button>
+        </div>
+        <div class="modal-body">
+          <p>
+            <strong>Warning:</strong>
+            This action cannot be undone. All your tweets, likes, follows, and
+            account data will be permanently deleted.
+          </p>
+          <form id="deleteAccountForm">
+            <div class="form-group">
+              <label for="deleteConfirmation">
+                Type "DELETE MY ACCOUNT" to confirm:
+              </label>
+              <input
+                type="text"
+                id="deleteConfirmation"
+                placeholder="DELETE MY ACCOUNT"
+                required
+              />
+            </div>
+            <div class="form-actions">
+              <button
+                type="button"
+                class="btn secondary"
+                id="cancelAccountDelete"
+              >
+                Cancel
+              </button>
+              <button type="submit" class="btn danger">Delete Account</button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+
+    <!-- Change Password Modal -->
+    <div id="changePasswordModal" class="modal" style="display: none">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h2>Change Password</h2>
+          <button class="close-btn" id="closePasswordModal">&times;</button>
+        </div>
+        <div class="modal-body">
+          <p id="passwordModalDescription">
+            Set a password for your account to enable traditional
+            username/password login.
+          </p>
+          <form id="changePasswordForm">
+            <div
+              class="form-group"
+              id="currentPasswordGroup"
+              style="display: none"
+            >
+              <label for="current-password">Current Password</label>
+              <input
+                type="password"
+                id="current-password"
+                placeholder="enter your current password"
+                required
+              />
+            </div>
+            <div class="form-group">
+              <label for="new-password">New Password</label>
+              <input
+                type="password"
+                id="new-password"
+                placeholder="enter your new password"
+                minlength="8"
+                required
+              />
+              <small>Password must be at least 8 characters long.</small>
+            </div>
+            <div class="form-actions">
+              <button
+                type="button"
+                class="btn secondary"
+                id="cancelPasswordChange"
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                class="btn primary"
+                id="changePasswordSubmit"
+              >
+                Set Password
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
     </div>
 
     <script src="/public/shared/darkmode.js" defer></script>

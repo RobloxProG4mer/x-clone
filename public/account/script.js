@@ -14,6 +14,14 @@ const elements = {
 	addPasskeyBtn: document.getElementById("addPasskey"),
 	passkeyStatus: document.getElementById("passkeyStatus"),
 	passkeyList: document.getElementById("passkeyList"),
+	changeUsernameBtn: document.getElementById("changeUsernameBtn"),
+	deleteAccountBtn: document.getElementById("deleteAccountBtn"),
+	changePasswordBtn: document.getElementById("changePasswordBtn"),
+	basicLoginModal: document.getElementById("basicLoginModal"),
+	changeUsernameModal: document.getElementById("changeUsernameModal"),
+	deleteAccountModal: document.getElementById("deleteAccountModal"),
+	changePasswordModal: document.getElementById("changePasswordModal"),
+	changePasswordForm: document.getElementById("changePasswordForm"),
 };
 
 let authToken = null;
@@ -86,6 +94,72 @@ async function handleRegistration() {
 	if (!username) {
 		return elements.username.focus();
 	}
+
+	const accountType = document.querySelector(
+		'input[name="accountType"]:checked',
+	).value;
+
+	if (accountType === "password") {
+		return await handlePasswordRegistration();
+	} else {
+		return await handlePasskeyRegistration();
+	}
+}
+
+async function handlePasswordRegistration() {
+	const username = elements.username.value.trim();
+	const password = document.getElementById("password").value;
+
+	if (!password) {
+		toastQueue.add(`<h1>Password Required</h1><p>Please enter a password</p>`);
+		return;
+	}
+
+	if (password.length < 6) {
+		toastQueue.add(
+			`<h1>Password Too Short</h1><p>Password must be at least 6 characters long</p>`,
+		);
+		return;
+	}
+
+	setButtonsDisabled(true);
+
+	try {
+		const response = await fetch("/api/auth/register-with-password", {
+			method: "POST",
+			headers: { "Content-Type": "application/json" },
+			body: JSON.stringify({ username, password }),
+		});
+
+		const data = await response.json();
+
+		if (data.error) {
+			toastQueue.add(`<h1>Registration Failed</h1><p>${data.error}</p>`);
+			return;
+		}
+
+		if (data.success && data.token) {
+			authToken = data.token;
+			localStorage.setItem("authToken", data.token);
+
+			await cookieStore.set({
+				name: "agree",
+				value: "yes",
+				expires: new Date("Fri, 31 Dec 9999 23:59:59 GMT"),
+			});
+			location.href = "/";
+		}
+	} catch (error) {
+		toastQueue.add(
+			`<h1>Registration Failed</h1><p>Unable to connect to server</p>`,
+		);
+	} finally {
+		setButtonsDisabled(false);
+	}
+}
+
+async function handlePasskeyRegistration() {
+	const username = elements.username.value.trim();
 
 	setButtonsDisabled(true);
 
@@ -455,6 +529,25 @@ const handleAddPasskey = async () => {
 	}
 };
 
+// Tab functionality
+document.querySelectorAll(".tab-btn").forEach((btn) => {
+	btn.addEventListener("click", () => {
+		const tabName = btn.dataset.tab;
+
+		// Update active tab button
+		document
+			.querySelectorAll(".tab-btn")
+			.forEach((b) => b.classList.remove("active"));
+		btn.classList.add("active");
+
+		// Update active tab content
+		document
+			.querySelectorAll(".tab-content")
+			.forEach((content) => content.classList.remove("active"));
+		document.getElementById(`${tabName}-tab`).classList.add("active");
+	});
+});
+
 elements.register.addEventListener("click", handleRegistration);
 elements.login.addEventListener("click", handleAuthentication);
 elements.addPasskeyBtn?.addEventListener("click", handleAddPasskey);
@@ -469,6 +562,354 @@ elements.logout.addEventListener("click", () => {
 elements.username.addEventListener("keypress", (e) => {
 	if (e.key === "Enter") handleRegistration();
 });
+
+// Account type selection handler
+document.querySelectorAll('input[name="accountType"]').forEach((radio) => {
+	radio.addEventListener("change", (e) => {
+		const passwordFields = document.getElementById("passwordFields");
+		const claim = document.querySelector(".claim");
+
+		if (e.target.value === "password") {
+			passwordFields.style.display = "block";
+			claim.innerHTML = claim.innerHTML.replace(
+				"no email or password required",
+				"secure password-based authentication",
+			);
+		} else {
+			passwordFields.style.display = "none";
+			claim.innerHTML = claim.innerHTML.replace(
+				"secure password-based authentication",
+				"no email or password required",
+			);
+		}
+	});
+});
+
+// Modal handlers
+function showModal(modal) {
+	modal.style.display = "flex";
+}
+
+function hideModal(modal) {
+	modal.style.display = "none";
+}
+
+document.getElementById("basicLoginLink")?.addEventListener("click", (e) => {
+	e.preventDefault();
+	showModal(elements.basicLoginModal);
+});
+
+document
+	.getElementById("closeBasicLoginModal")
+	?.addEventListener("click", () => {
+		hideModal(elements.basicLoginModal);
+	});
+
+document.getElementById("cancelBasicLogin")?.addEventListener("click", () => {
+	hideModal(elements.basicLoginModal);
+});
+
+document
+	.getElementById("basicLoginForm")
+	?.addEventListener("submit", async (e) => {
+		e.preventDefault();
+		const username = document.getElementById("basicUsername").value.trim();
+		const password = document.getElementById("basicPassword").value;
+
+		if (!username || !password) {
+			toastQueue.add(
+				`<h1>Error</h1><p>Please enter both username and password</p>`,
+			);
+			return;
+		}
+
+		try {
+			const response = await fetch("/api/auth/basic-login", {
+				method: "POST",
+				headers: { "Content-Type": "application/json" },
+				body: JSON.stringify({ username, password }),
+			});
+
+			const data = await response.json();
+
+			if (data.error) {
+				toastQueue.add(`<h1>Login Failed</h1><p>${data.error}</p>`);
+				return;
+			}
+
+			if (data.token) {
+				authToken = data.token;
+				localStorage.setItem("authToken", data.token);
+				showUserInfo(data);
+				hideModal(elements.basicLoginModal);
+
+				await cookieStore.set({
+					name: "agree",
+					value: "yes",
+					expires: new Date("Fri, 31 Dec 9999 23:59:59 GMT"),
+				});
+
+				toastQueue.add(`<h1>Welcome back!</h1><p>Signed in successfully</p>`);
+			}
+		} catch (error) {
+			toastQueue.add(`<h1>Login Failed</h1><p>Unable to connect to server</p>`);
+		}
+	});
+
+// Change username functionality
+elements.changeUsernameBtn?.addEventListener("click", () => {
+	showModal(elements.changeUsernameModal);
+	const newUsernameInput = document.getElementById("newUsername");
+	if (currentUser?.username) {
+		newUsernameInput.value = currentUser.username;
+	}
+});
+
+// Change password functionality
+elements.changePasswordBtn?.addEventListener("click", () => {
+	// Check if user already has a password
+	const hasPassword = currentUser.password_hash !== null;
+
+	// Update modal title
+	const modalTitle = elements.changePasswordModal.querySelector("h2");
+	modalTitle.textContent = hasPassword ? "Change Password" : "Set Password";
+
+	// Update button text
+	const submitBtn = elements.changePasswordForm.querySelector(
+		"button[type='submit']",
+	);
+	submitBtn.textContent = hasPassword ? "Change Password" : "Set Password";
+
+	// Show/hide current password field
+	const currentPasswordGroup = document.getElementById("currentPasswordGroup");
+	currentPasswordGroup.style.display = hasPassword ? "block" : "none";
+
+	// Clear form
+	elements.changePasswordForm.reset();
+	showModal(elements.changePasswordModal);
+});
+
+document.getElementById("closeUsernameModal")?.addEventListener("click", () => {
+	hideModal(elements.changeUsernameModal);
+});
+
+document
+	.getElementById("cancelUsernameChange")
+	?.addEventListener("click", () => {
+		hideModal(elements.changeUsernameModal);
+	});
+
+document.getElementById("newUsername")?.addEventListener("input", (e) => {
+	e.target.value = e.target.value.toLowerCase().replace(/[^a-z0-9_]/g, "");
+});
+
+document
+	.getElementById("changeUsernameForm")
+	?.addEventListener("submit", async (e) => {
+		e.preventDefault();
+		const newUsername = document.getElementById("newUsername").value.trim();
+
+		if (!newUsername || newUsername.length < 3 || newUsername.length > 20) {
+			toastQueue.add(
+				`<h1>Invalid Username</h1><p>Username must be between 3 and 20 characters</p>`,
+			);
+			return;
+		}
+
+		if (newUsername === currentUser?.username) {
+			toastQueue.add(
+				`<h1>No Change</h1><p>Please enter a different username</p>`,
+			);
+			return;
+		}
+
+		try {
+			const response = await fetch(
+				`/api/profile/${currentUser.username}/username`,
+				{
+					method: "PATCH",
+					headers: {
+						"Content-Type": "application/json",
+						Authorization: `Bearer ${authToken}`,
+					},
+					body: JSON.stringify({ newUsername }),
+				},
+			);
+
+			const data = await response.json();
+
+			if (data.error) {
+				toastQueue.add(`<h1>Username Change Failed</h1><p>${data.error}</p>`);
+				return;
+			}
+
+			if (data.success) {
+				currentUser.username = data.username;
+				elements.title.textContent = `@${data.username}`;
+
+				// Update the stored auth token with the new one
+				if (data.token) {
+					authToken = data.token;
+					localStorage.setItem("authToken", data.token);
+				}
+
+				hideModal(elements.changeUsernameModal);
+				toastQueue.add(
+					`<h1>Username Changed!</h1><p>Your username is now @${data.username}</p>`,
+				);
+			}
+		} catch (error) {
+			toastQueue.add(
+				`<h1>Username Change Failed</h1><p>Unable to connect to server</p>`,
+			);
+		}
+	});
+
+// Delete account functionality
+elements.deleteAccountBtn?.addEventListener("click", () => {
+	showModal(elements.deleteAccountModal);
+});
+
+document.getElementById("closeDeleteModal")?.addEventListener("click", () => {
+	hideModal(elements.deleteAccountModal);
+});
+
+document
+	.getElementById("cancelAccountDelete")
+	?.addEventListener("click", () => {
+		hideModal(elements.deleteAccountModal);
+	});
+
+document
+	.getElementById("deleteAccountForm")
+	?.addEventListener("submit", async (e) => {
+		e.preventDefault();
+		const confirmationText =
+			document.getElementById("deleteConfirmation").value;
+
+		if (confirmationText !== "DELETE MY ACCOUNT") {
+			toastQueue.add(
+				`<h1>Confirmation Required</h1><p>Please type "DELETE MY ACCOUNT" exactly as shown</p>`,
+			);
+			return;
+		}
+
+		try {
+			const response = await fetch(`/api/profile/${currentUser.username}`, {
+				method: "DELETE",
+				headers: {
+					"Content-Type": "application/json",
+					Authorization: `Bearer ${authToken}`,
+				},
+				body: JSON.stringify({ confirmationText }),
+			});
+
+			const data = await response.json();
+
+			if (data.error) {
+				toastQueue.add(`<h1>Account Deletion Failed</h1><p>${data.error}</p>`);
+				return;
+			}
+
+			if (data.success) {
+				hideModal(elements.deleteAccountModal);
+				toastQueue.add(
+					`<h1>Account Deleted</h1><p>Your account has been permanently deleted</p>`,
+				);
+				setTimeout(() => {
+					showLoginForm();
+				}, 2000);
+			}
+		} catch (error) {
+			toastQueue.add(
+				`<h1>Account Deletion Failed</h1><p>Unable to connect to server</p>`,
+			);
+		}
+	});
+
+// Close modals when clicking outside
+[
+	elements.basicLoginModal,
+	elements.changeUsernameModal,
+	elements.deleteAccountModal,
+	elements.changePasswordModal,
+].forEach((modal) => {
+	modal?.addEventListener("click", (e) => {
+		if (e.target === modal) {
+			hideModal(modal);
+		}
+	});
+});
+
+// Change password modal handlers
+document.getElementById("closePasswordModal")?.addEventListener("click", () => {
+	hideModal(elements.changePasswordModal);
+});
+
+document
+	.getElementById("cancelPasswordChange")
+	?.addEventListener("click", () => {
+		hideModal(elements.changePasswordModal);
+	});
+
+document
+	.getElementById("changePasswordForm")
+	?.addEventListener("submit", async (e) => {
+		e.preventDefault();
+		const hasPassword = currentUser.password_hash !== null;
+		const currentPassword = document.getElementById("current-password")?.value;
+		const newPassword = document.getElementById("new-password").value;
+
+		if (!newPassword || newPassword.length < 8) {
+			toastQueue.add(
+				`<h1>Invalid Password</h1><p>Password must be at least 8 characters long</p>`,
+			);
+			return;
+		}
+
+		if (hasPassword && !currentPassword) {
+			toastQueue.add(
+				`<h1>Current Password Required</h1><p>Please enter your current password</p>`,
+			);
+			return;
+		}
+
+		try {
+			const response = await fetch(
+				`/api/profile/${currentUser.username}/password`,
+				{
+					method: "PATCH",
+					headers: {
+						"Content-Type": "application/json",
+						Authorization: `Bearer ${authToken}`,
+					},
+					body: JSON.stringify({
+						currentPassword: hasPassword ? currentPassword : undefined,
+						newPassword,
+					}),
+				},
+			);
+
+			const data = await response.json();
+
+			if (data.error) {
+				toastQueue.add(`<h1>Password Change Failed</h1><p>${data.error}</p>`);
+				return;
+			}
+
+			if (data.success) {
+				currentUser.password_hash = true; // User now has a password
+				hideModal(elements.changePasswordModal);
+				toastQueue.add(
+					`<h1>Password ${hasPassword ? "Changed" : "Set"}!</h1><p>Your password has been ${hasPassword ? "updated" : "set"} successfully</p>`,
+				);
+			}
+		} catch (error) {
+			toastQueue.add(
+				`<h1>Password Change Failed</h1><p>Unable to connect to server</p>`,
+			);
+		}
+	});
 
 checkExistingSession();
 

@@ -255,13 +255,13 @@ const renderProfile = (data) => {
 	};
 
 	const meta = [];
-	if (profile.location) meta.push(`📍 ${escapeHTML(profile.location)}`);
+	if (profile.location) meta.push(`<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-map-pin-icon lucide-map-pin"><path d="M20 10c0 4.993-5.539 10.193-7.399 11.799a1 1 0 0 1-1.202 0C9.539 20.193 4 14.993 4 10a8 8 0 0 1 16 0"/><circle cx="12" cy="10" r="3"/></svg> ${escapeHTML(profile.location)}`);
 	if (profile.website) {
 		const url = profile.website.startsWith("http")
 			? profile.website
 			: `https://${profile.website}`;
 		meta.push(
-			`🔗 <a href="${escapeHTML(url)}" target="_blank" rel="noopener noreferrer">${escapeHTML(profile.website)}</a>`,
+			`<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-link-icon lucide-link"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg> <a href="${escapeHTML(url)}" target="_blank" rel="noopener noreferrer">${escapeHTML(profile.website)}</a>`,
 		);
 	}
 	meta.push(

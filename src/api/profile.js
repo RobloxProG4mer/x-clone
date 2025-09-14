@@ -59,6 +59,22 @@ const updateAvatar = db.query(`
   WHERE id = ?
 `);
 
+const updateUsername = db.query(`
+  UPDATE users
+  SET username = ?
+  WHERE id = ?
+`);
+
+const deleteUser = db.query(`
+  DELETE FROM users WHERE id = ?
+`);
+
+const updatePassword = db.query(`
+  UPDATE users
+  SET password_hash = ?
+  WHERE id = ?
+`);
+
 const getUserReplies = db.query(`
   SELECT posts.*, users.username, users.name, users.verified 
   FROM posts 
@@ -722,6 +738,108 @@ export default new Elysia({ prefix: "/profile" })
 		} catch (error) {
 			console.error("Search users error:", error);
 			return { error: "Failed to search users" };
+		}
+	})
+	.patch("/:username/username", async ({ params, jwt, headers, body }) => {
+		const authorization = headers.authorization;
+		if (!authorization) return { error: "Authentication required" };
+
+		try {
+			const payload = await jwt.verify(authorization.replace("Bearer ", ""));
+			if (!payload) return { error: "Invalid token" };
+
+			const currentUser = getUserByUsername.get(payload.username);
+			if (!currentUser) return { error: "User not found" };
+
+			const { username } = params;
+			if (currentUser.username !== username) {
+				return { error: "You can only change your own username" };
+			}
+
+			const { newUsername } = body;
+			if (!newUsername || newUsername.length < 3 || newUsername.length > 20) {
+				return { error: "Username must be between 3 and 20 characters" };
+			}
+
+			if (!/^[a-zA-Z0-9_]+$/.test(newUsername)) {
+				return {
+					error: "Username can only contain letters, numbers, and underscores",
+				};
+			}
+
+			const existingUser = getUserByUsername.get(newUsername);
+			if (existingUser && existingUser.id !== currentUser.id) {
+				return { error: "Username is already taken" };
+			}
+
+			updateUsername.run(newUsername, currentUser.id);
+
+			// Generate new JWT token with the new username
+			const newToken = await jwt.sign({ username: newUsername });
+
+			return { success: true, username: newUsername, token: newToken };
+		} catch (error) {
+			console.error("Update username error:", error);
+			return { error: "Failed to update username" };
+		}
+	})
+	.delete("/:username", async ({ params, jwt, headers, body }) => {
+		const authorization = headers.authorization;
+		if (!authorization) return { error: "Authentication required" };
+
+		try {
+			const payload = await jwt.verify(authorization.replace("Bearer ", ""));
+			if (!payload) return { error: "Invalid token" };
+
+			const currentUser = getUserByUsername.get(payload.username);
+			if (!currentUser) return { error: "User not found" };
+
+			const { username } = params;
+			if (currentUser.username !== username) {
+				return { error: "You can only delete your own account" };
+			}
+
+			const { confirmationText } = body;
+			if (confirmationText !== "DELETE MY ACCOUNT") {
+				return { error: "Please type 'DELETE MY ACCOUNT' to confirm" };
+			}
+
+			deleteUser.run(currentUser.id);
+
+			return { success: true, message: "Account deleted successfully" };
+		} catch (error) {
+			console.error("Delete account error:", error);
+			return { error: "Failed to delete account" };
+		}
+	})
+	.post("/:username/password", async ({ params, jwt, headers, body }) => {
+		const authorization = headers.authorization;
+		if (!authorization) return { error: "Authentication required" };
+
+		try {
+			const payload = await jwt.verify(authorization.replace("Bearer ", ""));
+			if (!payload) return { error: "Invalid token" };
+
+			const currentUser = getUserByUsername.get(payload.username);
+			if (!currentUser) return { error: "User not found" };
+
+			const { username } = params;
+			if (currentUser.username !== username) {
+				return { error: "You can only add a password to your own account" };
+			}
+
+			const { password } = body;
+			if (!password || password.length < 6) {
+				return { error: "Password must be at least 6 characters long" };
+			}
+
+			const passwordHash = await Bun.password.hash(password);
+			updatePassword.run(passwordHash, currentUser.id);
+
+			return { success: true, message: "Password added successfully" };
+		} catch (error) {
+			console.error("Add password error:", error);
+			return { error: "Failed to add password" };
 		}
 	});
 
