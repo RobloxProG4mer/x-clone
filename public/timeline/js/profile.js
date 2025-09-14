@@ -102,18 +102,14 @@ const renderPosts = async (posts, isReplies = false) => {
 		return;
 	}
 
-	// Clear container
 	container.innerHTML = "";
 
-	// Get unique usernames to minimize API calls
 	const uniqueUsernames = [...new Set(posts.map((post) => post.username))];
 
-	// Fetch all unique profiles at once
 	const profileCache = {};
 	await Promise.all(
 		uniqueUsernames.map(async (username) => {
 			if (username === currentUsername && currentProfile) {
-				// Use current profile data if it's the same user
 				profileCache[username] = currentProfile.profile || currentProfile.user;
 			} else {
 				const profile = await fetchUserProfile(username);
@@ -122,7 +118,6 @@ const renderPosts = async (posts, isReplies = false) => {
 		}),
 	);
 
-	// Now render posts using cached profile data
 	for (const post of posts) {
 		const authorProfile = profileCache[post.username];
 
@@ -197,7 +192,9 @@ const renderProfile = (data) => {
 		);
 	}
 	meta.push(
-		`<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-calendar-icon lucide-calendar"><path d="M8 2v4"/><path d="M16 2v4"/><rect width="18" height="18" x="3" y="4" rx="2"/><path d="M3 10h18"/></svg> Joined ${new Date(user.created_at).toLocaleDateString("en-US", {
+		`<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-calendar-icon lucide-calendar"><path d="M8 2v4"/><path d="M16 2v4"/><rect width="18" height="18" x="3" y="4" rx="2"/><path d="M3 10h18"/></svg> Joined ${new Date(
+			user.created_at,
+		).toLocaleDateString("en-US", {
 			month: "long",
 			year: "numeric",
 		})}`,
@@ -217,9 +214,8 @@ const renderProfile = (data) => {
 	}
 
 	currentPosts = posts;
-	currentReplies = []; // Reset replies when loading new profile
+	currentReplies = [];
 
-	// Reset tab navigation
 	document
 		.querySelectorAll(".profile-tab-btn")
 		.forEach((btn) => btn.classList.remove("active"));
@@ -250,26 +246,22 @@ const followUser = async () => {
 		return;
 	}
 
-	try {
-		const response = await fetch(`/api/profile/${currentUsername}/follow`, {
+	const { success } = await (
+		await fetch(`/api/profile/${currentUsername}/follow`, {
 			method: "POST",
 			headers: {
 				Authorization: `Bearer ${authToken}`,
 				"Content-Type": "application/json",
 			},
-		});
+		})
+	).json();
 
-		const data = await response.json();
-		if (data.success) {
-			updateFollowButton(true);
-			const count = document.getElementById("profileFollowerCount");
-			count.textContent = parseInt(count.textContent) + 1;
-		} else {
-			alert(data.error || "Failed to follow user");
-		}
-	} catch {
-		alert("Failed to follow user");
+	if (!success) {
+		return toastQueue.add(`<h1>Failed to follow user</h1>`);
 	}
+	updateFollowButton(true);
+	const count = document.getElementById("profileFollowerCount");
+	count.textContent = parseInt(count.textContent) + 1;
 };
 
 const unfollowUser = async () => {
@@ -278,23 +270,20 @@ const unfollowUser = async () => {
 		return;
 	}
 
-	try {
-		const response = await fetch(`/api/profile/${currentUsername}/follow`, {
+	const { success } = await (
+		await fetch(`/api/profile/${currentUsername}/follow`, {
 			method: "DELETE",
 			headers: { Authorization: `Bearer ${authToken}` },
-		});
+		})
+	).json();
 
-		const data = await response.json();
-		if (data.success) {
-			updateFollowButton(false);
-			const count = document.getElementById("profileFollowerCount");
-			count.textContent = Math.max(0, parseInt(count.textContent) - 1);
-		} else {
-			alert(data.error || "Failed to unfollow user");
-		}
-	} catch {
-		alert("Failed to unfollow user");
+	if (!success) {
+		return toastQueue.add(`<h1>Failed to unfollow user</h1>`);
 	}
+
+	updateFollowButton(false);
+	const count = document.getElementById("profileFollowerCount");
+	count.textContent = Math.max(0, parseInt(count.textContent) - 1);
 };
 
 const showEditModal = () => {
