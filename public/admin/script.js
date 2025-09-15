@@ -787,12 +787,10 @@ class AdminPanel {
 				method: "POST",
 			});
 
-			this.token = result.token;
+			navigator.clipboard.writeText(`${result.copyLink}`);
 
-			const copyButton = `<button class="btn btn-sm btn-outline-primary ms-2" onclick="navigator.clipboard.writeText('${result.copyLink}').then(() => this.textContent = 'Copied!')">Copy Incognito Link</button>`;
 			this.showSuccess(
-				`To impersonate @${result.user.username}, use: ${copyButton}`,
-				10000,
+				`Impersonation link copied, paste it into a new incognito window`,
 			);
 		} catch (error) {
 			this.showError(error.message);
