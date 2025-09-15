@@ -3,9 +3,11 @@ const pages = {
 	tweet: document.querySelector(".tweetPage"),
 	profile: document.querySelector(".profile"),
 	notifications: document.querySelector(".notifications"),
+	search: document.querySelector(".search-page"),
 	settings: null, // Will be created dynamically by settings.js
 };
 const states = {};
+let searchInitialized = false;
 
 function showPage(page, recoverState = () => {}) {
 	Object.values(pages).forEach((p) => {
@@ -15,6 +17,18 @@ function showPage(page, recoverState = () => {}) {
 	if (pages[page]) {
 		pages[page].style.display = "flex";
 		recoverState(pages[page]);
+
+		// Initialize search page if needed
+		if (page === "search" && !searchInitialized) {
+			searchInitialized = true;
+			try {
+				import("./search.js").then(({ initializeSearchPage }) => {
+					initializeSearchPage();
+				});
+			} catch (error) {
+				console.error("Failed to initialize search page:", error);
+			}
+		}
 	} else if (page === "settings") {
 		// Settings page will be created dynamically
 		const settingsElement = document.querySelector(".settings");
@@ -23,6 +37,8 @@ function showPage(page, recoverState = () => {}) {
 			settingsElement.style.display = "flex";
 			recoverState(settingsElement);
 		}
+	} else if (page === "search") {
+		// This case is now handled above in the main if block
 	}
 
 	return pages[page];
@@ -82,3 +98,5 @@ window.addEventListener("popstate", (event) => {
 		window.scrollTo(0, scroll || 0);
 	}, 0);
 });
+
+export { showPage };

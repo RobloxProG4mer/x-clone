@@ -8,7 +8,15 @@ import search from "./api/search.js";
 import timeline from "./api/timeline.js";
 import tweet from "./api/tweet.js";
 import upload, { uploadRoutes } from "./api/upload.js";
+import db from "./db.js";
 import ratelimit from "./helpers/ratelimit.js";
+
+const isSuspendedQuery = db.query(`
+  SELECT * FROM suspensions WHERE user_id = ? AND status = 'active'
+`);
+
+const suspensionCache = new Map();
+const CACHE_TTL = 30_000;
 
 export default new Elysia({
 	prefix: "/api",
@@ -21,6 +29,28 @@ export default new Elysia({
 			generator: ratelimit,
 		}),
 	)
+	.onBeforeHandle(({ headers }) => {
+		const token = headers.authorization?.split(" ")[1];
+		if (!token) return;
+
+		const { userId } = JSON.parse(atob(token.split(".")[1]));
+
+		const now = Date.now();
+		let cached = suspensionCache.get(userId);
+
+		if (!cached || cached.expiry < now) {
+			const suspension = isSuspendedQuery.get(userId);
+			cached = { suspension, expiry: now + CACHE_TTL };
+			suspensionCache.set(userId, cached);
+		}
+
+		if (cached.suspension) {
+			return {
+				error: "You are suspended",
+				suspension: cached.suspension,
+			};
+		}
+	})
 	.use(auth)
 	.use(admin)
 	.use(tweet)

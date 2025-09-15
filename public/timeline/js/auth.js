@@ -2,12 +2,6 @@ export const authToken = localStorage.getItem("authToken");
 
 let _user;
 
-// Handle logout from impersonation
-export const exitImpersonation = () => {
-	localStorage.removeItem("authToken");
-	window.location.href = "/admin/";
-};
-
 const closeDropdown = (dropdown) => {
 	if (!dropdown) return;
 	dropdown.classList.remove("open");
@@ -27,13 +21,11 @@ const closeDropdown = (dropdown) => {
 };
 
 (async () => {
-	// Check for impersonation token in URL
 	const urlParams = new URLSearchParams(window.location.search);
 	const impersonateToken = urlParams.get("impersonate");
 
 	if (impersonateToken) {
 		localStorage.setItem("authToken", decodeURIComponent(impersonateToken));
-		// Remove the parameter from URL without reload
 		window.history.replaceState({}, document.title, window.location.pathname);
 	}
 
@@ -50,7 +42,25 @@ const closeDropdown = (dropdown) => {
 		headers: { Authorization: `Bearer ${currentToken}` },
 	});
 
-	const { user, error } = await response.json();
+	const { user, error, suspension } = await response.json();
+
+	if (error && suspension) {
+		document.body.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-monitor-x-icon lucide-monitor-x"><path d="m14.5 12.5-5-5"/><path d="m9.5 12.5 5-5"/><rect width="20" height="14" x="2" y="3" rx="2"/><path d="M12 17v4"/><path d="M8 21h8"/></svg>
+		
+		<h1 style="font-weight: 500;">Your account has been suspended</h1>
+		<p>Your account has been ${suspension.expires_at ? "temporarily" : `permanently`} suspended by a moderator due to a violation of our policies.</p>
+
+		<p><b>Reason:</b> ${suspension.reason}</p>
+
+		${suspension.expires_at ? `<p>This suspension will expire on ${new Date(suspension.expires_at).toLocaleString()}</p>` : ""}
+
+		<p>Note that if you attempt to evade a suspension by creating new accounts, we will suspend your new accounts. If you wish to appeal this suspension, please contact our support team.</p>
+		
+		<p>You may also pursue alternative forms of redress, including out-of-court dispute settlement or judicial redress.</p>
+		
+		<p><a href="javascript:" onclick="localStorage.removeItem("authToken");window.location.href = "/";">Log out</a></p>`;
+		return;
+	}
 
 	if (error || !user) {
 		localStorage.removeItem("authToken");

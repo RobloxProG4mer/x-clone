@@ -12,7 +12,6 @@ class AdminPanel {
 		this.init();
 	}
 
-	// Utility method to escape HTML and prevent XSS
 	escapeHtml(text) {
 		if (!text) return "";
 		const div = document.createElement("div");
@@ -602,9 +601,9 @@ class AdminPanel {
             <h4>@${user.username}</h4>
             <p class="text-muted">${user.name || ""}</p>
             <div class="d-flex justify-content-center gap-2 mb-3">
-              ${user.verified ? '<span class="badge bg-success">Verified</span>' : ''}
-              ${user.admin ? '<span class="badge bg-primary">Admin</span>' : ''}
-              ${user.suspended ? '<span class="badge bg-danger">Suspended</span>' : ''}
+              ${user.verified ? '<span class="badge bg-success">Verified</span>' : ""}
+              ${user.admin ? '<span class="badge bg-primary">Admin</span>' : ""}
+              ${user.suspended ? '<span class="badge bg-danger">Suspended</span>' : ""}
             </div>
           </div>
           <div class="col-md-8">
@@ -646,19 +645,31 @@ class AdminPanel {
             
             <h5>Recent Posts</h5>
             <div class="mb-3" style="max-height: 200px; overflow-y: auto;">
-              ${recentPosts && recentPosts.length ? recentPosts.map(post => `
+              ${
+								recentPosts && recentPosts.length
+									? recentPosts
+											.map(
+												(post) => `
                 <div class="border-bottom pb-2 mb-2">
                   <small class="text-muted">${this.formatDate(post.created_at)}</small>
                   <p class="mb-1">${post.content.replaceAll("<", "&lt;").replaceAll(">", "&gt;")}</p>
                   <small>Likes: ${post.like_count} | Retweets: ${post.retweet_count} | Replies: ${post.reply_count}</small>
                 </div>
-              `).join("") : '<p class="text-muted">No recent posts</p>'}
+              `,
+											)
+											.join("")
+									: '<p class="text-muted">No recent posts</p>'
+							}
             </div>
 
-            ${suspensions && suspensions.length ? `
+            ${
+							suspensions && suspensions.length
+								? `
               <h5>Suspension History</h5>
               <div style="max-height: 200px; overflow-y: auto;">
-                ${suspensions.map(suspension => `
+                ${suspensions
+									.map(
+										(suspension) => `
                   <div class="border-bottom pb-2 mb-2">
                     <div class="d-flex justify-content-between">
                       <strong>Severity ${suspension.severity}/5</strong>
@@ -672,9 +683,13 @@ class AdminPanel {
                       ${suspension.expires_at ? ` | Expires: ${this.formatDate(suspension.expires_at)}` : " | Permanent"}
                     </small>
                   </div>
-                `).join("")}
+                `,
+									)
+									.join("")}
               </div>
-            ` : ""}
+            `
+								: ""
+						}
           </div>
         </div>
       `;
@@ -703,46 +718,54 @@ class AdminPanel {
 	}
 
 	toggleEditMode(enable) {
-    const form = document.getElementById('editProfileForm');
-    const fields = form.querySelectorAll('input, textarea');
-    
-    fields.forEach(field => {
-      if (field.id !== 'editProfileId') {
-        field.readOnly = !enable;
-      }
-      if (field.type === 'checkbox') {
-        field.disabled = !enable;
-      }
-    });
+		const form = document.getElementById("editProfileForm");
+		const fields = form.querySelectorAll("input, textarea");
 
-    document.getElementById('editProfileBtn').classList.toggle('d-none', enable);
-    document.getElementById('saveProfileBtn').classList.toggle('d-none', !enable);
-  }
+		fields.forEach((field) => {
+			if (field.id !== "editProfileId") {
+				field.readOnly = !enable;
+			}
+			if (field.type === "checkbox") {
+				field.disabled = !enable;
+			}
+		});
 
-  async saveProfile(userId) {
-    const payload = {
-      username: document.getElementById('editProfileUsername').value,
-      name: document.getElementById('editProfileName').value,
-      bio: document.getElementById('editProfileBio').value,
-      verified: document.getElementById('editProfileVerified').checked,
-      admin: document.getElementById('editProfileAdmin').checked,
-      followers: parseInt(document.getElementById('editProfileFollowers').value),
-      following: parseInt(document.getElementById('editProfileFollowing').value),
-    };
+		document
+			.getElementById("editProfileBtn")
+			.classList.toggle("d-none", enable);
+		document
+			.getElementById("saveProfileBtn")
+			.classList.toggle("d-none", !enable);
+	}
 
-    try {
-      await this.apiCall(`/api/admin/users/${userId}`, {
-        method: 'PATCH',
-        body: JSON.stringify(payload),
-      });
-      this.showSuccess('Profile updated successfully');
-      this.toggleEditMode(false);
-      this.loadUsers(this.currentPage.users);
-       bootstrap.Modal.getInstance(document.getElementById("userModal")).hide();
-    } catch (error) {
-      this.showError(error.message);
-    }
-  }
+	async saveProfile(userId) {
+		const payload = {
+			username: document.getElementById("editProfileUsername").value,
+			name: document.getElementById("editProfileName").value,
+			bio: document.getElementById("editProfileBio").value,
+			verified: document.getElementById("editProfileVerified").checked,
+			admin: document.getElementById("editProfileAdmin").checked,
+			followers: parseInt(
+				document.getElementById("editProfileFollowers").value,
+			),
+			following: parseInt(
+				document.getElementById("editProfileFollowing").value,
+			),
+		};
+
+		try {
+			await this.apiCall(`/api/admin/users/${userId}`, {
+				method: "PATCH",
+				body: JSON.stringify(payload),
+			});
+			this.showSuccess("Profile updated successfully");
+			this.toggleEditMode(false);
+			this.loadUsers(this.currentPage.users);
+			bootstrap.Modal.getInstance(document.getElementById("userModal")).hide();
+		} catch (error) {
+			this.showError(error.message);
+		}
+	}
 
 	async toggleVerification(userId, verified) {
 		try {
