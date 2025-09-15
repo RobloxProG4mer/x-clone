@@ -25,7 +25,7 @@ const linkifyText = (text) => {
 	});
 
 	const el = document.createElement("div");
-	
+
 	el.innerHTML = DOMPurify.sanitize(
 		html.replace(
 			mentionRegex,
@@ -46,7 +46,15 @@ const linkifyText = (text) => {
 				"code",
 				"pre",
 				"blockquote",
-				"h1", "h2", "h3", "h4", "h5", "h6"
+				"h1",
+				"h2",
+				"h3",
+				"h4",
+				"h5",
+				"h6",
+				"ul",
+				"ol",
+				"li"
 			],
 			ALLOWED_ATTR: ["href", "target", "rel", "class"],
 		},

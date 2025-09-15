@@ -231,7 +231,7 @@ h1 {
     }
 
     &.active {
-      color: white;
+      color: var(--text-primary);
       background-color: var(--primary-color);
       pointer-events: none;
     }

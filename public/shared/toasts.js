@@ -220,7 +220,7 @@ h = new WeakMap(), T = new WeakMap(), l = new WeakMap(), g = new WeakMap(), X = 
 ////////////////////////////////////////
 
 export default new $({
-	position: "bottom-start",
+	position: "bottom-center",
 	isMinimized: true,
 	maxVisibleToasts: 7,
 	root: document.body,
