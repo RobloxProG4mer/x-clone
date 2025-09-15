@@ -1,8 +1,8 @@
+import { existsSync, promises as fsPromises, mkdirSync } from "node:fs";
+import { join } from "node:path";
 import { jwt } from "@elysiajs/jwt";
 import { Elysia, file } from "elysia";
 import { rateLimit } from "elysia-rate-limit";
-import { existsSync, promises as fsPromises, mkdirSync } from "fs";
-import { join } from "path";
 import db from "../db.js";
 import ratelimit from "../helpers/ratelimit.js";
 import {
@@ -14,21 +14,19 @@ const JWT_SECRET = process.env.JWT_SECRET;
 
 const getUserByUsername = db.query("SELECT * FROM users WHERE username = ?");
 
-// Ensure uploads directory exists
 const uploadsDir = join(process.cwd(), ".data", "uploads");
 if (!existsSync(uploadsDir)) {
 	mkdirSync(uploadsDir, { recursive: true });
 }
 
-// Allowed file types - only WebP for images
 const ALLOWED_TYPES = {
 	"image/webp": ".webp",
 	"video/mp4": ".mp4",
 };
 
-const MAX_FILE_SIZE = 50 * 1024 * 1024; // 50MB for regular uploads
-const MAX_VIDEO_SIZE = 100 * 1024 * 1024; // 100MB hard limit for videos
-const MAX_COMPRESSED_SIZE = 10 * 1024 * 1024; // 10MB after compression
+const MAX_FILE_SIZE = 50 * 1024 * 1024;
+const MAX_VIDEO_SIZE = 100 * 1024 * 1024; 
+const MAX_COMPRESSED_SIZE = 10 * 1024 * 1024;
 
 export default new Elysia({ prefix: "/upload" })
 	.use(jwt({ name: "jwt", secret: JWT_SECRET }))
