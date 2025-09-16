@@ -23,3 +23,5 @@
 - AVOID code comments unless strictly needed
 - for uploads, EVERYTHING goes as a SHA256 HASH to the .DATA/UPLOADS folder. ONLY ACCEPT WEBPS, and convert all images to WEBPs.
 - DO NOT USE --spacing variables, THEY DO NOT EXIST.
+- ALWAYS create elements, not html.
+- BEWARE of XSS, SANITIZE EVERYTHING.
