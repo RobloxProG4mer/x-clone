@@ -3289,6 +3289,454 @@ nav {
   }
 }
 
+/* Group Settings Modal */
+.group-settings-modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+
+  .modal-content {
+    background-color: var(--bg-primary);
+    border-radius: 16px;
+    width: 90%;
+    max-width: 600px;
+    max-height: 80vh;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+
+    .modal-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 20px;
+      border-bottom: 1px solid var(--border-primary);
+
+      h3 {
+        margin: 0;
+        font-size: 18px;
+        font-weight: 600;
+        color: var(--text-primary);
+      }
+
+      .modal-close {
+        background-color: transparent;
+        border: none;
+        cursor: pointer;
+        padding: 8px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: var(--text-secondary);
+        border-radius: 50%;
+        transition: all 0.2s ease;
+
+        &:hover {
+          background-color: var(--bg-secondary);
+          color: var(--text-primary);
+        }
+      }
+    }
+
+    .modal-body {
+      padding: 20px;
+      flex: 1;
+      overflow-y: auto;
+
+      .form-group {
+        margin-bottom: 24px;
+
+        label {
+          display: block;
+          margin-bottom: 8px;
+          font-size: 14px;
+          font-weight: 600;
+          color: var(--text-primary);
+        }
+
+        #groupNameInput {
+          width: 100%;
+          padding: 12px 16px;
+          border: 1px solid var(--border-primary);
+          border-radius: 8px;
+          background-color: var(--bg-secondary);
+          color: var(--text-primary);
+          font-size: 14px;
+          outline: none;
+          transition: border-color 0.2s;
+
+          &::placeholder {
+            color: var(--text-secondary);
+          }
+
+          &:focus {
+            border-color: var(--primary);
+          }
+        }
+
+        .participants-list {
+          max-height: 300px;
+          overflow-y: auto;
+          border: 1px solid var(--border-primary);
+          border-radius: 8px;
+          margin-bottom: 12px;
+
+          .participant-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px 16px;
+            border-bottom: 1px solid var(--border-primary);
+
+            &:last-child {
+              border-bottom: none;
+            }
+
+            img {
+              width: 40px;
+              height: 40px;
+              border-radius: 50%;
+              object-fit: cover;
+              background-color: var(--bg-tertiary);
+            }
+
+            .participant-info {
+              flex: 1;
+
+              .participant-name {
+                display: block;
+                font-size: 14px;
+                font-weight: 600;
+                color: var(--text-primary);
+                margin-bottom: 2px;
+              }
+
+              .participant-username {
+                font-size: 12px;
+                color: var(--text-secondary);
+              }
+            }
+
+            .remove-participant-btn {
+              background-color: transparent;
+              border: 1px solid var(--border-primary);
+              border-radius: 6px;
+              padding: 6px 12px;
+              color: var(--text-secondary);
+              font-size: 12px;
+              cursor: pointer;
+              transition: all 0.2s ease;
+
+              &:hover {
+                background-color: var(--error);
+                border-color: var(--error);
+                color: white;
+              }
+            }
+
+            .current-user-badge {
+              background-color: var(--primary);
+              color: white;
+              padding: 4px 8px;
+              border-radius: 12px;
+              font-size: 11px;
+              font-weight: 600;
+            }
+          }
+        }
+      }
+    }
+
+    .modal-actions {
+      display: flex;
+      gap: 12px;
+      padding: 20px;
+      border-top: 1px solid var(--border-primary);
+
+      .btn-secondary {
+        flex: 1;
+        padding: 12px 24px;
+        border: 1px solid var(--border-primary);
+        border-radius: 8px;
+        background-color: transparent;
+        color: var(--text-primary);
+        font-size: 14px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s;
+
+        &:hover {
+          background-color: var(--bg-secondary);
+        }
+      }
+
+      .btn-primary {
+        flex: 1;
+        padding: 12px 24px;
+        border: none;
+        border-radius: 8px;
+        background-color: var(--primary);
+        color: white;
+        font-size: 14px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: background-color 0.2s;
+
+        &:hover {
+          background-color: var(--primary-dark);
+        }
+      }
+    }
+  }
+}
+
+/* Add Participant Modal - reuse styles from other modals */
+.add-participant-modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+
+  .modal-content {
+    background-color: var(--bg-primary);
+    border-radius: 16px;
+    width: 90%;
+    max-width: 500px;
+    max-height: 80vh;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+
+    .modal-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 20px;
+      border-bottom: 1px solid var(--border-primary);
+
+      h3 {
+        margin: 0;
+        font-size: 18px;
+        font-weight: 600;
+        color: var(--text-primary);
+      }
+
+      .modal-close {
+        background-color: transparent;
+        border: none;
+        cursor: pointer;
+        padding: 8px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: var(--text-secondary);
+        border-radius: 50%;
+        transition: all 0.2s ease;
+
+        &:hover {
+          background-color: var(--bg-secondary);
+          color: var(--text-primary);
+        }
+      }
+    }
+
+    .modal-body {
+      padding: 20px;
+      flex: 1;
+      overflow-y: auto;
+
+      .form-group {
+        position: relative;
+        margin-bottom: 16px;
+
+        label {
+          display: block;
+          margin-bottom: 8px;
+          font-size: 14px;
+          font-weight: 600;
+          color: var(--text-primary);
+        }
+
+        #addParticipantTo {
+          width: 100%;
+          padding: 12px 16px;
+          border: 1px solid var(--border-primary);
+          border-radius: 8px;
+          background-color: var(--bg-secondary);
+          color: var(--text-primary);
+          font-size: 14px;
+          outline: none;
+          transition: border-color 0.2s;
+
+          &::placeholder {
+            color: var(--text-secondary);
+          }
+
+          &:focus {
+            border-color: var(--primary);
+          }
+        }
+
+        .search-suggestions {
+          position: absolute;
+          top: 100%;
+          left: 0;
+          right: 0;
+          background-color: var(--bg-primary);
+          border: 1px solid var(--border-primary);
+          border-top: none;
+          border-radius: 0 0 8px 8px;
+          max-height: 200px;
+          overflow-y: auto;
+          z-index: 10;
+          display: none;
+
+          &.show {
+            display: block;
+          }
+
+          .suggestion-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px 16px;
+            cursor: pointer;
+            transition: background-color 0.2s;
+
+            &:hover {
+              background-color: var(--bg-secondary);
+            }
+
+            img {
+              width: 32px;
+              height: 32px;
+              border-radius: 50%;
+              object-fit: cover;
+              background-color: var(--bg-tertiary);
+            }
+
+            .user-info {
+              flex: 1;
+
+              .username {
+                font-size: 14px;
+                font-weight: 600;
+                color: var(--text-primary);
+                margin: 0;
+              }
+
+              .name {
+                font-size: 12px;
+                color: var(--text-secondary);
+                margin: 0;
+              }
+            }
+          }
+
+          .no-suggestions {
+            padding: 12px 16px;
+            text-align: center;
+            color: var(--text-secondary);
+            font-size: 14px;
+            font-style: italic;
+          }
+        }
+      }
+
+      .selected-users {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        margin-bottom: 16px;
+
+        .selected-user {
+          display: flex;
+          align-items: center;
+          gap: 8px;
+          background-color: var(--bg-secondary);
+          padding: 6px 12px;
+          border-radius: 16px;
+          font-size: 14px;
+          color: var(--text-primary);
+
+          .remove-user {
+            background-color: transparent;
+            border: none;
+            cursor: pointer;
+            color: var(--text-secondary);
+            font-size: 16px;
+            line-height: 1;
+
+            &:hover {
+              color: var(--text-primary);
+            }
+          }
+        }
+      }
+    }
+
+    .modal-actions {
+      display: flex;
+      gap: 12px;
+      padding: 20px;
+      border-top: 1px solid var(--border-primary);
+
+      .btn-secondary {
+        flex: 1;
+        padding: 12px 24px;
+        border: 1px solid var(--border-primary);
+        border-radius: 8px;
+        background-color: transparent;
+        color: var(--text-primary);
+        font-size: 14px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s;
+
+        &:hover {
+          background-color: var(--bg-secondary);
+        }
+      }
+
+      .btn-primary {
+        flex: 1;
+        padding: 12px 24px;
+        border: none;
+        border-radius: 8px;
+        background-color: var(--primary);
+        color: white;
+        font-size: 14px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: background-color 0.2s;
+
+        &:disabled {
+          background-color: var(--bg-tertiary);
+          color: var(--text-secondary);
+          cursor: not-allowed;
+        }
+
+        &:not(:disabled):hover {
+          background-color: var(--primary-dark);
+        }
+      }
+    }
+  }
+}
+
 @media (max-width: 768px) {
   .notifications-btn {
     right: 130px;

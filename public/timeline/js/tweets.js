@@ -760,6 +760,62 @@ export const createTweetElement = (tweet, config = {}) => {
           />
         </svg> ${tweet.reply_count}`;
 
+	tweetInteractionsReplyEl.addEventListener("click", async (e) => {
+		e.preventDefault();
+		e.stopPropagation();
+
+		try {
+			const { createComposer } = await import("./composer.js");
+
+			const composer = await createComposer({
+				placeholder: `Reply to @${tweet.author.username}...`,
+				replyTo: tweet.id,
+				callback: async (newTweet) => {
+					if (!newTweet.reply_to) {
+						addTweetToTimeline(newTweet, true).classList.add("created");
+					}
+					setTimeout(() => {
+						overlay.remove();
+					}, 10);
+				},
+			});
+
+			const overlay = document.createElement("div");
+			overlay.className = "composer-overlay";
+
+			const modal = document.createElement("div");
+			modal.classList.add("modal");
+
+			const closeButton = document.createElement("button");
+			closeButton.className = "modal-close";
+			closeButton.type = "button";
+			closeButton.innerHTML = `
+				<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+					<line x1="18" y1="6" x2="6" y2="18"></line>
+					<line x1="6" y1="6" x2="18" y2="18"></line>
+				</svg>
+			`;
+
+			closeButton.addEventListener("click", () => {
+				overlay.remove();
+			});
+
+			modal.appendChild(closeButton);
+			modal.appendChild(composer);
+			overlay.appendChild(modal);
+			document.body.appendChild(overlay);
+
+			overlay.addEventListener("click", (e) => {
+				if (e.target === overlay) {
+					overlay.remove();
+				}
+			});
+		} catch (error) {
+			console.error("Error creating reply composer:", error);
+			toastQueue.add(`<h1>Error opening reply composer</h1>`);
+		}
+	});
+
 	const tweetInteractionsShareEl = document.createElement("button");
 	tweetInteractionsShareEl.className = "engagement";
 	tweetInteractionsShareEl.style.setProperty("--color", "119, 119, 119");

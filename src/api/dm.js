@@ -169,14 +169,16 @@ export default new Elysia({ prefix: "/dm" })
 
 				// Determine conversation display info
 				let displayName, displayAvatar;
-				
+
 				if (conv.type === "group") {
-					displayName = conv.title || `Group Chat (${conv.participant_count} members)`;
+					displayName =
+						conv.title || `Group Chat (${conv.participant_count} members)`;
 					displayAvatar = null; // Will be handled in frontend for group avatars
 				} else {
 					// Direct message - show the other participant
 					const otherParticipant = participantList[0];
-					displayName = otherParticipant?.name || otherParticipant?.username || "Unknown";
+					displayName =
+						otherParticipant?.name || otherParticipant?.username || "Unknown";
 					displayAvatar = otherParticipant?.avatar;
 				}
 
@@ -185,7 +187,8 @@ export default new Elysia({ prefix: "/dm" })
 					participants: participantList,
 					displayName,
 					displayAvatar,
-					lastMessageSenderName: conv.last_message_sender_name || conv.last_message_sender,
+					lastMessageSenderName:
+						conv.last_message_sender_name || conv.last_message_sender,
 				};
 			});
 
@@ -268,7 +271,8 @@ export default new Elysia({ prefix: "/dm" })
 				}
 
 				const totalParticipants = participants.length + 1; // +1 for current user
-				const conversationType = isGroup || totalParticipants > 2 ? "group" : "direct";
+				const conversationType =
+					isGroup || totalParticipants > 2 ? "group" : "direct";
 
 				// For direct messages with exactly 2 participants, check if conversation already exists
 				if (conversationType === "direct" && participants.length === 1) {
@@ -525,7 +529,9 @@ export default new Elysia({ prefix: "/dm" })
 			if (!conversation) return { error: "Conversation not found" };
 
 			if (conversation.type !== "group") {
-				return { error: "Cannot remove participants from direct conversations" };
+				return {
+					error: "Cannot remove participants from direct conversations",
+				};
 			}
 
 			const participant = checkParticipant.get(id, user.id);
@@ -585,7 +591,7 @@ export default new Elysia({ prefix: "/dm" })
 		},
 		{
 			body: t.Object({
-				title: t.String(),
+				title: t.Union([t.String(), t.Null()]),
 			}),
 		},
 	);
