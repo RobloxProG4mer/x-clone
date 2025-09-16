@@ -10,6 +10,7 @@
 - see who liked, retweeted or quoted a tweet
 - private accounts
 - woke pronouns
+- An algorithm.
 
 ## others
 
