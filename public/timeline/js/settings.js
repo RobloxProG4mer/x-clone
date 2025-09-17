@@ -58,15 +58,16 @@ const createThemesContent = () => {
 	h2.textContent = "Appearance";
 	group.appendChild(h2);
 
+	// Theme Mode Setting
 	const themeItem = document.createElement("div");
 	themeItem.className = "setting-item";
 
-	const themeLabel = document.createElement("label");
+	const themeLabel = document.createElement("div");
 	themeLabel.className = "setting-label";
-	const themeTitle = document.createElement("span");
+	const themeTitle = document.createElement("div");
 	themeTitle.className = "setting-title";
 	themeTitle.textContent = "Theme Mode";
-	const themeDesc = document.createElement("span");
+	const themeDesc = document.createElement("div");
 	themeDesc.className = "setting-description";
 	themeDesc.textContent = "Choose light or dark mode";
 	themeLabel.appendChild(themeTitle);
@@ -107,78 +108,108 @@ const createThemesContent = () => {
 	dropdown.appendChild(dropdownButton);
 	dropdown.appendChild(dropdownMenu);
 	themeControl.appendChild(dropdown);
-	const select = document.createElement("select");
-	select.className = "theme-mode-select";
-	select.setAttribute("aria-label", "Theme mode");
-	select.style.display = "none";
-	[
-		{ v: "light", t: "Light" },
-		{ v: "dark", t: "Dark" },
-		{ v: "auto", t: "Auto" },
-	].forEach(({ v, t }) => {
-		const opt = document.createElement("option");
-		opt.value = v;
-		opt.textContent = t;
-		select.appendChild(opt);
-	});
-	themeControl.appendChild(select);
 
 	themeItem.appendChild(themeLabel);
 	themeItem.appendChild(themeControl);
 	group.appendChild(themeItem);
 
+	// Accent Color Setting
 	const colorItem = document.createElement("div");
 	colorItem.className = "setting-item";
 
-	const colorLabel = document.createElement("label");
+	const colorLabel = document.createElement("div");
 	colorLabel.className = "setting-label";
-	const colorTitle = document.createElement("span");
+	const colorTitle = document.createElement("div");
 	colorTitle.className = "setting-title";
 	colorTitle.textContent = "Accent Color";
-	const colorDesc = document.createElement("span");
+	const colorDesc = document.createElement("div");
 	colorDesc.className = "setting-description";
 	colorDesc.textContent = "Customize the accent color";
 	colorLabel.appendChild(colorTitle);
 	colorLabel.appendChild(colorDesc);
 
 	const colorControl = document.createElement("div");
-	colorControl.className = "accent-color-section setting-control";
-	const presets = document.createElement("div");
-	presets.className = "color-presets";
-	["#1185fe", "#dc2626", "#059669", "#7c3aed", "#ea580c", "#0891b2"].forEach(
-		(hex) => {
-			const dot = document.createElement("div");
-			dot.className = "color-option";
-			dot.dataset.color = hex;
-			dot.style.backgroundColor = hex;
-			presets.appendChild(dot);
-		},
-	);
-	const customWrap = document.createElement("div");
-	customWrap.className = "color-option";
-	customWrap.dataset.isCustom = "true";
-	const picker = document.createElement("input");
-	picker.type = "color";
-	picker.id = "customColorPicker";
-	picker.className = "custom-color-picker";
-	picker.title = "Choose custom color";
-	const savedColor = localStorage.getItem("accentColor") || "#1185fe";
-	picker.value = savedColor;
-	customWrap.style.backgroundColor = savedColor;
-	customWrap.appendChild(picker);
-	colorControl.appendChild(presets);
-	colorControl.appendChild(customWrap);
+	colorControl.className = "setting-control";
 
-	const actionsWrap = document.createElement("div");
-	actionsWrap.style.marginTop = "12px";
-	actionsWrap.style.display = "flex";
-	actionsWrap.style.justifyContent = "flex-end";
-	const saveBtn = document.createElement("button");
-	saveBtn.className = "btn primary";
-	saveBtn.id = "saveThemeBtn";
-	saveBtn.textContent = "Save Theme";
-	actionsWrap.appendChild(saveBtn);
-	colorControl.appendChild(actionsWrap);
+	const accentSection = document.createElement("div");
+	accentSection.className = "accent-color-section";
+
+	const presetContainer = document.createElement("div");
+	presetContainer.className = "color-presets";
+
+	const savedColor = localStorage.getItem("accentColor") || "#1d9bf0";
+
+	const presets = [
+		{ label: "Bluebird", color: "#1d9bf0" },
+		{ label: "Sunshine", color: "#ffad1f" },
+		{ label: "Flamingo", color: "#f91880" },
+		{ label: "Lavender", color: "#7856ff" },
+		{ label: "Emerald", color: "#00ba7c" },
+		{ label: "Coral", color: "#ff6347" },
+		{ label: "Ocean", color: "#0077be" },
+		{ label: "Cherry", color: "#e60023" },
+		{ label: "Forest", color: "#228b22" },
+		{ label: "Violet", color: "#8a2be2" },
+		{ label: "Sunset", color: "#ff4500" },
+		{ label: "Mint", color: "#00d4aa" },
+		{ label: "Custom", color: "custom" },
+	];
+
+	presets.forEach((preset) => {
+		const option = document.createElement("div");
+		option.className = "color-option";
+		option.title = preset.label;
+		option.dataset.color = preset.color;
+
+		if (preset.color === "custom") {
+			option.style.background =
+				"linear-gradient(45deg, #ff0000 0%, #ff7f00 14%, #ffff00 29%, #00ff00 43%, #0000ff 57%, #4b0082 71%, #9400d3 86%, #ff0000 100%)";
+			const picker = document.createElement("input");
+			picker.type = "color";
+			picker.className = "custom-color-picker";
+			picker.value = savedColor;
+			picker.title = "Choose custom color";
+			option.appendChild(picker);
+		} else {
+			option.style.backgroundColor = preset.color;
+		}
+
+		if (preset.color === savedColor) {
+			option.classList.add("active");
+		}
+
+		option.addEventListener("click", () => {
+			// Remove active from all options
+			document
+				.querySelectorAll(".color-option")
+				.forEach((opt) => opt.classList.remove("active"));
+
+			// Add active with proper timing
+			setTimeout(() => {
+				option.classList.add("active");
+			}, 10);
+
+			if (preset.color === "custom") {
+				const picker = option.querySelector(".custom-color-picker");
+				picker.click();
+			} else {
+				setAccentColor(preset.color);
+			}
+		});
+
+		if (preset.color === "custom") {
+			const picker = option.querySelector(".custom-color-picker");
+			picker.addEventListener("change", (e) => {
+				setAccentColor(e.target.value);
+				option.style.backgroundColor = e.target.value;
+			});
+		}
+
+		presetContainer.appendChild(option);
+	});
+
+	accentSection.appendChild(presetContainer);
+	colorControl.appendChild(accentSection);
 
 	colorItem.appendChild(colorLabel);
 	colorItem.appendChild(colorControl);
@@ -519,7 +550,558 @@ const createSettingsPage = () => {
 	settingsContainer.appendChild(body);
 
 	const style = document.createElement("style");
-	style.textContent = `.settings{flex-direction:column;min-height:100vh;max-width:1600px;margin:0 auto;padding:0 20px}.settings-header{display:flex;align-items:center;padding:20px 0;border-bottom:1px solid var(--border-primary);margin-bottom:20px}.back-button{background:none;border:none;color:var(--text-primary);cursor:pointer;padding:8px;margin-right:20px;border-radius:50%;display:flex;align-items:center;justify-content:center;transition:background-color .2s;text-decoration:none}.back-button:hover{background-color:var(--bg-overlay-light)}.settings-header-info h1{margin:0;font-size:24px;font-weight:700;color:var(--text-primary)}.settings-body{display:flex;gap:24px;flex:1;width:100%}.settings-sidebar{background-color:var(--bg-secondary);border-radius:8px;padding:8px;width:180px;flex-shrink:0;height:fit-content}.settings-tab-btn{width:100%;background:transparent;border:none;color:var(--text-primary);text-align:left;padding:12px 16px;font-size:16px;cursor:pointer;border-radius:6px;margin-bottom:4px;font-family:inherit;font-weight:400;transition:background-color .2s}.settings-tab-btn:hover{background-color:var(--bg-overlay-light)}.settings-tab-btn.active{background-color:var(--primary);color:#fff;font-weight:500}.settings-content{background-color:var(--bg-secondary);border-radius:8px;padding:32px;flex:1;min-width:0;overflow:hidden}.settings-section h1{margin:0 0 24px 0;font-size:24px;font-weight:700;color:var(--text-primary)}.setting-group{margin-bottom:32px}.setting-group h2{margin:0 0 16px 0;font-size:18px;font-weight:600;color:var(--text-primary)}.setting-item{display:flex;align-items:center;justify-content:space-between;padding:16px 0;border-bottom:1px solid var(--border-primary)}.setting-item:last-child{border-bottom:none}.setting-label{display:flex;flex-direction:column;gap:4px}.setting-title{font-size:16px;font-weight:500;color:var(--text-primary)}.setting-description{font-size:14px;color:var(--text-secondary)}.setting-control{flex-shrink:0}.custom-dropdown{position:relative;display:inline-block}.custom-dropdown-button{padding:8px 12px;background:var(--bg-primary);border:1px solid var(--border-primary);color:var(--text-primary);border-radius:6px;font-size:14px;cursor:pointer;display:flex;align-items:center;gap:8px;min-width:100px;transition:all 0.2s}.custom-dropdown-button:hover{background:var(--bg-secondary);border-color:var(--border-hover)}.custom-dropdown-arrow{transition:transform 0.2s}.custom-dropdown.open .custom-dropdown-arrow{transform:rotate(180deg)}.custom-dropdown-menu{position:absolute;top:100%;left:0;right:0;background:var(--bg-primary);border:1px solid var(--border-primary);border-radius:6px;box-shadow:0 4px 12px rgba(0,0,0,0.15);z-index:1000;opacity:0;visibility:hidden;transform:translateY(-8px);transition:all 0.2s}.custom-dropdown.open .custom-dropdown-menu{opacity:1;visibility:visible;transform:translateY(0)}.custom-dropdown-option{padding:8px 12px;cursor:pointer;transition:background-color 0.2s;font-size:14px}.custom-dropdown-option:hover{background:var(--bg-secondary)}.custom-dropdown-option.selected{background:var(--primary);color:#fff}.theme-mode-select{display:none}.accent-color-section{display:flex;flex-direction:column;gap:12px;width:100%}.color-presets{display:flex;gap:10px;align-items:center;flex-wrap:wrap;width:100%;overflow:visible}.color-option{width:36px;height:36px;border-radius:50%;cursor:pointer;border:2px solid var(--border-primary);transition:all .2s;position:relative;display:flex;align-items:center;justify-content:center;flex-shrink:0}.color-option:hover{transform:scale(1.08);border-color:var(--border-hover)}.color-option.active{border-color:var(--text-primary);transform:scale(1.08)}.color-option.active::after{content:'✓';position:absolute;color:#fff;font-size:16px;font-weight:700;text-shadow:0 0 3px rgba(0,0,0,.9);z-index:2;pointer-events:none}.custom-color-picker{width:100%;height:100%;border:none;border-radius:50%;cursor:pointer;padding:0;background:none;opacity:0;position:absolute;top:0;left:0}.custom-color-picker::-webkit-color-swatch-wrapper{padding:0;border-radius:50%}.custom-color-picker::-webkit-color-swatch{border:none;border-radius:50%}.custom-color-picker::-moz-color-swatch{border:none;border-radius:50%}.danger-group{border:1px solid var(--error-color);border-radius:8px;padding:16px;background-color:rgba(220,38,38,.05)}.danger-group h2{color:var(--error-color)}.modal{display:none;position:fixed;top:0;left:0;width:100%;height:100%;background-color:var(--bg-overlay);z-index:1000;align-items:center;justify-content:center}.modal-content{background:var(--bg-primary);border-radius:12px;width:90%;max-width:500px;max-height:90vh;overflow-y:auto;box-shadow:0 20px 25px -5px rgba(0,0,0,.1),0 10px 10px -5px rgba(0,0,0,.04)}.modal-header{display:flex;justify-content:space-between;align-items:center;padding:20px 24px 0;border-bottom:1px solid var(--border-primary);margin-bottom:20px}.modal-header h2{margin:0;font-size:20px;font-weight:600;color:var(--text-primary)}.close-btn{background:none;border:none;font-size:24px;cursor:pointer;color:var(--text-secondary);padding:0;width:32px;height:32px;display:flex;align-items:center;justify-content:center;border-radius:50%;transition:background-color .2s}.close-btn:hover{background-color:var(--bg-overlay-light)}.modal-body{padding:0 24px 24px}.form-group{margin-bottom:20px}.form-group label{display:block;margin-bottom:8px;font-weight:500;color:var(--text-primary)}.form-group input{width:100%;padding:12px;border:1px solid var(--border-input);border-radius:8px;font-size:16px;background:var(--bg-primary);color:var(--text-primary);transition:border-color .2s;box-sizing:border-box}.form-group input:focus{outline:none;border-color:var(--primary)}.form-group small{display:block;margin-top:4px;color:var(--text-secondary);font-size:14px}.username-wrapper{display:flex;align-items:center;border:1px solid var(--border-input);border-radius:8px;overflow:hidden}.username-wrapper span{padding:12px 8px 12px 12px;background:var(--bg-secondary);color:var(--text-secondary);font-size:16px}.username-wrapper input{border:none;flex:1}.form-actions{display:flex;gap:12px;justify-content:flex-end;margin-top:24px}.btn{padding:10px 20px;border-radius:8px;font-size:16px;font-weight:500;cursor:pointer;border:1px solid transparent;transition:all .2s}.btn.primary{background:var(--primary);color:#fff}.btn.primary:hover{background:var(--primary-hover)}.btn.secondary{background:transparent;color:var(--btn-secondary-color);border-color:var(--btn-secondary-border)}.btn.secondary:hover{background:var(--btn-secondary-hover-bg);border-color:var(--btn-secondary-hover-border)}.btn.danger{background:var(--error-color);color:#fff}.btn.danger:hover{background:#b91c1c}[data-toast=\"popover\"]{overflow:hidden!important;scrollbar-width:none!important;-ms-overflow-style:none!important}[data-toast=\"popover\"]::-webkit-scrollbar{display:none!important}[data-toast=\"container\"]{overflow:hidden!important;scrollbar-width:none!important;-ms-overflow-style:none!important}[data-toast=\"container\"]::-webkit-scrollbar{display:none!important}[data-toast=\"root\"]{overflow:hidden!important}@media (max-width:768px){.settings{padding:0 10px}.settings-body{flex-direction:column}.settings-sidebar{width:100%;display:flex;overflow-x:auto;gap:8px}.settings-tab-btn{white-space:nowrap;margin-bottom:0}.setting-item{flex-direction:column;align-items:stretch;gap:12px}.color-presets{justify-content:flex-start;width:100%;overflow-x:auto}.accent-color-section{width:100%}.custom-dropdown{width:100%}.custom-dropdown-button{width:100%}}`;
+	style.textContent = `
+		.settings {
+			flex-direction: column;
+			min-height: 100vh;
+			max-width: 1600px;
+			margin: 0 auto;
+			padding: 0 20px;
+		}
+		
+		.settings-header {
+			display: flex;
+			align-items: center;
+			padding: 20px 0;
+			border-bottom: 1px solid var(--border-primary);
+			margin-bottom: 20px;
+		}
+		
+		.back-button {
+			background: none;
+			border: none;
+			color: var(--text-primary);
+			cursor: pointer;
+			padding: 8px;
+			margin-right: 20px;
+			border-radius: 50%;
+			display: flex;
+			align-items: center;
+			justify-content: center;
+			transition: background-color 0.2s;
+			text-decoration: none;
+		}
+		
+		.back-button:hover {
+			background-color: var(--bg-overlay-light);
+		}
+		
+		.settings-header-info h1 {
+			margin: 0;
+			font-size: 24px;
+			font-weight: 700;
+			color: var(--text-primary);
+		}
+		
+		.settings-body {
+			display: flex;
+			gap: 24px;
+			flex: 1;
+			width: 100%;
+			align-items: flex-start;
+		}
+		
+		.settings-sidebar {
+			background-color: var(--bg-secondary);
+			border-radius: 8px;
+			padding: 8px;
+			width: 200px;
+			flex-shrink: 0;
+			height: fit-content;
+		}
+		
+		.settings-tab-btn {
+			width: 100%;
+			background: transparent;
+			border: none;
+			color: var(--text-primary);
+			text-align: left;
+			padding: 12px 16px;
+			font-size: 16px;
+			cursor: pointer;
+			border-radius: 6px;
+			margin-bottom: 4px;
+			font-family: inherit;
+			font-weight: 400;
+			transition: background-color 0.2s;
+		}
+		
+		.settings-tab-btn:hover {
+			background-color: var(--bg-overlay-light);
+		}
+		
+		.settings-tab-btn.active {
+			background-color: var(--primary);
+			color: #fff;
+			font-weight: 500;
+		}
+		
+		.settings-content {
+			background-color: var(--bg-secondary);
+			border-radius: 8px;
+			padding: 32px;
+			flex: 1;
+			min-width: 0;
+			max-width: calc(100% - 244px);
+			overflow-x: hidden;
+		}
+		
+		.settings-section h1 {
+			margin: 0 0 24px 0;
+			font-size: 24px;
+			font-weight: 700;
+			color: var(--text-primary);
+		}
+		
+		.setting-group {
+			margin-bottom: 32px;
+		}
+		
+		.setting-group h2 {
+			margin: 0 0 16px 0;
+			font-size: 18px;
+			font-weight: 600;
+			color: var(--text-primary);
+		}
+		
+		.setting-item {
+			display: grid;
+			grid-template-columns: 1fr auto;
+			gap: 24px;
+			align-items: flex-start;
+			padding: 20px 0;
+			border-bottom: 1px solid var(--border-primary);
+		}
+		
+		.setting-item:last-child {
+			border-bottom: none;
+		}
+		
+		.setting-label {
+			display: flex;
+			flex-direction: column;
+			gap: 4px;
+			min-width: 0;
+		}
+		
+		.setting-title {
+			font-size: 16px;
+			font-weight: 500;
+			color: var(--text-primary);
+		}
+		
+		.setting-description {
+			font-size: 14px;
+			color: var(--text-secondary);
+		}
+		
+		.setting-control {
+			flex-shrink: 0;
+			min-width: 0;
+			max-width: 100%;
+		}
+		
+		.custom-dropdown {
+			position: relative;
+			display: inline-block;
+		}
+		
+		.custom-dropdown-button {
+			padding: 8px 12px;
+			background: var(--bg-primary);
+			border: 1px solid var(--border-primary);
+			color: var(--text-primary);
+			border-radius: 6px;
+			font-size: 14px;
+			cursor: pointer;
+			display: flex;
+			align-items: center;
+			gap: 8px;
+			min-width: 100px;
+			transition: all 0.2s;
+		}
+		
+		.custom-dropdown-button:hover {
+			background: var(--bg-secondary);
+			border-color: var(--border-hover);
+		}
+		
+		.custom-dropdown-arrow {
+			transition: transform 0.2s;
+		}
+		
+		.custom-dropdown.open .custom-dropdown-arrow {
+			transform: rotate(180deg);
+		}
+		
+		.custom-dropdown-menu {
+			position: absolute;
+			top: 100%;
+			left: 0;
+			right: 0;
+			background: var(--bg-primary);
+			border: 1px solid var(--border-primary);
+			border-radius: 6px;
+			box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+			z-index: 1000;
+			opacity: 0;
+			visibility: hidden;
+			transform: translateY(-8px);
+			transition: all 0.2s;
+		}
+		
+		.custom-dropdown.open .custom-dropdown-menu {
+			opacity: 1;
+			visibility: visible;
+			transform: translateY(0);
+		}
+		
+		.custom-dropdown-option {
+			padding: 8px 12px;
+			cursor: pointer;
+			transition: background-color 0.2s;
+			font-size: 14px;
+		}
+		
+		.custom-dropdown-option:hover {
+			background: var(--bg-secondary);
+		}
+		
+		.custom-dropdown-option.selected {
+			background: var(--primary);
+			color: #fff;
+		}
+		
+		.theme-mode-select {
+			display: none;
+		}
+		
+		.accent-color-section {
+			display: flex;
+			flex-direction: column;
+			gap: 16px;
+			width: 100%;
+			max-width: 400px;
+		}
+		
+		.color-presets {
+			display: grid;
+			grid-template-columns: repeat(auto-fit, 44px);
+			gap: 12px;
+			justify-content: flex-start;
+			width: 100%;
+		}
+		
+		.color-option {
+			width: 44px;
+			height: 44px;
+			border-radius: 50%;
+			cursor: pointer;
+			border: 3px solid var(--border-primary);
+			transition: all 0.3s ease;
+			position: relative;
+			display: flex;
+			align-items: center;
+			justify-content: center;
+			flex-shrink: 0;
+			background-clip: padding-box;
+		}
+		
+		.color-option:hover {
+			transform: scale(1.1);
+			border-color: var(--border-hover);
+			box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+		}
+		
+		.color-option.active {
+			border-color: var(--text-primary);
+			transform: scale(1.1);
+			box-shadow: 0 6px 16px rgba(0,0,0,0.2);
+		}
+		
+		.color-option.active::before {
+			content: '';
+			position: absolute;
+			inset: -3px;
+			border-radius: 50%;
+			border: 2px solid var(--text-primary);
+			animation: checkmark-pulse 0.3s ease-out;
+		}
+		
+		.color-option.active::after {
+			content: '✓';
+			position: absolute;
+			color: white;
+			font-size: 18px;
+			font-weight: 900;
+			text-shadow: 0 0 4px rgba(0,0,0,0.8), 0 0 8px rgba(0,0,0,0.6);
+			z-index: 10;
+			pointer-events: none;
+			animation: checkmark-appear 0.4s ease-out;
+		}
+		
+		@keyframes checkmark-pulse {
+			0% { transform: scale(0.8); opacity: 0; }
+			50% { transform: scale(1.05); opacity: 1; }
+			100% { transform: scale(1); opacity: 1; }
+		}
+		
+		@keyframes checkmark-appear {
+			0% { transform: scale(0); opacity: 0; }
+			50% { transform: scale(1.2); opacity: 1; }
+			100% { transform: scale(1); opacity: 1; }
+		}
+		
+		.custom-color-picker {
+			width: 100%;
+			height: 100%;
+			border: none;
+			border-radius: 50%;
+			cursor: pointer;
+			padding: 0;
+			background: none;
+			opacity: 0;
+			position: absolute;
+			top: 0;
+			left: 0;
+		}
+		
+		.custom-color-picker::-webkit-color-swatch-wrapper {
+			padding: 0;
+			border-radius: 50%;
+		}
+		
+		.custom-color-picker::-webkit-color-swatch {
+			border: none;
+			border-radius: 50%;
+		}
+		
+		.custom-color-picker::-moz-color-swatch {
+			border: none;
+			border-radius: 50%;
+		}
+		
+		.danger-group {
+			border: 1px solid var(--error-color);
+			border-radius: 8px;
+			padding: 16px;
+			background-color: rgba(220,38,38,.05);
+		}
+		
+		.danger-group h2 {
+			color: var(--error-color);
+		}
+		
+		.modal {
+			display: none;
+			position: fixed;
+			top: 0;
+			left: 0;
+			width: 100%;
+			height: 100%;
+			background-color: var(--bg-overlay);
+			z-index: 1000;
+			align-items: center;
+			justify-content: center;
+		}
+		
+		.modal-content {
+			background: var(--bg-primary);
+			border-radius: 12px;
+			width: 90%;
+			max-width: 500px;
+			max-height: 90vh;
+			overflow-y: auto;
+			box-shadow: 0 20px 25px -5px rgba(0,0,0,.1), 0 10px 10px -5px rgba(0,0,0,.04);
+		}
+		
+		.modal-header {
+			display: flex;
+			justify-content: space-between;
+			align-items: center;
+			padding: 20px 24px 0;
+			border-bottom: 1px solid var(--border-primary);
+			margin-bottom: 20px;
+		}
+		
+		.modal-header h2 {
+			margin: 0;
+			font-size: 20px;
+			font-weight: 600;
+			color: var(--text-primary);
+		}
+		
+		.close-btn {
+			background: none;
+			border: none;
+			font-size: 24px;
+			cursor: pointer;
+			color: var(--text-secondary);
+			padding: 0;
+			width: 32px;
+			height: 32px;
+			display: flex;
+			align-items: center;
+			justify-content: center;
+			border-radius: 50%;
+			transition: background-color 0.2s;
+		}
+		
+		.close-btn:hover {
+			background-color: var(--bg-overlay-light);
+		}
+		
+		.modal-body {
+			padding: 0 24px 24px;
+		}
+		
+		.form-group {
+			margin-bottom: 20px;
+		}
+		
+		.form-group label {
+			display: block;
+			margin-bottom: 8px;
+			font-weight: 500;
+			color: var(--text-primary);
+		}
+		
+		.form-group input {
+			width: 100%;
+			padding: 12px;
+			border: 1px solid var(--border-input);
+			border-radius: 8px;
+			font-size: 16px;
+			background: var(--bg-primary);
+			color: var(--text-primary);
+			transition: border-color 0.2s;
+			box-sizing: border-box;
+		}
+		
+		.form-group input:focus {
+			outline: none;
+			border-color: var(--primary);
+		}
+		
+		.form-group small {
+			display: block;
+			margin-top: 4px;
+			color: var(--text-secondary);
+			font-size: 14px;
+		}
+		
+		.username-wrapper {
+			display: flex;
+			align-items: center;
+			border: 1px solid var(--border-input);
+			border-radius: 8px;
+			overflow: hidden;
+		}
+		
+		.username-wrapper span {
+			padding: 12px 8px 12px 12px;
+			background: var(--bg-secondary);
+			color: var(--text-secondary);
+			font-size: 16px;
+		}
+		
+		.username-wrapper input {
+			border: none;
+			flex: 1;
+		}
+		
+		.form-actions {
+			display: flex;
+			gap: 12px;
+			justify-content: flex-end;
+			margin-top: 24px;
+		}
+		
+		.btn {
+			padding: 10px 20px;
+			border-radius: 8px;
+			font-size: 16px;
+			font-weight: 500;
+			cursor: pointer;
+			border: 1px solid transparent;
+			transition: all 0.2s;
+		}
+		
+		.btn.primary {
+			background: var(--primary);
+			color: #fff;
+		}
+		
+		.btn.primary:hover {
+			background: var(--primary-hover);
+		}
+		
+		.btn.secondary {
+			background: transparent;
+			color: var(--btn-secondary-color);
+			border-color: var(--btn-secondary-border);
+		}
+		
+		.btn.secondary:hover {
+			background: var(--btn-secondary-hover-bg);
+			border-color: var(--btn-secondary-hover-border);
+		}
+		
+		.btn.danger {
+			background: var(--error-color);
+			color: #fff;
+		}
+		
+		.btn.danger:hover {
+			background: #b91c1c;
+		}
+		
+		@media (max-width: 768px) {
+			.settings {
+				padding: 0 10px;
+			}
+			
+			.settings-body {
+				flex-direction: column;
+			}
+			
+			.settings-sidebar {
+				width: 100%;
+				display: flex;
+				overflow-x: auto;
+				gap: 8px;
+			}
+			
+			.settings-tab-btn {
+				white-space: nowrap;
+				margin-bottom: 0;
+			}
+			
+			.setting-item {
+				grid-template-columns: 1fr;
+				gap: 16px;
+			}
+			
+			.settings-content {
+				max-width: 100%;
+			}
+			
+			.color-presets {
+				grid-template-columns: repeat(auto-fit, 40px);
+				gap: 8px;
+				justify-content: center;
+			}
+			
+			.color-option {
+				width: 40px;
+				height: 40px;
+			}
+			
+			.accent-color-section {
+				max-width: 100%;
+			}
+		}
+	`;
 
 	document.head.appendChild(style);
 	document.body.appendChild(settingsContainer);
@@ -749,6 +1331,25 @@ const setupSettingsEventHandlers = async () => {
 		if (event.target.closest(".modal") === event.target) {
 			hideModal(event.target);
 		}
+
+		// Handle color option clicks
+		if (event.target.classList.contains("color-option")) {
+			const color = event.target.dataset.color;
+			if (color && color !== "custom") {
+				setAccentColor(color);
+			}
+		}
+
+		// Handle custom color picker trigger
+		if (
+			event.target.classList.contains("color-option") &&
+			event.target.dataset.color === "custom"
+		) {
+			const picker = event.target.querySelector(".custom-color-picker");
+			if (picker) {
+				picker.click();
+			}
+		}
 	});
 
 	loadCurrentAccentColor();
@@ -763,9 +1364,9 @@ const setupSettingsEventHandlers = async () => {
 		if (event.target.classList.contains("theme-mode-select")) {
 			handleThemeModeChange(event.target.value);
 		}
-		if (event.target.id === "customColorPicker") {
+		if (event.target.classList.contains("custom-color-picker")) {
 			const color = event.target.value;
-			handleCustomColorChange(color);
+			setAccentColor(color);
 		}
 	});
 };
@@ -859,28 +1460,37 @@ const handleThemeModeChange = (theme) => {
 	);
 };
 
-const handleCustomColorChange = (color) => {
+const setAccentColor = (color) => {
 	applyAccentColor(color);
 
+	// Update all color options
 	document.querySelectorAll(".color-option").forEach((option) => {
 		option.classList.remove("active");
+		if (option.dataset.color === color) {
+			option.classList.add("active");
+		}
 	});
 
-	const customWrap = document.querySelector('[data-is-custom="true"]');
-	if (customWrap) {
-		customWrap.classList.add("active");
-		customWrap.style.backgroundColor = color;
-
-		const picker = customWrap.querySelector("#customColorPicker");
-		if (picker && picker.value !== color) {
+	// If it's a custom color, update the custom picker
+	const customOption = document.querySelector(
+		'.color-option[data-color="custom"]',
+	);
+	if (customOption && !document.querySelector(`[data-color="${color}"]`)) {
+		customOption.classList.add("active");
+		const picker = customOption.querySelector(".custom-color-picker");
+		if (picker) {
 			picker.value = color;
 		}
 	}
 
 	if (themeToastRef) toastQueue.delete(themeToastRef.id);
 	themeToastRef = toastQueue.add(
-		`<h1>Custom Color Applied</h1><p>Your custom accent color has been set</p>`,
+		`<h1>Accent Color Changed</h1><p>Your accent color has been updated</p>`,
 	);
+};
+
+const handleCustomColorChange = (color) => {
+	setAccentColor(color);
 };
 
 const applyAccentColor = (color) => {

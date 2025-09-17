@@ -233,6 +233,15 @@ CREATE TABLE IF NOT EXISTS bookmarks (
   FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
   FOREIGN KEY (post_id) REFERENCES posts(id) ON DELETE CASCADE,
   UNIQUE(user_id, post_id)
+);
+
+CREATE TABLE IF NOT EXISTS tweetaai_chats (
+  id TEXT PRIMARY KEY,
+  user_id TEXT NOT NULL,
+  prompt TEXT NOT NULL,
+  response TEXT NOT NULL,
+  created_at TIMESTAMP DEFAULT (datetime('now', 'utc')),
+  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 );`);
 
 try {

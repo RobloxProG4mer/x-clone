@@ -23,6 +23,61 @@ export default new Elysia({ prefix: "/tweetaai" })
 		}),
 	)
 
+	.get("/history", async ({ jwt, headers }) => {
+		const authorization = headers.authorization;
+		if (!authorization) return { error: "Authentication required" };
+
+		const token = authorization.replace("Bearer ", "");
+		let payload;
+		try {
+			payload = await jwt.verify(token);
+			if (!payload) return { error: "Invalid token" };
+		} catch {
+			return { error: "Invalid token" };
+		}
+
+		const user = getUserByUsername.get(payload.username);
+		if (!user) return { error: "User not found" };
+
+		try {
+			const chats = db
+				.query(
+					`SELECT prompt, response, created_at FROM tweetaai_chats WHERE user_id = ? ORDER BY created_at ASC LIMIT 50`,
+				)
+				.all(user.id);
+
+			return { success: true, chats };
+		} catch (error) {
+			console.error("Failed to fetch chat history:", error);
+			return { error: "Failed to fetch chat history" };
+		}
+	})
+
+	.delete("/history", async ({ jwt, headers }) => {
+		const authorization = headers.authorization;
+		if (!authorization) return { error: "Authentication required" };
+
+		const token = authorization.replace("Bearer ", "");
+		let payload;
+		try {
+			payload = await jwt.verify(token);
+			if (!payload) return { error: "Invalid token" };
+		} catch {
+			return { error: "Invalid token" };
+		}
+
+		const user = getUserByUsername.get(payload.username);
+		if (!user) return { error: "User not found" };
+
+		try {
+			db.query(`DELETE FROM tweetaai_chats WHERE user_id = ?`).run(user.id);
+			return { success: true };
+		} catch (error) {
+			console.error("Failed to clear chat history:", error);
+			return { error: "Failed to clear chat history" };
+		}
+	})
+
 	.post("/chat", async ({ body, jwt, headers }) => {
 		const authorization = headers.authorization;
 		if (!authorization) return { error: "Authentication required" };

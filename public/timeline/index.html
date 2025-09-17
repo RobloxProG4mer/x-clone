@@ -167,7 +167,7 @@
 
     <div class="tweetaai-page">
       <div class="tweetaai-header">
-        <button class="back-button" onclick="history.back()">
+        <button class="back-button" id="tweetaaiBackBtn">
           <svg
             xmlns="http://www.w3.org/2000/svg"
             width="24"
@@ -186,6 +186,14 @@
         <div class="tweetaai-header-info">
           <h1>TweetaAI</h1>
           <p>Chat with our AI assistant</p>
+        </div>
+        <div class="tweetaai-controls">
+          <button class="tweetaai-control-btn" id="clearHistoryBtn" title="Clear chat history">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M3 6h18l-2 13H5L3 6z"/>
+              <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/>
+            </svg>
+          </button>
         </div>
       </div>
 

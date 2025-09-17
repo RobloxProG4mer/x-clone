@@ -9,19 +9,44 @@ let _user;
 const closeDropdown = (dropdown) => {
 	if (!dropdown) return;
 	dropdown.classList.remove("open");
-	const onTransitionEnd = (ev) => {
-		if (ev.propertyName === "opacity") {
-			dropdown.style.display = "none";
-			dropdown.removeEventListener("transitionend", onTransitionEnd);
-		}
+	
+	// Use a more reliable approach for hiding
+	const hideDropdown = () => {
+		dropdown.style.display = "none";
+		dropdown.removeEventListener("transitionend", hideDropdown);
 	};
-	const fallback = setTimeout(() => {
-		if (getComputedStyle(dropdown).opacity === "0") {
+	
+	dropdown.addEventListener("transitionend", hideDropdown);
+	
+	// Fallback in case transition doesn't fire
+	setTimeout(() => {
+		if (!dropdown.classList.contains("open")) {
 			dropdown.style.display = "none";
 		}
-		clearTimeout(fallback);
-	}, 300);
-	dropdown.addEventListener("transitionend", onTransitionEnd);
+	}, 250);
+};
+
+const openDropdown = (dropdown) => {
+	if (!dropdown) return;
+	
+	// Ensure proper initial state
+	dropdown.style.display = "block";
+	dropdown.style.opacity = "0";
+	dropdown.style.visibility = "hidden";
+	dropdown.style.transform = "translateY(-8px)";
+	
+	// Force reflow
+	dropdown.offsetHeight;
+	
+	// Apply open styles
+	dropdown.classList.add("open");
+	
+	// Set final styles after a short delay
+	setTimeout(() => {
+		dropdown.style.opacity = "";
+		dropdown.style.visibility = "";
+		dropdown.style.transform = "";
+	}, 10);
 };
 
 (async () => {
@@ -77,7 +102,10 @@ const closeDropdown = (dropdown) => {
 	const outsideClickHandler = (e) => {
 		const accountBtn = document.querySelector(".account");
 		const dropdown = document.getElementById("accountDropdown");
-		if (!dropdown) return;
+		
+		if (!dropdown || !accountBtn) return;
+		
+		// Check if click is outside both button and dropdown
 		if (!accountBtn.contains(e.target) && !dropdown.contains(e.target)) {
 			closeDropdown(dropdown);
 			document.removeEventListener("click", outsideClickHandler);
@@ -87,12 +115,23 @@ const closeDropdown = (dropdown) => {
 	document.querySelector(".account").addEventListener("click", (e) => {
 		e.stopPropagation();
 		e.preventDefault();
+		
 		const dropdown = document.getElementById("accountDropdown");
-		if (!dropdown.classList.contains("open")) {
-			dropdown.style.display = "block";
-			void dropdown.offsetHeight;
-			dropdown.classList.add("open");
-			document.addEventListener("click", outsideClickHandler);
+		if (!dropdown) return;
+		
+		const isOpen = dropdown.classList.contains("open");
+		
+		// Close any other open dropdowns
+		document.querySelectorAll(".account-dropdown").forEach(d => {
+			if (d !== dropdown) closeDropdown(d);
+		});
+		
+		if (!isOpen) {
+			openDropdown(dropdown);
+			// Add outside click handler with delay to prevent immediate closure
+			setTimeout(() => {
+				document.addEventListener("click", outsideClickHandler, { once: false });
+			}, 50);
 		} else {
 			closeDropdown(dropdown);
 			document.removeEventListener("click", outsideClickHandler);

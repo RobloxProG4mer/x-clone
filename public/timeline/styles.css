@@ -4211,9 +4211,10 @@ nav {
   max-width: 600px;
   margin: 0 auto;
   padding: 24px;
-  min-height: 100vh;
+  height: 100vh;
   display: none;
   flex-direction: column;
+  overflow: hidden;
 }
 
 .tweetaai-header {
@@ -4223,6 +4224,7 @@ nav {
   margin-bottom: 32px;
   padding-bottom: 16px;
   border-bottom: 1px solid var(--border-secondary);
+  justify-content: space-between;
 }
 
 .tweetaai-header .back-button {
@@ -4252,10 +4254,44 @@ nav {
   font-size: 14px;
 }
 
+.tweetaai-controls {
+  display: flex;
+  gap: 8px;
+}
+
+.tweetaai-control-btn {
+  background: none;
+  border: 1px solid var(--border-secondary);
+  border-radius: 8px;
+  padding: 8px;
+  cursor: pointer;
+  color: var(--text-secondary);
+  transition: all 0.2s;
+}
+
+.tweetaai-control-btn:hover {
+  background-color: var(--bg-secondary);
+  border-color: var(--border-hover);
+  color: var(--text-primary);
+}
+
+.message-wrapper {
+  margin: 12px 0;
+}
+
+.message-timestamp {
+  font-size: 11px;
+  color: var(--text-tertiary);
+  margin-bottom: 4px;
+  text-align: left;
+}
+
 #tweetaai-messages {
   flex: 1;
   margin-bottom: 24px;
-  min-height: 300px;
+  min-height: 0;
+  overflow-y: auto;
+  max-height: calc(100vh - 300px);
 }
 
 .tweetaai-page .bubble {
@@ -4313,6 +4349,7 @@ nav {
   color: var(--text-primary);
   resize: none;
   line-height: 1.4;
+  overflow-y: hidden;
 }
 
 .tweetaai-composer textarea:focus {

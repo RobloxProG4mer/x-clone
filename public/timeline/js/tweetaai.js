@@ -6,12 +6,15 @@ let isLoading = false;
 let currentStreamElement = null;
 let abortController = null;
 
-function appendMessage(text, cls, isThinking = false) {
+function appendMessage(text, cls, isThinking = false, timestamp = null) {
 	const messages = document.getElementById("tweetaai-messages");
 	const emptyState = messages.querySelector(".tweetaai-empty-state");
 	if (emptyState) {
 		emptyState.remove();
 	}
+
+	const messageWrapper = document.createElement("div");
+	messageWrapper.className = "message-wrapper";
 
 	const div = document.createElement("div");
 	div.className = `bubble ${cls}`;
@@ -19,9 +22,62 @@ function appendMessage(text, cls, isThinking = false) {
 		div.classList.add("thinking");
 	}
 	div.textContent = text;
-	messages.appendChild(div);
+
+	if (timestamp && cls === "ai") {
+		const timeEl = document.createElement("div");
+		timeEl.className = "message-timestamp";
+		timeEl.textContent = new Date(timestamp).toLocaleString();
+		messageWrapper.appendChild(timeEl);
+	}
+
+	messageWrapper.appendChild(div);
+	messages.appendChild(messageWrapper);
 	messages.scrollTop = messages.scrollHeight;
 	return div;
+}
+
+async function clearChatHistory() {
+	if (!authToken) return;
+
+	if (
+		!confirm(
+			"Are you sure you want to clear all chat history? This cannot be undone.",
+		)
+	) {
+		return;
+	}
+
+	try {
+		const response = await fetch("/api/tweetaai/history", {
+			method: "DELETE",
+			headers: {
+				Authorization: `Bearer ${authToken}`,
+			},
+		});
+
+		const data = await response.json();
+
+		if (data.success) {
+			const messages = document.getElementById("tweetaai-messages");
+			messages.innerHTML = `
+				<div class="tweetaai-empty-state">
+					<svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+						<path d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386L8.46 15.54z" />
+					</svg>
+					<h3>Chat with TweetaAI</h3>
+					<p>Ask me anything! I'll keep my responses concise and helpful.</p>
+				</div>
+			`;
+			toastQueue.add(
+				"<h1>Chat history cleared</h1><p>All previous conversations have been deleted</p>",
+			);
+		} else {
+			toastQueue.add("<h1>Error</h1><p>Failed to clear chat history</p>");
+		}
+	} catch (error) {
+		console.error("Failed to clear chat history:", error);
+		toastQueue.add("<h1>Error</h1><p>Failed to clear chat history</p>");
+	}
 }
 
 function createStreamingMessage() {
@@ -41,7 +97,44 @@ function createStreamingMessage() {
 
 function autoResizeTextarea(textarea) {
 	textarea.style.height = "auto";
-	textarea.style.height = Math.min(textarea.scrollHeight, 120) + "px";
+	const newHeight = Math.min(textarea.scrollHeight, 120);
+	textarea.style.height = newHeight + "px";
+
+	if (textarea.scrollHeight > 44) {
+		textarea.style.overflowY = "auto";
+	} else {
+		textarea.style.overflowY = "hidden";
+	}
+}
+
+async function loadChatHistory() {
+	if (!authToken) return;
+
+	try {
+		const response = await fetch("/api/tweetaai/history", {
+			headers: {
+				Authorization: `Bearer ${authToken}`,
+			},
+		});
+
+		const data = await response.json();
+
+		if (data.success && data.chats) {
+			const messages = document.getElementById("tweetaai-messages");
+			const emptyState = messages.querySelector(".tweetaai-empty-state");
+
+			if (data.chats.length > 0 && emptyState) {
+				emptyState.remove();
+			}
+
+			data.chats.forEach((chat) => {
+				appendMessage(chat.prompt, "user");
+				appendMessage(chat.response, "ai");
+			});
+		}
+	} catch (error) {
+		console.error("Failed to load chat history:", error);
+	}
 }
 
 function updateSendButton() {
@@ -128,8 +221,15 @@ async function streamChatResponse(message, token) {
 function initializeTweetaAI() {
 	const messageInput = document.getElementById("tweetaai-message");
 	const chatForm = document.getElementById("tweetaaiChatForm");
+	const clearBtn = document.getElementById("clearHistoryBtn");
 
 	if (!messageInput || !chatForm) return;
+
+	loadChatHistory();
+
+	if (clearBtn) {
+		clearBtn.addEventListener("click", clearChatHistory);
+	}
 
 	messageInput.addEventListener("input", () => {
 		autoResizeTextarea(messageInput);
@@ -217,6 +317,10 @@ document.getElementById("aiBtn")?.addEventListener("click", () => {
 			}, 0);
 		},
 	});
+});
+
+document.getElementById("tweetaaiBackBtn")?.addEventListener("click", () => {
+	switchPage("timeline", { path: "/" });
 });
 
 export { initializeTweetaAI };
