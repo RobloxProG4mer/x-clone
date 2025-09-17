@@ -6,6 +6,42 @@ import toastQueue from "../../shared/toasts.js";
 import getUser, { authToken } from "./auth.js";
 import openTweet from "./tweet.js";
 
+async function checkReplyPermissions(tweet, replyRestriction) {
+	try {
+		const response = await fetch(`/api/tweets/can-reply/${tweet.id}`, {
+			headers: {
+				'Authorization': `Bearer ${authToken}`
+			}
+		});
+		
+		if (!response.ok) {
+			return { canReply: false, restrictionText: 'Unable to check reply permissions' };
+		}
+		
+		const data = await response.json();
+		
+		let restrictionText = '';
+		switch (replyRestriction) {
+			case 'following':
+				restrictionText = `Only people @${tweet.author.username} follows can reply`;
+				break;
+			case 'followers':
+				restrictionText = `Only people who follow @${tweet.author.username} can reply`;
+				break;
+			case 'verified':
+				restrictionText = 'Only verified users can reply';
+				break;
+			default:
+				restrictionText = data.canReply ? 'You can reply' : 'You cannot reply to this tweet';
+		}
+		
+		return { canReply: data.canReply, restrictionText };
+	} catch (error) {
+		console.error('Error checking reply permissions:', error);
+		return { canReply: false, restrictionText: 'Error checking reply permissions' };
+	}
+}
+
 async function showInteractionUsers(tweetId, interaction, title) {
 	try {
 		const response = await fetch(`/api/tweets/${tweetId}/${interaction}`, {
@@ -76,7 +112,7 @@ async function showInteractionUsers(tweetId, interaction, title) {
 			userItem.addEventListener("click", async () => {
 				overlay.remove();
 				const { default: openProfile } = await import("./profile.js");
-				openProfile(user);
+				openProfile(user.username);
 			});
 
 			usersList.appendChild(userItem);
@@ -1166,7 +1202,8 @@ export const createTweetElement = (tweet, config = {}) => {
 
 	const tweetInteractionsBookmarkEl = document.createElement("button");
 	tweetInteractionsBookmarkEl.className = "engagement";
-	tweetInteractionsBookmarkEl.dataset.bookmarked = tweet.bookmarked_by_user || false;
+	tweetInteractionsBookmarkEl.dataset.bookmarked =
+		tweet.bookmarked_by_user || false;
 	tweetInteractionsBookmarkEl.style.setProperty("--color", "255, 169, 0");
 
 	const bookmarkColor = tweet.bookmarked_by_user ? "#FFA900" : "currentColor";
@@ -1198,8 +1235,11 @@ export const createTweetElement = (tweet, config = {}) => {
 		}
 
 		try {
-			const isBookmarked = tweetInteractionsBookmarkEl.dataset.bookmarked === "true";
-			const endpoint = isBookmarked ? "/api/bookmarks/remove" : "/api/bookmarks/add";
+			const isBookmarked =
+				tweetInteractionsBookmarkEl.dataset.bookmarked === "true";
+			const endpoint = isBookmarked
+				? "/api/bookmarks/remove"
+				: "/api/bookmarks/add";
 
 			const response = await fetch(endpoint, {
 				method: "POST",
@@ -1229,13 +1269,49 @@ export const createTweetElement = (tweet, config = {}) => {
 					toastQueue.add(`<h1>Bookmark removed</h1>`);
 				}
 			} else {
-				toastQueue.add(`<h1>${result.error || "Failed to bookmark tweet"}</h1>`);
+				toastQueue.add(
+					`<h1>${result.error || "Failed to bookmark tweet"}</h1>`,
+				);
 			}
 		} catch (error) {
 			console.error("Error bookmarking tweet:", error);
 			toastQueue.add(`<h1>Network error. Please try again.</h1>`);
 		}
 	});
+
+	// Check reply restrictions and modify reply button accordingly
+	const replyRestriction = tweet.reply_restriction || 'everyone';
+
+	if (replyRestriction !== 'everyone') {
+		// Get current user info to check permissions
+		import('./auth.js').then(({ authToken }) => {
+			if (authToken) {
+				// This is async but we'll handle the UI update
+				checkReplyPermissions(tweet, replyRestriction).then(({ canReply: allowed, restrictionText }) => {
+					if (!allowed) {
+						tweetInteractionsReplyEl.disabled = true;
+						tweetInteractionsReplyEl.style.opacity = '0.5';
+						tweetInteractionsReplyEl.style.cursor = 'not-allowed';
+						tweetInteractionsReplyEl.title = 'You cannot reply to this tweet';
+					}
+					
+					// Add restriction text below interactions
+					if (restrictionText) {
+						const restrictionEl = document.createElement('div');
+						restrictionEl.className = 'reply-restriction-info';
+						restrictionEl.textContent = restrictionText;
+						restrictionEl.style.cssText = `
+							font-size: 13px;
+							color: var(--text-secondary);
+							margin-top: 8px;
+							padding-left: 20px;
+						`;
+						tweetInteractionsEl.appendChild(restrictionEl);
+					}
+				});
+			}
+		});
+	}
 
 	tweetInteractionsEl.appendChild(tweetInteractionsLikeEl);
 	tweetInteractionsEl.appendChild(tweetInteractionsRetweetEl);

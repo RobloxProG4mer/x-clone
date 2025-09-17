@@ -194,7 +194,10 @@ export default new Elysia({ prefix: "/bookmarks" })
 			if (!user) return { error: "User not found" };
 
 			const { limit = 20 } = query;
-			const bookmarkedTweets = getBookmarkedTweets.all(user.id, parseInt(limit));
+			const bookmarkedTweets = getBookmarkedTweets.all(
+				user.id,
+				parseInt(limit),
+			);
 
 			const postIds = bookmarkedTweets.map((tweet) => tweet.id);
 			if (postIds.length === 0) {
@@ -217,8 +220,12 @@ export default new Elysia({ prefix: "/bookmarks" })
 			const userBookmarks = getUserBookmarksQuery.all(user.id, ...postIds);
 
 			const likedPosts = new Set(userLikes.map((like) => like.post_id));
-			const retweetedPosts = new Set(userRetweets.map((retweet) => retweet.post_id));
-			const bookmarkedPosts = new Set(userBookmarks.map((bookmark) => bookmark.post_id));
+			const retweetedPosts = new Set(
+				userRetweets.map((retweet) => retweet.post_id),
+			);
+			const bookmarkedPosts = new Set(
+				userBookmarks.map((bookmark) => bookmark.post_id),
+			);
 
 			const processedBookmarks = bookmarkedTweets.map((tweet) => ({
 				...tweet,

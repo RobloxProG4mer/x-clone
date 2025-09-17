@@ -9,7 +9,7 @@ export default async function openTweet(
 	{ repliesCache, threadPostsCache } = {},
 ) {
 	if (!tweet?.author) {
-		const apiOutput = await await (
+		const apiOutput = await (
 			await fetch(`/api/tweets/${tweet.id}`, {
 				headers: authToken ? { Authorization: `Bearer ${authToken}` } : {},
 			})

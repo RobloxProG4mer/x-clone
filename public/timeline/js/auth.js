@@ -125,7 +125,16 @@ const closeDropdown = (dropdown) => {
 	});
 
 	document.getElementById("homeBtn").addEventListener("click", () => {
-		window.location.href = "/";
+		if (window.location.pathname === "/") {
+			window.location.reload();
+		} else {
+			switchPage("timeline", {
+				path: "/",
+				recoverState: () => {
+					window.location.reload();
+				},
+			});
+		}
 	});
 
 	document.getElementById("signOutLink").addEventListener("click", (e) => {

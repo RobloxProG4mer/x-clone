@@ -645,21 +645,43 @@
             >
               Follow
             </button>
-            <div class="profile-dropdown" id="profileDropdown" style="display: none">
-              <button class="profile-btn profile-btn-secondary profile-dropdown-btn" id="profileDropdownBtn">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                  <circle cx="12" cy="12" r="1"/>
-                  <circle cx="12" cy="5" r="1"/>
-                  <circle cx="12" cy="19" r="1"/>
+            <div
+              class="profile-dropdown"
+              id="profileDropdown"
+              style="display: none"
+            >
+              <button
+                class="profile-btn profile-btn-secondary profile-dropdown-btn"
+                id="profileDropdownBtn"
+              >
+                <svg
+                  width="20"
+                  height="20"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                >
+                  <circle cx="12" cy="12" r="1" />
+                  <circle cx="12" cy="5" r="1" />
+                  <circle cx="12" cy="19" r="1" />
                 </svg>
               </button>
               <div class="dropdown-menu" id="profileDropdownMenu">
                 <button class="dropdown-item" id="blockUserBtn">
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <circle cx="12" cy="12" r="10"/>
-                    <path d="4.93 4.93l14.14 14.14"/>
+                  <svg
+                    width="16"
+                    height="16"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                  >
+                    <circle cx="12" cy="12" r="10" />
+                    <path d="M4.93 4.93l14.14 14.14" />
                   </svg>
-                  Block @<span id="blockUsername"></span>
+                  Block @
+                  <span id="blockUsername"></span>
                 </button>
               </div>
             </div>

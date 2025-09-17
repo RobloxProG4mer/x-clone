@@ -9,7 +9,7 @@ const JWT_SECRET = process.env.JWT_SECRET;
 const getTimelinePosts = db.query(`
   SELECT posts.* FROM posts 
   LEFT JOIN blocks ON (posts.user_id = blocks.blocked_id AND blocks.blocker_id = ?)
-  WHERE posts.reply_to IS NULL AND blocks.id IS NULL
+  WHERE posts.reply_to IS NULL AND blocks.id IS NULL AND posts.pinned = 0
   ORDER BY posts.created_at DESC 
   LIMIT 20
 `);
@@ -18,7 +18,7 @@ const getFollowingTimelinePosts = db.query(`
   SELECT posts.* FROM posts 
   JOIN follows ON posts.user_id = follows.following_id
   LEFT JOIN blocks ON (posts.user_id = blocks.blocked_id AND blocks.blocker_id = ?)
-  WHERE follows.follower_id = ? AND posts.reply_to IS NULL AND blocks.id IS NULL
+  WHERE follows.follower_id = ? AND posts.reply_to IS NULL AND blocks.id IS NULL AND posts.pinned = 0
   ORDER BY posts.created_at DESC 
   LIMIT 20
 `);
@@ -217,9 +217,15 @@ export default new Elysia({ prefix: "/timeline" })
 				topReply.bookmarked_by_user = userBookmarkedPosts.has(topReply.id);
 			}
 
+			const author = userMap[post.user_id];
+			if (!author) {
+				console.error(`Missing author for post ${post.id}, user_id: ${post.user_id}`);
+				return null; // Skip posts with missing authors
+			}
+
 			return {
 				...post,
-				author: userMap[post.user_id],
+				author,
 				liked_by_user: userLikedPosts.has(post.id),
 				retweeted_by_user: userRetweetedPosts.has(post.id),
 				bookmarked_by_user: userBookmarkedPosts.has(post.id),
@@ -228,7 +234,7 @@ export default new Elysia({ prefix: "/timeline" })
 				top_reply: shouldShowTopReply ? topReply : null,
 				attachments: getTweetAttachments(post.id),
 			};
-		});
+		}).filter(Boolean); // Remove null entries
 
 		return { timeline };
 	})

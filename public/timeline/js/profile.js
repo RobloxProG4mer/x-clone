@@ -847,11 +847,13 @@ editBannerUpload?.addEventListener("change", (e) => {
 editRemoveBannerBtn?.addEventListener("click", handleEditBannerRemoval);
 
 // Profile dropdown event listeners
-document.getElementById("profileDropdownBtn")?.addEventListener("click", (e) => {
-	e.stopPropagation();
-	const menu = document.getElementById("profileDropdownMenu");
-	menu.classList.toggle("show");
-});
+document
+	.getElementById("profileDropdownBtn")
+	?.addEventListener("click", (e) => {
+		e.stopPropagation();
+		const menu = document.getElementById("profileDropdownMenu");
+		menu.classList.toggle("show");
+	});
 
 // Close dropdown when clicking outside
 document.addEventListener("click", (e) => {
@@ -970,7 +972,7 @@ const updateBlockButton = (isBlocked) => {
 		blockBtn.innerHTML = `
 			<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
 				<circle cx="12" cy="12" r="10"/>
-				<path d="4.93 4.93l14.14 14.14"/>
+				<path d="M4.93 4.93l14.14 14.14"/>
 			</svg>
 			Unblock @<span id="blockUsername">${currentUsername}</span>
 		`;
@@ -979,7 +981,7 @@ const updateBlockButton = (isBlocked) => {
 		blockBtn.innerHTML = `
 			<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
 				<circle cx="12" cy="12" r="10"/>
-				<path d="4.93 4.93l14.14 14.14"/>
+				<path d="M4.93 4.93l14.14 14.14"/>
 			</svg>
 			Block @<span id="blockUsername">${currentUsername}</span>
 		`;
@@ -1004,7 +1006,9 @@ const handleBlockUser = async () => {
 
 		if (success) {
 			updateBlockButton(true);
-			toastQueue.add(`<h1>User blocked</h1><p>@${currentUsername} has been blocked.</p>`);
+			toastQueue.add(
+				`<h1>User blocked</h1><p>@${currentUsername} has been blocked.</p>`,
+			);
 			// Close dropdown
 			document.getElementById("profileDropdownMenu").classList.remove("show");
 		} else {
@@ -1033,7 +1037,9 @@ const handleUnblockUser = async () => {
 
 		if (success) {
 			updateBlockButton(false);
-			toastQueue.add(`<h1>User unblocked</h1><p>@${currentUsername} has been unblocked.</p>`);
+			toastQueue.add(
+				`<h1>User unblocked</h1><p>@${currentUsername} has been unblocked.</p>`,
+			);
 			// Close dropdown
 			document.getElementById("profileDropdownMenu").classList.remove("show");
 		} else {

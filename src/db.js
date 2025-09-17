@@ -78,6 +78,7 @@ CREATE TABLE IF NOT EXISTS posts (
   quote_count INTEGER DEFAULT 0,
   source TEXT DEFAULT NULL,
   pinned BOOLEAN DEFAULT FALSE,
+  reply_restriction TEXT DEFAULT 'everyone', -- 'everyone', 'followers', 'following', 'verified'
   FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
   FOREIGN KEY (poll_id) REFERENCES polls(id) ON DELETE CASCADE,
   FOREIGN KEY (quote_tweet_id) REFERENCES posts(id) ON DELETE CASCADE
@@ -257,6 +258,23 @@ try {
 	}
 } catch (err) {
 	console.error("DB migration check failed:", err);
+}
+
+// Check for posts table migration
+try {
+	const postsTableInfo = db.query("PRAGMA table_info(posts);").all();
+	const postsColNames = postsTableInfo.map((c) => c.name);
+
+	if (!postsColNames.includes("reply_restriction")) {
+		try {
+			db.exec("ALTER TABLE posts ADD COLUMN reply_restriction TEXT DEFAULT 'everyone';");
+			console.log("Added 'reply_restriction' column to posts table");
+		} catch (e) {
+			console.error("Failed to add 'reply_restriction' column:", e);
+		}
+	}
+} catch (err) {
+	console.error("Posts migration check failed:", err);
 }
 
 export default db;

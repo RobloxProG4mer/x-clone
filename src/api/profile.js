@@ -183,6 +183,9 @@ const getQuotedTweet = db.query(`
 const getAttachmentsByPostId = db.query(`
   SELECT * FROM attachments WHERE post_id = ?
 `);
+const isSuspendedQuery = db.query(`
+  SELECT * FROM suspensions WHERE user_id = ? AND status = 'active'
+`);
 
 const getTweetAttachments = (tweetId) => {
 	return getAttachmentsByPostId.all(tweetId);
@@ -231,7 +234,6 @@ const getPollDataForTweet = (tweetId, userId) => {
 	};
 };
 
-// Helper function aliases
 const getPollDataForPost = getPollDataForTweet;
 const getQuotedPostData = getQuotedTweetData;
 const getPostAttachments = getTweetAttachments;
@@ -253,6 +255,11 @@ export default new Elysia({ prefix: "/profile" })
 			const user = getUserByUsername.get(username);
 			if (!user) {
 				return { error: "User not found" };
+			}
+
+			const isSuspended = isSuspendedQuery.get(user.id);
+			if (isSuspended) {
+				return { error: "User is suspended" };
 			}
 
 			// Get user's posts and retweets separately, then combine

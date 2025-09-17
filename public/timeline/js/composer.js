@@ -18,9 +18,12 @@ export const useComposer = (
 	const fileInput = element.querySelector("#file-input");
 	const fileUploadBtn = element.querySelector("#file-upload-btn");
 	const attachmentPreview = element.querySelector("#attachment-preview");
+	const replyRestrictionBtn = element.querySelector("#reply-restriction-btn");
+	const replyRestrictionSelect = element.querySelector("#reply-restriction-select");
 
 	let pollEnabled = false;
 	let pendingFiles = [];
+	let replyRestriction = 'everyone';
 
 	const updateCharacterCount = () => {
 		const length = textarea.value.length;
@@ -298,6 +301,35 @@ export const useComposer = (
 		addPollOptionBtn.addEventListener("click", () => addPollOption());
 	}
 
+	// Reply restriction functionality
+	if (replyRestrictionBtn && replyRestrictionSelect) {
+		replyRestrictionBtn.addEventListener("click", () => {
+			const isVisible = replyRestrictionSelect.style.display !== "none";
+			replyRestrictionSelect.style.display = isVisible ? "none" : "block";
+		});
+
+		replyRestrictionSelect.addEventListener("change", () => {
+			replyRestriction = replyRestrictionSelect.value;
+			replyRestrictionSelect.style.display = "none";
+			
+			// Update button appearance based on selection
+			const restrictionTexts = {
+				'everyone': 'Everyone can reply',
+				'following': 'People you follow can reply',
+				'followers': 'Your followers can reply',
+				'verified': 'Verified accounts can reply'
+			};
+			replyRestrictionBtn.title = restrictionTexts[replyRestriction];
+		});
+
+		// Hide when clicking outside
+		document.addEventListener("click", (e) => {
+			if (!replyRestrictionBtn.contains(e.target) && !replyRestrictionSelect.contains(e.target)) {
+				replyRestrictionSelect.style.display = "none";
+			}
+		});
+	}
+
 	tweetButton.addEventListener("click", async () => {
 		const content = textarea.value.trim();
 
@@ -371,6 +403,7 @@ export const useComposer = (
 					? "mobile_web"
 					: "desktop_web",
 				files: uploadedFiles,
+				reply_restriction: replyRestriction,
 			};
 
 			if (poll) {
@@ -474,6 +507,22 @@ export const createComposer = async ({
                   <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-image-icon lucide-image"><rect width="18" height="18" x="3" y="3" rx="2" ry="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/></svg>
                 </button>
                 <input type="file" id="file-input" multiple accept="image/png,image/webp,image/avif,image/jpeg,image/jpg,image/gif,video/mp4" style="display: none;" title="Images: max 10MB, Videos: max 100MB (auto-compressed if needed)">
+                <div class="reply-restriction-container">
+                  <button type="button" id="reply-restriction-btn" title="Who can reply">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                      <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+                      <circle cx="9" cy="7" r="4"/>
+                      <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
+                      <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+                    </svg>
+                  </button>
+                  <select id="reply-restriction-select" style="display: none;">
+                    <option value="everyone">Everyone can reply</option>
+                    <option value="following">People you follow</option>
+                    <option value="followers">Your followers</option>
+                    <option value="verified">Verified accounts</option>
+                  </select>
+                </div>
               </div>
               <div class="compose-submit">
                 <div class="character-counter" id="">

@@ -10,6 +10,7 @@ import profile, { avatarRoutes } from "./api/profile.js";
 import search from "./api/search.js";
 import timeline from "./api/timeline.js";
 import tweet from "./api/tweet.js";
+import tweetaai from "./api/tweetaai.js";
 import upload, { uploadRoutes } from "./api/upload.js";
 import db from "./db.js";
 import ratelimit from "./helpers/ratelimit.js";
@@ -63,6 +64,7 @@ export default new Elysia({
 	.use(timeline)
 	.use(search)
 	.use(upload)
+	.use(tweetaai)
 	.use(notifications)
 	.use(dm)
 	.use(avatarRoutes)

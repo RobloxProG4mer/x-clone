@@ -8,6 +8,38 @@ import { addNotification } from "./notifications.js";
 const JWT_SECRET = process.env.JWT_SECRET;
 
 const getUserByUsername = db.query("SELECT * FROM users WHERE username = ?");
+
+// Helper function to check if user can reply based on restrictions
+const checkReplyPermission = async (replier, originalAuthor, restriction) => {
+	// Original author can always get replies
+	if (replier.id === originalAuthor.id) {
+		return true;
+	}
+
+	switch (restriction) {
+		case 'followers': {
+			// Check if original author follows the replier
+			const isFollower = db.query("SELECT 1 FROM follows WHERE follower_id = ? AND following_id = ?")
+				.get(replier.id, originalAuthor.id);
+			return !!isFollower;
+		}
+		
+		case 'following': {
+			// Check if original author is followed by the replier
+			const isFollowing = db.query("SELECT 1 FROM follows WHERE follower_id = ? AND following_id = ?")
+				.get(originalAuthor.id, replier.id);
+			return !!isFollowing;
+		}
+		
+		case 'verified':
+			// Check if replier is verified
+			return !!replier.verified;
+		
+		case 'everyone':
+		default:
+			return true;
+	}
+};
 const getTweetById = db.query(`
   SELECT *
   FROM posts 
@@ -40,8 +72,8 @@ const getTweetReplies = db.query(`
 `);
 
 const createTweet = db.query(`
-	INSERT INTO posts (id, user_id, content, reply_to, source, poll_id, quote_tweet_id) 
-  VALUES (?, ?, ?, ?, ?, ?, ?)
+	INSERT INTO posts (id, user_id, content, reply_to, source, poll_id, quote_tweet_id, reply_restriction) 
+  VALUES (?, ?, ?, ?, ?, ?, ?, ?)
 	RETURNING *
 `);
 
@@ -243,7 +275,7 @@ export default new Elysia({ prefix: "/tweets" })
 			const user = getUserByUsername.get(payload.username);
 			if (!user) return { error: "User not found" };
 
-			const { content, reply_to, source, poll, quote_tweet_id, files } = body;
+			const { content, reply_to, source, poll, quote_tweet_id, files, reply_restriction } = body;
 			const tweetContent = content;
 
 			if (!tweetContent || tweetContent.trim().length === 0) {
@@ -253,6 +285,11 @@ export default new Elysia({ prefix: "/tweets" })
 			if (tweetContent.length > 400) {
 				return { error: "Tweet content must be 400 characters or less" };
 			}
+
+			// Validate reply_restriction
+			const validRestrictions = ['everyone', 'followers', 'following', 'verified'];
+			const replyRestriction = reply_restriction && validRestrictions.includes(reply_restriction) 
+				? reply_restriction : 'everyone';
 
 			if (
 				poll &&
@@ -272,6 +309,32 @@ export default new Elysia({ prefix: "/tweets" })
 				(!poll.duration || poll.duration < 5 || poll.duration > 10080)
 			) {
 				return { error: "Poll duration must be between 5 minutes and 7 days" };
+			}
+
+			// Check reply restrictions if this is a reply
+			if (reply_to) {
+				const originalTweet = getTweetById.get(reply_to);
+				if (!originalTweet) {
+					return { error: "Original tweet not found" };
+				}
+
+				const originalAuthor = db.query("SELECT * FROM users WHERE id = ?").get(originalTweet.user_id);
+				
+				// Check if either user has blocked the other
+				const isBlocked = db.query("SELECT 1 FROM blocks WHERE (blocker_id = ? AND blocked_id = ?) OR (blocker_id = ? AND blocked_id = ?)")
+					.get(user.id, originalAuthor.id, originalAuthor.id, user.id);
+				
+				if (isBlocked) {
+					return { error: "You cannot reply to this tweet" };
+				}
+
+				if (originalTweet.reply_restriction && originalTweet.reply_restriction !== 'everyone') {
+					// Check if user can reply based on restriction
+					const canReply = await checkReplyPermission(user, originalAuthor, originalTweet.reply_restriction);
+					if (!canReply) {
+						return { error: "You don't have permission to reply to this tweet" };
+					}
+				}
 			}
 
 			const tweetId = Bun.randomUUIDv7();
@@ -299,6 +362,7 @@ export default new Elysia({ prefix: "/tweets" })
 				source || null,
 				pollId,
 				quote_tweet_id || null,
+				replyRestriction,
 			);
 			if (reply_to) {
 				updatePostCounts.run(reply_to);
@@ -712,5 +776,49 @@ export default new Elysia({ prefix: "/tweets" })
 		} catch (error) {
 			console.error("Get quoters error:", error);
 			return { error: "Failed to get quoters" };
+		}
+	})
+	.get("/can-reply/:id", async ({ jwt, headers, params }) => {
+		const authorization = headers.authorization;
+		if (!authorization) return { canReply: false, error: "Authentication required" };
+
+		try {
+			const payload = await jwt.verify(authorization.replace("Bearer ", ""));
+			if (!payload) return { canReply: false, error: "Invalid token" };
+
+			const user = getUserByUsername.get(payload.username);
+			if (!user) return { canReply: false, error: "User not found" };
+
+			const { id } = params;
+			const tweet = getTweetById.get(id);
+			if (!tweet) return { canReply: false, error: "Tweet not found" };
+
+			const tweetAuthor = db.query("SELECT * FROM users WHERE id = ?").get(tweet.author_id);
+			if (!tweetAuthor) return { canReply: false, error: "Tweet author not found" };
+
+			// Check if user is blocked by tweet author
+			const isBlocked = db.query("SELECT 1 FROM blocks WHERE blocker_id = ? AND blocked_id = ?")
+				.get(tweetAuthor.id, user.id);
+			
+			if (isBlocked) {
+				return { canReply: false, reason: "blocked" };
+			}
+
+			const replyRestriction = tweet.reply_restriction || 'everyone';
+			
+			if (replyRestriction === 'everyone') {
+				return { canReply: true };
+			}
+
+			const canReply = await checkReplyPermission(user, tweetAuthor, replyRestriction);
+			
+			return { 
+				canReply,
+				restriction: replyRestriction,
+				reason: canReply ? null : 'restriction'
+			};
+		} catch (error) {
+			console.error("Check reply permission error:", error);
+			return { canReply: false, error: "Failed to check reply permission" };
 		}
 	});

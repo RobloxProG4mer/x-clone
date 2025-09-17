@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>TweetaAI</title>
+    <link rel="stylesheet" href="/shared/variables.css" />
+    <link rel="stylesheet" href="/shared/toasts.css" />
+    <style>
+      body {
+        font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+        padding: 20px;
+      }
+      #chat {
+        max-width: 720px;
+        margin: 0 auto;
+      }
+      .bubble {
+        padding: 10px 14px;
+        border-radius: 14px;
+        margin: 8px 0;
+      }
+      .user {
+        background: #e6f0ff;
+        text-align: right;
+      }
+      .ai {
+        background: #f2f2f2;
+      }
+      #input {
+        display: flex;
+        gap: 8px;
+        margin-top: 12px;
+      }
+      textarea {
+        flex: 1;
+        min-height: 44px;
+        resize: vertical;
+      }
+      button {
+        padding: 10px 14px;
+      }
+    </style>
+  </head>
+  <body>
+    <main id="chat">
+      <h1>TweetaAI</h1>
+      <div id="messages" aria-live="polite"></div>
+
+      <form id="input">
+        <textarea
+          id="message"
+          placeholder="Ask TweetaAI something..."
+        ></textarea>
+        <button id="send">Send</button>
+      </form>
+    </main>
+
+    <script src="/shared/toasts.js"></script>
+    <script src="/account/tweetaai/script.js"></script>
+  </body>
+</html>
