@@ -217,10 +217,7 @@ const requireAdmin = async ({ headers, jwt, set }) => {
 			return { error: "Invalid token" };
 		}
 
-		// For impersonation tokens, get the original admin user
-		const userId = payload.impersonation
-			? payload.originalUserId
-			: payload.userId;
+		const userId = payload.userId;
 		const user = adminQueries.findUserById.get(userId);
 
 		if (!user?.admin) {
@@ -230,8 +227,7 @@ const requireAdmin = async ({ headers, jwt, set }) => {
 
 		return {
 			user,
-			originalUser: user,
-			isImpersonating: !!payload.impersonation,
+			originalUser: user
 		};
 	} catch (_error) {
 		set.status = 401;
