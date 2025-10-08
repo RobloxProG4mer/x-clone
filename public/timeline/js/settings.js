@@ -733,6 +733,10 @@ const createSettingsPage = () => {
 
   const style = document.createElement("style");
   style.textContent = `
+		.main-content:has(.settings) {
+			max-width: 100%;
+		}
+		
 		.settings {
 			flex-direction: column;
 			min-height: 100vh;
@@ -850,7 +854,7 @@ const createSettingsPage = () => {
 		.setting-item {
 			display: flex;
 			flex-direction: column;
-			gap: 14px;
+			gap: 12px;
 			align-items: stretch;
 			padding: 18px 0;
 			border-bottom: 1px solid var(--border-primary);
@@ -863,6 +867,10 @@ const createSettingsPage = () => {
 			flex-direction: column;
 			gap: 4px;
 			min-width: 0;
+		}
+		
+		.setting-label:empty {
+			display: none;
 		}
 		
 		.setting-title {

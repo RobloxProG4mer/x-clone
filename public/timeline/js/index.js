@@ -152,18 +152,17 @@ if (currentPath.startsWith("/settings")) {
 } else if (currentPath === "/search") {
   showPage("search");
 } else if (currentPath.startsWith("/@")) {
-  // Handle profile routing on refresh
   const username = currentPath.slice(2);
   (async () => {
     const { loadProfile } = await import("./profile.js");
     loadProfile(username);
   })();
 } else if (currentPath.startsWith("/tweet/")) {
-  // Handle tweet detail routing on refresh
   const tweetId = currentPath.split("/tweet/")[1];
   (async () => {
-    const { loadTweet } = await import("./tweet.js");
-    loadTweet(tweetId);
+    const openTweet = await import("./tweet.js");
+
+		openTweet.default(tweetId);
   })();
 } else {
   showPage("timeline");

@@ -168,8 +168,8 @@ class AdminPanel {
       const stats = await this.apiCall("/api/admin/stats");
       this.renderStats(stats.stats);
       this.renderRecentActivity(stats.recentActivity);
-    } catch (error) {
-      this.showError("Failed to load dashboard");
+    } catch {
+			location.href = "/";
     }
   }
 
