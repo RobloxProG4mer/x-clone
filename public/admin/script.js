@@ -169,7 +169,7 @@ class AdminPanel {
       this.renderStats(stats.stats);
       this.renderRecentActivity(stats.recentActivity);
     } catch {
-			location.href = "/";
+      location.href = "/";
     }
   }
 
@@ -181,8 +181,7 @@ class AdminPanel {
           <div class="card-body text-center">
             <i class="bi bi-people-fill fs-1"></i>
             <h3>${stats.users.total}</h3>
-            <p class="mb-0">Total Users</p>
-            <small>Suspended: ${stats.users.suspended} | Verified: ${stats.users.verified}</small>
+            <p class="mb-0">Users</p>
           </div>
         </div>
       </div>
@@ -191,7 +190,7 @@ class AdminPanel {
           <div class="card-body text-center">
             <i class="bi bi-chat-left-text-fill fs-1"></i>
             <h3>${stats.posts.total}</h3>
-            <p class="mb-0">Total Posts</p>
+            <p class="mb-0">Posts</p>
           </div>
         </div>
       </div>
@@ -200,7 +199,7 @@ class AdminPanel {
           <div class="card-body text-center">
             <i class="bi bi-exclamation-triangle-fill fs-1"></i>
             <h3>${stats.suspensions.active}</h3>
-            <p class="mb-0">Active Suspensions</p>
+            <p class="mb-0">Suspensions (${stats.users.suspended})</p>
           </div>
         </div>
       </div>
@@ -208,8 +207,8 @@ class AdminPanel {
         <div class="card stat-card">
           <div class="card-body text-center">
             <i class="bi bi-clipboard-check-fill fs-1"></i>
-            <h3>${stats.suspensions.active}</h3>
-            <p class="mb-0">Active Suspensions</p>
+            <h3>${stats.users.verified}</h3>
+            <p class="mb-0">Verified users</p>
           </div>
         </div>
       </div>
@@ -517,10 +516,9 @@ class AdminPanel {
               <th>User</th>
               <th>Reason</th>
               <th>Severity</th>
-              <th>Suspended By</th>
+              <th>By</th>
               <th>Date</th>
               <th>Expires</th>
-              <th>Actions</th>
             </tr>
           </thead>
           <tbody>
@@ -1103,8 +1101,8 @@ class AdminPanel {
       bootstrap.Modal.getInstance(
         document.getElementById("tweetOnBehalfModal")
       ).hide();
-      this.showSuccess("Tweet posted successfully");
-      await this.loadPosts(this.currentPage.posts);
+
+			await this.loadPosts(this.currentPage.posts);
     } catch (error) {
       this.showError(error.message);
     }
@@ -1115,7 +1113,7 @@ class AdminPanel {
   }
 
   showSuccess(message, duration = 3000) {
-    this.showToast(message, "success", duration);
+    this.showToast(message, "Success", duration);
   }
 
   showToast(message, type, duration = 3000) {

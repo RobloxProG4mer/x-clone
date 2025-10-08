@@ -45,8 +45,6 @@ function connectWebSocket() {
   socket = ws;
 
   ws.onopen = () => {
-    console.log("WebSocket connected");
-
     if (authToken) {
       _safeSend(JSON.stringify({ type: "authenticate", token: authToken }));
     }
@@ -73,7 +71,6 @@ function connectWebSocket() {
   };
 
   socket.onclose = () => {
-    console.log("WebSocket disconnected");
     setTimeout(connectWebSocket, 3000);
   };
 
@@ -85,9 +82,7 @@ function connectWebSocket() {
 function handleWebSocketMessage(data) {
   switch (data.type) {
     case "authenticated":
-      if (data.success) {
-        console.log("WebSocket authenticated");
-      } else {
+      if (!data.success) {
         console.error("WebSocket authentication failed:", data.error);
       }
       break;
@@ -97,7 +92,7 @@ function handleWebSocketMessage(data) {
       break;
 
     default:
-      console.log("Unknown WebSocket message type:", data.type);
+      console.error("Unknown WebSocket message type:", data.type);
   }
 }
 
@@ -116,25 +111,22 @@ function handleNewMessage(data) {
 
 async function loadConversations() {
   if (!authToken) {
-    console.log("No auth token available for DM");
+    console.error("No auth token available for DM");
     return;
   }
 
   try {
-    console.log("Loading conversations...");
     const response = await fetch("/api/dm/conversations", {
       headers: { Authorization: `Bearer ${authToken}` },
     });
     const data = await response.json();
 
     if (data.error) {
-      console.error("DM API error:", data.error);
-      toastQueue.add("error", data.error);
+      toastQueue.add("An error occurred");
       return;
     }
 
     currentConversations = data.conversations || [];
-    console.log("Loaded conversations:", currentConversations.length);
     renderConversations();
     updateUnreadCount();
   } catch (error) {
@@ -498,16 +490,13 @@ function formatTime(date) {
 }
 
 async function openDMList() {
-  console.log("Opening DM list, authToken:", !!authToken);
 
   if (!authToken) {
-    console.log("No auth token, redirecting to timeline");
     toastQueue.add("error", "Please log in to access messages");
     switchPage("timeline", { path: "/" });
     return;
   }
 
-  console.log("Switching to DM page");
   switchPage("direct-messages", { path: "/dm" });
   await loadConversations();
 }
@@ -627,10 +616,8 @@ async function saveGroupSettings() {
 
       currentConversation.title = newTitle;
       renderConversationHeader();
-      toastQueue.add("success", "Group settings updated");
     } catch (error) {
       console.error("Failed to update group settings:", error);
-      toastQueue.add("error", "Failed to update group settings");
       return;
     }
   }
@@ -665,7 +652,6 @@ async function removeParticipantFromGroup(userId, username) {
     );
     renderParticipantsList();
     renderConversationHeader();
-    toastQueue.add("success", `${username} has been removed from the group`);
     loadConversations();
   } catch (error) {
     console.error("Failed to remove participant:", error);
@@ -1045,11 +1031,8 @@ function updateSendButton() {
 }
 
 document.addEventListener("DOMContentLoaded", () => {
-  console.log("DM module: DOM loaded, setting up event listeners");
-
   const dmBtn = document.getElementById("dmBtn");
   if (dmBtn) {
-    console.log("DM button found, adding event listener");
     dmBtn.addEventListener("click", openDMList);
   } else {
     console.error("DM button not found in DOM!");
@@ -1058,7 +1041,6 @@ document.addEventListener("DOMContentLoaded", () => {
   setTimeout(() => {
     const dmBtnDelayed = document.getElementById("dmBtn");
     if (dmBtnDelayed && !dmBtnDelayed.onclick) {
-      console.log("Adding delayed DM button event listener");
       dmBtnDelayed.addEventListener("click", openDMList);
     }
   }, 1000);

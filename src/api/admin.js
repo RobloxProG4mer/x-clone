@@ -51,7 +51,7 @@ const adminQueries = {
 
   // Recent activity
   getRecentUsers: db.query(
-    "SELECT username, created_at FROM users ORDER BY created_at DESC LIMIT 5"
+    "SELECT username, created_at FROM users ORDER BY created_at DESC LIMIT 15"
   ),
   getRecentSuspensions: db.query(`
     SELECT u.username, s.created_at
@@ -59,10 +59,9 @@ const adminQueries = {
     JOIN users u ON s.user_id = u.id
     WHERE s.status = 'active'
     ORDER BY s.created_at DESC
-    LIMIT 5
+    LIMIT 15
   `),
 
-  // User details
   getUserWithDetails: db.query(`
     SELECT u.*, 
            (SELECT COUNT(*) FROM posts WHERE user_id = u.id) as actual_post_count,
@@ -218,8 +217,7 @@ const requireAdmin = async ({ headers, jwt, set }) => {
       user: {},
     };
   }
-  console.log(payload)
-
+  
   const userId = payload.userId;
   const user = adminQueries.findUserById.get(userId);
 

@@ -68,14 +68,6 @@ export async function compressVideo(inputPath, outputPath, options = {}) {
 					});
 				});
 
-			// Add progress logging for debugging
-			command.on("progress", (progress) => {
-				console.log(
-					`Video compression progress: ${progress.percent?.toFixed(1) || 0}%`,
-				);
-			});
-
-			// Save the compressed video
 			command.save(outputPath);
 		});
 	} catch (error) {

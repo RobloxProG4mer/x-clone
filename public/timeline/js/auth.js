@@ -5,6 +5,7 @@ import { createTweetElement } from "./tweets.js";
 export const authToken = localStorage.getItem("authToken");
 
 let _user;
+const lastDropdownOpenAt = 0;
 
 const closeDropdown = (dropdown) => {
   if (!dropdown) return;
@@ -40,6 +41,9 @@ const openDropdown = (dropdown) => {
 
   // Apply open styles
   dropdown.classList.add("open");
+
+  // record open time to prevent immediate outside click closures
+  lastDropdownOpenAt = Date.now();
 
   // Set final styles after a short delay
   setTimeout(() => {
@@ -117,6 +121,10 @@ const openDropdown = (dropdown) => {
 
     if (!dropdown || !accountBtn) return;
 
+    // Ignore clicks that happen immediately after opening the dropdown
+    // to avoid race conditions with other global click handlers.
+    if (Date.now() - lastDropdownOpenAt < 200) return;
+
     if (!accountBtn.contains(e.target) && !dropdown.contains(e.target)) {
       closeDropdown(dropdown);
       document.removeEventListener("click", outsideClickHandler);
@@ -140,10 +148,8 @@ const openDropdown = (dropdown) => {
     if (!isOpen) {
       openDropdown(dropdown);
       if (!outsideClickHandlerAttached) {
-        setTimeout(() => {
-          document.addEventListener("click", outsideClickHandler);
-          outsideClickHandlerAttached = true;
-        }, 150);
+        document.addEventListener("click", outsideClickHandler);
+        outsideClickHandlerAttached = true;
       }
     } else {
       closeDropdown(dropdown);

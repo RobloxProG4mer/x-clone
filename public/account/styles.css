@@ -1,6 +1,12 @@
 @import url("/public/shared/variables.css");
 @import url("/public/shared/base.css");
 
+body {
+  max-width: 400px;
+  margin: 0px auto;
+  margin-top: 4em;
+}
+
 #login-form,
 #user-info {
   max-width: 920px;
@@ -174,22 +180,6 @@ h1 {
 
 @starting-style {
   h1 {
-    opacity: 0;
-    transform: translateY(6px);
-  }
-}
-
-.tagline {
-  margin-top: 2px;
-  margin-bottom: 32px;
-  font-size: 17px;
-  opacity: 0.9;
-  user-select: none;
-  transition: opacity 0.4s 150ms, transform 0.4s 150ms;
-}
-
-@starting-style {
-  .tagline {
     opacity: 0;
     transform: translateY(6px);
   }

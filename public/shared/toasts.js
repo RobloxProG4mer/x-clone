@@ -44,7 +44,7 @@ class D {
     return e(this, r);
   }
   set direction(t) {
-    console.log("set direction"), a(this, r, t);
+    a(this, r, t);
   }
   addEventListeners() {
     document.addEventListener("pointerdown", this.onStart), document.addEventListener("pointermove", this.onMove), document.addEventListener("pointerup", this.onEnd);

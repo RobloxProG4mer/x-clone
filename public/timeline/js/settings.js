@@ -42,7 +42,11 @@ initializeGlobalColors();
 
 const settingsPages = [
   { key: "account", title: "Account", content: () => createAccountContent() },
-  { key: "passkeys", title: "Passkeys", content: () => createPasskeysContent() },
+  {
+    key: "passkeys",
+    title: "Passkeys",
+    content: () => createPasskeysContent(),
+  },
   { key: "themes", title: "Themes", content: () => createThemesContent() },
   { key: "other", title: "Other", content: () => createOtherContent() },
 ];
@@ -310,7 +314,7 @@ const createPasskeysContent = () => {
 
   const group = document.createElement("div");
   group.className = "setting-group";
-  
+
   const h2 = document.createElement("h2");
   h2.textContent = "Your Passkeys";
   group.appendChild(h2);
@@ -319,7 +323,8 @@ const createPasskeysContent = () => {
   description.style.color = "var(--text-secondary)";
   description.style.fontSize = "14px";
   description.style.marginBottom = "16px";
-  description.textContent = "Passkeys allow you to sign in securely without a password. You can use your device's biometric authentication or security key.";
+  description.textContent =
+    "Passkeys allow you to sign in securely without a password. You can use your device's biometric authentication or security key.";
   group.appendChild(description);
 
   const addPasskeyItem = document.createElement("div");
@@ -352,7 +357,7 @@ const createPasskeysContent = () => {
   const passkeyListTitle = document.createElement("h2");
   passkeyListTitle.textContent = "Registered Passkeys";
   passkeyListGroup.appendChild(passkeyListTitle);
-  
+
   const passkeyList = document.createElement("div");
   passkeyList.id = "passkeyListSettings";
   passkeyList.style.display = "flex";
@@ -402,18 +407,20 @@ const loadPasskeys = async () => {
 
       const info = document.createElement("div");
       info.style.flex = "1";
-      
+
       const name = document.createElement("div");
       name.style.fontWeight = "500";
       name.style.color = "var(--text-primary)";
       name.style.marginBottom = "4px";
       name.textContent = passkey.name || "Unnamed Passkey";
-      
+
       const createdAt = document.createElement("div");
       createdAt.style.fontSize = "12px";
       createdAt.style.color = "var(--text-secondary)";
-      createdAt.textContent = `Created: ${new Date(passkey.created_at).toLocaleDateString()}`;
-      
+      createdAt.textContent = `Created: ${new Date(
+        passkey.created_at
+      ).toLocaleDateString()}`;
+
       info.appendChild(name);
       info.appendChild(createdAt);
 
@@ -733,9 +740,9 @@ const createSettingsPage = () => {
 
   const style = document.createElement("style");
   style.textContent = `
-		.main-content:has(.settings) {
-			max-width: 100%;
-		}
+    .main-content:has(.settings.page-active) {
+      max-width: 100%;
+    }
 		
 		.settings {
 			flex-direction: column;
@@ -1774,7 +1781,9 @@ const handleAddPasskey = async () => {
       attResp = await startRegistration({ optionsJSON: options });
     } catch (error) {
       console.error("Registration failed:", error);
-      toastQueue.add(`<h1>Registration Cancelled</h1><p>Passkey registration was cancelled or failed</p>`);
+      toastQueue.add(
+        `<h1>Registration Cancelled</h1><p>Passkey registration was cancelled or failed</p>`
+      );
       return;
     }
 
@@ -1790,7 +1799,9 @@ const handleAddPasskey = async () => {
     const verificationJSON = await verificationResp.json();
 
     if (verificationJSON.error) {
-      toastQueue.add(`<h1>Verification Failed</h1><p>${verificationJSON.error}</p>`);
+      toastQueue.add(
+        `<h1>Verification Failed</h1><p>${verificationJSON.error}</p>`
+      );
       return;
     }
 

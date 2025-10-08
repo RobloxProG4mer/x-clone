@@ -100,14 +100,11 @@ export default new Elysia({ prefix: "/upload" })
 					);
 
 					if (compressionCheck.needsCompression) {
-						console.log(`Compressing video: ${compressionCheck.reason}`);
-
-						// Compress the video
 						const compressionResult = await compressVideo(
 							tempInputPath,
 							tempOutputPath,
 							{
-								crf: 28, // Good quality/size balance for social media
+								crf: 28,
 								preset: "fast",
 								maxWidth: 1280,
 								maxHeight: 720,
@@ -115,17 +112,12 @@ export default new Elysia({ prefix: "/upload" })
 						);
 
 						if (compressionResult.success) {
-							// Read compressed file
 							finalArrayBuffer = await Bun.file(tempOutputPath).arrayBuffer();
-							console.log(
-								`Video compressed: ${compressionResult.compressionRatio}% size reduction`,
-							);
 						} else {
 							console.error(
 								"Video compression failed:",
 								compressionResult.error,
 							);
-							// Clean up temp files
 							try {
 								(await Bun.file(tempInputPath).exists()) &&
 									(await fsPromises.unlink(tempInputPath));
@@ -138,11 +130,8 @@ export default new Elysia({ prefix: "/upload" })
 								error: "Video compression failed. Please try a smaller file.",
 							};
 						}
-					} else {
-						console.log("Video compression not needed");
 					}
 
-					// Clean up temp files
 					try {
 						(await Bun.file(tempInputPath).exists()) &&
 							(await fsPromises.unlink(tempInputPath));

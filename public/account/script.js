@@ -85,7 +85,6 @@ function checkExistingSession() {
 function showUserInfo(user) {
 	currentUser = user.user;
 	elements.title.textContent = `@${user.user.username}`;
-	document.querySelector(".tagline").innerText = "Manage your account";
 	elements.loginForm.style.display = "none";
 	elements.userInfo.style.display = "block";
 
@@ -99,7 +98,6 @@ function showLoginForm() {
 	elements.userInfo.style.display = "none";
 	elements.username.value = "";
 	elements.title.textContent = "Welcome to Tweetapus";
-	document.querySelector(".tagline").innerText = "Twitter, but better";
 }
 
 function setButtonsDisabled(disabled) {

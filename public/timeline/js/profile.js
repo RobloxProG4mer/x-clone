@@ -171,7 +171,6 @@ const switchTab = async (tabName) => {
 };
 
 const renderProfile = (data) => {
-  console.log("data", data);
   const { profile, posts, isFollowing, isOwnProfile } = data;
 
   document.getElementById("profileHeaderName").textContent =

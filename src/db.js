@@ -260,48 +260,4 @@ CREATE TABLE IF NOT EXISTS bookmarks (
 CREATE INDEX IF NOT EXISTS idx_bookmarks_user_id ON bookmarks(user_id);
 CREATE INDEX IF NOT EXISTS idx_bookmarks_post_id ON bookmarks(post_id);`);
 
-try {
-  const tableInfo = db.query("PRAGMA table_info(users);").all();
-  const colNames = tableInfo.map((c) => c.name);
-
-  if (!colNames.includes("theme")) {
-    try {
-      db.exec("ALTER TABLE users ADD COLUMN theme TEXT DEFAULT NULL;");
-      console.log("Added 'theme' column to users table");
-    } catch (e) {
-      console.error("Failed to add 'theme' column:", e);
-    }
-  }
-
-  if (!colNames.includes("accent_color")) {
-    try {
-      db.exec("ALTER TABLE users ADD COLUMN accent_color TEXT DEFAULT NULL;");
-      console.log("Added 'accent_color' column to users table");
-    } catch (e) {
-      console.error("Failed to add 'accent_color' column:", e);
-    }
-  }
-} catch (err) {
-  console.error("DB migration check failed:", err);
-}
-
-// Check for posts table migration
-try {
-  const postsTableInfo = db.query("PRAGMA table_info(posts);").all();
-  const postsColNames = postsTableInfo.map((c) => c.name);
-
-  if (!postsColNames.includes("reply_restriction")) {
-    try {
-      db.exec(
-        "ALTER TABLE posts ADD COLUMN reply_restriction TEXT DEFAULT 'everyone';"
-      );
-      console.log("Added 'reply_restriction' column to posts table");
-    } catch (e) {
-      console.error("Failed to add 'reply_restriction' column:", e);
-    }
-  }
-} catch (err) {
-  console.error("Posts migration check failed:", err);
-}
-
 export default db;
