@@ -666,8 +666,9 @@ const createSettingsPage = () => {
 			padding: 32px;
 			flex: 1;
 			min-width: 0;
-			max-width: calc(100% - 244px);
+			max-width: 700px;
 			overflow-x: hidden;
+			margin: 0 auto;
 		}
 		
 		.settings-section h1 {
@@ -688,16 +689,14 @@ const createSettingsPage = () => {
 			color: var(--text-primary);
 		}
 		
-    .setting-item {
-      display: grid;
-      grid-template-columns: 1fr auto;
-      gap: 24px;
-      align-items: center;
-      padding: 20px 0;
-      border-bottom: 1px solid var(--border-primary);
-    }
-		
-		.setting-item:last-child {
+		.setting-item {
+			display: flex;
+			flex-direction: column;
+			gap: 16px;
+			align-items: stretch;
+			padding: 20px 0;
+			border-bottom: 1px solid var(--border-primary);
+		}		.setting-item:last-child {
 			border-bottom: none;
 		}
 		
@@ -1039,28 +1038,28 @@ const createSettingsPage = () => {
 			margin-top: 24px;
 		}
 
-    /* Make buttons inside setting-control span full width but keep a sane max */
-    .setting-control .btn {
-      width: 100%;
-      max-width: 360px;
-      min-width: 0;
-    }
-		
-		.btn {
-      padding: 10px 20px;
-      border-radius: 8px;
-      font-size: 16px;
-      font-weight: 500;
-      cursor: pointer;
-      border: 1px solid transparent;
-      transition: all 0.2s;
-      min-width: 0;
-      height: 44px;
-      width: 100%;
-      max-width: 420px;
+		/* Make buttons inside setting-control span full width but keep a sane max */
+		.setting-control .btn {
+			width: 100%;
+			max-width: 100%;
+			min-width: 0;
+			margin: 0 auto;
+			display: block;
 		}
 		
-		.btn.primary {
+		.btn {
+			padding: 12px 24px;
+			border-radius: 8px;
+			font-size: 16px;
+			font-weight: 500;
+			cursor: pointer;
+			border: 1px solid transparent;
+			transition: all 0.2s;
+			min-width: 0;
+			height: 44px;
+			width: 100%;
+			max-width: 100%;
+		}		.btn.primary {
 			background: var(--primary);
 			color: #fff;
 		}
@@ -1111,7 +1110,7 @@ const createSettingsPage = () => {
 			}
 			
 			.setting-item {
-				grid-template-columns: 1fr;
+				flex-direction: column;
 				gap: 16px;
 			}
 			
@@ -1173,6 +1172,13 @@ const initializeSettings = () => {
     const newPath = `/settings/${tabKey}`;
     if (window.location.pathname !== newPath) {
       window.history.pushState(null, null, newPath);
+    }
+
+    if (tabKey === "themes") {
+      setTimeout(() => {
+        loadCurrentAccentColor();
+        loadCurrentThemeMode();
+      }, 50);
     }
   };
 
