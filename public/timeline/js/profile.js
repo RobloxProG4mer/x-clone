@@ -5,6 +5,7 @@ import {
 } from "../../shared/image-utils.js";
 import toastQueue from "../../shared/toasts.js";
 import { createModal, createPopup } from "../../shared/ui-utils.js";
+import query from "./api.js";
 import { authToken } from "./auth.js";
 import switchPage, { addRoute } from "./pages.js";
 import { createTweetElement } from "./tweets.js";
@@ -24,13 +25,7 @@ export default async function openProfile(username) {
     path: `/@${username}`,
     recoverState: async () => {
       document.getElementById("profileContainer").style.display = "none";
-      const data = await (
-        await fetch(`/api/profile/${username}`, {
-          headers: {
-            Authorization: `Bearer ${authToken}`,
-          },
-        })
-      ).json();
+      const data = await query(`/profile/${username}`);
 
       if (data.error) {
         toastQueue.add(`<h1>${escapeHTML(data.error)}</h1>`);
@@ -76,13 +71,7 @@ const renderPosts = async (posts, isReplies = false) => {
       if (username === currentUsername && currentProfile) {
         profileCache[username] = currentProfile.profile;
       } else {
-        const { error, profile } = await (
-          await fetch(`/api/profile/${username}`, {
-            headers: {
-              Authorization: `Bearer ${authToken}`,
-            },
-          })
-        ).json();
+        const { error, profile } = await query(`/profile/${username}`);
 
         if (error) {
           if (error === "User is suspended") {
@@ -161,13 +150,9 @@ const switchTab = async (tabName) => {
     if (currentReplies.length === 0 && currentUsername) {
       document.getElementById("profilePostsContainer").innerHTML = "";
 
-      let { error, replies } = await (
-        await fetch(`/api/profile/${currentUsername}/replies`, {
-          headers: {
-            Authorization: `Bearer ${authToken}`,
-          },
-        })
-      ).json();
+      let { error, replies } = await query(
+        `/profile/${currentUsername}/replies`
+      );
 
       if (error) {
         toastQueue.add(`<h1>${escapeHTML(error)}</h1>`);
@@ -356,12 +341,9 @@ const updateFollowButton = (isFollowing) => {
         return;
       }
 
-      const { success } = await (
-        await fetch(`/api/profile/${currentUsername}/follow`, {
-          method: "DELETE",
-          headers: { Authorization: `Bearer ${authToken}` },
-        })
-      ).json();
+      const { success } = await query(`/profile/${currentUsername}/follow`, {
+        method: "DELETE",
+      });
 
       if (!success) {
         return toastQueue.add(`<h1>Failed to unfollow user</h1>`);
@@ -380,14 +362,9 @@ const updateFollowButton = (isFollowing) => {
         return;
       }
 
-      const { success } = await (
-        await fetch(`/api/profile/${currentUsername}/follow`, {
-          method: "POST",
-          headers: {
-            Authorization: `Bearer ${authToken}`,
-          },
-        })
-      ).json();
+      const { success } = await query(`/profile/${currentUsername}/follow`, {
+        method: "POST",
+      });
 
       if (!success) {
         return toastQueue.add(`<h1>Failed to follow user</h1>`);
@@ -510,18 +487,13 @@ const handleEditBannerUpload = async (file) => {
     const formData = new FormData();
     formData.append("banner", webpFile);
 
-    const response = await fetch(
-      `/api/profile/${currentProfile.profile.username}/banner`,
+    const result = await query(
+      `/profile/${currentProfile.profile.username}/banner`,
       {
         method: "POST",
-        headers: {
-          Authorization: `Bearer ${authToken}`,
-        },
         body: formData,
       }
     );
-
-    const result = await response.json();
 
     if (result.success) {
       currentProfile.profile.banner = result.banner;
@@ -565,17 +537,12 @@ const handleEditBannerRemoval = async () => {
   }
 
   try {
-    const response = await fetch(
-      `/api/profile/${currentProfile.profile.username}/banner`,
+    const result = await query(
+      `/profile/${currentProfile.profile.username}/banner`,
       {
         method: "DELETE",
-        headers: {
-          Authorization: `Bearer ${authToken}`,
-        },
       }
     );
-
-    const result = await response.json();
 
     if (result.success) {
       currentProfile.profile.banner = null;
@@ -665,18 +632,13 @@ const handleEditAvatarUpload = async (file) => {
     const formData = new FormData();
     formData.append("avatar", webpFile);
 
-    const response = await fetch(
-      `/api/profile/${currentProfile.profile.username}/avatar`,
+    const result = await query(
+      `/profile/${currentProfile.profile.username}/avatar`,
       {
         method: "POST",
-        headers: {
-          Authorization: `Bearer ${authToken}`,
-        },
         body: formData,
       }
     );
-
-    const result = await response.json();
 
     if (result.success) {
       currentProfile.profile.avatar = result.avatar;
@@ -717,13 +679,10 @@ const handleEditAvatarRemoval = async () => {
   }
 
   try {
-    const response = await fetch(
-      `/api/profile/${currentProfile.profile.username}/avatar`,
+    const response = await query(
+      `/profile/${currentProfile.profile.username}/avatar`,
       {
         method: "DELETE",
-        headers: {
-          Authorization: `Bearer ${authToken}`,
-        },
       }
     );
 
@@ -776,10 +735,9 @@ const saveProfile = async (event) => {
   };
 
   try {
-    const response = await fetch(`/api/profile/${currentUsername}`, {
+    const response = await query(`/profile/${currentUsername}`, {
       method: "PUT",
       headers: {
-        Authorization: `Bearer ${authToken}`,
         "Content-Type": "application/json",
       },
       body: JSON.stringify(formData),
@@ -941,12 +899,10 @@ addRoute(
 
 async function showFollowersList(username, type) {
   try {
-    const endpoint = `/api/profile/${username}/${type}`;
-    const { error, followers, following } = await (
-      await fetch(endpoint, {
-        headers: { Authorization: `Bearer ${authToken}` },
-      })
-    ).json();
+    const endpoint = `/profile/${username}/${type}`;
+    const { error, followers, following } = await query(endpoint, {
+      headers: { Authorization: `Bearer ${authToken}` },
+    });
 
     if (error) {
       toastQueue.add(
@@ -973,7 +929,7 @@ async function showFollowersList(username, type) {
         followerItem.dataset.username = user.username;
 
         const avatar = document.createElement("img");
-        avatar.src = user.avatar || "/api/avatars/default.png";
+        avatar.src = user.avatar || "/avatars/default.png";
         avatar.alt = user.name;
         avatar.className = "follower-avatar";
 
@@ -1029,13 +985,9 @@ const checkBlockStatus = async () => {
   if (!authToken || !currentProfile) return;
 
   try {
-    const { blocked } = await (
-      await fetch(`/api/blocking/check/${currentProfile.profile.id}`, {
-        headers: {
-          Authorization: `Bearer ${authToken}`,
-        },
-      })
-    ).json();
+    const { blocked } = await query(
+      `/blocking/check/${currentProfile.profile.id}`
+    );
 
     updateBlockButton(blocked);
   } catch (error) {
@@ -1071,16 +1023,13 @@ const handleBlockUser = async () => {
   if (!authToken || !currentUsername || !currentProfile) return;
 
   try {
-    const { success } = await (
-      await fetch(`/api/blocking/block`, {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${authToken}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ userId: currentProfile.profile.id }),
-      })
-    ).json();
+    const { success } = await query(`/blocking/block`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ userId: currentProfile.profile.id }),
+    });
 
     if (success) {
       updateBlockButton(true);
@@ -1100,16 +1049,13 @@ const handleUnblockUser = async () => {
   if (!authToken || !currentUsername || !currentProfile) return;
 
   try {
-    const { success } = await (
-      await fetch(`/api/blocking/unblock`, {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${authToken}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ userId: currentProfile.profile.id }),
-      })
-    ).json();
+    const { success } = await query(`/blocking/unblock`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ userId: currentProfile.profile.id }),
+    });
 
     if (success) {
       updateBlockButton(false);

@@ -14,7 +14,7 @@
 - DONT USE user_id ON THE USERS TABLE, IT'S JUST id
 - DO NOT CREATE PROFILES IF THEY DONT EXIST.
 - IT'S NOT display_name, IT'S NAME.
-- ALWAYS do fetch requests inline, like: `await (await fetch("/api/tweets/")).json();` instead of 2 variables.
+- ALWAYS do fetch requests inline using the `api.js`
 - for fetching tweets, first fetch the tweet, then the profile. NEVER use joins for tweet+authors
 - DO NOT set a content-type if the body is empty
 - PREFER using background-color instead of background

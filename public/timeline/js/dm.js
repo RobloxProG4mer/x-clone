@@ -1,4 +1,5 @@
 import toastQueue from "../../shared/toasts.js";
+import query from "./api.js";
 import { authToken } from "./auth.js";
 import switchPage, { addRoute } from "./pages.js";
 
@@ -116,10 +117,7 @@ async function loadConversations() {
   }
 
   try {
-    const response = await fetch("/api/dm/conversations", {
-      headers: { Authorization: `Bearer ${authToken}` },
-    });
-    const data = await response.json();
+    const data = await query("/dm/conversations");
 
     if (data.error) {
       toastQueue.add("An error occurred");
@@ -233,10 +231,7 @@ function createConversationElement(conversation) {
 
 async function openConversation(conversationId) {
   try {
-    const response = await fetch(`/api/dm/conversations/${conversationId}`, {
-      headers: { Authorization: `Bearer ${authToken}` },
-    });
-    const data = await response.json();
+    const data = await query(`/dm/conversations/${conversationId}`);
 
     if (data.error) {
       toastQueue.add("error", data.error);
@@ -394,19 +389,16 @@ async function sendMessage() {
       requestBody.files = pendingFiles;
     }
 
-    const response = await fetch(
-      `/api/dm/conversations/${currentConversation.id}/messages`,
+    const data = await query(
+      `/dm/conversations/${currentConversation.id}/messages`,
       {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${authToken}`,
         },
         body: JSON.stringify(requestBody),
       }
     );
-
-    const data = await response.json();
 
     if (data.error) {
       toastQueue.add("error", data.error);
@@ -430,7 +422,7 @@ async function sendMessage() {
 
 async function markConversationAsRead(conversationId) {
   try {
-    await fetch(`/api/dm/conversations/${conversationId}/read`, {
+    await query(`/dm/conversations/${conversationId}/read`, {
       method: "PATCH",
       headers: { Authorization: `Bearer ${authToken}` },
     });
@@ -490,7 +482,6 @@ function formatTime(date) {
 }
 
 async function openDMList() {
-
   if (!authToken) {
     toastQueue.add("error", "Please log in to access messages");
     switchPage("timeline", { path: "/" });
@@ -595,19 +586,16 @@ async function saveGroupSettings() {
 
   if (newTitle !== (currentConversation.title || "")) {
     try {
-      const response = await fetch(
-        `/api/dm/conversations/${currentConversation.id}/title`,
+      const data = await query(
+        `/dm/conversations/${currentConversation.id}/title`,
         {
           method: "PATCH",
           headers: {
             "Content-Type": "application/json",
-            Authorization: `Bearer ${authToken}`,
           },
           body: JSON.stringify({ title: newTitle }),
         }
       );
-
-      const data = await response.json();
 
       if (data.error) {
         toastQueue.add("error", data.error);
@@ -632,15 +620,12 @@ async function removeParticipantFromGroup(userId, username) {
   if (!confirm(`Remove ${username} from this group?`)) return;
 
   try {
-    const response = await fetch(
-      `/api/dm/conversations/${currentConversation.id}/participants/${userId}`,
+    const data = await query(
+      `/dm/conversations/${currentConversation.id}/participants/${userId}`,
       {
         method: "DELETE",
-        headers: { Authorization: `Bearer ${authToken}` },
       }
     );
-
-    const data = await response.json();
 
     if (data.error) {
       toastQueue.add("error", data.error);
@@ -771,21 +756,18 @@ async function confirmAddParticipant() {
   if (selectedParticipants.length === 0 || !currentConversation) return;
 
   try {
-    const response = await fetch(
-      `/api/dm/conversations/${currentConversation.id}/participants`,
+    const data = await query(
+      `/dm/conversations/${currentConversation.id}/participants`,
       {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${authToken}`,
         },
         body: JSON.stringify({
           usernames: selectedParticipants.map((u) => u.username),
         }),
       }
     );
-
-    const data = await response.json();
 
     if (data.error) {
       toastQueue.add("error", data.error);
@@ -822,13 +804,9 @@ async function searchUsers(query) {
   if (!query.trim()) return [];
 
   try {
-    const response = await fetch(
-      `/api/search/users?q=${encodeURIComponent(query)}&limit=5`,
-      {
-        headers: { Authorization: `Bearer ${authToken}` },
-      }
+    const data = await query(
+      `/search/users?q=${encodeURIComponent(query)}&limit=5`
     );
-    const data = await response.json();
     return data.users || [];
   } catch (error) {
     console.error("Failed to search users:", error);
@@ -921,11 +899,10 @@ async function startConversation() {
     const titleInput = document.getElementById("groupTitleInput");
     const title = titleInput?.value?.trim() || null;
 
-    const response = await fetch("/api/dm/conversations", {
+    const data = await query("/dm/conversations", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        Authorization: `Bearer ${authToken}`,
       },
       body: JSON.stringify({
         participantUsernames: selectedUsers.map((u) => u.username),
@@ -933,8 +910,6 @@ async function startConversation() {
         isGroup: isGroup,
       }),
     });
-
-    const data = await response.json();
 
     if (data.error) {
       toastQueue.add("error", data.error);
@@ -969,13 +944,10 @@ async function handleFileUpload(files) {
       const formData = new FormData();
       formData.append("file", file);
 
-      const response = await fetch("/api/upload", {
+      const data = await query("/upload", {
         method: "POST",
-        headers: { Authorization: `Bearer ${authToken}` },
         body: formData,
       });
-
-      const data = await response.json();
 
       if (data.error) {
         toastQueue.add("error", data.error);
@@ -1235,19 +1207,16 @@ async function openOrCreateConversation(username) {
     openConversation(existing.id);
   } else {
     try {
-      const response = await fetch("/api/dm/conversations", {
+      const data = await query("/dm/conversations", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${authToken}`,
         },
         body: JSON.stringify({
           participantUsernames: [username],
           isGroup: false,
         }),
       });
-
-      const data = await response.json();
 
       if (data.error) {
         toastQueue.add("error", data.error);

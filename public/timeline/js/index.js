@@ -1,4 +1,5 @@
 import toastQueue from "../../shared/toasts.js";
+import query from "./api.js";
 import { authToken } from "./auth.js";
 import { createComposer } from "./composer.js";
 import dm from "./dm.js";
@@ -40,14 +41,10 @@ window.onunhandledrejection = (event) => {
 
   const loadTimeline = async (type = "home") => {
     const endpoint =
-      type === "following" ? "/api/timeline/following" : "/api/timeline/";
+      type === "following" ? "/timeline/following" : "/timeline/";
 
     try {
-      const { timeline } = await (
-        await fetch(endpoint, {
-          headers: { Authorization: `Bearer ${authToken}` },
-        })
-      ).json();
+      const { timeline } = await query(endpoint);
 
       document.querySelector(".tweets").innerHTML = "";
 
@@ -155,7 +152,7 @@ if (currentPath.startsWith("/settings")) {
   (async () => {
     const openTweet = await import("./tweet.js");
 
-		openTweet.default(tweetId);
+    openTweet.default(tweetId);
   })();
 } else {
   showPage("timeline");

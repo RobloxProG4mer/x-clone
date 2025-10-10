@@ -1,4 +1,4 @@
-import { authToken } from "./auth.js";
+import query from "./api.js";
 import { createTweetElement } from "./tweets.js";
 
 let currentFilter = "all";
@@ -48,43 +48,29 @@ export const initializeSearchPage = () => {
 
 	const performSearch = async (query) => {
 		try {
-			const promises = [];
+		const promises = [];
 
-			if (currentFilter === "all" || currentFilter === "users") {
-				promises.push(
-					fetch(`/api/search/users?q=${encodeURIComponent(query)}`, {
-						headers: { Authorization: `Bearer ${authToken}` },
-					}),
-				);
-			}
+		if (currentFilter === "all" || currentFilter === "users") {
+			promises.push(query(`/search/users?q=${encodeURIComponent(query)}`));
+		}
 
-			if (currentFilter === "all" || currentFilter === "tweets") {
-				promises.push(
-					fetch(`/api/search/posts?q=${encodeURIComponent(query)}`, {
-						headers: { Authorization: `Bearer ${authToken}` },
-					}),
-				);
-			}
+		if (currentFilter === "all" || currentFilter === "tweets") {
+			promises.push(query(`/search/posts?q=${encodeURIComponent(query)}`));
+		}
 
-			const responses = await Promise.all(promises);
-			let users = [];
-			let posts = [];
+		const results = await Promise.all(promises);
+		let users = [];
+		let posts = [];
 
-			if (currentFilter === "all") {
-				const [usersRes, postsRes] = responses;
-				const usersData = await usersRes.json();
-				const postsData = await postsRes.json();
-				users = usersData.users;
-				posts = postsData.posts;
-			} else if (currentFilter === "users") {
-				const usersData = await responses[0].json();
-				users = usersData.users;
-			} else if (currentFilter === "tweets") {
-				const postsData = await responses[0].json();
-				posts = postsData.posts;
-			}
-
-			displayResults(users, posts);
+		if (currentFilter === "all") {
+			const [usersData, postsData] = results;
+			users = usersData.users;
+			posts = postsData.posts;
+		} else if (currentFilter === "users") {
+			users = results[0].users;
+		} else if (currentFilter === "tweets") {
+			posts = results[0].posts;
+		}			displayResults(users, posts);
 		} catch (error) {
 			console.error("Search error:", error);
 		}

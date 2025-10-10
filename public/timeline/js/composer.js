@@ -1,7 +1,8 @@
 import confetti from "../../shared/confetti.js";
 import { isConvertibleImage } from "../../shared/image-utils.js";
 import toastQueue from "../../shared/toasts.js";
-import getUser, { authToken } from "./auth.js";
+import query from "./api.js";
+import getUser from "./auth.js";
 
 export const useComposer = (
   element,
@@ -384,15 +385,11 @@ export const useComposer = (
         const formData = new FormData();
         formData.append("file", fileData.file);
 
-        const uploadResponse = await fetch("/api/upload/", {
+        const uploadResult = await query("/upload", {
           method: "POST",
-          headers: {
-            Authorization: `Bearer ${authToken}`,
-          },
           body: formData,
         });
 
-        const uploadResult = await uploadResponse.json();
         if (uploadResult.success) {
           uploadedFiles.push(uploadResult.file);
         } else {
@@ -416,16 +413,13 @@ export const useComposer = (
         requestBody.poll = poll;
       }
 
-      const { error, tweet } = await (
-        await fetch("/api/tweets/", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${authToken}`,
-          },
-          body: JSON.stringify(requestBody),
-        })
-      ).json();
+      const { error, tweet } = await query("/tweets/", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(requestBody),
+      });
 
       if (!tweet) {
         toastQueue.add(`<h1>${error || "Failed to post tweet"}</h1>`);

@@ -179,9 +179,6 @@ export default new Elysia({ prefix: "/timeline" })
       userMap[user.id] = user;
     });
 
-    // Pre-fetch top replies (raw) so we can include their IDs when checking
-    // likes/retweets/bookmarks. If we don't, top replies will never show as
-    // liked/retweeted/bookmarked because we only queried the main post IDs.
     const rawTopReplies = posts
       .map((post) => getTopReply.get(post.id))
       .filter(Boolean);

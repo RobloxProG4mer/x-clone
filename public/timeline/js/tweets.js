@@ -3,25 +3,20 @@ import { marked } from "https://esm.sh/marked@16.3.0";
 import confetti from "../../shared/confetti.js";
 import toastQueue from "../../shared/toasts.js";
 import { createModal, createPopup } from "../../shared/ui-utils.js";
+import query from "./api.js";
 import getUser, { authToken } from "./auth.js";
 import openTweet from "./tweet.js";
 
 async function checkReplyPermissions(tweet, replyRestriction) {
   try {
-    const response = await fetch(`/api/tweets/can-reply/${tweet.id}`, {
-      headers: {
-        Authorization: `Bearer ${authToken}`,
-      },
-    });
+    const data = await query(`/tweets/can-reply/${tweet.id}`);
 
-    if (!response.ok) {
+    if (data.error) {
       return {
         canReply: false,
         restrictionText: "Unable to check reply permissions",
       };
     }
-
-    const data = await response.json();
 
     let restrictionText = "";
     switch (replyRestriction) {
@@ -52,11 +47,7 @@ async function checkReplyPermissions(tweet, replyRestriction) {
 
 async function showInteractionUsers(tweetId, interaction, title) {
   try {
-    const response = await fetch(`/api/tweets/${tweetId}/${interaction}`, {
-      headers: { Authorization: `Bearer ${authToken}` },
-    });
-
-    const data = await response.json();
+    const data = await query(`/tweets/${tweetId}/${interaction}`);
 
     if (data.error) {
       toastQueue.add(`<h1>Error</h1><p>${data.error}</p>`);
@@ -134,7 +125,7 @@ async function showInteractionUsers(tweetId, interaction, title) {
       className: "interactions-modal",
     });
   } catch (error) {
-    console.error("Error fetching interaction users:", error);
+    console.error("Error querying interaction users:", error);
     toastQueue.add(
       `<h1>Network Error</h1><p>Failed to load ${title.toLowerCase()}.</p>`
     );
@@ -357,16 +348,13 @@ const createPollElement = (poll, tweet) => {
 
 const votePoll = async (tweetId, optionId, pollElement) => {
   try {
-    const response = await fetch(`/api/tweets/${tweetId}/poll/vote`, {
+    const result = await query(`/tweets/${tweetId}/poll/vote`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        Authorization: `Bearer ${authToken}`,
       },
       body: JSON.stringify({ optionId }),
     });
-
-    const result = await response.json();
 
     if (result.success) {
       updatePollDisplay(pollElement, result.poll);
@@ -450,24 +438,10 @@ async function createExpandedStats(tweetId) {
   statsContainer.className = "expanded-tweet-stats";
 
   try {
-    const [likesResponse, retweetsResponse, quotesResponse] = await Promise.all(
-      [
-        fetch(`/api/tweets/${tweetId}/likes?limit=3`, {
-          headers: { Authorization: `Bearer ${authToken}` },
-        }),
-        fetch(`/api/tweets/${tweetId}/retweets?limit=3`, {
-          headers: { Authorization: `Bearer ${authToken}` },
-        }),
-        fetch(`/api/tweets/${tweetId}/quotes?limit=3`, {
-          headers: { Authorization: `Bearer ${authToken}` },
-        }),
-      ]
-    );
-
     const [likesData, retweetsData, quotesData] = await Promise.all([
-      likesResponse.json(),
-      retweetsResponse.json(),
-      quotesResponse.json(),
+      query(`/tweets/${tweetId}/likes?limit=3`),
+      query(`/tweets/${tweetId}/retweets?limit=3`),
+      query(`/tweets/${tweetId}/quotes?limit=3`),
     ]);
 
     const stats = [];
@@ -728,15 +702,12 @@ export const createTweetElement = (tweet, config = {}) => {
             onClick: async () => {
               try {
                 const method = tweet.pinned ? "DELETE" : "POST";
-                const response = await fetch(
-                  `/api/profile/${currentUser.username}/pin/${tweet.id}`,
+                const result = await query(
+                  `/profile/${currentUser.username}/pin/${tweet.id}`,
                   {
                     method,
-                    headers: { Authorization: `Bearer ${authToken}` },
                   }
                 );
-
-                const result = await response.json();
 
                 if (result.success) {
                   tweet.pinned = !tweet.pinned;
@@ -797,12 +768,9 @@ export const createTweetElement = (tweet, config = {}) => {
               }
 
               try {
-                const response = await fetch(`/api/tweets/${tweet.id}`, {
+                const result = await query(`/tweets/${tweet.id}`, {
                   method: "DELETE",
-                  headers: { Authorization: `Bearer ${authToken}` },
                 });
-
-                const result = await response.json();
 
                 if (result.success) {
                   tweetEl.style.opacity = "0.5";
@@ -946,12 +914,9 @@ export const createTweetElement = (tweet, config = {}) => {
         });
       }
 
-      const response = await fetch(`/api/tweets/${tweet.id}/like`, {
+      const result = await query(`/tweets/${tweet.id}/like`, {
         method: "POST",
-        headers: { Authorization: `Bearer ${authToken}` },
       });
-
-      const result = await response.json();
 
       if (result.success) {
         const newIsLiked = result.liked;
@@ -1041,12 +1006,9 @@ export const createTweetElement = (tweet, config = {}) => {
         title: "Retweet",
         onClick: async () => {
           try {
-            const response = await fetch(`/api/tweets/${tweet.id}/retweet`, {
+            const result = await query(`/tweets/${tweet.id}/retweet`, {
               method: "POST",
-              headers: { Authorization: `Bearer ${authToken}` },
             });
-
-            const result = await response.json();
 
             if (result.success) {
               const newIsRetweeted = result.retweeted;
@@ -1245,19 +1207,16 @@ export const createTweetElement = (tweet, config = {}) => {
       const isBookmarked =
         tweetInteractionsBookmarkEl.dataset.bookmarked === "true";
       const endpoint = isBookmarked
-        ? "/api/bookmarks/remove"
-        : "/api/bookmarks/add";
+        ? "/bookmarks/remove"
+        : "/bookmarks/add";
 
-      const response = await fetch(endpoint, {
+      const result = await query(endpoint, {
         method: "POST",
         headers: {
-          Authorization: `Bearer ${authToken}`,
           "Content-Type": "application/json",
         },
         body: JSON.stringify({ postId: tweet.id }),
       });
-
-      const result = await response.json();
 
       if (result.success) {
         const newIsBookmarked = result.bookmarked;

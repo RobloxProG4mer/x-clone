@@ -295,7 +295,6 @@ export default new Elysia({ prefix: "/tweets" })
         return { error: "Tweet content must be 400 characters or less" };
       }
 
-      // Validate reply_restriction
       const validRestrictions = [
         "everyone",
         "followers",
@@ -327,7 +326,6 @@ export default new Elysia({ prefix: "/tweets" })
         return { error: "Poll duration must be between 5 minutes and 7 days" };
       }
 
-      // Check reply restrictions if this is a reply
       if (reply_to) {
         const originalTweet = getTweetById.get(reply_to);
         if (!originalTweet) {
@@ -338,7 +336,6 @@ export default new Elysia({ prefix: "/tweets" })
           .query("SELECT * FROM users WHERE id = ?")
           .get(originalTweet.user_id);
 
-        // Check if either user has blocked the other
         const isBlocked = db
           .query(
             "SELECT 1 FROM blocks WHERE (blocker_id = ? AND blocked_id = ?) OR (blocker_id = ? AND blocked_id = ?)"

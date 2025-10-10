@@ -120,17 +120,19 @@ img {
 .popup {
   background: var(--bg-primary);
   border: 1px solid var(--border-primary);
-  border-radius: 8px;
+  border-radius: 12px;
   padding: 4px 0;
-  min-width: 200px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-  transition: opacity 0.15s, transform 0.15s;
+  min-width: 220px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+  transition: opacity 0.2s cubic-bezier(0.16, 1, 0.3, 1),
+    transform 0.2s cubic-bezier(0.16, 1, 0.3, 1);
   pointer-events: auto;
+  transform-origin: top left;
 
   @starting-style {
     & {
       opacity: 0;
-      transform: scale(0.95) translateY(-10px);
+      transform: scale(0.92);
     }
   }
 }
@@ -143,21 +145,29 @@ img {
   width: 100%;
   background: transparent;
   border: none;
-  padding: 12px 16px;
+  padding: 14px 16px;
   display: flex;
   align-items: center;
   gap: 12px;
   cursor: pointer;
-  transition: background-color 0.2s, transform .2s;
+  transition: background-color 0.15s ease;
   font-family: inherit;
   text-align: left;
 
   &:hover {
-    transform: scale(1.02);
+    background-color: var(--bg-secondary);
   }
 
   &:active {
-    transform: scale(0.98);
+    opacity: 0.8;
+  }
+
+  &:first-child {
+    border-radius: 12px 12px 0 0;
+  }
+
+  &:last-child {
+    border-radius: 0 0 12px 12px;
   }
 
   .popup-option-icon {

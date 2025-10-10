@@ -65,103 +65,103 @@ const createNotification = db.prepare(`
 `);
 
 export function addNotification(userId, type, content, relatedId = null) {
-	const id = Bun.randomUUIDv7();
+  const id = Bun.randomUUIDv7();
 
-	createNotification.run(id, userId, type, content, relatedId);
-	return id;
+  createNotification.run(id, userId, type, content, relatedId);
+  return id;
 }
 
 export default new Elysia({ prefix: "/notifications" })
-	.get("/", ({ headers, query: { limit = 20 } }) => {
-		try {
-			const token = headers.authorization?.replace("Bearer ", "");
-			if (!token) return { error: "Unauthorized" };
+  .get("/", ({ headers, query: { limit = 20 } }) => {
+    try {
+      const token = headers.authorization?.replace("Bearer ", "");
+      if (!token) return { error: "Unauthorized" };
 
-			const payload = JSON.parse(atob(token.split(".")[1]));
-			const user = getUserByUsername.get(payload.username);
-			if (!user) return { error: "User not found" };
+      const payload = JSON.parse(atob(token.split(".")[1]));
+      const user = getUserByUsername.get(payload.username);
+      if (!user) return { error: "User not found" };
 
-			const notifications = getNotifications.all(user.id, parseInt(limit));
+      const notifications = getNotifications.all(user.id, parseInt(limit));
 
-			// Enhance notifications with tweet data if related_id refers to a tweet
-			const enhancedNotifications = notifications.map((notification) => {
-				const enhanced = { ...notification };
+      const enhancedNotifications = notifications.map((notification) => {
+        const enhanced = { ...notification };
 
-				// If the notification is about a tweet (like, retweet, reply, quote, mention), fetch tweet data
-				if (
-					notification.related_id &&
-					["like", "retweet", "reply", "quote", "mention"].includes(notification.type)
-				) {
-					try {
-						const tweet = getTweetById.get(
-							user.id,
-							user.id,
-							notification.related_id,
-						);
-						if (tweet) {
-							enhanced.tweet = {
-								id: tweet.id,
-								content: tweet.content,
-								created_at: tweet.created_at,
-								user: {
-									username: tweet.username,
-									name: tweet.name,
-									avatar: tweet.avatar,
-									verified: tweet.verified,
-								},
-								like_count: tweet.like_count,
-								retweet_count: tweet.retweet_count,
-								reply_count: tweet.reply_count,
-								quote_count: tweet.quote_count,
-							};
-						}
-					} catch (error) {
-						console.error("Error fetching tweet for notification:", error);
-					}
-				}
+        if (
+          notification.related_id &&
+          ["like", "retweet", "reply", "quote", "mention"].includes(
+            notification.type
+          )
+        ) {
+          try {
+            const tweet = getTweetById.get(
+              user.id,
+              user.id,
+              notification.related_id
+            );
+            if (tweet) {
+              enhanced.tweet = {
+                id: tweet.id,
+                content: tweet.content,
+                created_at: tweet.created_at,
+                user: {
+                  username: tweet.username,
+                  name: tweet.name,
+                  avatar: tweet.avatar,
+                  verified: tweet.verified,
+                },
+                like_count: tweet.like_count,
+                retweet_count: tweet.retweet_count,
+                reply_count: tweet.reply_count,
+                quote_count: tweet.quote_count,
+              };
+            }
+          } catch (error) {
+            console.error("Error fetching tweet for notification:", error);
+          }
+        }
 
-				return enhanced;
-			});
+        return enhanced;
+      });
 
-			return { notifications: enhancedNotifications };
-		} catch (error) {
-			console.error("Error fetching notifications:", error);
-			return { error: "Failed to fetch notifications" };
-		}
-	})
+      return { notifications: enhancedNotifications };
+    } catch (error) {
+      console.error("Error fetching notifications:", error);
+      return { error: "Failed to fetch notifications" };
+    }
+  })
 
-	.get("/unread-count", ({ headers }) => {
-		const token = headers.authorization?.replace("Bearer ", "");
-		if (!token) return { error: "Unauthorized" };
+  .get("/unread-count", ({ headers }) => {
+    const token = headers.authorization?.replace("Bearer ", "");
+    if (!token) return { error: "Unauthorized" };
 
-		const payload = JSON.parse(atob(token.split(".")[1]));
-		const user = getUserByUsername.get(payload.username);
-		if (!user) return { error: "User not found" };
+    const payload = JSON.parse(atob(token.split(".")[1]));
+    const user = getUserByUsername.get(payload.username);
+    if (!user) return { error: "User not found" };
 
-		const result = getUnreadCount.get(user.id);
-		return { count: result.count };
-	})
+    const result = getUnreadCount.get(user.id);
+    return { count: result.count };
+  })
 
-	.patch("/:id/read", ({ headers, params: { id } }) => {
-		const token = headers.authorization?.replace("Bearer ", "");
-		if (!token) return { error: "Unauthorized" };
+  .patch("/:id/read", ({ headers, params: { id } }) => {
+    const token = headers.authorization?.replace("Bearer ", "");
+    if (!token) return { error: "Unauthorized" };
 
-		const payload = JSON.parse(atob(token.split(".")[1]));
-		const user = getUserByUsername.get(payload.username);
-		if (!user) return { error: "User not found" };
+    const payload = JSON.parse(atob(token.split(".")[1]));
+    const user = getUserByUsername.get(payload.username);
+    if (!user) return { error: "User not found" };
 
-		markAsRead.run(id, user.id);
-		return { success: true };
-	})
+    markAsRead.run(id, user.id);
+    return { success: true };
+  })
 
-	.patch("/mark-all-read", ({ headers }) => {
-		const token = headers.authorization?.replace("Bearer ", "");
-		if (!token) return { error: "Unauthorized" };
+  .patch("/mark-all-read", ({ headers }) => {
+    const token = headers.authorization?.replace("Bearer ", "");
+    if (!token) return { error: "Unauthorized" };
 
-		const payload = JSON.parse(atob(token.split(".")[1]));
-		const user = getUserByUsername.get(payload.username);
-		if (!user) return { error: "User not found" };
+    const payload = JSON.parse(atob(token.split(".")[1]));
+    const user = getUserByUsername.get(payload.username);
+    if (!user) return { error: "User not found" };
 
-		markAllAsRead.run(user.id);
-		return { success: true };
-	});
+    markAllAsRead.run(user.id);
+    return { success: true };
+  });

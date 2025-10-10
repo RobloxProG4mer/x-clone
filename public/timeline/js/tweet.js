@@ -4,110 +4,102 @@ import switchPage, { addRoute } from "./pages.js";
 import { createTweetElement } from "./tweets.js";
 
 export default async function openTweet(
-	tweet,
-	{ repliesCache, threadPostsCache } = {},
+  tweet,
+  { repliesCache, threadPostsCache } = {}
 ) {
-	if (!tweet.id) return;
-	
-	if (!tweet?.author) {
-		const { authToken } = await import("./auth.js");
-		const apiOutput = await (
-			await fetch(`/api/tweets/${tweet.id}`, {
-				headers: authToken ? { Authorization: `Bearer ${authToken}` } : {},
-			})
-		).json();
-		tweet = apiOutput.tweet;
-		threadPostsCache = apiOutput.threadPosts;
-		repliesCache = apiOutput.replies;
+  const { default: query } = await import("./api.js");
 
-		if (!tweet) {
-			switchPage("timeline");
-			toastQueue.add(
-				`<h1>Tweet not found</h1><p>It might have been deleted</p>`,
-			);
-			return;
-		}
-	}
+  if (!tweet.id) return;
 
-	switchPage("tweet", {
-		path: `/tweet/${tweet.id}`,
-		recoverState: async (page) => {
-			page.innerHTML = `<button class="back-button" onclick="history.back()"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-arrow-left-icon lucide-arrow-left"><path d="m12 19-7-7 7-7"/><path d="M19 12H5"/></svg></button>`;
+  if (!tweet?.author) {
+    const apiOutput = await query(`/tweets/${tweet.id}`);
+    tweet = apiOutput.tweet;
+    threadPostsCache = apiOutput.threadPosts;
+    repliesCache = apiOutput.replies;
 
-			page.querySelector(".back-button").addEventListener("click", (e) => {
-				e.preventDefault();
-				history.back();
-			});
+    if (!tweet) {
+      switchPage("timeline");
+      toastQueue.add(
+        `<h1>Tweet not found</h1><p>It might have been deleted</p>`
+      );
+      return;
+    }
+  }
 
-			const tweetEl = createTweetElement(tweet, {
-				clickToOpen: false,
-				showStats: true,
-			});
-			page.appendChild(tweetEl);
+  switchPage("tweet", {
+    path: `/tweet/${tweet.id}`,
+    recoverState: async (page) => {
+      page.innerHTML = `<button class="back-button" onclick="history.back()"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-arrow-left-icon lucide-arrow-left"><path d="m12 19-7-7 7-7"/><path d="M19 12H5"/></svg></button>`;
 
-			const composer = await createComposer({
-				placeholder: `Add a reply…`,
-				replyTo: tweet.id,
-				callback: (tweet) => {
-					const replyEl = createTweetElement(tweet, {
-						clickToOpen: true,
-					});
-					replyEl.classList.add("created");
+      page.querySelector(".back-button").addEventListener("click", (e) => {
+        e.preventDefault();
+        history.back();
+      });
 
-					composer.insertAdjacentElement("afterend", replyEl);
-				},
-			});
+      const tweetEl = createTweetElement(tweet, {
+        clickToOpen: false,
+        showStats: true,
+      });
+      page.appendChild(tweetEl);
 
-			page.appendChild(composer);
+      const composer = await createComposer({
+        placeholder: `Add a reply…`,
+        replyTo: tweet.id,
+        callback: (tweet) => {
+          const replyEl = createTweetElement(tweet, {
+            clickToOpen: true,
+          });
+          replyEl.classList.add("created");
 
-			if (!threadPostsCache || !repliesCache) {
-				const { authToken } = await import("./auth.js");
-				const apiOutput = await (
-					await fetch(`/api/tweets/${tweet.id}`, {
-						headers: authToken ? { Authorization: `Bearer ${authToken}` } : {},
-					})
-				).json();
-				tweet = apiOutput.tweet;
-				threadPostsCache = apiOutput.threadPosts;
-				repliesCache = apiOutput.replies;
-			}
+          composer.insertAdjacentElement("afterend", replyEl);
+        },
+      });
 
-			if (!tweet) {
-				switchPage("timeline");
-				toastQueue.add(
-					`<h1>Tweet not found</h1><p>It might have been deleted</p>`,
-				);
-				return;
-			}
+      page.appendChild(composer);
 
-			// Replace the initial tweet element with thread posts
-			if (threadPostsCache.length > 0) {
-				tweetEl.remove();
-				threadPostsCache.forEach((reply) => {
-					const postEl = createTweetElement(reply, {
-						clickToOpen: reply.id !== tweet.id,
-						showStats: reply.id === tweet.id,
-					});
-					composer.insertAdjacentElement("beforebegin", postEl);
-				});
-			}
+      if (!threadPostsCache || !repliesCache) {
+        const { authToken } = await import("./auth.js");
+        const apiOutput = await query(`/tweets/${tweet.id}`);
+        tweet = apiOutput.tweet;
+        threadPostsCache = apiOutput.threadPosts;
+        repliesCache = apiOutput.replies;
+      }
 
-			repliesCache.forEach((reply) => {
-				const replyEl = createTweetElement(reply, {
-					clickToOpen: true,
-				});
-				page.appendChild(replyEl);
-			});
-		},
-	});
+      if (!tweet) {
+        switchPage("timeline");
+        toastQueue.add(
+          `<h1>Tweet not found</h1><p>It might have been deleted</p>`
+        );
+        return;
+      }
+
+      // Replace the initial tweet element with thread posts
+      if (threadPostsCache.length > 0) {
+        tweetEl.remove();
+        threadPostsCache.forEach((reply) => {
+          const postEl = createTweetElement(reply, {
+            clickToOpen: reply.id !== tweet.id,
+            showStats: reply.id === tweet.id,
+          });
+          composer.insertAdjacentElement("beforebegin", postEl);
+        });
+      }
+
+      repliesCache.forEach((reply) => {
+        const replyEl = createTweetElement(reply, {
+          clickToOpen: true,
+        });
+        page.appendChild(replyEl);
+      });
+    },
+  });
 }
 
-// Register tweet route
 addRoute(
-	(pathname) =>
-		pathname.startsWith("/tweet/") && pathname.split("/").length === 3,
-	(pathname) => {
-		const tweetId = pathname.split("/").pop();
-		openTweet({ id: tweetId });
-	},
+  (pathname) =>
+    pathname.startsWith("/tweet/") && pathname.split("/").length === 3,
+  (pathname) => {
+    const tweetId = pathname.split("/").pop();
+    openTweet({ id: tweetId });
+  }
 );

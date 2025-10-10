@@ -1,4 +1,5 @@
 import toastQueue from "../../shared/toasts.js";
+import query from "./api.js";
 import { authToken } from "./auth.js";
 import { showPage } from "./pages.js";
 
@@ -379,10 +380,7 @@ const loadPasskeys = async () => {
   if (!passkeyList) return;
 
   try {
-    const response = await fetch("/api/auth/passkeys", {
-      headers: { Authorization: `Bearer ${authToken}` },
-    });
-    const data = await response.json();
+    const data = await query("/auth/passkeys");
 
     if (data.error) {
       passkeyList.innerHTML = `<p style="color: var(--text-secondary); font-size: 14px;">Failed to load passkeys</p>`;
@@ -444,12 +442,9 @@ const deletePasskey = async (passkeyId) => {
   if (!confirm("Are you sure you want to remove this passkey?")) return;
 
   try {
-    const response = await fetch(`/api/auth/passkeys/${passkeyId}`, {
+    const data = await query(`/auth/passkeys/${passkeyId}`, {
       method: "DELETE",
-      headers: { Authorization: `Bearer ${authToken}` },
     });
-
-    const data = await response.json();
 
     if (data.error) {
       toastQueue.add(`<h1>Error</h1><p>${data.error}</p>`);
@@ -1390,10 +1385,7 @@ const setupSettingsEventHandlers = async () => {
   if (!authToken) return;
 
   try {
-    const response = await fetch("/api/auth/me", {
-      headers: { Authorization: `Bearer ${authToken}` },
-    });
-    const data = await response.json();
+    const data = await query("/auth/me");
     if (data.user) {
       currentUser = data.user;
 
@@ -1406,7 +1398,7 @@ const setupSettingsEventHandlers = async () => {
       }
     }
   } catch (error) {
-    console.error("Failed to fetch user data:", error);
+    console.error("Failed to query user data:", error);
   }
 
   document.addEventListener("click", (event) => {
@@ -1584,11 +1576,10 @@ const saveThemeToServer = async () => {
     "#1185fe";
 
   try {
-    const res = await fetch(`/api/profile/${currentUser.username}`, {
+    const res = await query(`/profile/${currentUser.username}`, {
       method: "PUT",
       headers: {
         "Content-Type": "application/json",
-        Authorization: `Bearer ${authToken}`,
       },
       body: JSON.stringify({ theme, accent_color: accent }),
     });
@@ -1760,15 +1751,12 @@ const hideModal = (modal) => {
 
 const handleAddPasskey = async () => {
   try {
-    const response = await fetch("/api/auth/passkey/register/start", {
+    const options = await query("/auth/passkey/register/start", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        Authorization: `Bearer ${authToken}`,
       },
     });
-
-    const options = await response.json();
 
     if (options.error) {
       toastQueue.add(`<h1>Error</h1><p>${options.error}</p>`);
@@ -1787,16 +1775,13 @@ const handleAddPasskey = async () => {
       return;
     }
 
-    const verificationResp = await fetch("/api/auth/passkey/register/finish", {
+    const verificationJSON = await query("/auth/passkey/register/finish", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        Authorization: `Bearer ${authToken}`,
       },
       body: JSON.stringify(attResp),
     });
-
-    const verificationJSON = await verificationResp.json();
 
     if (verificationJSON.error) {
       toastQueue.add(
@@ -1833,19 +1818,13 @@ const handleUsernameChange = async () => {
   }
 
   try {
-    const response = await fetch(
-      `/api/profile/${currentUser.username}/username`,
-      {
-        method: "PATCH",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${authToken}`,
-        },
-        body: JSON.stringify({ newUsername }),
-      }
-    );
-
-    const data = await response.json();
+    const data = await query(`/profile/${currentUser.username}/username`, {
+      method: "PATCH",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ newUsername }),
+    });
 
     if (data.error) {
       toastQueue.add(`<h1>Username Change Failed</h1><p>${data.error}</p>`);
@@ -1891,22 +1870,16 @@ const handlePasswordChange = async () => {
   }
 
   try {
-    const response = await fetch(
-      `/api/profile/${currentUser.username}/password`,
-      {
-        method: "PATCH",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${authToken}`,
-        },
-        body: JSON.stringify({
-          currentPassword: hasPassword ? currentPassword : undefined,
-          newPassword,
-        }),
-      }
-    );
-
-    const data = await response.json();
+    const data = await query(`/profile/${currentUser.username}/password`, {
+      method: "PATCH",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        currentPassword: hasPassword ? currentPassword : undefined,
+        newPassword,
+      }),
+    });
 
     if (data.error) {
       toastQueue.add(`<h1>Password Change Failed</h1><p>${data.error}</p>`);
@@ -1942,12 +1915,11 @@ const handleAccountDeletion = async () => {
   }
 
   try {
-    const response = await fetch(`/api/profile/${currentUser.username}`, {
+    const response = await query(`/profile/${currentUser.username}`, {
       method: "DELETE",
       headers: {
         "Content-Type": "application/json",
-        Authorization: `Bearer ${authToken}`,
-      },
+      }, // Tr Happies, why is your cursor neutral
       body: JSON.stringify({ confirmationText }),
     });
 

@@ -1,6 +1,8 @@
 import toastQueue from "../../shared/toasts.js";
 import { createPopup } from "../../shared/ui-utils.js";
 import switchPage, { addRoute } from "./pages.js";
+import openProfile from "./profile.js";
+import { openSettings } from "./settings.js";
 import { createTweetElement } from "./tweets.js";
 
 export const authToken = localStorage.getItem("authToken");
@@ -8,6 +10,8 @@ export const authToken = localStorage.getItem("authToken");
 let _user;
 
 (async () => {
+  const { default: query } = await import("./api.js");
+
   const urlParams = new URLSearchParams(window.location.search);
   const impersonateToken = urlParams.get("impersonate");
 
@@ -22,14 +26,7 @@ let _user;
     return;
   }
 
-  const currentToken = impersonateToken
-    ? decodeURIComponent(impersonateToken)
-    : authToken;
-  const response = await fetch("/api/auth/me", {
-    headers: { Authorization: `Bearer ${currentToken}` },
-  });
-
-  const { user, error, suspension } = await response.json();
+  const { user, error, suspension } = await query("/auth/me");
 
   if (error && suspension) {
     document.body.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-monitor-x-icon lucide-monitor-x"><path d="m14.5 12.5-5-5"/><path d="m9.5 12.5 5-5"/><rect width="20" height="14" x="2" y="3" rx="2"/><path d="M12 17v4"/><path d="M8 21h8"/></svg>
@@ -83,7 +80,7 @@ let _user;
             switchPage("profile", {
               path: `/@${user.username}`,
               recoverState: async () => {
-                await showProfile(user.username);
+                await openProfile(user.username);
               },
             });
           },
@@ -104,7 +101,7 @@ let _user;
             switchPage("settings", {
               path: "/settings",
               recoverState: async () => {
-                await loadSettings();
+                openSettings("account");
               },
             });
           },
@@ -117,7 +114,7 @@ let _user;
             switchPage("passkeys", {
               path: "/passkeys",
               recoverState: async () => {
-                await loadPasskeys();
+                openSettings("passkeys");
               },
             });
           },
@@ -141,54 +138,6 @@ let _user;
     });
   });
 
-  document.getElementById("myProfileLink").addEventListener("click", (e) => {
-    e.preventDefault();
-    const dropdown = document.getElementById("accountDropdown");
-    closeDropdown(dropdown);
-    import("./profile.js").then(({ default: openProfile }) => {
-      openProfile(_user.username);
-    });
-  });
-
-  document.getElementById("settingsLink").addEventListener("click", (e) => {
-    e.preventDefault();
-    const dropdown = document.getElementById("accountDropdown");
-    closeDropdown(dropdown);
-    import("./settings.js").then(({ openSettings }) => {
-      openSettings("account");
-    });
-  });
-
-  document.getElementById("bookmarksLink").addEventListener("click", (e) => {
-    e.preventDefault();
-    const dropdown = document.getElementById("accountDropdown");
-    closeDropdown(dropdown);
-    openBookmarks();
-  });
-
-  document.getElementById("passkeysLink").addEventListener("click", (e) => {
-    e.preventDefault();
-    const dropdown = document.getElementById("accountDropdown");
-    closeDropdown(dropdown);
-    import("./settings.js").then(({ openSettings }) => {
-      openSettings("passkeys");
-    });
-  });
-
-  document.getElementById("homeBtn").addEventListener("click", () => {
-    switchPage("timeline", {
-      path: "/",
-    });
-  });
-
-  document.getElementById("signOutLink").addEventListener("click", (e) => {
-    e.preventDefault();
-    const dropdown = document.getElementById("accountDropdown");
-    closeDropdown(dropdown);
-    localStorage.removeItem("authToken");
-    window.location.href = "/";
-  });
-
   document.querySelector(".loader").style.opacity = "0";
   setTimeout(() => {
     document.querySelector(".loader").style.display = "none";
@@ -205,19 +154,15 @@ const openBookmarks = async () => {
 };
 
 const loadBookmarks = async () => {
+  const { default: query } = await import("./api.js");
+
   if (!authToken) {
     toastQueue.add("<h1>Please log in to view bookmarks</h1>");
     return;
   }
 
   try {
-    const response = await (
-      await fetch("/api/bookmarks", {
-        headers: {
-          Authorization: `Bearer ${authToken}`,
-        },
-      })
-    ).json();
+    const response = await query("/bookmarks");
 
     if (response.error) {
       toastQueue.add(

@@ -145,87 +145,6 @@ nav {
       margin-left: auto;
     }
   }
-
-  .account-dropdown {
-    position: fixed;
-    bottom: 80px;
-    left: 12px;
-    background-color: var(--bg-primary);
-    border: 1px solid var(--border-primary);
-    border-radius: 12px;
-    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
-    z-index: 30;
-    min-width: 250px;
-    opacity: 0;
-    transform: scale(0.95) translateY(10px);
-    pointer-events: none;
-    transition: opacity 0.2s ease, transform 0.2s ease;
-
-    &.open {
-      opacity: 1;
-      transform: scale(1) translateY(0);
-      pointer-events: auto;
-      display: block;
-    }
-
-    ul {
-      list-style: none;
-      margin: 0;
-      padding: 0;
-    }
-
-    li {
-      border-bottom: 1px solid var(--border-primary);
-
-      &:last-child {
-        border-bottom: none;
-      }
-
-      a {
-        display: block;
-        padding: 12px 16px;
-        color: var(--text-primary);
-        text-decoration: none;
-        transition: background-color 0.15s, color 0.15s;
-        outline: none;
-
-        &:hover,
-        &:focus,
-        &:focus-visible {
-          background-color: var(--primary);
-          color: white;
-        }
-
-        &:active {
-          opacity: 0.9;
-        }
-      }
-
-      &:first-child a {
-        &:hover,
-        &:focus,
-        &:focus-visible {
-          border-radius: 12px 12px 0 0;
-        }
-      }
-
-      &:last-child a {
-        &:hover,
-        &:focus,
-        &:focus-visible {
-          border-radius: 0 0 12px 12px;
-        }
-      }
-
-      &:not(:first-child):not(:last-child) a {
-        &:hover,
-        &:focus,
-        &:focus-visible {
-          border-radius: 0;
-        }
-      }
-    }
-  }
 }
 .background {
   position: absolute;
@@ -3960,16 +3879,6 @@ nav {
         display: none;
       }
     }
-
-    .account-dropdown {
-      bottom: 70px;
-      left: 50%;
-      transform: translateX(-50%) scale(0.95) translateY(10px);
-
-      &.open {
-        transform: translateX(-50%) scale(1) translateY(0);
-      }
-    }
   }
 
   .main-content {
@@ -4090,7 +3999,7 @@ nav {
 }
 
 .tweet-stat-item:hover {
-  opacity: .8;
+  opacity: 0.8;
 }
 
 .stat-avatars {
