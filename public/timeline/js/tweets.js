@@ -1206,9 +1206,7 @@ export const createTweetElement = (tweet, config = {}) => {
     try {
       const isBookmarked =
         tweetInteractionsBookmarkEl.dataset.bookmarked === "true";
-      const endpoint = isBookmarked
-        ? "/bookmarks/remove"
-        : "/bookmarks/add";
+      const endpoint = isBookmarked ? "/bookmarks/remove" : "/bookmarks/add";
 
       const result = await query(endpoint, {
         method: "POST",

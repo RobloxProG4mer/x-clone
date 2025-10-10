@@ -234,8 +234,7 @@ function createNotificationElement(notification) {
       try {
         const data = await query(`/dm/conversations/${relatedId}`);
 
-
-				if (data.conversation) {
+        if (data.conversation) {
           window.location.href = `/dm/${relatedId}`;
         }
       } catch (error) {
@@ -298,7 +297,7 @@ async function markAllAsRead() {
   if (!authToken) return;
 
   await query("/notifications/mark-all-read", {
-    method: "PATCH"
+    method: "PATCH",
   });
 
   currentNotifications.forEach((notification) => {
