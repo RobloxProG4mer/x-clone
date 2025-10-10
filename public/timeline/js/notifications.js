@@ -247,11 +247,9 @@ function createNotificationElement(notification) {
     ) {
       try {
         const response = await query(`/api/tweets/${relatedId}`);
-        // Tr Happies
         if (response.ok) {
           try {
-            // Force fresh import to avoid caching issues
-            const tweetModule = await import(`./tweet.js?t=${Date.now()}`);
+            const tweetModule = await import(`./tweet.js`);
             const openTweet = tweetModule.default;
 
             if (typeof openTweet !== "function") {

@@ -46,16 +46,16 @@ export const initializeSearchPage = () => {
     }, 300);
   });
 
-  const performSearch = async (query) => {
+  const performSearch = async (q) => {
     try {
       const promises = [];
 
       if (currentFilter === "all" || currentFilter === "users") {
-        promises.push(query(`/search/users?q=${encodeURIComponent(query)}`));
+        promises.push(query(`/search/users?q=${encodeURIComponent(q)}`));
       }
 
       if (currentFilter === "all" || currentFilter === "tweets") {
-        promises.push(query(`/search/posts?q=${encodeURIComponent(query)}`));
+        promises.push(query(`/search/posts?q=${encodeURIComponent(q)}`));
       }
 
       const results = await Promise.all(promises);
@@ -71,6 +71,7 @@ export const initializeSearchPage = () => {
       } else if (currentFilter === "tweets") {
         posts = results[0].posts;
       }
+
       displayResults(users, posts);
     } catch (error) {
       console.error("Search error:", error);
@@ -95,10 +96,13 @@ export const initializeSearchPage = () => {
       .map(
         (user) => `
 			<a href="/@${user.username}" class="search-user">
-				<img src="${user.avatar || "/default-avatar.png"}" alt="${user.name}">
+				<img src="${user.avatar || "/default-avatar.png"}" alt="${user.name.replaceAll(
+          '"',
+          ""
+        )}">
 				<div class="user-info">
-					<h4>${user.name}</h4>
-					<p>@${user.username}</p>
+					<h4>${user.name.replaceAll('"', "")}</h4>
+					<p>@${user.username.replaceAll('"', "")}</p>
 				</div>
 			</a>
 		`

@@ -1,7 +1,7 @@
 import { staticPlugin } from "@elysiajs/static";
 import { Elysia, file } from "elysia";
-
 import api from "./api.js";
+import { compression } from "./compress.js";
 
 const connectedUsers = new Map();
 
@@ -70,6 +70,7 @@ export function broadcastToUser(userId, message) {
 }
 
 new Elysia()
+  .use(compression)
   .use(staticPlugin())
   .ws("/ws", wsHandler)
   .get("/account", () => file("./public/account/index.html"))
