@@ -802,10 +802,40 @@ export default new Elysia({ prefix: "/tweets" })
       if (!tweet) return { error: "Tweet not found" };
 
       const quoters = getTweetQuoters.all(id, parseInt(limit));
+      
+      const quoteTweets = quoters.map(quoter => {
+        const quoteTweet = getTweetById.get(quoter.quote_tweet_id);
+        if (!quoteTweet) return null;
+        
+        const author = db.query("SELECT id, username, name, avatar, verified FROM users WHERE id = ?").get(quoteTweet.user_id);
+        const attachments = db.query("SELECT * FROM attachments WHERE post_id = ?").all(quoteTweet.id);
+        const liked = db.query("SELECT * FROM likes WHERE user_id = ? AND post_id = ?").get(user.id, quoteTweet.id);
+        const retweeted = db.query("SELECT * FROM retweets WHERE user_id = ? AND post_id = ?").get(user.id, quoteTweet.id);
+        const bookmarked = db.query("SELECT * FROM bookmarks WHERE user_id = ? AND post_id = ?").get(user.id, quoteTweet.id);
+        
+        return {
+          id: quoteTweet.id,
+          content: quoteTweet.content,
+          created_at: quoteTweet.created_at,
+          author,
+          like_count: quoteTweet.like_count || 0,
+          retweet_count: quoteTweet.retweet_count || 0,
+          reply_count: quoteTweet.reply_count || 0,
+          quote_count: quoteTweet.quote_count || 0,
+          liked_by_user: !!liked,
+          retweeted_by_user: !!retweeted,
+          bookmarked_by_user: !!bookmarked,
+          attachments: attachments || [],
+          source: quoteTweet.source,
+          reply_to: quoteTweet.reply_to,
+          quote_tweet_id: quoteTweet.quote_tweet_id,
+          pinned: quoteTweet.pinned || 0,
+        };
+      }).filter(tweet => tweet !== null);
 
       return {
         success: true,
-        users: quoters,
+        tweets: quoteTweets,
         type: "quotes",
       };
     } catch (error) {

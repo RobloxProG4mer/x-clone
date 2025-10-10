@@ -4,6 +4,7 @@ import {
   isConvertibleImage,
 } from "../../shared/image-utils.js";
 import toastQueue from "../../shared/toasts.js";
+import { createModal, createPopup } from "../../shared/ui-utils.js";
 import { authToken } from "./auth.js";
 import switchPage, { addRoute } from "./pages.js";
 import { createTweetElement } from "./tweets.js";
@@ -896,21 +897,33 @@ document
   ?.addEventListener("click", (e) => {
     e.preventDefault();
     e.stopPropagation();
-    const menu = document.getElementById("profileDropdownMenu");
-    menu.classList.toggle("show");
+    
+    const isBlocked = document.getElementById("blockUserBtn")?.textContent.includes("Unblock");
+    
+    createPopup({
+      triggerElement: e.currentTarget,
+      items: [
+        {
+          id: "block-user-option",
+          icon: `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="10"/>
+            <path d="M4.93 4.93l14.14 14.14"/>
+          </svg>`,
+          title: isBlocked ? "Unblock" : "Block",
+          description: isBlocked 
+            ? `Unblock @${currentUsername}` 
+            : `Block @${currentUsername}`,
+          onClick: () => {
+            if (isBlocked) {
+              handleUnblockUser();
+            } else {
+              handleBlockUser();
+            }
+          },
+        },
+      ],
+    });
   });
-
-// Close dropdown when clicking outside
-document.addEventListener("click", (e) => {
-  const dropdown = document.getElementById("profileDropdown");
-  const menu = document.getElementById("profileDropdownMenu");
-
-  if (!dropdown || !menu) return;
-
-  if (!dropdown.contains(e.target) && menu.classList.contains("show")) {
-    menu.classList.remove("show");
-  }
-});
 
 document.getElementById("editProfileModal").addEventListener("click", (e) => {
   if (e.target === e.currentTarget) closeEditModal();
@@ -943,54 +956,66 @@ async function showFollowersList(username, type) {
     const users = type === "followers" ? followers : following;
     const title = type === "followers" ? "Followers" : "Following";
 
-    // Create modal content
-    const modalContent = `
-			<div class="followers-modal">
-				<div class="followers-modal-header">
-					<h2>${title}</h2>
-					<button class="close-btn" onclick="this.closest('.followers-modal').style.display='none'">&times;</button>
-				</div>
-				<div class="followers-list">
-					${
-            users.length === 0
-              ? `<div class="empty-followers">No ${type} yet</div>`
-              : users
-                  .map(
-                    (user) => `
-							<div class="follower-item" data-username="${escapeHTML(user.username)}">
-								<img src="${user.avatar || "/api/avatars/default.png"}" alt="${escapeHTML(
-                      user.name
-                    )}" class="follower-avatar">
-								<div class="follower-info">
-									<div class="follower-name">${escapeHTML(user.name)}</div>
-									<div class="follower-username">@${escapeHTML(user.username)}</div>
-									${user.bio ? `<div class="follower-bio">${escapeHTML(user.bio)}</div>` : ""}
-								</div>
-							</div>
-						`
-                  )
-                  .join("")
-          }
-				</div>
-			</div>
-		`;
+    const followersList = document.createElement("div");
+    followersList.className = "followers-list";
 
-    // Show modal
-    const modal = document.createElement("div");
-    modal.className = "modal-overlay";
-    modal.innerHTML = modalContent;
-    modal.onclick = (e) => {
-      if (e.target === modal) modal.remove();
-    };
+    if (users.length === 0) {
+      const emptyDiv = document.createElement("div");
+      emptyDiv.className = "empty-followers";
+      emptyDiv.textContent = `No ${type} yet`;
+      followersList.appendChild(emptyDiv);
+    } else {
+      users.forEach((user) => {
+        const followerItem = document.createElement("div");
+        followerItem.className = "follower-item";
+        followerItem.dataset.username = user.username;
 
-    document.body.appendChild(modal);
+        const avatar = document.createElement("img");
+        avatar.src = user.avatar || "/api/avatars/default.png";
+        avatar.alt = user.name;
+        avatar.className = "follower-avatar";
 
-    modal.querySelectorAll(".follower-item").forEach((item) => {
-      item.onclick = () => {
-        const username = item.dataset.username;
-        modal.remove();
-        openProfile(username);
-      };
+        const followerInfo = document.createElement("div");
+        followerInfo.className = "follower-info";
+
+        const followerName = document.createElement("div");
+        followerName.className = "follower-name";
+        followerName.textContent = user.name;
+
+        const followerUsername = document.createElement("div");
+        followerUsername.className = "follower-username";
+        followerUsername.textContent = `@${user.username}`;
+
+        followerInfo.appendChild(followerName);
+        followerInfo.appendChild(followerUsername);
+
+        if (user.bio) {
+          const followerBio = document.createElement("div");
+          followerBio.className = "follower-bio";
+          followerBio.textContent = user.bio;
+          followerInfo.appendChild(followerBio);
+        }
+
+        followerItem.appendChild(avatar);
+        followerItem.appendChild(followerInfo);
+
+        followerItem.addEventListener("click", () => {
+          modal.close();
+          openProfile(user.username);
+        });
+
+        followersList.appendChild(followerItem);
+      });
+    }
+
+    const modalContent = document.createElement("div");
+    modalContent.className = "followers-modal";
+    modalContent.appendChild(followersList);
+
+    const modal = createModal({
+      title,
+      content: modalContent,
+      className: "modal-overlay",
     });
   } catch (error) {
     console.error("Error loading followers:", error);
@@ -1060,8 +1085,6 @@ const handleBlockUser = async () => {
       toastQueue.add(
         `<h1>User blocked</h1><p>@${currentUsername} has been blocked.</p>`
       );
-
-      document.getElementById("profileDropdownMenu").classList.remove("show");
     } else {
       toastQueue.add(`<h1>Failed to block user</h1>`);
     }
@@ -1091,8 +1114,6 @@ const handleUnblockUser = async () => {
       toastQueue.add(
         `<h1>User unblocked</h1><p>@${currentUsername} has been unblocked.</p>`
       );
-      // Close dropdown
-      document.getElementById("profileDropdownMenu").classList.remove("show");
     } else {
       toastQueue.add(`<h1>Failed to unblock user</h1>`);
     }

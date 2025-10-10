@@ -23,18 +23,16 @@ body {
 }
 
 .page-active {
-  animation: fadeIn 0.2s ease-in-out;
+  animation: fadeIn 0.15s ease-in-out;
 }
 
 @keyframes fadeIn {
   from {
     opacity: 0;
-    transform: translateY(2px);
     filter: blur(1px);
   }
   to {
     opacity: 1;
-    transform: translateY(0);
   }
 }
 
@@ -491,10 +489,6 @@ nav {
       flex-shrink: 0;
       object-fit: cover;
       transition: box-shadow 0.2s ease;
-    }
-
-    &:focus-within img#compose-avatar {
-      box-shadow: 0 0 0 2px rgba(var(--primary-rgb), 0.3);
     }
 
     .compose-input {
@@ -1950,6 +1944,10 @@ nav {
     max-height: 80vh;
     overflow-y: auto;
   }
+}
+
+.quotes-list {
+  padding: 18px;
 }
 
 .quoted-tweet-preview {
@@ -4064,7 +4062,6 @@ nav {
   margin-top: 4px;
 }
 
-/* Clickable count styles */
 .clickable-count {
   cursor: pointer;
   transition: color 0.2s ease;
@@ -4076,9 +4073,7 @@ nav {
 }
 
 .expanded-tweet-stats {
-  border-top: 1px solid var(--border-primary);
-  padding: 16px 0 0;
-  margin-top: 16px;
+  padding: 4px 0 0;
   display: flex;
   flex-direction: column;
 }
@@ -4091,11 +4086,11 @@ nav {
   padding-bottom: 0px;
   border-radius: 8px;
   cursor: pointer;
-  transition: background-color 0.2s ease;
+  transition: opacity 0.2s ease;
 }
 
 .tweet-stat-item:hover {
-  background-color: var(--bg-secondary);
+  opacity: .8;
 }
 
 .stat-avatars {

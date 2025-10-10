@@ -130,7 +130,7 @@ img {
   @starting-style {
     & {
       opacity: 0;
-      transform: scale(0.95);
+      transform: scale(0.95) translateY(-10px);
     }
   }
 }
@@ -148,12 +148,12 @@ img {
   align-items: center;
   gap: 12px;
   cursor: pointer;
-  transition: background-color 0.2s;
+  transition: background-color 0.2s, transform .2s;
   font-family: inherit;
   text-align: left;
 
   &:hover {
-    background-color: var(--bg-secondary);
+    transform: scale(1.02);
   }
 
   &:active {

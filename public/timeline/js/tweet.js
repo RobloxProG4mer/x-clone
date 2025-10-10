@@ -7,6 +7,8 @@ export default async function openTweet(
 	tweet,
 	{ repliesCache, threadPostsCache } = {},
 ) {
+	if (!tweet.id) return;
+	
 	if (!tweet?.author) {
 		const { authToken } = await import("./auth.js");
 		const apiOutput = await (

@@ -473,7 +473,7 @@ export const useComposer = (
 
 export const createComposer = async ({
   callback = () => {},
-  placeholder = "What's happening?",
+  placeholder = "What is happening?! Did a browser just go angry?!",
   replyTo = null,
   quoteTweet = null,
 }) => {
@@ -483,7 +483,7 @@ export const createComposer = async ({
         <div class="compose-header">
           <img src="" alt="Your avatar" id="compose-avatar">
           <div class="compose-input">
-            <textarea placeholder="What's happening?" maxlength="400" id="tweet-textarea" style="overflow:hidden"></textarea>
+            <textarea maxlength="400" id="tweet-textarea" style="overflow:hidden"></textarea>
             <div id="quoted-tweet-container"></div>
             <div id="poll-container" style="display: none;">
               <div class="poll-options"></div>
