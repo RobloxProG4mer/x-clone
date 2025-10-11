@@ -862,13 +862,60 @@ export default new Elysia({ prefix: "/profile" })
 
       updateUsername.run(newUsername, currentUser.id);
 
-      // Generate new JWT token with the new username
-      const newToken = await jwt.sign({ username: newUsername });
+      const newToken = await jwt.sign({
+        username: newUsername,
+        userId: currentUser.id,
+      });
 
       return { success: true, username: newUsername, token: newToken };
     } catch (error) {
       console.error("Update username error:", error);
       return { error: "Failed to update username" };
+    }
+  })
+  .patch("/:username/password", async ({ params, jwt, headers, body }) => {
+    const authorization = headers.authorization;
+    if (!authorization) return { error: "Authentication required" };
+
+    try {
+      const payload = await jwt.verify(authorization.replace("Bearer ", ""));
+      if (!payload) return { error: "Invalid token" };
+
+      const currentUser = getUserByUsername.get(payload.username);
+      if (!currentUser) return { error: "User not found" };
+
+      const { username } = params;
+      if (currentUser.username !== username) {
+        return { error: "You can only change your own password" };
+      }
+
+      const { currentPassword, newPassword } = body;
+
+      if (!newPassword || newPassword.length < 8) {
+        return { error: "New password must be at least 8 characters long" };
+      }
+
+      if (currentUser.password_hash) {
+        if (!currentPassword) {
+          return { error: "Current password is required" };
+        }
+
+        const isValid = await Bun.password.verify(
+          currentPassword,
+          currentUser.password_hash
+        );
+        if (!isValid) {
+          return { error: "Current password is incorrect" };
+        }
+      }
+
+      const passwordHash = await Bun.password.hash(newPassword);
+      updatePassword.run(passwordHash, currentUser.id);
+
+      return { success: true, message: "Password updated successfully" };
+    } catch (error) {
+      console.error("Update password error:", error);
+      return { error: "Failed to update password" };
     }
   })
   .delete("/:username", async ({ params, jwt, headers, body }) => {

@@ -12,89 +12,37 @@ function sanitizeHTML(str) {
 let currentConversations = [];
 let currentConversation = null;
 let currentMessages = [];
-let socket = null;
+let eventSource = null;
 let selectedUsers = [];
 let pendingFiles = [];
-let _wsSendQueue = [];
 
-function _safeSend(message) {
-  try {
-    if (socket && socket.readyState === WebSocket.OPEN) {
-      socket.send(message);
-      return true;
-    }
-
-    _wsSendQueue.push(message);
-    return false;
-  } catch (err) {
-    console.error("_safeSend error:", err);
-
-    _wsSendQueue.push(message);
-    return false;
-  }
-}
-
-function connectWebSocket() {
-  if (socket && socket.readyState === WebSocket.OPEN) {
+function connectSSE() {
+  if (eventSource && eventSource.readyState === EventSource.OPEN) {
     return;
   }
+  if (!authToken) return;
 
-  const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
-  const wsUrl = `${protocol}//${window.location.host}/ws`;
+  const sseUrl = `/sse?token=${encodeURIComponent(authToken)}`;
+  eventSource = new EventSource(sseUrl);
 
-  const ws = new WebSocket(wsUrl);
-  socket = ws;
-
-  ws.onopen = () => {
-    if (authToken) {
-      _safeSend(JSON.stringify({ type: "authenticate", token: authToken }));
-    }
-
-    if (_wsSendQueue.length > 0) {
-      for (const msg of _wsSendQueue) {
-        try {
-          ws.send(msg);
-        } catch (e) {
-          console.error("Failed to send queued WebSocket message:", e);
-        }
-      }
-      _wsSendQueue = [];
-    }
+  eventSource.onopen = () => {
+    console.log("SSE connection established");
   };
 
-  socket.onmessage = (event) => {
+  eventSource.onmessage = (event) => {
     try {
       const data = JSON.parse(event.data);
-      handleWebSocketMessage(data);
+      if (data.type === "new_message") handleNewMessage(data);
     } catch (error) {
-      console.error("Error parsing WebSocket message:", error);
+      console.error("Error parsing SSE message:", error);
     }
   };
 
-  socket.onclose = () => {
-    setTimeout(connectWebSocket, 3000);
+  eventSource.onerror = (error) => {
+    console.error("SSE error:", error);
+    eventSource.close();
+    setTimeout(connectSSE, 3000);
   };
-
-  socket.onerror = (error) => {
-    console.error("WebSocket error:", error);
-  };
-}
-
-function handleWebSocketMessage(data) {
-  switch (data.type) {
-    case "authenticated":
-      if (!data.success) {
-        console.error("WebSocket authentication failed:", data.error);
-      }
-      break;
-
-    case "new_message":
-      handleNewMessage(data);
-      break;
-
-    default:
-      console.error("Unknown WebSocket message type:", data.type);
-  }
 }
 
 function handleNewMessage(data) {
@@ -800,12 +748,12 @@ function closeNewMessageModal() {
   }
 }
 
-async function searchUsers(query) {
-  if (!query.trim()) return [];
+async function searchUsers(searchQuery) {
+  if (!searchQuery.trim()) return [];
 
   try {
     const data = await query(
-      `/search/users?q=${encodeURIComponent(query)}&limit=5`
+      `/search/users?q=${encodeURIComponent(searchQuery)}&limit=5`
     );
     return data.users || [];
   } catch (error) {
@@ -1140,7 +1088,7 @@ document.addEventListener("DOMContentLoaded", () => {
   });
 
   if (authToken) {
-    connectWebSocket();
+    connectSSE();
   }
 });
 
@@ -1238,7 +1186,7 @@ window.openGroupSettings = openGroupSettings;
 export default {
   loadConversations,
   updateUnreadCount,
-  connectWebSocket,
+  connectSSE,
 };
 
 export { openOrCreateConversation };

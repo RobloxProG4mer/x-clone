@@ -22,48 +22,48 @@ const suspensionCache = new Map();
 const CACHE_TTL = 30_000;
 
 export default new Elysia({
-	prefix: "/api",
+  prefix: "/api",
 })
-	.use(
-		rateLimit({
-			duration: 10_000,
-			max: 30,
-			scoping: "scoped",
-			generator: ratelimit,
-		}),
-	)
-	.onBeforeHandle(({ headers }) => {
-		const token = headers.authorization?.split(" ")[1];
-		if (!token) return;
+  .use(
+    rateLimit({
+      duration: 10_000,
+      max: 30,
+      scoping: "scoped",
+      generator: ratelimit,
+    })
+  )
+  .onBeforeHandle(({ headers }) => {
+    const token = headers.authorization?.split(" ")[1];
+    if (!token) return;
 
-		const { userId } = JSON.parse(atob(token.split(".")[1]));
+    const { userId } = JSON.parse(atob(token.split(".")[1]));
 
-		const now = Date.now();
-		let cached = suspensionCache.get(userId);
+    const now = Date.now();
+    let cached = suspensionCache.get(userId);
 
-		if (!cached || cached.expiry < now) {
-			const suspension = isSuspendedQuery.get(userId);
-			cached = { suspension, expiry: now + CACHE_TTL };
-			suspensionCache.set(userId, cached);
-		}
+    if (!cached || cached.expiry < now) {
+      const suspension = isSuspendedQuery.get(userId);
+      cached = { suspension, expiry: now + CACHE_TTL };
+      suspensionCache.set(userId, cached);
+    }
 
-		if (cached.suspension) {
-			return {
-				error: "You are suspended",
-				suspension: cached.suspension,
-			};
-		}
-	})
-	.use(auth)
-	.use(admin)
-	.use(blocking)
-	.use(bookmarks)
-	.use(tweet)
-	.use(profile)
-	.use(timeline)
-	.use(search)
-	.use(upload)
-	.use(notifications)
-	.use(dm)
-	.use(avatarRoutes)
-	.use(uploadRoutes);
+    if (cached.suspension) {
+      return {
+        error: "You are suspended",
+        suspension: cached.suspension,
+      };
+    }
+  })
+  .use(auth)
+  .use(admin)
+  .use(blocking)
+  .use(bookmarks)
+  .use(tweet)
+  .use(profile)
+  .use(timeline)
+  .use(search)
+  .use(upload)
+  .use(notifications)
+  .use(dm)
+  .use(avatarRoutes)
+  .use(uploadRoutes);

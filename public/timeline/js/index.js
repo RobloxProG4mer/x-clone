@@ -108,8 +108,7 @@ window.onunhandledrejection = (event) => {
   await loadTimeline("home");
   handleUrlParams();
 
-  // Initialize DM functionality
-  dm.connectWebSocket();
+  dm.connectSSE();
   dm.updateUnreadCount();
 
   const composer = await createComposer({

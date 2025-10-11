@@ -523,7 +523,6 @@ export default new Elysia({ prefix: "/admin" })
     const impersonationToken = await jwt.sign({
       userId: targetUser.id,
       username: targetUser.username,
-      impersonation: true,
       iat: Math.floor(Date.now() / 1000),
       exp: Math.floor(Date.now() / 1000) + 24 * 60 * 60, // 24 hours
     });
@@ -542,33 +541,6 @@ export default new Elysia({ prefix: "/admin" })
     };
   })
 
-  .post("/stop-impersonation", async ({ headers, jwt }) => {
-    const token = headers.authorization?.replace("Bearer ", "");
-    const payload = await jwt.verify(token);
-
-    if (!payload?.impersonation) {
-      return { error: "Not currently impersonating" };
-    }
-
-    const originalUser = adminQueries.findUserById.get(payload.originalUserId);
-    if (!originalUser) {
-      return { error: "Original user not found" };
-    }
-
-    const newToken = await jwt.sign({
-      userId: originalUser.id,
-      username: originalUser.username,
-      iat: Math.floor(Date.now() / 1000),
-      exp: Math.floor(Date.now() / 1000) + 7 * 24 * 60 * 60, // 7 days
-    });
-
-    return {
-      success: true,
-      token: newToken,
-    };
-  })
-
-  // DM Management endpoints
   .get("/dms", async ({ query }) => {
     const page = Math.max(1, Number.parseInt(query.page || "1"));
     const limit = Math.min(

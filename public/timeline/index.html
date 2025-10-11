@@ -564,31 +564,6 @@
               >
                 Edit profile
               </button>
-              <button
-                class="profile-btn profile-btn-secondary"
-                id="profileDmBtn"
-                style="display: none"
-              >
-                <svg
-                  width="18"
-                  height="18"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  stroke-width="2"
-                >
-                  <path
-                    d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"
-                  />
-                </svg>
-              </button>
-              <button
-                class="profile-btn profile-btn-primary"
-                id="followBtn"
-                style="display: none"
-              >
-                Follow
-              </button>
               <div
                 class="profile-dropdown"
                 id="profileDropdown"
@@ -598,18 +573,7 @@
                   class="profile-btn profile-btn-secondary profile-dropdown-btn"
                   id="profileDropdownBtn"
                 >
-                  <svg
-                    width="20"
-                    height="20"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    stroke-width="2"
-                  >
-                    <circle cx="12" cy="12" r="1" />
-                    <circle cx="12" cy="5" r="1" />
-                    <circle cx="12" cy="19" r="1" />
-                  </svg>
+                  <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 20 20"><path fill="currentColor" d="M10.001 7.8a2.2 2.2 0 1 0 0 4.402A2.2 2.2 0 0 0 10 7.8zm-7 0a2.2 2.2 0 1 0 0 4.402A2.2 2.2 0 0 0 3 7.8zm14 0a2.2 2.2 0 1 0 0 4.402A2.2 2.2 0 0 0 17 7.8z"></path></svg>
                 </button>
                 <div class="dropdown-menu" id="profileDropdownMenu">
                   <button class="dropdown-item" id="blockUserBtn">
@@ -629,6 +593,25 @@
                   </button>
                 </div>
               </div>
+              <button
+                class="profile-btn profile-btn-secondary"
+                id="profileDmBtn"
+                style="display: none"
+              >
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+                  <path
+                    d="M1.998 5.5c0-1.381 1.119-2.5 2.5-2.5h15c1.381 0 2.5 1.119 2.5 2.5v13c0 1.381-1.119 2.5-2.5 2.5h-15c-1.381 0-2.5-1.119-2.5-2.5v-13zm2.5-.5c-.276 0-.5.224-.5.5v2.764l8 3.638 8-3.636V5.5c0-.276-.224-.5-.5-.5h-15zm15.5 5.463l-8 3.636-8-3.638V18.5c0 .276.224.5.5.5h15c.276 0 .5-.224.5-.5v-8.037z"
+                    fill="currentColor"
+                  ></path>
+                </svg>
+              </button>
+              <button
+                class="profile-btn profile-btn-primary"
+                id="followBtn"
+                style="display: none"
+              >
+                Follow
+              </button>
             </div>
 
             <div class="profile-info">

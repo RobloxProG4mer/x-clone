@@ -1,3 +1,4 @@
+import { jwt } from "@elysiajs/jwt";
 import { staticPlugin } from "@elysiajs/static";
 import { Elysia, file } from "elysia";
 import api from "./api.js";
@@ -5,51 +6,7 @@ import { compression } from "./compress.js";
 
 const connectedUsers = new Map();
 
-const wsHandler = {
-  message: (ws, message) => {
-    try {
-      let data;
-      if (typeof message === "string") {
-        data = JSON.parse(message);
-      } else {
-        data = message;
-      }
-      if (data.type === "authenticate") {
-        const { token } = data;
-        if (token) {
-          try {
-            const payload = JSON.parse(atob(token.split(".")[1]));
-            ws.data.userId = payload.userId;
-            ws.data.username = payload.username;
-            if (!connectedUsers.has(payload.userId)) {
-              connectedUsers.set(payload.userId, new Set());
-            }
-            connectedUsers.get(payload.userId).add(ws);
-            ws.send(JSON.stringify({ type: "authenticated", success: true }));
-          } catch {
-            ws.send(
-              JSON.stringify({
-                type: "authenticated",
-                success: false,
-                error: "Invalid token",
-              })
-            );
-          }
-        }
-      }
-    } catch (error) {
-      console.error("WebSocket message error:", error);
-    }
-  },
-  close: (ws) => {
-    if (ws.data.userId && connectedUsers.has(ws.data.userId)) {
-      connectedUsers.get(ws.data.userId).delete(ws);
-      if (connectedUsers.get(ws.data.userId).size === 0) {
-        connectedUsers.delete(ws.data.userId);
-      }
-    }
-  },
-};
+const sseConnections = new Map();
 
 export function broadcastToUser(userId, message) {
   const userSockets = connectedUsers.get(userId);
@@ -63,12 +20,107 @@ export function broadcastToUser(userId, message) {
       }
     }
   }
+
+  const sseClients = sseConnections.get(userId);
+  if (sseClients) {
+    for (const client of sseClients) {
+      try {
+        client.controller.enqueue(`data: ${JSON.stringify(message)}\n\n`);
+      } catch (error) {
+        console.error("Error sending SSE message:", error);
+        sseClients.delete(client);
+      }
+    }
+  }
 }
 
 new Elysia()
   .use(compression)
   .use(staticPlugin())
-  .ws("/ws", wsHandler)
+  .use(jwt({ name: "jwt", secret: process.env.JWT_SECRET }))
+  .get("/sse", async ({ jwt, query, set }) => {
+    const { token } = query;
+
+    if (!token) {
+      set.status = 401;
+      return { error: "Authentication required" };
+    }
+
+    const payload = await jwt.verify(token);
+    if (!payload) {
+      set.status = 401;
+      return { error: "Invalid token" };
+    }
+
+    const userId = payload.userId;
+
+    const stream = new ReadableStream({
+      start(controller) {
+        controller.enqueue(`:ok\n\n`);
+
+        if (!sseConnections.has(userId)) {
+          sseConnections.set(userId, new Set());
+        }
+        const client = { controller };
+        sseConnections.get(userId).add(client);
+
+        const keepAlive = setInterval(() => {
+          try {
+            controller.enqueue(`:ping\n\n`);
+          } catch {
+            clearInterval(keepAlive);
+          }
+        }, 30000);
+
+        client.keepAlive = keepAlive;
+      },
+      cancel() {
+        if (sseConnections.has(userId)) {
+          const clients = sseConnections.get(userId);
+          for (const client of clients) {
+            if (client.keepAlive) clearInterval(client.keepAlive);
+          }
+          clients.clear();
+          sseConnections.delete(userId);
+        }
+      },
+    });
+
+    set.headers = {
+      "Content-Type": "text/event-stream",
+      "Cache-Control": "no-cache",
+      Connection: "keep-alive",
+    };
+
+    return new Response(stream, {
+      headers: set.headers,
+    });
+  })
+  .ws("/ws", {
+    open: async (ws) => {
+      const { token } = ws.data.query;
+
+      if (!token) ws.close();
+
+      const payload = await ws.data.jwt.verify(token);
+      if (!payload) ws.close();
+
+      ws.data.userId = payload.userId;
+      ws.data.username = payload.username;
+      if (!connectedUsers.has(payload.userId)) {
+        connectedUsers.set(payload.userId, new Set());
+      }
+      connectedUsers.get(payload.userId).add(ws);
+    },
+    close: (ws) => {
+      if (ws.data.userId && connectedUsers.has(ws.data.userId)) {
+        connectedUsers.get(ws.data.userId).delete(ws);
+        if (connectedUsers.get(ws.data.userId).size === 0) {
+          connectedUsers.delete(ws.data.userId);
+        }
+      }
+    },
+  })
   .get("/account", () => file("./public/account/index.html"))
   .get("/admin", () => file("./public/admin/index.html"))
   .get("/profile/:username", () => file("./public/timeline/index.html"))
@@ -81,7 +133,7 @@ new Elysia()
       : redirect("/account");
   })
   .use(api)
-  .listen(3000, () => {
+  .listen({ port: 3000, idleTimeout: 255 }, () => {
     console.log(
       "Happies tweetapus app is running on http://localhost:3000 ✅✅✅✅✅✅✅✅✅"
     );

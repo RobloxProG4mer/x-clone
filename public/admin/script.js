@@ -37,30 +37,8 @@ class AdminPanel {
       this.currentUser = user;
       this.setupEventListeners();
       this.loadDashboard();
-    } catch () {
+    } catch {
       location.href = "/";
-    }
-  }
-
-  async stopImpersonation() {
-    try {
-      const response = await fetch("/api/admin/stop-impersonation", {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${this.token}`,
-        },
-      });
-
-      const result = await response.json();
-      if (result.success) {
-        this.token = result.token;
-        localStorage.setItem("authToken", this.token);
-        location.reload();
-      } else {
-        this.showError(result.error || "Failed to stop impersonation");
-      }
-    } catch (error) {
-      this.showError("Failed to stop impersonation");
     }
   }
 
@@ -1478,15 +1456,10 @@ class AdminPanel {
   }
 }
 
-// Global functions for onclick handlers
 const adminPanel = new AdminPanel();
 
 function showSection(section) {
   adminPanel.showSection(section);
-}
-
-function stopImpersonation() {
-  adminPanel.stopImpersonation();
 }
 
 function searchUsers() {

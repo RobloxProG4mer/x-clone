@@ -150,16 +150,16 @@ img {
   align-items: center;
   gap: 12px;
   cursor: pointer;
-  transition: background-color 0.15s ease;
+  transition: transform 0.15s;
   font-family: inherit;
   text-align: left;
 
   &:hover {
-    background-color: var(--bg-secondary);
+    transform: scale(1.01);
   }
 
   &:active {
-    opacity: 0.8;
+    transform: scale(0.98);
   }
 
   &:first-child {

@@ -305,13 +305,13 @@ const renderProfile = (data) => {
   } else if (authToken) {
     document.getElementById("editProfileBtn").style.display = "none";
     document.getElementById("followBtn").style.display = "block";
-    document.getElementById("profileDmBtn").style.display = "block";
+    document.getElementById("profileDmBtn").style.display = "flex";
     document.getElementById("profileDropdown").style.display = "block";
     updateFollowButton(isFollowing);
     setupDmButton(profile.username);
     checkBlockStatus(profile.username);
   } else {
-    document.getElementById("profileDmBtn").style.display = "none";
+    document.getElementById("profileDmBtn").style.display = "flex";
     document.getElementById("profileDropdown").style.display = "none";
   }
 
@@ -735,7 +735,7 @@ const saveProfile = async (event) => {
   };
 
   try {
-    const response = await query(`/profile/${currentUsername}`, {
+    const { success, error } = await query(`/profile/${currentUsername}`, {
       method: "PUT",
       headers: {
         "Content-Type": "application/json",
@@ -743,12 +743,11 @@ const saveProfile = async (event) => {
       body: JSON.stringify(formData),
     });
 
-    const data = await response.json();
-    if (data.success) {
+    if (success) {
       closeEditModal();
       loadProfile(currentUsername);
     } else {
-      alert(data.error || "Failed to update profile");
+      alert(error || "Failed to update profile");
     }
   } catch {
     alert("Failed to update profile");

@@ -341,6 +341,7 @@ const timeAgo = (input) => {
 
 const apiRequest = async (path, options = {}) => {
   return await query(`/api${path}`, {
+    // why is cursor stuck, Tr?
     headers: {
       "Content-Type": options.body ? "application/json" : undefined,
       ...(authToken && { Authorization: `Bearer ${authToken}` }),

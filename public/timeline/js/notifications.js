@@ -209,10 +209,10 @@ function createNotificationElement(notification) {
     const notificationType = e.currentTarget.dataset.type;
     const relatedId = e.currentTarget.dataset.relatedId;
 
-    if (authToken) {
+    if (authToken && isUnread) {
       try {
         await query(`/notifications/${notificationId}/read`, {
-          method: "POST",
+          method: "PATCH",
         });
 
         const notification = currentNotifications.find(
@@ -230,23 +230,13 @@ function createNotificationElement(notification) {
 
     if (!relatedId) return;
 
-    if (notificationType === "dm") {
-      try {
-        const data = await query(`/dm/conversations/${relatedId}`);
-
-        if (data.conversation) {
-          window.location.href = `/dm/${relatedId}`;
-        }
-      } catch (error) {
-        console.error("Failed to open DM conversation:", error);
-      }
-    } else if (
+    if (
       ["like", "retweet", "reply", "quote", "mention"].includes(
         notificationType
       )
     ) {
       try {
-        const response = await query(`/api/tweets/${relatedId}`);
+        const response = await query(`/tweets/${relatedId}`);
         if (response.ok) {
           try {
             const tweetModule = await import(`./tweet.js`);
