@@ -157,7 +157,7 @@ CREATE TABLE IF NOT EXISTS poll_votes (
 CREATE TABLE IF NOT EXISTS attachments (
   id TEXT PRIMARY KEY,
   post_id TEXT NOT NULL,
-  file_hash TEXT NOT NULL,
+  file_hash TEXT,
   file_name TEXT NOT NULL,
   file_type TEXT NOT NULL,
   file_size INTEGER NOT NULL,

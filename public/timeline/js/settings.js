@@ -121,7 +121,6 @@ const createThemesContent = () => {
   themeItem.appendChild(themeControl);
   group.appendChild(themeItem);
 
-  // Accent Color Setting
   const colorItem = document.createElement("div");
   colorItem.className = "setting-item";
 
@@ -429,9 +428,7 @@ const loadPasskeys = async () => {
       const createdAt = document.createElement("div");
       createdAt.style.fontSize = "12px";
       createdAt.style.color = "var(--text-secondary)";
-      const date = passkey.created_at
-        ? new Date(passkey.created_at)
-        : new Date();
+      const date = passkey.createdAt ? new Date(passkey.createdAt) : new Date();
       createdAt.textContent = `Created: ${date.toLocaleDateString()}`;
 
       info.appendChild(name);
@@ -441,7 +438,7 @@ const loadPasskeys = async () => {
       deleteBtn.className = "btn danger";
       deleteBtn.textContent = "Remove";
       deleteBtn.style.maxWidth = "120px";
-      deleteBtn.onclick = () => deletePasskey(passkey.cred_id);
+      deleteBtn.onclick = () => deletePasskey(passkey.id);
 
       item.appendChild(info);
       item.appendChild(deleteBtn);
@@ -457,6 +454,15 @@ const deletePasskey = async (passkeyId) => {
   if (!confirm("Are you sure you want to remove this passkey?")) return;
 
   try {
+    const passkeysList = await query("/auth/passkeys");
+
+    if (passkeysList.passkeys && passkeysList.passkeys.length <= 1) {
+      toastQueue.add(
+        `<h1>Cannot Delete</h1><p>You must have at least one passkey. Add another passkey before removing this one.</p>`
+      );
+      return;
+    }
+
     const data = await query(`/auth/passkeys/${passkeyId}`, {
       method: "DELETE",
     });
@@ -478,7 +484,7 @@ const createOtherContent = () => {
   const wrap = document.createElement("div");
   wrap.className = "settings-section";
   const h1 = document.createElement("h1");
-  h1.textContent = "Other Settings";
+  h1.textContent = "Other or Uncategorized Settings";
   const p = document.createElement("p");
   p.textContent = "Additional settings will be added here.";
   wrap.appendChild(h1);
@@ -762,57 +768,22 @@ const createSettingsPage = () => {
 			padding: 0 20px;
 		}
 		
-		.settings-header {
-			display: flex;
-			align-items: center;
-			padding: 20px 0;
-			border-bottom: 1px solid var(--border-primary);
-			margin-bottom: 12px;
-		}
+    .settings-header {
+      display: flex;
+      align-items: center;
+      padding: 20px 0;
+      border-bottom: 1px solid var(--border-primary);
+      margin-bottom: 12px;
+    }
 		
-		.back-button {
-			background: none;
-			border: none;
-			color: var(--text-primary);
-			cursor: pointer;
-			padding: 8px;
-			margin-right: 20px;
-			border-radius: 50%;
-			display: flex;
-			align-items: center;
-			justify-content: center;
-			transition: background-color 0.2s;
-			text-decoration: none;
-		}
-		
-		.back-button:hover {
-			background-color: var(--bg-overlay-light);
-		}
-		
-		.settings-header-info h1 {
-			margin: 0;
-			font-size: 24px;
-			font-weight: 700;
-			color: var(--text-primary);
-		}
-		
-		.settings-body {
-			display: flex;
-			gap: 24px;
-			flex: 1;
-			width: 100%;
-			align-items: flex-start;
-			justify-content: center;
-		}
-		
-		.settings-sidebar {
-			background-color: var(--bg-secondary);
-			border-radius: 8px;
-			padding: 8px;
-			width: 200px;
-			flex-shrink: 0;
-			height: fit-content;
-		}
+    .color-option:hover {
+      box-shadow: 0 6px 18px rgba(0,0,0,0.08);
+    }
+
+    .color-option.active {
+      border-color: var(--text-primary);
+      box-shadow: 0 6px 12px rgba(0,0,0,0.12);
+    }
 		
 		.settings-tab-btn {
 			width: 100%;
@@ -820,35 +791,52 @@ const createSettingsPage = () => {
 			border: none;
 			color: var(--text-primary);
 			text-align: left;
-			padding: 12px 16px;
+			padding: 14px 18px;
 			font-size: 16px;
 			cursor: pointer;
-			border-radius: 6px;
-			margin-bottom: 4px;
+			border-radius: 10px;
+			margin-bottom: 6px;
 			font-family: inherit;
 			font-weight: 400;
-			transition: background-color 0.2s;
+			transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+			position: relative;
+			overflow: hidden;
 		}
 		
 		.settings-tab-btn:hover {
 			background-color: var(--bg-overlay-light);
+			transform: translateX(4px);
 		}
 		
 		.settings-tab-btn.active {
 			background-color: var(--primary);
 			color: #fff;
 			font-weight: 500;
+			box-shadow: 0 4px 12px rgba(var(--primary-rgb), 0.3);
+			transform: translateX(0);
 		}
 		
-		.settings-content {
-			background-color: var(--bg-secondary);
-			border-radius: 8px;
-			padding: 32px;
-			flex: 1;
-			min-width: 0;
-			max-width: 900px;
-			overflow-x: hidden;
+		.settings-tab-btn.active::before {
+			content: '';
+			position: absolute;
+			left: 0;
+			top: 0;
+			bottom: 0;
+			width: 4px;
+			background: #fff;
+			opacity: 0.8;
 		}
+		
+    .settings-content {
+      background-color: var(--bg-secondary);
+      border-radius: 8px;
+      padding: 28px;
+      flex: 1;
+      min-width: 0;
+      max-width: 900px;
+      overflow-x: hidden;
+      border: 1px solid var(--border-primary);
+    }
 		
 		.settings-section h1 {
 			margin: 0 0 20px 0;
@@ -871,111 +859,99 @@ const createSettingsPage = () => {
 		.setting-item {
 			display: flex;
 			flex-direction: column;
-			gap: 12px;
+			gap: 14px;
 			align-items: stretch;
-			padding: 18px 0;
+			padding: 20px 0;
 			border-bottom: 1px solid var(--border-primary);
-		}		.setting-item:last-child {
-			border-bottom: none;
+			transition: padding 0.2s;
 		}
 		
-		.setting-label {
-			display: flex;
-			flex-direction: column;
-			gap: 4px;
-			min-width: 0;
+		.setting-item:hover {
+			padding: 20px 8px;
+			border-radius: 8px;
+			background: rgba(var(--primary-rgb), 0.02);
 		}
 		
-		.setting-label:empty {
-			display: none;
-		}
+    .settings-tab-btn {
+      width: 100%;
+      background: transparent;
+      border: none;
+      color: var(--text-primary);
+      text-align: left;
+      padding: 12px 16px;
+      font-size: 16px;
+      cursor: pointer;
+      border-radius: 6px;
+      margin-bottom: 4px;
+      font-family: inherit;
+      font-weight: 400;
+      position: relative;
+    }
 		
-		.setting-title {
-			font-size: 16px;
+    .settings-tab-btn:hover {
+      background-color: var(--bg-overlay-light);
+    }
+		
+    .settings-tab-btn.active {
+      background-color: var(--primary);
+      color: #fff;
+      font-weight: 500;
+    }
+      color: var(--text-primary);
+      border-radius: 12px;
+      font-size: 14px;
+      font-weight: 500;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 20px;
+      min-width: 140px;
+    }
+		
+    .custom-dropdown-option {
+      padding: 12px 16px;
+      cursor: pointer;
+      font-size: 14px;
+      font-weight: 500;
+      position: relative;
+    }
+		
+    .custom-dropdown-option:hover {
+      background: var(--bg-secondary);
+    }
+		
+    .custom-dropdown-option.selected {
+      background: var(--primary);
+      color: #fff;
+      padding-left: 16px;
+    }
+			cursor: pointer;
+			transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+			font-size: 14px;
 			font-weight: 500;
-			color: var(--text-primary);
-		}
-		
-		.setting-description {
-			font-size: 14px;
-			color: var(--text-secondary);
-		}
-		
-		.setting-control {
-			flex-shrink: 0;
-			min-width: 0;
-			max-width: 100%;
-		}
-		
-		.custom-dropdown {
 			position: relative;
-			display: inline-block;
-		}
-		
-		.custom-dropdown-button {
-			padding: 8px 12px;
-			background: var(--bg-primary);
-			border: 1px solid var(--border-primary);
-			color: var(--text-primary);
-			border-radius: 6px;
-			font-size: 14px;
-			cursor: pointer;
-			display: flex;
-			align-items: center;
-			gap: 8px;
-			min-width: 100px;
-			transition: all 0.2s;
-		}
-		
-		.custom-dropdown-button:hover {
-			background: var(--bg-secondary);
-			border-color: var(--border-hover);
-		}
-		
-		.custom-dropdown-arrow {
-			transition: transform 0.2s;
-		}
-		
-		.custom-dropdown.open .custom-dropdown-arrow {
-			transform: rotate(180deg);
-		}
-		
-		.custom-dropdown-menu {
-			position: absolute;
-			top: 100%;
-			left: 0;
-			right: 0;
-			background: var(--bg-primary);
-			border: 1px solid var(--border-primary);
-			border-radius: 6px;
-			box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-			z-index: 1000;
-			opacity: 0;
-			visibility: hidden;
-			transform: translateY(-8px);
-			transition: all 0.2s;
-		}
-		
-		.custom-dropdown.open .custom-dropdown-menu {
-			opacity: 1;
-			visibility: visible;
-			transform: translateY(0);
-		}
-		
-		.custom-dropdown-option {
-			padding: 8px 12px;
-			cursor: pointer;
-			transition: background-color 0.2s;
-			font-size: 14px;
 		}
 		
 		.custom-dropdown-option:hover {
 			background: var(--bg-secondary);
+			padding-left: 20px;
 		}
 		
 		.custom-dropdown-option.selected {
 			background: var(--primary);
 			color: #fff;
+			box-shadow: inset 0 0 0 2px rgba(255, 255, 255, 0.2);
+			padding-left: 36px;
+		}
+		
+		.custom-dropdown-option.selected::before {
+			content: '✓';
+			position: absolute;
+			left: 14px;
+			font-weight: 700;
+			font-size: 16px;
+			opacity: 0.95;
 		}
 		
 		.theme-mode-select {
@@ -987,7 +963,8 @@ const createSettingsPage = () => {
 			flex-direction: column;
 			gap: 16px;
 			width: 100%;
-			max-width: 400px;
+			margin: 0 auto;
+			padding: 0 16px;
 		}
 
 		.color-presets {
@@ -1769,22 +1746,23 @@ const hideModal = (modal) => {
 
 const handleAddPasskey = async () => {
   try {
-    const options = await query("/auth/passkey/register/start", {
+    const response = await query("/auth/generate-registration-options", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
       },
+      body: JSON.stringify({ username: currentUser.username }),
     });
 
-    if (options.error) {
-      toastQueue.add(`<h1>Error</h1><p>${options.error}</p>`);
+    if (response.error) {
+      toastQueue.add(`<h1>Error</h1><p>${response.error}</p>`);
       return;
     }
 
     const { startRegistration } = window.SimpleWebAuthnBrowser;
     let attResp;
     try {
-      attResp = await startRegistration({ optionsJSON: options });
+      attResp = await startRegistration({ optionsJSON: response.options });
     } catch (error) {
       console.error("Registration failed:", error);
       toastQueue.add(
@@ -1793,12 +1771,16 @@ const handleAddPasskey = async () => {
       return;
     }
 
-    const verificationJSON = await query("/auth/passkey/register/finish", {
+    const verificationJSON = await query("/auth/verify-registration", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
       },
-      body: JSON.stringify(attResp),
+      body: JSON.stringify({
+        username: currentUser.username,
+        credential: attResp,
+        challenge: response.challenge,
+      }),
     });
 
     if (verificationJSON.error) {

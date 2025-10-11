@@ -8,6 +8,7 @@ import dm from "./api/dm.js";
 import notifications from "./api/notifications.js";
 import profile, { avatarRoutes } from "./api/profile.js";
 import search from "./api/search.js";
+import tenor from "./api/tenor.js";
 import timeline from "./api/timeline.js";
 import tweet from "./api/tweet.js";
 import upload, { uploadRoutes } from "./api/upload.js";
@@ -65,5 +66,6 @@ export default new Elysia({
   .use(upload)
   .use(notifications)
   .use(dm)
+  .use(tenor)
   .use(avatarRoutes)
   .use(uploadRoutes);

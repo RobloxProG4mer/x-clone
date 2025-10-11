@@ -19,6 +19,11 @@ export const useComposer = (
   const fileInput = element.querySelector("#file-input");
   const fileUploadBtn = element.querySelector("#file-upload-btn");
   const attachmentPreview = element.querySelector("#attachment-preview");
+  const gifBtn = element.querySelector("#gif-btn");
+  const gifPicker = element.querySelector("#gif-picker");
+  const gifSearchInput = element.querySelector("#gif-search-input");
+  const gifResults = element.querySelector("#gif-results");
+  const gifPickerClose = element.querySelector("#gif-picker-close");
   const replyRestrictionBtn = element.querySelector("#reply-restriction-btn");
   const replyRestrictionSelect = element.querySelector(
     "#reply-restriction-select"
@@ -27,6 +32,7 @@ export const useComposer = (
   let pollEnabled = false;
   let pendingFiles = [];
   let replyRestriction = "everyone";
+  let selectedGif = null;
 
   const updateCharacterCount = () => {
     const length = textarea.value.length;
@@ -253,10 +259,23 @@ export const useComposer = (
 
   if (fileUploadBtn && fileInput) {
     fileUploadBtn.addEventListener("click", () => {
+      if (selectedGif) {
+        toastQueue.add(
+          `<h1>Cannot add files</h1><p>Remove the GIF first to upload files</p>`
+        );
+        return;
+      }
       fileInput.click();
     });
 
     fileInput.addEventListener("change", async (e) => {
+      if (selectedGif) {
+        toastQueue.add(
+          `<h1>Cannot add files</h1><p>Remove the GIF first to upload files</p>`
+        );
+        e.target.value = "";
+        return;
+      }
       const files = Array.from(e.target.files);
       for (const file of files) {
         await processFileForUpload(file);
@@ -309,6 +328,138 @@ export const useComposer = (
   textarea.addEventListener("dragover", handleDragOver);
   textarea.addEventListener("dragleave", handleDragLeave);
   textarea.addEventListener("drop", handleDrop);
+
+  if (gifBtn && gifPicker && gifSearchInput && gifResults && gifPickerClose) {
+    let searchTimeout;
+
+    gifBtn.addEventListener("click", () => {
+      if (pendingFiles.length > 0) {
+        toastQueue.add(
+          `<h1>Cannot add GIF</h1><p>Remove uploaded files first to select a GIF</p>`
+        );
+        return;
+      }
+      const isVisible = gifPicker.style.display === "block";
+      gifPicker.style.display = isVisible ? "none" : "block";
+      if (!isVisible) {
+        gifSearchInput.focus();
+        if (gifResults.children.length === 0) {
+          gifResults.innerHTML = `
+            <div style="text-align: center; padding: 40px; color: var(--text-secondary);">
+              <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin: 0 auto 16px;">
+                <rect width="18" height="18" x="3" y="3" rx="2" ry="2"/>
+                <circle cx="9" cy="9" r="2"/>
+                <path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/>
+              </svg>
+              <p>Search for GIFs</p>
+            </div>
+          `;
+        }
+      }
+    });
+
+    gifPickerClose.addEventListener("click", () => {
+      gifPicker.style.display = "none";
+    });
+
+    const searchGifs = async (q) => {
+      if (!q || q.trim().length === 0) {
+        gifResults.innerHTML = `
+          <div style="text-align: center; padding: 40px; color: var(--text-secondary);">
+            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin: 0 auto 16px;">
+              <rect width="18" height="18" x="3" y="3" rx="2" ry="2"/>
+              <circle cx="9" cy="9" r="2"/>
+              <path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/>
+            </svg>
+            <p>Search for GIFs</p>
+          </div>
+        `;
+        return;
+      }
+
+      gifResults.innerHTML = `
+        <div style="text-align: center; padding: 40px;">
+          <div class="spinner"></div>
+        </div>
+      `;
+
+      try {
+        const { results, error } = await query(
+          `/tenor/search?q=${encodeURIComponent(q)}&limit=12`
+        );
+
+        if (error) {
+          gifResults.innerHTML = `
+            <div style="text-align: center; padding: 40px; color: var(--text-secondary);">
+              <p>Failed to load GIFs</p>
+            </div>
+          `;
+          return;
+        }
+
+        if (!results || results.length === 0) {
+          gifResults.innerHTML = `
+            <div style="text-align: center; padding: 40px; color: var(--text-secondary);">
+              <p>No GIFs found</p>
+            </div>
+          `;
+          return;
+        }
+
+        gifResults.innerHTML = "";
+        results.forEach((gif) => {
+          const gifEl = document.createElement("div");
+          gifEl.className = "gif-item";
+          const gifUrl =
+            gif.media_formats?.tinygif?.url || gif.media_formats?.gif?.url;
+          const previewUrl =
+            gif.media_formats?.tinygif?.url || gif.media_formats?.nanogif?.url;
+
+          gifEl.innerHTML = `<img src="${previewUrl}" alt="${gif.content_description}" loading="lazy" />`;
+
+          gifEl.addEventListener("click", () => {
+            selectedGif = gifUrl;
+            pendingFiles = [];
+            attachmentPreview.innerHTML = "";
+
+            const previewEl = document.createElement("div");
+            previewEl.className = "attachment-preview-item";
+            previewEl.innerHTML = `
+              <img src="${gifUrl}" alt="Selected GIF" />
+              <button type="button" class="remove-attachment">×</button>
+            `;
+
+            previewEl
+              .querySelector(".remove-attachment")
+              .addEventListener("click", () => {
+                selectedGif = null;
+                previewEl.remove();
+              });
+
+            attachmentPreview.appendChild(previewEl);
+            gifPicker.style.display = "none";
+            gifSearchInput.value = "";
+          });
+
+          gifResults.appendChild(gifEl);
+        });
+      } catch (error) {
+        console.error("GIF search error:", error);
+        gifResults.innerHTML = `
+          <div style="text-align: center; padding: 40px; color: var(--text-secondary);">
+            <p>Failed to load GIFs</p>
+          </div>
+        `;
+      }
+    };
+
+    gifSearchInput.addEventListener("input", (e) => {
+      clearTimeout(searchTimeout);
+      searchTimeout = setTimeout(() => {
+        searchGifs(e.target.value);
+      }, 500);
+    });
+  }
 
   if (addPollOptionBtn) {
     addPollOptionBtn.addEventListener("click", () => addPollOption());
@@ -407,6 +558,10 @@ export const useComposer = (
         reply_restriction: replyRestriction,
       };
 
+      if (selectedGif) {
+        requestBody.gif_url = selectedGif;
+      }
+
       if (poll) {
         requestBody.poll = poll;
       }
@@ -429,6 +584,7 @@ export const useComposer = (
       textarea.style.height = "25px";
 
       pendingFiles = [];
+      selectedGif = null;
       attachmentPreview.innerHTML = "";
 
       if (pollEnabled && pollContainer) {
@@ -501,6 +657,9 @@ export const createComposer = async ({
                   <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-image-icon lucide-image"><rect width="18" height="18" x="3" y="3" rx="2" ry="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/></svg>
                 </button>
                 <input type="file" id="file-input" multiple accept="image/png,image/webp,image/avif,image/jpeg,image/jpg,image/gif,video/mp4" style="display: none;" title="Images: max 10MB, Videos: max 100MB (auto-compressed if needed)">
+                <button type="button" id="gif-btn" title="Add GIF">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="18" x="3" y="3" rx="2"/><path d="M7 8h6"/><path d="M7 12h3"/><path d="M17 8v5h-2"/><path d="M17 10.5h2"/></svg>
+                </button>
                 <button type="button" id="poll-toggle"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-chart-bar-big-icon lucide-chart-bar-big"><path d="M3 3v16a2 2 0 0 0 2 2h16"></path><rect x="7" y="13" width="9" height="4" rx="1"></rect><rect x="7" y="5" width="12" height="4" rx="1"></rect></svg></button>
                 <div class="reply-restriction-container">
                   <button type="button" id="reply-restriction-btn" title="Who can reply">
@@ -527,6 +686,13 @@ export const createComposer = async ({
               </div>
             </div>
             <div id="attachment-preview"></div>
+            <div id="gif-picker" style="display: none;">
+              <div class="gif-picker-header">
+                <input type="text" id="gif-search-input" placeholder="Search for GIFs" />
+                <button type="button" id="gif-picker-close">×</button>
+              </div>
+              <div id="gif-results"></div>
+            </div>
           </div>
         </div>`;
   el.querySelector("#tweet-textarea").placeholder = placeholder;

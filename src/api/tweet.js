@@ -311,6 +311,7 @@ export default new Elysia({ prefix: "/tweets" })
         quote_tweet_id,
         files,
         reply_restriction,
+        gif_url,
       } = body;
       const tweetContent = content;
 
@@ -320,6 +321,15 @@ export default new Elysia({ prefix: "/tweets" })
 
       if (tweetContent.length > 400) {
         return { error: "Tweet content must be 400 characters or less" };
+      }
+
+      if (gif_url) {
+        if (
+          typeof gif_url !== "string" ||
+          !gif_url.startsWith("https://media.tenor.com/")
+        ) {
+          return { error: "Invalid GIF URL" };
+        }
       }
 
       const validRestrictions = [
@@ -485,6 +495,20 @@ export default new Elysia({ prefix: "/tweets" })
           );
           attachments.push(attachment);
         });
+      }
+
+      if (gif_url) {
+        const attachmentId = Bun.randomUUIDv7();
+        const attachment = saveAttachment.get(
+          attachmentId,
+          tweetId,
+          null,
+          "tenor.gif",
+          "image/gif",
+          0,
+          gif_url
+        );
+        attachments.push(attachment);
       }
 
       return {
