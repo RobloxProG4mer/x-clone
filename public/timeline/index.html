@@ -573,7 +573,17 @@
                   class="profile-btn profile-btn-secondary profile-dropdown-btn"
                   id="profileDropdownBtn"
                 >
-                  <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 20 20"><path fill="currentColor" d="M10.001 7.8a2.2 2.2 0 1 0 0 4.402A2.2 2.2 0 0 0 10 7.8zm-7 0a2.2 2.2 0 1 0 0 4.402A2.2 2.2 0 0 0 3 7.8zm14 0a2.2 2.2 0 1 0 0 4.402A2.2 2.2 0 0 0 17 7.8z"></path></svg>
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="18"
+                    height="18"
+                    viewBox="0 0 20 20"
+                  >
+                    <path
+                      fill="currentColor"
+                      d="M10.001 7.8a2.2 2.2 0 1 0 0 4.402A2.2 2.2 0 0 0 10 7.8zm-7 0a2.2 2.2 0 1 0 0 4.402A2.2 2.2 0 0 0 3 7.8zm14 0a2.2 2.2 0 1 0 0 4.402A2.2 2.2 0 0 0 17 7.8z"
+                    ></path>
+                  </svg>
                 </button>
                 <div class="dropdown-menu" id="profileDropdownMenu">
                   <button class="dropdown-item" id="blockUserBtn">
@@ -749,6 +759,25 @@
                   Remove Banner
                 </button>
               </div>
+            </div>
+
+            <div class="form-group">
+              <label for="editUsername">Username</label>
+              <input type="text" id="editUsername" maxlength="20" />
+              <div class="char-count">
+                <span id="usernameCount">0</span>
+                /20
+              </div>
+              <small
+                style="
+                  color: var(--text-secondary);
+                  font-size: 12px;
+                  display: block;
+                  margin-top: 4px;
+                "
+              >
+                Username can only contain letters, numbers, and underscores
+              </small>
             </div>
 
             <div class="form-group">

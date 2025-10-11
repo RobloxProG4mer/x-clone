@@ -15,13 +15,27 @@ let currentMessages = [];
 let eventSource = null;
 let selectedUsers = [];
 let pendingFiles = [];
+let sseConnectTimeout = null;
+let lastSSEConnect = 0;
 
 function connectSSE() {
+  const now = Date.now();
+  const timeSinceLastConnect = now - lastSSEConnect;
+
+  if (timeSinceLastConnect < 1000) {
+    if (sseConnectTimeout) clearTimeout(sseConnectTimeout);
+    sseConnectTimeout = setTimeout(() => {
+      connectSSE();
+    }, 1000 - timeSinceLastConnect);
+    return;
+  }
+
   if (eventSource && eventSource.readyState === EventSource.OPEN) {
     return;
   }
   if (!authToken) return;
 
+  lastSSEConnect = now;
   const sseUrl = `/sse?token=${encodeURIComponent(authToken)}`;
   eventSource = new EventSource(sseUrl);
 

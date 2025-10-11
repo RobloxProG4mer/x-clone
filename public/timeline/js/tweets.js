@@ -433,16 +433,24 @@ const updatePollDisplay = (pollElement, poll) => {
   metaContainer.appendChild(pollTimeEl);
 };
 
-async function createExpandedStats(tweetId) {
+async function createExpandedStats(tweetId, extendedStats = null) {
   const statsContainer = document.createElement("div");
   statsContainer.className = "expanded-tweet-stats";
 
   try {
-    const [likesData, retweetsData, quotesData] = await Promise.all([
-      query(`/tweets/${tweetId}/likes?limit=3`),
-      query(`/tweets/${tweetId}/retweets?limit=3`),
-      query(`/tweets/${tweetId}/quotes?limit=3`),
-    ]);
+    let likesData, retweetsData, quotesData;
+
+    if (extendedStats) {
+      likesData = { users: extendedStats.likes || [] };
+      retweetsData = { users: extendedStats.retweets || [] };
+      quotesData = { users: extendedStats.quotes || [] };
+    } else {
+      [likesData, retweetsData, quotesData] = await Promise.all([
+        query(`/tweets/${tweetId}/likes?limit=3`),
+        query(`/tweets/${tweetId}/retweets?limit=3`),
+        query(`/tweets/${tweetId}/quotes?limit=3`),
+      ]);
+    }
 
     const stats = [];
 
@@ -526,6 +534,7 @@ export const createTweetElement = (tweet, config = {}) => {
     isTopReply = false,
     size = "normal",
     showStats = false,
+    extendedStats = null,
   } = config;
 
   const tweetEl = document.createElement("div");
@@ -1329,7 +1338,7 @@ export const createTweetElement = (tweet, config = {}) => {
   }
 
   if (showStats) {
-    createExpandedStats(tweet.id).then((statsEl) => {
+    createExpandedStats(tweet.id, extendedStats).then((statsEl) => {
       if (statsEl && statsEl.children.length > 0) {
         tweetEl.appendChild(statsEl);
       }

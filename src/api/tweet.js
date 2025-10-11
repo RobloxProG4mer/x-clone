@@ -145,6 +145,33 @@ const getPollVoters = db.query(`
   LIMIT 10
 `);
 
+const getTweetLikes = db.query(`
+  SELECT users.username, users.name, users.avatar, users.verified
+  FROM likes
+  JOIN users ON likes.user_id = users.id
+  WHERE likes.post_id = ?
+  ORDER BY likes.created_at DESC
+  LIMIT 3
+`);
+
+const getTweetRetweets = db.query(`
+  SELECT users.username, users.name, users.avatar, users.verified
+  FROM retweets
+  JOIN users ON retweets.user_id = users.id
+  WHERE retweets.post_id = ?
+  ORDER BY retweets.created_at DESC
+  LIMIT 3
+`);
+
+const getTweetQuotes = db.query(`
+  SELECT users.username, users.name, users.avatar, users.verified
+  FROM posts
+  JOIN users ON posts.user_id = users.id
+  WHERE posts.quote_tweet_id = ?
+  ORDER BY posts.created_at DESC
+  LIMIT 3
+`);
+
 const getPollDataForTweet = (tweetId, userId) => {
   const poll = getPollByPostId.get(tweetId);
   if (!poll) return null;
@@ -562,6 +589,12 @@ export default new Elysia({ prefix: "/tweets" })
       attachments: getTweetAttachments(reply.id),
     }));
 
+    const extendedStats = {
+      likes: getTweetLikes.all(tweet.id),
+      retweets: getTweetRetweets.all(tweet.id),
+      quotes: getTweetQuotes.all(tweet.id),
+    };
+
     return {
       tweet: {
         ...tweet,
@@ -572,6 +605,7 @@ export default new Elysia({ prefix: "/tweets" })
       },
       threadPosts: processedThreadPosts,
       replies: processedReplies,
+      extendedStats,
     };
   })
   .post("/:id/like", async ({ jwt, headers, params }) => {

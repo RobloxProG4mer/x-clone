@@ -410,6 +410,7 @@ const closeEditModal = () => {
 
 const updateCharCounts = () => {
   const fields = [
+    { id: "editUsername", countId: "usernameCount" },
     { id: "editDisplayName", countId: "displayNameCount" },
     { id: "editBio", countId: "bioCount" },
     { id: "editPronouns", countId: "pronounsCount" },
@@ -726,6 +727,28 @@ const saveProfile = async (event) => {
     return;
   }
 
+  const newUsername = document
+    .getElementById("editUsername")
+    .value.trim()
+    .toLowerCase();
+  const oldUsername = currentProfile.profile.username;
+
+  if (newUsername !== oldUsername) {
+    if (newUsername.length < 3 || newUsername.length > 20) {
+      toastQueue.add(
+        `<h1>Invalid Username</h1><p>Username must be between 3 and 20 characters</p>`
+      );
+      return;
+    }
+
+    if (!/^[a-zA-Z0-9_]+$/.test(newUsername)) {
+      toastQueue.add(
+        `<h1>Invalid Username</h1><p>Username can only contain letters, numbers, and underscores</p>`
+      );
+      return;
+    }
+  }
+
   const formData = {
     name: document.getElementById("editDisplayName").value.trim(),
     bio: document.getElementById("editBio").value.trim(),
@@ -735,6 +758,29 @@ const saveProfile = async (event) => {
   };
 
   try {
+    if (newUsername !== oldUsername) {
+      const usernameResult = await query(`/profile/${oldUsername}/username`, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ newUsername }),
+      });
+
+      if (usernameResult.error) {
+        toastQueue.add(
+          `<h1>Username Change Failed</h1><p>${usernameResult.error}</p>`
+        );
+        return;
+      }
+
+      if (usernameResult.token) {
+        localStorage.setItem("authToken", usernameResult.token);
+      }
+
+      currentUsername = newUsername;
+    }
+
     const { success, error } = await query(`/profile/${currentUsername}`, {
       method: "PUT",
       headers: {
@@ -745,12 +791,18 @@ const saveProfile = async (event) => {
 
     if (success) {
       closeEditModal();
+      toastQueue.add(
+        `<h1>Profile Updated!</h1><p>Your profile has been successfully updated</p>`
+      );
       loadProfile(currentUsername);
     } else {
-      alert(error || "Failed to update profile");
+      toastQueue.add(
+        `<h1>Update Failed</h1><p>${error || "Failed to update profile"}</p>`
+      );
     }
-  } catch {
-    alert("Failed to update profile");
+  } catch (error) {
+    console.error("Profile update error:", error);
+    toastQueue.add(`<h1>Update Failed</h1><p>Failed to update profile</p>`);
   }
 };
 
@@ -788,6 +840,7 @@ document
   .addEventListener("submit", saveProfile);
 
 [
+  "editUsername",
   "editDisplayName",
   "editBio",
   "editPronouns",
@@ -799,6 +852,14 @@ document
     element.addEventListener("input", updateCharCounts);
   }
 });
+
+const editUsernameInput = document.getElementById("editUsername");
+if (editUsernameInput) {
+  editUsernameInput.addEventListener("input", (e) => {
+    e.target.value = e.target.value.toLowerCase().replace(/[^a-z0-9_]/g, "");
+    updateCharCounts();
+  });
+}
 
 // Avatar upload event listeners
 const editChangeAvatarBtn = document.getElementById("edit-change-avatar");

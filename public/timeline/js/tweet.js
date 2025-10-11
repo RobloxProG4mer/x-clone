@@ -16,6 +16,7 @@ export default async function openTweet(
     tweet = apiOutput.tweet;
     threadPostsCache = apiOutput.threadPosts;
     repliesCache = apiOutput.replies;
+    tweet.extendedStats = apiOutput.extendedStats;
 
     if (!tweet) {
       switchPage("timeline");
@@ -39,6 +40,7 @@ export default async function openTweet(
       const tweetEl = createTweetElement(tweet, {
         clickToOpen: false,
         showStats: true,
+        extendedStats: tweet.extendedStats,
       });
       page.appendChild(tweetEl);
 
@@ -58,11 +60,11 @@ export default async function openTweet(
       page.appendChild(composer);
 
       if (!threadPostsCache || !repliesCache) {
-        const { authToken } = await import("./auth.js");
         const apiOutput = await query(`/tweets/${tweet.id}`);
         tweet = apiOutput.tweet;
         threadPostsCache = apiOutput.threadPosts;
         repliesCache = apiOutput.replies;
+        tweet.extendedStats = apiOutput.extendedStats;
       }
 
       if (!tweet) {
@@ -80,6 +82,7 @@ export default async function openTweet(
           const postEl = createTweetElement(reply, {
             clickToOpen: reply.id !== tweet.id,
             showStats: reply.id === tweet.id,
+            extendedStats: reply.id === tweet.id ? tweet.extendedStats : null,
           });
           composer.insertAdjacentElement("beforebegin", postEl);
         });

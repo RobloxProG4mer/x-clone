@@ -7,6 +7,7 @@ import { compression } from "./compress.js";
 const connectedUsers = new Map();
 
 const sseConnections = new Map();
+const sseRateLimits = new Map();
 
 export function broadcastToUser(userId, message) {
   const userSockets = connectedUsers.get(userId);
@@ -53,6 +54,15 @@ new Elysia()
     }
 
     const userId = payload.userId;
+    const now = Date.now();
+    const lastConnection = sseRateLimits.get(userId) || 0;
+
+    if (now - lastConnection < 1000) {
+      set.status = 429;
+      return { error: "Too many connection attempts. Please wait." };
+    }
+
+    sseRateLimits.set(userId, now);
 
     const stream = new ReadableStream({
       start(controller) {
