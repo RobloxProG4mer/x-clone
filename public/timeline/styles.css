@@ -2795,7 +2795,7 @@ nav {
   display: flex;
   gap: 12px;
   max-width: 75%;
-
+  width: fit-content;
   &.own {
     align-self: flex-end;
     flex-direction: row-reverse;
@@ -2825,6 +2825,7 @@ nav {
     color: var(--text-primary);
     word-wrap: break-word;
     border-bottom-left-radius: 6px;
+    width: fit-content;
     box-shadow: 0 1px 4px rgba(0, 0, 0, 0.05);
 
     .dm-message-text {
