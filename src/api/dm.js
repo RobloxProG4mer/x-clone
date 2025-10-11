@@ -118,11 +118,7 @@ const updateConversationTimestamp = db.query(`
 
 const updateLastReadAt = db.query(`
   UPDATE conversation_participants 
-  SET last_read_at = (
-    SELECT MAX(datetime(created_at, '+1 second'))
-    FROM dm_messages
-    WHERE conversation_id = ?
-  )
+  SET last_read_at = datetime('now', 'utc')
   WHERE conversation_id = ? AND user_id = ?
 `);
 
@@ -237,7 +233,7 @@ export default new Elysia({ prefix: "/dm" })
         return { ...message, attachments };
       });
 
-      updateLastReadAt.run(id, id, user.id);
+      updateLastReadAt.run(id, user.id);
 
       return {
         conversation: {
@@ -443,7 +439,7 @@ export default new Elysia({ prefix: "/dm" })
       const participant = checkParticipant.get(id, user.id);
       if (!participant) return { error: "Access denied" };
 
-      updateLastReadAt.run(id, id, user.id);
+      updateLastReadAt.run(id, user.id);
       sendUnreadCounts(user.id);
 
       return { success: true };
