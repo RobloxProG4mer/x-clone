@@ -817,19 +817,13 @@ export const createTweetElement = (tweet, config = {}) => {
     ];
 
     getUser().then((currentUser) => {
-      if (
-        currentUser &&
-        currentUser.id === tweet.author.id &&
-        size !== "preview"
-      ) {
-        createPopup({
-          triggerElement: menuButtonEl,
-          items:
-            currentUser?.id === tweet.author.id
-              ? [...defaultItems, ...userItems]
-              : defaultItems,
-        });
-      }
+      createPopup({
+        triggerElement: menuButtonEl,
+        items:
+          currentUser?.id === tweet.author.id
+            ? [...defaultItems, ...userItems]
+            : defaultItems,
+      });
     });
 
     tweetEl.style.position = "relative";
