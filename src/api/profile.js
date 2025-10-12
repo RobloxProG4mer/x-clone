@@ -8,7 +8,7 @@ import { addNotification } from "./notifications.js";
 const JWT_SECRET = process.env.JWT_SECRET;
 
 const getFollowers = db.query(`
-  SELECT users.id, users.username, users.name, users.avatar, users.verified, users.bio
+  SELECT users.id, users.username, users.name, users.avatar, users.verified, users.gold, users.bio
   FROM follows
   JOIN users ON follows.follower_id = users.id
   WHERE follows.following_id = ? AND users.suspended = 0
@@ -17,7 +17,7 @@ const getFollowers = db.query(`
 `);
 
 const getFollowing = db.query(`
-  SELECT users.id, users.username, users.name, users.avatar, users.verified, users.bio
+  SELECT users.id, users.username, users.name, users.avatar, users.verified, users.gold, users.bio
   FROM follows
   JOIN users ON follows.following_id = users.id
   WHERE follows.follower_id = ? AND users.suspended = 0
@@ -68,7 +68,7 @@ const updatePassword = db.query(`
 `);
 
 const getUserReplies = db.query(`
-  SELECT posts.*, users.username, users.name, users.verified 
+  SELECT posts.*, users.username, users.name, users.verified, users.gold 
   FROM posts 
   JOIN users ON posts.user_id = users.id 
   WHERE posts.user_id = ? AND posts.reply_to IS NOT NULL
@@ -77,7 +77,7 @@ const getUserReplies = db.query(`
 `);
 
 const getUserPosts = db.query(`
-  SELECT posts.*, users.username, users.name, users.avatar, users.verified
+  SELECT posts.*, users.username, users.name, users.avatar, users.verified, users.gold
   FROM posts 
   JOIN users ON posts.user_id = users.id 
   WHERE posts.user_id = ? AND posts.reply_to IS NULL AND users.suspended = 0
@@ -87,7 +87,7 @@ const getUserPosts = db.query(`
 const getUserRetweets = db.query(`
   SELECT 
     original_posts.*,
-    original_users.username, original_users.name, original_users.avatar, original_users.verified,
+    original_users.username, original_users.name, original_users.avatar, original_users.verified, original_users.gold,
     retweets.created_at as retweet_created_at,
     retweets.post_id as original_post_id
   FROM retweets
@@ -134,7 +134,7 @@ const deleteFollowRequest = db.query(`
 `);
 
 const getPendingFollowRequests = db.query(`
-  SELECT fr.*, u.username, u.name, u.avatar, u.verified, u.bio
+  SELECT fr.*, u.username, u.name, u.avatar, u.verified, u.gold, u.bio
   FROM follow_requests fr
   JOIN users u ON fr.requester_id = u.id
   WHERE fr.target_id = ? AND fr.status = 'pending'
@@ -165,7 +165,7 @@ const getTotalPollVotes = db.query(`
 `);
 
 const getPollVoters = db.query(`
-  SELECT DISTINCT users.username, users.name, users.avatar, users.verified
+  SELECT DISTINCT users.username, users.name, users.avatar, users.verified, users.gold
   FROM poll_votes 
   JOIN users ON poll_votes.user_id = users.id 
   WHERE poll_votes.poll_id = ?
@@ -174,7 +174,7 @@ const getPollVoters = db.query(`
 `);
 
 const getQuotedTweet = db.query(`
-  SELECT posts.*, users.username, users.name, users.avatar, users.verified
+  SELECT posts.*, users.username, users.name, users.avatar, users.verified, users.gold
   FROM posts
   JOIN users ON posts.user_id = users.id
   WHERE posts.id = ?
