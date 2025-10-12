@@ -2352,7 +2352,6 @@ nav {
   }
 
   &.unread {
-    background-color: rgba(29, 155, 240, 0.05);
     padding-left: 16px;
 
     &::before {
@@ -2368,52 +2367,33 @@ nav {
 }
 
 .notification-icon {
-  width: 32px;
-  height: 32px;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-
   &.like-icon {
-    background-color: rgba(249, 24, 128, 0.1);
     color: #f91880;
   }
 
   &.retweet-icon {
-    background-color: rgba(0, 186, 124, 0.1);
     color: #00ba7c;
   }
 
   &.reply-icon {
-    background-color: rgba(29, 155, 240, 0.1);
     color: #1d9bf0;
   }
 
   &.follow-icon {
-    background-color: rgba(29, 155, 240, 0.1);
     color: #1d9bf0;
   }
 
   &.quote-icon {
-    background-color: rgba(0, 186, 124, 0.1);
     color: #00ba7c;
   }
 
   &.mention-icon {
-    background-color: rgba(29, 155, 240, 0.1);
-    color: #1d9bf0;
-  }
-
-  &.dm-icon {
-    background-color: rgba(29, 155, 240, 0.1);
     color: #1d9bf0;
   }
 
   svg {
-    width: 16px;
-    height: 16px;
+    width: 26px;
+    height: 26px;
   }
 }
 
