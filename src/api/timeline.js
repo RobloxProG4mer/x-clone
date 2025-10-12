@@ -12,7 +12,16 @@ const getTimelinePosts = db.query(`
   LEFT JOIN blocks ON (posts.user_id = blocks.blocked_id AND blocks.blocker_id = ?)
   WHERE posts.reply_to IS NULL AND blocks.id IS NULL AND posts.pinned = 0 AND users.suspended = 0
   ORDER BY posts.created_at DESC 
-  LIMIT 20
+  LIMIT 10
+`);
+
+const getTimelinePostsBefore = db.query(`
+  SELECT posts.* FROM posts 
+  JOIN users ON posts.user_id = users.id
+  LEFT JOIN blocks ON (posts.user_id = blocks.blocked_id AND blocks.blocker_id = ?)
+  WHERE posts.reply_to IS NULL AND blocks.id IS NULL AND posts.pinned = 0 AND users.suspended = 0 AND posts.id < ?
+  ORDER BY posts.created_at DESC 
+  LIMIT 10
 `);
 
 const getFollowingTimelinePosts = db.query(`
@@ -22,7 +31,17 @@ const getFollowingTimelinePosts = db.query(`
   LEFT JOIN blocks ON (posts.user_id = blocks.blocked_id AND blocks.blocker_id = ?)
   WHERE follows.follower_id = ? AND posts.reply_to IS NULL AND blocks.id IS NULL AND posts.pinned = 0 AND users.suspended = 0
   ORDER BY posts.created_at DESC 
-  LIMIT 20
+  LIMIT 10
+`);
+
+const getFollowingTimelinePostsBefore = db.query(`
+  SELECT posts.* FROM posts 
+  JOIN follows ON posts.user_id = follows.following_id
+  JOIN users ON posts.user_id = users.id
+  LEFT JOIN blocks ON (posts.user_id = blocks.blocked_id AND blocks.blocker_id = ?)
+  WHERE follows.follower_id = ? AND posts.reply_to IS NULL AND blocks.id IS NULL AND posts.pinned = 0 AND users.suspended = 0 AND posts.id < ?
+  ORDER BY posts.created_at DESC 
+  LIMIT 10
 `);
 
 const getUserByUsername = db.query("SELECT * FROM users WHERE username = ?");
@@ -147,7 +166,7 @@ export default new Elysia({ prefix: "/timeline" })
       generator: ratelimit,
     })
   )
-  .get("/", async ({ jwt, headers }) => {
+  .get("/", async ({ jwt, headers, query }) => {
     const authorization = headers.authorization;
     if (!authorization) return { error: "Authentication required" };
     let user;
@@ -163,7 +182,10 @@ export default new Elysia({ prefix: "/timeline" })
       return { error: "Authentication failed" };
     }
 
-    const posts = getTimelinePosts.all(user.id);
+    const beforeId = query.before;
+    const posts = beforeId 
+      ? getTimelinePostsBefore.all(user.id, beforeId)
+      : getTimelinePosts.all(user.id);
 
     const userIds = [...new Set(posts.map((post) => post.user_id))];
 
@@ -246,7 +268,7 @@ export default new Elysia({ prefix: "/timeline" })
 
     return { timeline };
   })
-  .get("/following", async ({ jwt, headers }) => {
+  .get("/following", async ({ jwt, headers, query }) => {
     const authorization = headers.authorization;
     if (!authorization) return { error: "Authentication required" };
     let user;
@@ -262,7 +284,10 @@ export default new Elysia({ prefix: "/timeline" })
       return { error: "Authentication failed" };
     }
 
-    const posts = getFollowingTimelinePosts.all(user.id, user.id);
+    const beforeId = query.before;
+    const posts = beforeId
+      ? getFollowingTimelinePostsBefore.all(user.id, user.id, beforeId)
+      : getFollowingTimelinePosts.all(user.id, user.id);
 
     if (posts.length === 0) {
       return { timeline: [] };
