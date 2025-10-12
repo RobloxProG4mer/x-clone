@@ -26,7 +26,9 @@ const liftSuspension = db.query(`
   UPDATE suspensions SET status = 'lifted' WHERE id = ?
 `);
 
-const updateUserSuspended = db.query("UPDATE users SET suspended = ? WHERE id = ?");
+const updateUserSuspended = db.query(
+  "UPDATE users SET suspended = ? WHERE id = ?"
+);
 
 const suspensionCache = new Map();
 const CACHE_TTL = 30_000;
