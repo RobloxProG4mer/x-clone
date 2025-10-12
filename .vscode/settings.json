@@ -1,0 +1,12 @@
+{
+	"editor.formatOnSave": true,
+	"editor.tabSize": 2,
+	"editor.wordWrap": "on",
+	"files.exclude": {
+		"**/.wrangler": true,
+		"**/bun.lock": false,
+		"**/node_modules": true,
+		"**/.data": true,
+		"**/.github": true
+	}
+}

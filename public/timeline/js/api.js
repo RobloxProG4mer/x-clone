@@ -1,4 +1,4 @@
-import { authToken } from "./auth.js";
+import AccountSwitcher from "./accountSwitcher.js";
 
 // this is mostly a foundation to build upon
 // for easier further optimizations
@@ -22,8 +22,8 @@ export default (url, options = {}) =>
         ...options,
         headers: {
           ...(options.headers || {}),
-          Authorization: `Bearer ${authToken}`,
-          "X-Request-Token": hash(authToken || "public"),
+          Authorization: `Bearer ${AccountSwitcher.getActiveToken() || ""}`,
+          "X-Request-Token": hash(AccountSwitcher.getActiveToken() || "public"),
         },
       }).then((r) => r.json())
     );
