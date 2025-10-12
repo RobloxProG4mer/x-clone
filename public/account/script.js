@@ -177,14 +177,14 @@ async function handlePasskeyRegistration() {
   setButtonsDisabled(true);
 
   try {
-    const { options, challenge, error } = await query(
+    const { options, challenge, error } = await (await query(
       "/api/auth/generate-registration-options",
       {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ username }),
       }
-    );
+    )).json();
 
     if (error) {
       toastQueue.add(`<h1>Unable to create account</h1><p>${error}</p>`);
@@ -195,7 +195,7 @@ async function handlePasskeyRegistration() {
       optionsJSON: options,
     });
 
-    const verification = await query("/api/auth/verify-registration", {
+    const verification = await (await query("/api/auth/verify-registration", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -203,7 +203,7 @@ async function handlePasskeyRegistration() {
         credential: registrationResponse,
         challenge,
       }),
-    });
+    })).json();
 
     if (!verification.verified) {
       toastQueue.add(
