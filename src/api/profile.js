@@ -29,7 +29,7 @@ const getUserByUsername = db.query("SELECT * FROM users WHERE username = ?");
 
 const updateProfile = db.query(`
   UPDATE users
-  SET name = ?, bio = ?, location = ?, website = ?, pronouns = ?
+  SET name = ?, bio = ?, location = ?, website = ?, pronouns = ?, avatar_radius = ?
   WHERE id = ?
 `);
 
@@ -320,6 +320,19 @@ export default new Elysia({ prefix: "/profile" })
         }
       }
 
+      // If the viewer is authenticated and not the profile owner, check whether
+      // the profile owner has blocked the viewer. This is used by the frontend
+      // to show a banner and disable interactions.
+      let blockedByProfile = false;
+      if (currentUserId && !isOwnProfile) {
+        const blockedRow = db
+          .query("SELECT 1 FROM blocks WHERE blocker_id = ? AND blocked_id = ?")
+          .get(user.id, currentUserId);
+        blockedByProfile = !!blockedRow;
+      }
+
+      profile.blockedByProfile = blockedByProfile;
+
       // Combine and sort by creation time
       const allContent = [
         ...userPosts.map((post) => ({
@@ -473,6 +486,15 @@ export default new Elysia({ prefix: "/profile" })
 
       const { theme, accent_color } = body;
 
+      let radiusToStore = currentUser.avatar_radius;
+      if (body.avatar_radius !== undefined) {
+        const parsed = parseInt(body.avatar_radius, 10);
+        if (Number.isNaN(parsed) || parsed < 0 || parsed > 1000) {
+          return { error: "Invalid avatar radius" };
+        }
+        radiusToStore = parsed;
+      }
+
       if (name && name.length > 50) {
         return { error: "Display name must be 50 characters or less" };
       }
@@ -499,10 +521,9 @@ export default new Elysia({ prefix: "/profile" })
         location !== undefined ? location : currentUser.location,
         website !== undefined ? website : currentUser.website,
         pronouns !== undefined ? pronouns : currentUser.pronouns,
+        radiusToStore,
         currentUser.id
       );
-
-      // Persist theme/accent if provided
       if (theme !== undefined || accent_color !== undefined) {
         updateThemeAccent.run(
           theme !== undefined ? theme : currentUser.theme,

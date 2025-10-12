@@ -108,11 +108,21 @@
         </svg>
 
         <h1>
-          <a href="javascript:" class="active">Your feed</a>
-          <a href="javascript:">Following</a>
+          <a href="javascript:" class="active" data-tab="home">Your feed</a>
+          <a href="javascript:" data-tab="following">Following</a>
+          <a href="javascript:" data-tab="articles">Articles</a>
         </h1>
 
         <div id="composer-container"></div>
+
+        <div id="articles-container" class="articles-container hidden">
+          <div id="article-composer"></div>
+          <div id="articles-empty" class="articles-empty hidden"></div>
+          <div id="articles-list" class="articles-list"></div>
+          <button type="button" id="articles-load-more" class="articles-load-more hidden">
+            Load more articles
+          </button>
+        </div>
 
         <div class="tweets"></div>
       </div>
@@ -555,7 +565,7 @@
           </div>
         </div>
 
-        <div id="profileContainer" style="display: none">
+          <div id="profileContainer" style="display: none">
           <div class="profile-banner"></div>
 
           <div class="profile-card">
@@ -633,6 +643,20 @@
             </div>
           </div>
 
+          <!-- Banner shown when the viewed profile has blocked the current user -->
+          <div id="profileBlockedBanner" class="profile-block-banner" role="alert" aria-live="polite" style="display: none">
+            <div class="banner-icon">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M12 2a10 10 0 100 20 10 10 0 000-20zm1 14h-2v-2h2v2zm0-4h-2V6h2v6z" fill="#DC2626" />
+              </svg>
+            </div>
+            <div class="banner-text">
+              <strong>You have been blocked</strong>
+              <div class="banner-sub">This account has blocked you. You won't be able to follow or interact with their posts.</div>
+            </div>
+            <button class="banner-dismiss" id="profileBlockedBannerDismiss" aria-label="Dismiss banner">✕</button>
+          </div>
+
           <div class="profile-tabs">
             <div class="profile-tab-nav">
               <button class="profile-tab-btn active" data-tab="posts">
@@ -654,60 +678,30 @@
         <div class="modal-content">
           <div class="modal-header">
             <h3>Edit Profile</h3>
-            <button class="close-btn" id="closeEditModalBtn">&times;</button>
+            <button class="modal-close" id="closeEditModalBtn">
+              <svg
+                width="24"
+                height="24"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              >
+                <path d="M18 6 6 18" />
+                <path d="m6 6 12 12" />
+              </svg>
+            </button>
           </div>
 
-          <form id="editProfileForm">
-            <div class="avatar-section">
-              <label>Profile Picture</label>
-              <div class="avatar-preview">
-                <img id="edit-current-avatar" src="" alt="Your avatar" />
-                <div class="avatar-overlay">
-                  <svg
-                    width="24"
-                    height="24"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    stroke-width="2"
-                  >
-                    <path
-                      d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"
-                    />
-                    <circle cx="12" cy="13" r="4" />
-                  </svg>
-                </div>
-              </div>
-              <div class="avatar-controls">
-                <input
-                  type="file"
-                  id="edit-avatar-upload"
-                  accept="image/*"
-                  style="display: none"
-                />
-                <button
-                  type="button"
-                  class="profile-btn profile-btn-secondary"
-                  id="edit-change-avatar"
-                >
-                  Change Avatar
-                </button>
-                <button
-                  type="button"
-                  class="profile-btn profile-btn-secondary"
-                  id="edit-remove-avatar"
-                  style="display: none"
-                >
-                  Remove Avatar
-                </button>
-              </div>
-            </div>
-
-            <div class="banner-section">
-              <label>Profile Banner</label>
-              <div class="banner-preview">
-                <div id="edit-current-banner" class="banner-image">
-                  <div class="banner-overlay">
+          <div class="modal-body">
+            <form id="editProfileForm">
+              <div class="avatar-section">
+                <label>Profile Picture</label>
+                <div class="avatar-preview">
+                  <img id="edit-current-avatar" src="" alt="Your avatar" />
+                  <div class="avatar-overlay">
                     <svg
                       width="24"
                       height="24"
@@ -723,105 +717,195 @@
                     </svg>
                   </div>
                 </div>
+                <div class="avatar-controls">
+                  <input
+                    type="file"
+                    id="edit-avatar-upload"
+                    accept="image/*"
+                    style="display: none"
+                  />
+                  <button
+                    type="button"
+                    class="profile-btn profile-btn-secondary"
+                    id="edit-change-avatar"
+                  >
+                    Change Avatar
+                  </button>
+                  <button
+                    type="button"
+                    class="profile-btn profile-btn-secondary"
+                    id="edit-remove-avatar"
+                    style="display: none"
+                  >
+                    Remove Avatar
+                  </button>
+                  <div
+                    id="avatarRadiusControls"
+                    style="display: none; margin-top: 12px"
+                  >
+                    <label>Profile corner radius</label>
+                    <div
+                      style="
+                        display: flex;
+                        gap: 8px;
+                        align-items: center;
+                        margin-top: 6px;
+                      "
+                    >
+                      <button
+                        type="button"
+                        class="profile-btn"
+                        id="radius-preset-square"
+                      >
+                        Square
+                      </button>
+                      <button
+                        type="button"
+                        class="profile-btn"
+                        id="radius-preset-default"
+                      >
+                        Default
+                      </button>
+                      <input
+                        id="radius-input"
+                        type="number"
+                        min="0"
+                        max="1000"
+                        value="4"
+                        style="width: 80px; padding: 6px"
+                      />
+                      <span style="font-size: 12px; color: var(--muted)">
+                        px
+                      </span>
+                    </div>
+                  </div>
+                </div>
               </div>
-              <div class="banner-controls">
+
+              <div class="banner-section">
+                <label>Profile Banner</label>
+                <div class="banner-preview">
+                  <div id="edit-current-banner" class="banner-image">
+                    <div class="banner-overlay">
+                      <svg
+                        width="24"
+                        height="24"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="2"
+                      >
+                        <path
+                          d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"
+                        />
+                        <circle cx="12" cy="13" r="4" />
+                      </svg>
+                    </div>
+                  </div>
+                </div>
+                <div class="banner-controls">
+                  <input
+                    type="file"
+                    id="edit-banner-upload"
+                    accept="image/*"
+                    style="display: none"
+                  />
+                  <button
+                    type="button"
+                    class="profile-btn profile-btn-secondary"
+                    id="edit-change-banner"
+                  >
+                    Change Banner
+                  </button>
+                  <button
+                    type="button"
+                    class="profile-btn profile-btn-secondary"
+                    id="edit-remove-banner"
+                    style="display: none"
+                  >
+                    Remove Banner
+                  </button>
+                </div>
+              </div>
+
+              <div class="form-group">
+                <label for="editDisplayName">Display Name</label>
+                <input type="text" id="editDisplayName" maxlength="50" />
+                <div class="char-count">
+                  <span id="displayNameCount">0</span>
+                  /50
+                </div>
+              </div>
+
+              <div class="form-group">
+                <label for="editBio">Bio</label>
+                <textarea
+                  id="editBio"
+                  maxlength="160"
+                  placeholder="Tell us about yourself"
+                ></textarea>
+                <div class="char-count">
+                  <span id="bioCount">0</span>
+                  /160
+                </div>
+              </div>
+
+              <div class="form-group">
+                <label for="editPronouns">Pronouns</label>
                 <input
-                  type="file"
-                  id="edit-banner-upload"
-                  accept="image/*"
-                  style="display: none"
+                  type="text"
+                  id="editPronouns"
+                  maxlength="30"
+                  placeholder="e.g., she/her, he/him, they/them"
                 />
-                <button
-                  type="button"
-                  class="profile-btn profile-btn-secondary"
-                  id="edit-change-banner"
-                >
-                  Change Banner
-                </button>
-                <button
-                  type="button"
-                  class="profile-btn profile-btn-secondary"
-                  id="edit-remove-banner"
-                  style="display: none"
-                >
-                  Remove Banner
-                </button>
+                <div class="char-count">
+                  <span id="pronounsCount">0</span>
+                  /30
+                </div>
               </div>
-            </div>
 
-            <div class="form-group">
-              <label for="editDisplayName">Display Name</label>
-              <input type="text" id="editDisplayName" maxlength="50" />
-              <div class="char-count">
-                <span id="displayNameCount">0</span>
-                /50
+              <div class="form-group">
+                <label for="editLocation">Location</label>
+                <input
+                  type="text"
+                  id="editLocation"
+                  maxlength="30"
+                  placeholder="Where are you?"
+                />
+                <div class="char-count">
+                  <span id="locationCount">0</span>
+                  /30
+                </div>
               </div>
-            </div>
 
-            <div class="form-group">
-              <label for="editBio">Bio</label>
-              <textarea
-                id="editBio"
-                maxlength="160"
-                placeholder="Tell us about yourself"
-              ></textarea>
-              <div class="char-count">
-                <span id="bioCount">0</span>
-                /160
+              <div class="form-group">
+                <label for="editWebsite">Website</label>
+                <input
+                  type="url"
+                  id="editWebsite"
+                  maxlength="100"
+                  placeholder="https://example.com"
+                />
+                <div class="char-count">
+                  <span id="websiteCount">0</span>
+                  /100
+                </div>
               </div>
-            </div>
+            </form>
+          </div>
 
-            <div class="form-group">
-              <label for="editPronouns">Pronouns</label>
-              <input
-                type="text"
-                id="editPronouns"
-                maxlength="30"
-                placeholder="e.g., she/her, he/him, they/them"
-              />
-              <div class="char-count">
-                <span id="pronounsCount">0</span>
-                /30
-              </div>
-            </div>
-
-            <div class="form-group">
-              <label for="editLocation">Location</label>
-              <input
-                type="text"
-                id="editLocation"
-                maxlength="30"
-                placeholder="Where are you?"
-              />
-              <div class="char-count">
-                <span id="locationCount">0</span>
-                /30
-              </div>
-            </div>
-
-            <div class="form-group">
-              <label for="editWebsite">Website</label>
-              <input
-                type="url"
-                id="editWebsite"
-                maxlength="100"
-                placeholder="https://example.com"
-              />
-              <div class="char-count">
-                <span id="websiteCount">0</span>
-                /100
-              </div>
-            </div>
-
-            <div class="modal-actions">
-              <button type="button" class="profile-btn" id="cancelEditBtn">
-                Cancel
-              </button>
-              <button type="submit" class="profile-btn profile-btn-primary">
-                Save
-              </button>
-            </div>
-          </form>
+          <div class="modal-actions">
+            <button type="button" class="profile-btn" id="cancelEditBtn">
+              Cancel
+            </button>
+            <button
+              type="submit"
+              class="profile-btn profile-btn-primary"
+              form="editProfileForm"
+            >
+              Save
+            </button>
+          </div>
         </div>
       </div>
 

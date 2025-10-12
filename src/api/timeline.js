@@ -156,6 +156,29 @@ const getTopReplyData = (tweetId, userId) => {
   };
 };
 
+const summarizeArticle = (article) => {
+  if (!article) return "";
+  const trimmedContent = article.content?.trim();
+  if (trimmedContent) {
+    return trimmedContent;
+  }
+  if (!article.article_body_markdown) {
+    return "";
+  }
+  const stripped = article.article_body_markdown
+    .replace(/```[\s\S]*?```/g, " ")
+    .replace(/`[^`]*`/g, " ")
+    .replace(/!\[[^\]]*\]\([^)]*\)/g, " ")
+    .replace(/\[[^\]]*\]\([^)]*\)/g, " ")
+    .replace(/[>#*_~]/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+  if (stripped.length <= 260) {
+    return stripped;
+  }
+  return `${stripped.slice(0, 257)}…`;
+};
+
 export default new Elysia({ prefix: "/timeline" })
   .use(jwt({ name: "jwt", secret: JWT_SECRET }))
   .use(
@@ -205,6 +228,71 @@ export default new Elysia({ prefix: "/timeline" })
       .map((post) => getTopReply.get(post.id))
       .filter(Boolean);
 
+    const articleIds = new Set();
+    posts.forEach((post) => {
+      if (post.article_id) {
+        articleIds.add(post.article_id);
+      }
+    });
+    rawTopReplies.forEach((reply) => {
+      if (reply.article_id) {
+        articleIds.add(reply.article_id);
+      }
+    });
+
+    let articleMap = new Map();
+    if (articleIds.size > 0) {
+      const ids = [...articleIds];
+      const placeholders = ids.map(() => "?").join(",");
+      const articles = db
+        .query(
+          `SELECT * FROM posts WHERE id IN (${placeholders}) AND is_article = TRUE`,
+        )
+        .all(...ids);
+      const articleUserIds = [...new Set(articles.map((article) => article.user_id))];
+      const articleUsers = articleUserIds.length
+        ? db
+            .query(
+              `SELECT * FROM users WHERE id IN (${articleUserIds
+                .map(() => "?")
+                .join(",")})`,
+            )
+            .all(...articleUserIds)
+        : [];
+      const articleUserMap = new Map(articleUsers.map((u) => [u.id, u]));
+      const attachmentPlaceholders = ids.map(() => "?").join(",");
+      const articleAttachments = db
+        .query(
+          `SELECT * FROM attachments WHERE post_id IN (${attachmentPlaceholders})`,
+        )
+        .all(...ids);
+      const attachmentMap = new Map();
+      articleAttachments.forEach((attachment) => {
+        if (!attachmentMap.has(attachment.post_id)) {
+          attachmentMap.set(attachment.post_id, []);
+        }
+        attachmentMap.get(attachment.post_id).push(attachment);
+      });
+      articleMap = new Map(
+        articles.map((article) => {
+          const attachmentsForArticle = attachmentMap.get(article.id) || [];
+          return [
+            article.id,
+            {
+              ...article,
+              author: articleUserMap.get(article.user_id) || null,
+              attachments: attachmentsForArticle,
+              cover:
+                attachmentsForArticle.find((item) =>
+                  item.file_type.startsWith("image/"),
+                ) || null,
+              excerpt: summarizeArticle(article),
+            },
+          ];
+        }),
+      );
+    }
+
     const postIds = posts.map((post) => post.id);
     const topReplyIds = rawTopReplies.map((r) => r.id);
     const combinedIds = [...new Set([...postIds, ...topReplyIds])];
@@ -247,6 +335,9 @@ export default new Elysia({ prefix: "/timeline" })
           topReply.liked_by_user = userLikedPosts.has(topReply.id);
           topReply.retweeted_by_user = userRetweetedPosts.has(topReply.id);
           topReply.bookmarked_by_user = userBookmarkedPosts.has(topReply.id);
+          topReply.article_preview = topReply.article_id
+            ? articleMap.get(topReply.article_id) || null
+            : null;
         }
 
         const author = userMap[post.user_id];
@@ -262,6 +353,9 @@ export default new Elysia({ prefix: "/timeline" })
           quoted_tweet: getQuotedTweetData(post.quote_tweet_id, user.id),
           top_reply: shouldShowTopReply ? topReply : null,
           attachments: getTweetAttachments(post.id),
+          article_preview: post.article_id
+            ? articleMap.get(post.article_id) || null
+            : null,
         };
       })
       .filter(Boolean); // Remove null entries
@@ -311,6 +405,71 @@ export default new Elysia({ prefix: "/timeline" })
       .map((post) => getTopReply.get(post.id))
       .filter(Boolean);
 
+    const articleIds = new Set();
+    posts.forEach((post) => {
+      if (post.article_id) {
+        articleIds.add(post.article_id);
+      }
+    });
+    rawTopReplies.forEach((reply) => {
+      if (reply.article_id) {
+        articleIds.add(reply.article_id);
+      }
+    });
+
+    let articleMap = new Map();
+    if (articleIds.size > 0) {
+      const ids = [...articleIds];
+      const placeholders = ids.map(() => "?").join(",");
+      const articles = db
+        .query(
+          `SELECT * FROM posts WHERE id IN (${placeholders}) AND is_article = TRUE`,
+        )
+        .all(...ids);
+      const articleUserIds = [...new Set(articles.map((article) => article.user_id))];
+      const articleUsers = articleUserIds.length
+        ? db
+            .query(
+              `SELECT * FROM users WHERE id IN (${articleUserIds
+                .map(() => "?")
+                .join(",")})`,
+            )
+            .all(...articleUserIds)
+        : [];
+      const articleUserMap = new Map(articleUsers.map((u) => [u.id, u]));
+      const attachmentPlaceholders = ids.map(() => "?").join(",");
+      const articleAttachments = db
+        .query(
+          `SELECT * FROM attachments WHERE post_id IN (${attachmentPlaceholders})`,
+        )
+        .all(...ids);
+      const attachmentMap = new Map();
+      articleAttachments.forEach((attachment) => {
+        if (!attachmentMap.has(attachment.post_id)) {
+          attachmentMap.set(attachment.post_id, []);
+        }
+        attachmentMap.get(attachment.post_id).push(attachment);
+      });
+      articleMap = new Map(
+        articles.map((article) => {
+          const attachmentsForArticle = attachmentMap.get(article.id) || [];
+          return [
+            article.id,
+            {
+              ...article,
+              author: articleUserMap.get(article.user_id) || null,
+              attachments: attachmentsForArticle,
+              cover:
+                attachmentsForArticle.find((item) =>
+                  item.file_type.startsWith("image/"),
+                ) || null,
+              excerpt: summarizeArticle(article),
+            },
+          ];
+        }),
+      );
+    }
+
     const postIds = posts.map((post) => post.id);
     const topReplyIds = rawTopReplies.map((r) => r.id);
     const combinedIds = [...new Set([...postIds, ...topReplyIds])];
@@ -353,6 +512,9 @@ export default new Elysia({ prefix: "/timeline" })
           topReply.liked_by_user = userLikedPosts.has(topReply.id);
           topReply.retweeted_by_user = userRetweetedPosts.has(topReply.id);
           topReply.bookmarked_by_user = userBookmarkedPosts.has(topReply.id);
+          topReply.article_preview = topReply.article_id
+            ? articleMap.get(topReply.article_id) || null
+            : null;
         }
 
         const author = userMap[post.user_id];
@@ -368,6 +530,9 @@ export default new Elysia({ prefix: "/timeline" })
           quoted_tweet: getQuotedTweetData(post.quote_tweet_id, user.id),
           top_reply: shouldShowTopReply ? topReply : null,
           attachments: getTweetAttachments(post.id),
+          article_preview: post.article_id
+            ? articleMap.get(post.article_id) || null
+            : null,
         };
       })
       .filter(Boolean); // Remove null entries

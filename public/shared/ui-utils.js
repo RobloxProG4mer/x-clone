@@ -40,7 +40,7 @@ export function createPopup(options) {
 
     button.addEventListener("click", () => {
       closePopup();
-      item.onClick && item.onClick();
+      item.onClick?.();
     });
 
     popupContent.appendChild(button);
@@ -52,34 +52,112 @@ export function createPopup(options) {
 
   requestAnimationFrame(() => {
     // compute after DOM render to get correct popup size
-    const rect = triggerElement?.getBoundingClientRect();
+    const rect = triggerElement?.getBoundingClientRect?.();
     const viewportWidth = window.innerWidth;
     const viewportHeight = window.innerHeight;
-    const popupRect = popup.getBoundingClientRect();
 
-    if (triggerElement && rect) {
-      let top = rect.bottom + 8;
-      let transformOriginX = "left";
-      let transformOriginY = "top";
+    popup.style.position = "fixed";
 
-      popup.style.position = "fixed";
+    if (triggerElement) {
+      // Robustly obtain a usable rect for the trigger element. Some elements (svg, virtual
+      // nodes) may report zero sizes; try getClientRects as a fallback.
+      let usableRect = rect;
+      try {
+        if (
+          !usableRect ||
+          (usableRect.width === 0 && usableRect.height === 0)
+        ) {
+          const clientRects = triggerElement.getClientRects?.();
+          if (clientRects && clientRects.length > 0)
+            usableRect = clientRects[0];
+          else usableRect = triggerElement.getBoundingClientRect?.();
+        }
+      } catch (_) {
+        usableRect = null;
+      }
 
-      if (rect.left + popupRect.width > viewportWidth - 12) {
-        popup.style.right = `${viewportWidth - rect.right}px`;
-        popup.style.left = "auto";
-        transformOriginX = "right";
+      if (usableRect) {
+        // initial placement below the trigger (viewport coordinates)
+        let top = usableRect.bottom + 8;
+        let left = usableRect.left;
+        let transformOriginX = "left";
+        let transformOriginY = "top";
+
+        // position off-screen first so popup can size itself, then adjust
+        popup.style.left = "-9999px";
+        popup.style.top = "-9999px";
+
+        // force layout to get actual popup size
+        const popupRect = popup.getBoundingClientRect();
+
+        // If popup would overflow to the right, align to the right edge of trigger
+        if (left + popupRect.width > viewportWidth - 12) {
+          left = usableRect.right - popupRect.width;
+          transformOriginX = "right";
+        }
+
+        // If popup would overflow bottom, place above the trigger
+        if (top + popupRect.height > viewportHeight - 12) {
+          top = usableRect.top - popupRect.height - 8;
+          transformOriginY = "bottom";
+        }
+
+        // keep within viewport margins (allow fractional pixels)
+        left = Math.min(
+          Math.max(12, left),
+          viewportWidth - popupRect.width - 12
+        );
+        top = Math.min(
+          Math.max(12, top),
+          viewportHeight - popupRect.height - 12
+        );
+
+        popup.style.left = `${left}px`;
+        popup.style.top = `${top}px`;
+        popup.style.transformOrigin = `${transformOriginX} ${transformOriginY}`;
       } else {
-        popup.style.left = `${Math.max(12, rect.left)}px`;
-        popup.style.right = "auto";
+        // If we couldn't determine a rect, fall back to centering
+        const vw = Math.max(
+          document.documentElement.clientWidth || 0,
+          window.innerWidth || 0
+        );
+        const vh = Math.max(
+          document.documentElement.clientHeight || 0,
+          window.innerHeight || 0
+        );
+        const left = Math.round(vw / 2 - popup.offsetWidth / 2);
+        const top = Math.round(vh / 2 - popup.offsetHeight / 2);
+        popup.style.left = `${Math.max(
+          12,
+          Math.min(left, vw - popup.offsetWidth - 12)
+        )}px`;
+        popup.style.top = `${Math.max(
+          12,
+          Math.min(top, vh - popup.offsetHeight - 12)
+        )}px`;
+        popup.style.transformOrigin = `center center`;
       }
-
-      if (top + popupRect.height > viewportHeight - 12) {
-        top = rect.top - popupRect.height - 8;
-        transformOriginY = "bottom";
-      }
-
-      popup.style.top = `${Math.max(12, top)}px`;
-      popup.style.transformOrigin = `${transformOriginX} ${transformOriginY}`;
+    } else {
+      // center fallback using precise pixel coordinates
+      const vw = Math.max(
+        document.documentElement.clientWidth || 0,
+        window.innerWidth || 0
+      );
+      const vh = Math.max(
+        document.documentElement.clientHeight || 0,
+        window.innerHeight || 0
+      );
+      const left = Math.round(vw / 2 - popup.offsetWidth / 2);
+      const top = Math.round(vh / 2 - popup.offsetHeight / 2);
+      popup.style.left = `${Math.max(
+        12,
+        Math.min(left, vw - popup.offsetWidth - 12)
+      )}px`;
+      popup.style.top = `${Math.max(
+        12,
+        Math.min(top, vh - popup.offsetHeight - 12)
+      )}px`;
+      popup.style.transformOrigin = `center center`;
     }
 
     overlay.classList.add("visible");
@@ -115,7 +193,6 @@ export function createPopup(options) {
     element: overlay,
   };
 }
-
 
 export function createModal(options) {
   const {

@@ -93,20 +93,26 @@ export const initializeSearchPage = () => {
     }
 
     usersResults.innerHTML = users
-      .map(
-        (user) => `
+      .map((user) => {
+        const radius =
+          user.avatar_radius !== null && user.avatar_radius !== undefined
+            ? `${user.avatar_radius}px`
+            : user.gold
+            ? "4px"
+            : "50px";
+        return `
 			<a href="/@${user.username}" class="search-user">
 				<img src="${user.avatar || "/default-avatar.png"}" alt="${user.name.replaceAll(
           '"',
           ""
-        )}">
+        )}" style="border-radius: ${radius};">
 				<div class="user-info">
 					<h4>${user.name.replaceAll('"', "")}</h4>
 					<p>@${user.username.replaceAll('"', "")}</p>
 				</div>
 			</a>
-		`
-      )
+		`;
+      })
       .join("");
 
     tweetsResults.innerHTML = "";

@@ -20,6 +20,11 @@ class AdminPanel {
     const div = document.createElement("div");
     div.textContent = text;
     return div.innerHTML;
+  } // Tr, a the fix
+  // Applehidr
+
+  isFlagSet(value) {
+    return value === true || value === 1 || value === "1" || value === "true";
   }
 
   async init() {
@@ -273,10 +278,18 @@ class AdminPanel {
                   <div class="d-flex align-items-center">
                     ${
                       user.avatar
-                        ? `<img src="${user.avatar}" class="user-avatar me-2" alt="Avatar">`
-                        : `<div class="user-avatar me-2 bg-secondary rounded-circle d-flex align-items-center justify-content-center">
-                        <i class="bi bi-person text-white"></i>
-                      </div>`
+                          ? (() => {
+                              const radius =
+                                user.avatar_radius !== null && user.avatar_radius !== undefined
+                                  ? `${user.avatar_radius}px`
+                                  : user.gold
+                                  ? `4px`
+                                  : `50px`;
+                              return `<img src="${user.avatar}" class="user-avatar me-2" alt="Avatar" style="border-radius: ${radius};">`;
+                            })()
+                          : `<div class="user-avatar me-2 bg-secondary rounded-circle d-flex align-items-center justify-content-center">
+                          <i class="bi bi-person text-white"></i>
+                        </div>`
                     }
                     <div>
                       <strong>@${user.username}</strong>
@@ -297,11 +310,11 @@ class AdminPanel {
                 </td>
                 <td>
                   <div class="d-flex flex-column gap-1">
-                    ${
-                      user.verified
-                        ? '<span class="badge bg-success">Verified</span>'
-                        : ""
-                    }
+                      ${
+                        this.isFlagSet(user.verified)
+                          ? '<span class="badge bg-success">Verified</span>'
+                          : ""
+                      }
                     ${
                       user.admin
                         ? '<span class="badge bg-primary">Admin</span>'
@@ -309,7 +322,7 @@ class AdminPanel {
                     }
                     ${
                       // add account switching @tiagozip
-                      user.gold
+                      this.isFlagSet(user.gold)
                         ? '<span class="badge bg-yellow">Gold</span>'
                         : ""
                     }
@@ -413,7 +426,15 @@ class AdminPanel {
                   <div class="d-flex align-items-center">
                     ${
                       post.avatar
-                        ? `<img src="${post.avatar}" class="user-avatar me-2" alt="Avatar">`
+                        ? (() => {
+                            const radius =
+                              post.avatar_radius !== null && post.avatar_radius !== undefined
+                                ? `${post.avatar_radius}px`
+                                : post.gold
+                                ? `4px`
+                                : `50px`;
+                            return `<img src="${post.avatar}" class="user-avatar me-2" alt="Avatar" style="border-radius: ${radius};">`;
+                          })()
                         : `<div class="user-avatar me-2 bg-secondary rounded-circle d-flex align-items-center justify-content-center">
                         <i class="bi bi-person text-white"></i>
                       </div>`
@@ -421,7 +442,7 @@ class AdminPanel {
                     <div>
                       <strong>@${post.username}</strong>
                       ${
-                        post.verified
+                        this.isFlagSet(post.verified)
                           ? '<i class="bi bi-patch-check-fill text-primary"></i>'
                           : ""
                       }
@@ -524,7 +545,15 @@ class AdminPanel {
                   <div class="d-flex align-items-center">
                     ${
                       suspension.avatar
-                        ? `<img src="${suspension.avatar}" class="user-avatar me-2" alt="Avatar">`
+                        ? (() => {
+                            const radius =
+                              suspension.avatar_radius !== null && suspension.avatar_radius !== undefined
+                                ? `${suspension.avatar_radius}px`
+                                : suspension.gold
+                                ? `4px`
+                                : `50px`;
+                            return `<img src="${suspension.avatar}" class="user-avatar me-2" alt="Avatar" style="border-radius: ${radius};">`;
+                          })()
                         : `<div class="user-avatar me-2 bg-secondary rounded-circle d-flex align-items-center justify-content-center">
                         <i class="bi bi-person text-white"></i>
                       </div>`
@@ -665,12 +694,12 @@ class AdminPanel {
             <p class="text-muted">${user.name || ""}</p>
             <div class="d-flex justify-content-center gap-2 mb-3">
               ${
-                user.verified
+                this.isFlagSet(user.verified)
                   ? '<span class="badge bg-success">Verified</span>'
                   : ""
               }
               ${
-                user.gold
+                this.isFlagSet(user.gold)
                   ? '<span class="badge bg-warning text-dark">Gold</span>'
                   : ""
               }
@@ -721,13 +750,13 @@ class AdminPanel {
               </div>
               <div class="form-check form-switch mb-3">
                 <input class="form-check-input" type="checkbox" id="editProfileVerified" ${
-                  user.verified && user.verified !== "0" ? "checked" : ""
+                  this.isFlagSet(user.verified) ? "checked" : ""
                 }>
                 <label class="form-check-label">Verified</label>
               </div>
                <div class="form-check form-switch mb-3">
                 <input class="form-check-input" type="checkbox" id="editProfileGold" ${
-                  user.gold && user.gold !== "0" ? "checked" : ""
+                  this.isFlagSet(user.gold) ? "checked" : ""
                 }>
                 <label class="form-check-label">Gold</label>
               </div>
@@ -841,16 +870,23 @@ class AdminPanel {
       const goldCheckbox = document.getElementById("editProfileGold");
 
       if (verifiedCheckbox && goldCheckbox) {
-        verifiedCheckbox.addEventListener("change", () => {
-          if (verifiedCheckbox.checked) {
-            goldCheckbox.checked = false;
-          }
+        // Remove any existing listeners by replacing node with a clone, then re-query
+        const newVerified = verifiedCheckbox.cloneNode(true);
+        verifiedCheckbox.parentNode.replaceChild(newVerified, verifiedCheckbox);
+
+        const newGold = goldCheckbox.cloneNode(true);
+        goldCheckbox.parentNode.replaceChild(newGold, goldCheckbox);
+
+        // Re-query to get the replaced elements
+        const vCheckbox = document.getElementById("editProfileVerified");
+        const gCheckbox = document.getElementById("editProfileGold");
+
+        vCheckbox.addEventListener("change", () => {
+          if (vCheckbox.checked) gCheckbox.checked = false;
         });
 
-        goldCheckbox.addEventListener("change", () => {
-          if (goldCheckbox.checked) {
-            verifiedCheckbox.checked = false;
-          }
+        gCheckbox.addEventListener("change", () => {
+          if (gCheckbox.checked) vCheckbox.checked = false;
         });
       }
     } catch {
@@ -952,6 +988,13 @@ class AdminPanel {
         method: "PATCH",
         body: JSON.stringify(payload),
       });
+
+      try {
+        this.userCache.delete(userId);
+      } catch {
+        // noop
+      }
+
       this.showSuccess("Profile updated successfully");
       this.toggleEditMode(false);
       this.loadUsers(this.currentPage.users);
@@ -1578,16 +1621,21 @@ class AdminPanel {
     const goldCheckbox = document.getElementById("createGold");
 
     if (verifiedCheckbox && goldCheckbox) {
-      verifiedCheckbox.addEventListener("change", () => {
-        if (verifiedCheckbox.checked) {
-          goldCheckbox.checked = false;
-        }
+      const newVerified = verifiedCheckbox.cloneNode(true);
+      verifiedCheckbox.parentNode.replaceChild(newVerified, verifiedCheckbox);
+
+      const newGold = goldCheckbox.cloneNode(true);
+      goldCheckbox.parentNode.replaceChild(newGold, goldCheckbox);
+
+      const vCheckbox = document.getElementById("createVerified");
+      const gCheckbox = document.getElementById("createGold");
+
+      vCheckbox.addEventListener("change", () => {
+        if (vCheckbox.checked) gCheckbox.checked = false;
       });
 
-      goldCheckbox.addEventListener("change", () => {
-        if (goldCheckbox.checked) {
-          verifiedCheckbox.checked = false;
-        }
+      gCheckbox.addEventListener("change", () => {
+        if (gCheckbox.checked) vCheckbox.checked = false;
       });
     }
   }

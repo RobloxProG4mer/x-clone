@@ -10,6 +10,12 @@ import "./profile.js";
 import "./notifications.js";
 import "./settings.js";
 import "./search.js";
+import {
+	initArticles,
+	activateArticlesTab,
+	deactivateArticlesTab,
+	handleArticlesScroll,
+} from "./articles.js";
 
 window.onerror = (message, source, lineno, colno) => {
 	toastQueue.add(
@@ -53,6 +59,9 @@ window.onunhandledrejection = (event) => {
 	let isLoading = false;
 	let hasMoreTweets = true;
 	let oldestTweetId = null;
+
+	initArticles();
+	deactivateArticlesTab();
 
 	const loadTimeline = async (type = "home", append = false) => {
 		if (isLoading) return;
@@ -103,25 +112,39 @@ window.onunhandledrejection = (event) => {
 	};
 
 	const feedLinks = document.querySelectorAll("h1 a");
-	feedLinks.forEach((link, index) => {
+	feedLinks.forEach((link) => {
 		link.addEventListener("click", async (e) => {
 			e.preventDefault();
 
 			feedLinks.forEach((l) => l.classList.remove("active"));
 			link.classList.add("active");
 
-			const timelineType = index === 0 ? "home" : "following";
-			currentTimeline = timelineType;
+			const tab = link.dataset.tab || "home";
+			if (tab === "articles") {
+				currentTimeline = "articles";
+				deactivateArticlesTab();
+				document.querySelector("#composer-container").style.display = "none";
+				document.querySelector(".tweets").style.display = "none";
+				activateArticlesTab();
+				return;
+			}
 
+			deactivateArticlesTab();
 			document.querySelector("#composer-container").style.display = "block";
 			document.querySelector(".tweets").style.display = "flex";
 			oldestTweetId = null;
 			hasMoreTweets = true;
-			await loadTimeline(timelineType);
+			currentTimeline = tab === "following" ? "following" : "home";
+			await loadTimeline(currentTimeline);
 		});
 	});
 
 	window.addEventListener("scroll", async () => {
+		if (currentTimeline === "articles") {
+			await handleArticlesScroll();
+			return;
+		}
+
 		if (!hasMoreTweets || isLoading) return;
 
 		const scrollPosition = window.innerHeight + window.scrollY;
@@ -179,6 +202,15 @@ window.onunhandledrejection = (event) => {
 addRoute(
 	(pathname) => pathname === "/",
 	() => showPage("timeline"),
+);
+
+addRoute(
+	(pathname) => pathname === "/articles",
+	() => {
+		showPage("timeline");
+		const articleLink = document.querySelector('h1 a[data-tab="articles"]');
+		articleLink?.click();
+	},
 );
 
 addRoute(

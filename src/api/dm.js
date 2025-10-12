@@ -271,6 +271,13 @@ export default new Elysia({ prefix: "/dm" })
           if (!participant) {
             return { error: `User ${username} not found` };
           }
+          const blocked = db
+            .query(
+              "SELECT 1 FROM blocks WHERE (blocker_id = ? AND blocked_id = ?) OR (blocker_id = ? AND blocked_id = ?)"
+            )
+            .get(user.id, participant.id, participant.id, user.id);
+          if (blocked)
+            return { error: `Cannot start a conversation with ${username}` };
           participants.push(participant);
         }
 
@@ -339,6 +346,19 @@ export default new Elysia({ prefix: "/dm" })
         const participant = checkParticipant.get(id, user.id);
         if (!participant) return { error: "Access denied" };
 
+        const otherParticipants = getConversationParticipants
+          .all(id)
+          .filter((p) => p.user_id !== user.id);
+        for (const p of otherParticipants) {
+          const blocked = db
+            .query(
+              "SELECT 1 FROM blocks WHERE (blocker_id = ? AND blocked_id = ?) OR (blocker_id = ? AND blocked_id = ?)"
+            )
+            .get(user.id, p.user_id, p.user_id, user.id);
+          if (blocked)
+            return { error: "Cannot send messages to this conversation" };
+        }
+
         if (!content?.trim() && (!files || files.length === 0)) {
           return { error: "Message content or attachments required" };
         }
@@ -373,10 +393,10 @@ export default new Elysia({ prefix: "/dm" })
 
         updateConversationTimestamp.run(id);
 
-        const otherParticipants = getConversationParticipants
+        const recipients = getConversationParticipants
           .all(id)
           .filter((p) => p.user_id !== user.id);
-        for (const participant of otherParticipants) {
+        for (const participant of recipients) {
           broadcastToUser(participant.user_id, {
             type: "m",
             conversationId: id,

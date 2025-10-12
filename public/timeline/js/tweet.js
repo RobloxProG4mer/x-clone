@@ -16,7 +16,7 @@ export default async function openTweet(
     tweet = apiOutput.tweet;
     threadPostsCache = apiOutput?.threadPosts || [{
       ...tweet,
-      content: "failed to load tweet. it might have been deleted",
+      content: "failed to load xeet. it might have been deleted",
     }];
     repliesCache = apiOutput?.replies || [];
     tweet.extendedStats = apiOutput?.extendedStats || [];

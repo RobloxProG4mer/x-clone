@@ -15,6 +15,7 @@ import tenor from "./api/tenor.js";
 import timeline from "./api/timeline.js";
 import tweet from "./api/tweet.js";
 import upload, { uploadRoutes } from "./api/upload.js";
+import articles from "./api/articles.js";
 import db from "./db.js";
 import ratelimit from "./helpers/ratelimit.js";
 
@@ -81,6 +82,7 @@ export default new Elysia({
   .use(blocking)
   .use(bookmarks)
   .use(tweet)
+  .use(articles)
   .use(profile)
   .use(timeline)
   .use(search)

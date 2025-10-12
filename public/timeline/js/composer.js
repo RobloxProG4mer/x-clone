@@ -6,7 +6,7 @@ import getUser from "./auth.js";
 export const useComposer = (
   element,
   callback,
-  { replyTo = null, quoteTweet = null, maxChars = 400 } = {}
+  { replyTo = null, quoteTweet = null, article = null, maxChars = 400 } = {}
 ) => {
   const textarea = element.querySelector("#tweet-textarea");
   const charCount = element.querySelector("#char-count");
@@ -50,7 +50,12 @@ export const useComposer = (
       tweetButton.disabled = true;
     } else {
       charCount.parentElement.id = "";
-      tweetButton.disabled = length === 0;
+      const hasExtras =
+        (pendingFiles && pendingFiles.length > 0) ||
+        !!selectedGif ||
+        pollEnabled ||
+        !!article;
+      tweetButton.disabled = !hasExtras && length === 0;
     }
   };
 
@@ -647,6 +652,7 @@ export const useComposer = (
           : "desktop_web",
         files: uploadedFiles,
         reply_restriction: replyRestriction,
+        article_id: article?.id || null,
       };
 
       if (selectedGif) {
@@ -701,6 +707,8 @@ export const useComposer = (
       }
     }
   });
+
+  updateCharacterCount();
 };
 
 export const createComposer = async ({

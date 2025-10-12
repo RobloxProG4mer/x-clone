@@ -4,9 +4,9 @@ import { authToken } from "./auth.js";
 import switchPage, { addRoute } from "./pages.js";
 
 function sanitizeHTML(str) {
-	const div = document.createElement("div");
-	div.textContent = str;
-	return div.innerHTML;
+  const div = document.createElement("div");
+  div.textContent = str;
+  return div.innerHTML;
 }
 
 let currentConversations = [];
@@ -19,177 +19,189 @@ let sseConnectTimeout = null;
 let lastSSEConnect = 0;
 
 function connectSSE() {
-	const now = Date.now();
-	const timeSinceLastConnect = now - lastSSEConnect;
+  const now = Date.now();
+  const timeSinceLastConnect = now - lastSSEConnect;
 
-	if (timeSinceLastConnect < 1000) {
-		if (sseConnectTimeout) clearTimeout(sseConnectTimeout);
-		sseConnectTimeout = setTimeout(() => {
-			connectSSE();
-		}, 1000 - timeSinceLastConnect);
-		return;
-	}
+  if (timeSinceLastConnect < 1000) {
+    if (sseConnectTimeout) clearTimeout(sseConnectTimeout);
+    sseConnectTimeout = setTimeout(() => {
+      connectSSE();
+    }, 1000 - timeSinceLastConnect);
+    return;
+  }
 
-	if (eventSource && eventSource.readyState === EventSource.OPEN) {
-		return;
-	}
-	if (!authToken) return;
+  if (eventSource && eventSource.readyState === EventSource.OPEN) {
+    return;
+  }
+  if (!authToken) return;
 
-	lastSSEConnect = now;
-	const sseUrl = `/sse?token=${encodeURIComponent(authToken)}`;
-	eventSource = new EventSource(sseUrl);
+  lastSSEConnect = now;
+  const sseUrl = `/sse?token=${encodeURIComponent(authToken)}`;
+  eventSource = new EventSource(sseUrl);
 
-	eventSource.onmessage = (event) => {
-		try {
-			const data = JSON.parse(event.data);
-			if (data.type === "m") {
-				handleNewMessage(data);
-			} else if (data.type === "u") {
-				if (data.notifications !== undefined) {
-					displayNotificationCount(data.notifications);
-				}
-				if (data.dms !== undefined) {
-					displayDMCount(data.dms);
-				}
-			}
-		} catch (error) {
-			console.error("Error parsing SSE message:", error);
-		}
-	};
+  eventSource.onmessage = (event) => {
+    try {
+      const data = JSON.parse(event.data);
+      if (data.type === "m") {
+        handleNewMessage(data);
+      } else if (data.type === "u") {
+        if (data.notifications !== undefined) {
+          displayNotificationCount(data.notifications);
+        }
+        if (data.dms !== undefined) {
+          displayDMCount(data.dms);
+        }
+      }
+    } catch (error) {
+      console.error("Error parsing SSE message:", error);
+    }
+  };
 
-	eventSource.onerror = (error) => {
-		console.error("SSE error:", error);
-		eventSource.close();
-		setTimeout(connectSSE, 3000);
-	};
+  eventSource.onerror = (error) => {
+    console.error("SSE error:", error);
+    eventSource.close();
+    setTimeout(connectSSE, 3000);
+  };
 }
 
 function handleNewMessage(data) {
-	const { conversationId, message } = data;
+  const { conversationId, message } = data;
 
-	if (currentConversation && currentConversation.id === conversationId) {
-		currentMessages.push(message);
-		renderMessages();
-		scrollToBottom();
-	}
+  if (currentConversation && currentConversation.id === conversationId) {
+    currentMessages.push(message);
+    renderMessages();
+    scrollToBottom();
+  }
 
-	loadConversations();
+  loadConversations();
 }
 
 function displayDMCount(count) {
-	const countElement = document.getElementById("dmCount");
-	if (countElement) {
-		if (count > 0) {
-			countElement.textContent = count > 99 ? "99+" : count.toString();
-			countElement.style.display = "flex";
-		} else {
-			countElement.style.display = "none";
-		}
-	}
+  const countElement = document.getElementById("dmCount");
+  if (countElement) {
+    if (count > 0) {
+      countElement.textContent = count > 99 ? "99+" : count.toString();
+      countElement.style.display = "flex";
+    } else {
+      countElement.style.display = "none";
+    }
+  }
 }
 
 function displayNotificationCount(count) {
-	const countElement = document.getElementById("notificationCount");
-	if (countElement) {
-		if (count > 0) {
-			countElement.textContent = count > 99 ? "99+" : count.toString();
-			countElement.style.display = "block";
-		} else {
-			countElement.style.display = "none";
-		}
-	}
+  const countElement = document.getElementById("notificationCount");
+  if (countElement) {
+    if (count > 0) {
+      countElement.textContent = count > 99 ? "99+" : count.toString();
+      countElement.style.display = "block";
+    } else {
+      countElement.style.display = "none";
+    }
+  }
 }
 
 async function loadConversations() {
-	if (!authToken) {
-		console.error("No auth token available for DM");
-		return;
-	}
+  if (!authToken) {
+    console.error("No auth token available for DM");
+    return;
+  }
 
-	try {
-		const data = await query("/dm/conversations");
+  try {
+    const data = await query("/dm/conversations");
 
-		if (data.error) {
-			toastQueue.add("An error occurred");
-			return;
-		}
+    if (data.error) {
+      toastQueue.add("An error occurred");
+      return;
+    }
 
-		currentConversations = data.conversations || [];
-		renderConversations();
-	} catch (error) {
-		console.error("Failed to load conversations:", error);
-		toastQueue.add("Failed to load conversations");
-	}
+    currentConversations = data.conversations || [];
+    renderConversations();
+  } catch (error) {
+    console.error("Failed to load conversations:", error);
+    toastQueue.add("Failed to load conversations");
+  }
 }
 
 function renderConversations() {
-	const listElement = document.getElementById("dmConversationsList");
-	if (!listElement) return;
+  const listElement = document.getElementById("dmConversationsList");
+  if (!listElement) return;
 
-	if (currentConversations.length === 0) {
-		listElement.innerHTML = `
+  if (currentConversations.length === 0) {
+    listElement.innerHTML = `
       <div class="no-conversations">
         <p>No conversations yet.</p>
         <p>Start a new conversation to get chatting!</p>
       </div>
     `;
-		return;
-	}
+    return;
+  }
 
-	listElement.innerHTML = currentConversations
-		.map((conversation) => createConversationElement(conversation))
-		.join("");
+  listElement.innerHTML = currentConversations
+    .map((conversation) => createConversationElement(conversation))
+    .join("");
 }
 
 function createConversationElement(conversation) {
-	const displayAvatar =
-		conversation.displayAvatar || "/public/shared/default-avatar.png";
-	const displayName = sanitizeHTML(conversation.displayName || "Unknown");
-	const lastMessage = sanitizeHTML(
-		conversation.last_message_content || "No messages yet",
-	);
-	const lastSender = sanitizeHTML(
-		conversation.lastMessageSenderName ||
-			conversation.last_message_sender ||
-			"",
-	);
-	const time = conversation.last_message_time
-		? formatTime(new Date(conversation.last_message_time))
-		: "";
-	const unreadCount = conversation.unread_count || 0;
-	const isGroup = conversation.type === "group";
+  const displayAvatar =
+    conversation.displayAvatar || "/public/shared/default-avatar.png";
+  const displayName = sanitizeHTML(conversation.displayName || "Unknown");
+  const lastMessage = sanitizeHTML(
+    conversation.last_message_content || "No messages yet"
+  );
+  const lastSender = sanitizeHTML(
+    conversation.lastMessageSenderName || conversation.last_message_sender || ""
+  );
+  const time = conversation.last_message_time
+    ? formatTime(new Date(conversation.last_message_time))
+    : "";
+  const unreadCount = conversation.unread_count || 0;
+  const isGroup = conversation.type === "group";
 
-	let avatarHtml;
-	if (isGroup && conversation.participants.length > 0) {
-		const maxAvatars = 3;
-		const visibleParticipants = conversation.participants.slice(0, maxAvatars);
-		avatarHtml = `
-      <div class="dm-group-avatars">
-        ${visibleParticipants
-					.map(
-						(p) =>
-							`<img src="${
-								p.avatar || "/public/shared/default-avatar.png"
-							}" alt="${p.name || p.username}" />`,
-					)
-					.join("")}
-        ${
-					conversation.participants.length > maxAvatars
-						? `<div class="dm-avatar-more">+${
-								conversation.participants.length - maxAvatars
-							}</div>`
-						: ""
-				}
-      </div>
-    `;
-	} else {
-		avatarHtml = `<img src="${displayAvatar}" alt="${displayName}" class="dm-avatar" />`;
-	}
+  let avatarHtml;
+  if (isGroup && conversation.participants.length > 0) {
+    const maxAvatars = 3;
+    const visibleParticipants = conversation.participants.slice(0, maxAvatars);
+    avatarHtml = `
+	  <div class="dm-group-avatars">
+		${visibleParticipants
+      .map((p) => {
+        const radius =
+          p.avatar_radius !== null && p.avatar_radius !== undefined
+            ? `${p.avatar_radius}px`
+            : p.gold
+            ? `4px`
+            : `50px`;
+        return `<img src="${
+          p.avatar || "/public/shared/default-avatar.png"
+        }" alt="${p.name || p.username}" style="border-radius: ${radius};" />`;
+      })
+      .join("")}
+		${
+      conversation.participants.length > maxAvatars
+        ? `<div class="dm-avatar-more">+${
+            conversation.participants.length - maxAvatars
+          }</div>`
+        : ""
+    }
+	  </div>
+	`;
+  } else {
+    const singleParticipant = conversation.participants?.[0] ?? null;
+    const radius = singleParticipant
+      ? singleParticipant.avatar_radius !== null &&
+        singleParticipant.avatar_radius !== undefined
+        ? `${singleParticipant.avatar_radius}px`
+        : singleParticipant.gold
+        ? `4px`
+        : `50px`
+      : `50px`;
+    avatarHtml = `<img src="${displayAvatar}" alt="${displayName}" class="dm-avatar" style="border-radius: ${radius};" />`;
+  }
 
-	return `
+  return `
     <div class="dm-conversation-item ${unreadCount > 0 ? "unread" : ""} ${
-			isGroup ? "group" : ""
-		}" 
+    isGroup ? "group" : ""
+  }" 
          onclick="openConversation('${conversation.id}')">
       ${avatarHtml}
       <div class="dm-conversation-info">
@@ -199,954 +211,982 @@ function createConversationElement(conversation) {
         </h3>
         <p class="dm-last-message">
           ${
-						lastSender && isGroup
-							? `<span class="dm-sender">${lastSender
-									.replaceAll("<", "&lt;")
-									.replaceAll(">", "&gt;")}:</span> `
-							: ""
-					}
+            lastSender && isGroup
+              ? `<span class="dm-sender">${lastSender
+                  .replaceAll("<", "&lt;")
+                  .replaceAll(">", "&gt;")}:</span> `
+              : ""
+          }
           ${lastMessage.replaceAll("<", "&lt;").replaceAll(">", "&gt;")}
         </p>
       </div>
       <div class="dm-conversation-meta">
         ${time ? `<span class="dm-time">${time}</span>` : ""}
         ${
-					unreadCount > 0
-						? `<span class="dm-unread-count">${unreadCount}</span>`
-						: ""
-				}
+          unreadCount > 0
+            ? `<span class="dm-unread-count">${unreadCount}</span>`
+            : ""
+        }
       </div>
     </div>
   `;
 }
 
 async function openConversation(conversationId) {
-	try {
-		const data = await query(`/dm/conversations/${conversationId}`);
+  try {
+    const data = await query(`/dm/conversations/${conversationId}`);
 
-		if (data.error) {
-			toastQueue.add(data.error);
-			return;
-		}
+    if (data.error) {
+      toastQueue.add(data.error);
+      return;
+    }
 
-		currentConversation = data.conversation;
-		currentMessages = data.messages || [];
+    currentConversation = data.conversation;
+    currentMessages = data.messages || [];
 
-		switchPage("dm-conversation", { path: `/dm/${conversationId}` });
-		renderConversationHeader();
-		renderMessages();
-		scrollToBottom();
-		markConversationAsRead(conversationId);
-	} catch (error) {
-		console.error("Failed to open conversation:", error);
-		toastQueue.add("Failed to open conversation");
-	}
+    switchPage("dm-conversation", { path: `/dm/${conversationId}` });
+    renderConversationHeader();
+    renderMessages();
+    scrollToBottom();
+    markConversationAsRead(conversationId);
+  } catch (error) {
+    console.error("Failed to open conversation:", error);
+    toastQueue.add("Failed to open conversation");
+  }
 }
 
 function renderConversationHeader() {
-	if (!currentConversation) return;
+  if (!currentConversation) return;
 
-	const avatarsElement = document.getElementById("dmParticipantAvatars");
-	const titleElement = document.getElementById("dmConversationTitle");
-	const countElement = document.getElementById("dmParticipantCount");
-	const actionsElement = document.getElementById("dmConversationActions");
+  const avatarsElement = document.getElementById("dmParticipantAvatars");
+  const titleElement = document.getElementById("dmConversationTitle");
+  const countElement = document.getElementById("dmParticipantCount");
+  const actionsElement = document.getElementById("dmConversationActions");
 
-	if (!avatarsElement || !titleElement || !countElement) return;
+  if (!avatarsElement || !titleElement || !countElement) return;
 
-	const currentUsername = getCurrentUsername();
-	const participants = currentConversation.participants.filter(
-		(p) => p.username !== currentUsername,
-	);
-	const isGroup = currentConversation.type === "group";
+  const currentUsername = getCurrentUsername();
+  const participants = currentConversation.participants.filter(
+    (p) => p.username !== currentUsername
+  );
+  const isGroup = currentConversation.type === "group";
 
-	if (isGroup && participants.length > 3) {
-		const visibleParticipants = participants.slice(0, 3);
-		avatarsElement.innerHTML = `
+  if (isGroup && participants.length > 3) {
+    const visibleParticipants = participants.slice(0, 3);
+    avatarsElement.innerHTML = `
       ${visibleParticipants
-				.map(
-					(p) =>
-						`<img src="${
-							p.avatar || "/public/shared/default-avatar.png"
-						}" alt="${p.name || p.username}" />`,
-				)
-				.join("")}
+        .map((p) => {
+          const radius =
+            p.avatar_radius !== null && p.avatar_radius !== undefined
+              ? `${p.avatar_radius}px`
+              : p.gold
+              ? `4px`
+              : `50px`;
+          return `<img src="${
+            p.avatar || "/public/shared/default-avatar.png"
+          }" alt="${
+            p.name || p.username
+          }" style="border-radius: ${radius};" />`;
+        })
+        .join("")}
       <div class="avatar-more">+${participants.length - 3}</div>
     `;
-	} else {
-		avatarsElement.innerHTML = participants
-			.map(
-				(p) =>
-					`<img src="${p.avatar || "/public/shared/default-avatar.png"}" alt="${
-						p.name || p.username
-					}" />`,
-			)
-			.join("");
-	}
+  } else {
+    avatarsElement.innerHTML = participants
+      .map((p) => {
+        const radius =
+          p.avatar_radius !== null && p.avatar_radius !== undefined
+            ? `${p.avatar_radius}px`
+            : p.gold
+            ? `4px`
+            : `50px`;
+        return `<img src="${
+          p.avatar || "/public/shared/default-avatar.png"
+        }" alt="${p.name || p.username}" style="border-radius: ${radius};" />`;
+      })
+      .join("");
+  }
 
-	if (isGroup) {
-		titleElement.textContent = currentConversation.title || "Group Chat";
-		countElement.textContent = `${participants.length + 1} participants`;
+  if (isGroup) {
+    titleElement.textContent = currentConversation.title || "Group Chat";
+    countElement.textContent = `${participants.length + 1} participants`;
 
-		if (actionsElement) {
-			actionsElement.innerHTML = `
+    if (actionsElement) {
+      actionsElement.innerHTML = `
         <button class="dm-action-btn" onclick="openGroupSettings()" title="Group Settings">
           ⚙️
         </button>
       `;
-		}
-	} else {
-		if (participants.length === 1) {
-			titleElement.textContent =
-				participants[0].name || participants[0].username;
-			countElement.textContent = `@${participants[0].username}`;
-		} else {
-			titleElement.textContent = "Direct Message";
-			countElement.textContent = "1-on-1 chat";
-		}
+    }
+  } else {
+    if (participants.length === 1) {
+      titleElement.textContent =
+        participants[0].name || participants[0].username;
+      countElement.textContent = `@${participants[0].username}`;
+    } else {
+      titleElement.textContent = "Direct Message";
+      countElement.textContent = "1-on-1 chat";
+    }
 
-		if (actionsElement) {
-			actionsElement.innerHTML = "";
-		}
-	}
+    if (actionsElement) {
+      actionsElement.innerHTML = "";
+    }
+  }
 }
 
 function renderMessages() {
-	const messagesElement = document.getElementById("dmMessages");
-	if (!messagesElement || !currentMessages) return;
+  const messagesElement = document.getElementById("dmMessages");
+  if (!messagesElement || !currentMessages) return;
 
-	const currentUser = getCurrentUsername();
+  const currentUser = getCurrentUsername();
 
-	messagesElement.innerHTML = currentMessages
-		.map((message) => createMessageElement(message, currentUser))
-		.join("");
+  messagesElement.innerHTML = currentMessages
+    .map((message) => createMessageElement(message, currentUser))
+    .join("");
 }
 
 function createMessageElement(message, currentUser) {
-	const isOwn = message.username === currentUser;
-	const avatar = message.avatar || "/public/shared/default-avatar.png";
-	const time = formatTime(new Date(message.created_at));
-	const sanitizedContent = sanitizeHTML(message.content || "");
-	const sanitizedName = sanitizeHTML(message.name || message.username);
+  const isOwn = message.username === currentUser;
+  const avatar = message.avatar || "/public/shared/default-avatar.png";
+  const radius =
+    message.avatar_radius !== null && message.avatar_radius !== undefined
+      ? `${message.avatar_radius}px`
+      : message.gold
+      ? `4px`
+      : `50px`;
+  const time = formatTime(new Date(message.created_at));
+  const sanitizedContent = sanitizeHTML(message.content || "");
+  const sanitizedName = sanitizeHTML(message.name || message.username);
 
-	const attachmentsHtml =
-		message.attachments?.length > 0
-			? `
+  const attachmentsHtml =
+    message.attachments?.length > 0
+      ? `
     <div class="dm-message-attachments">
       ${message.attachments
-				.map(
-					(att) => `
+        .map(
+          (att) => `
         <img src="${sanitizeHTML(att.file_url)}" alt="${sanitizeHTML(
-					att.file_name,
-				)}" onclick="window.open('${sanitizeHTML(att.file_url)}', '_blank')" />
-      `,
-				)
-				.join("")}
+            att.file_name
+          )}" onclick="window.open('${sanitizeHTML(
+            att.file_url
+          )}', '_blank')" />
+      `
+        )
+        .join("")}
     </div>
   `
-			: "";
+      : "";
 
-	return `
-    <div class="dm-message ${isOwn ? "own" : ""}">
-      <img src="${avatar}" alt="${sanitizedName}" class="dm-message-avatar" />
-      <div class="dm-message-content">
-        ${
-					sanitizedContent
-						? `<p class="dm-message-text">${sanitizedContent}</p>`
-						: ""
-				}
-        ${attachmentsHtml}
-      </div>
-      <div class="dm-message-time">${time}</div>
-    </div>
-  `;
+  return `
+		<div class="dm-message ${isOwn ? "own" : ""}">
+			<img src="${avatar}" alt="${sanitizedName}" class="dm-message-avatar" style="border-radius: ${radius};" />
+			<div class="dm-message-content">
+				${sanitizedContent ? `<p class="dm-message-text">${sanitizedContent}</p>` : ""}
+				${attachmentsHtml}
+			</div>
+			<div class="dm-message-time">${time}</div>
+		</div>
+	`;
 }
 
 async function sendMessage() {
-	if (!currentConversation) return;
+  if (!currentConversation) return;
 
-	const input = document.getElementById("dmMessageInput");
-	const content = input.value.trim();
+  const input = document.getElementById("dmMessageInput");
+  const content = input.value.trim();
 
-	if (!content && pendingFiles.length === 0) return;
+  if (!content && pendingFiles.length === 0) return;
 
-	try {
-		const requestBody = {
-			content: content || "",
-		};
+  try {
+    const requestBody = {
+      content: content || "",
+    };
 
-		if (pendingFiles.length > 0) {
-			requestBody.files = pendingFiles;
-		}
+    if (pendingFiles.length > 0) {
+      requestBody.files = pendingFiles;
+    }
 
-		const data = await query(
-			`/dm/conversations/${currentConversation.id}/messages`,
-			{
-				method: "POST",
-				headers: {
-					"Content-Type": "application/json",
-				},
-				body: JSON.stringify(requestBody),
-			},
-		);
+    const data = await query(
+      `/dm/conversations/${currentConversation.id}/messages`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(requestBody),
+      }
+    );
 
-		if (data.error) {
-			toastQueue.add(data.error);
-			return;
-		}
+    if (data.error) {
+      toastQueue.add(data.error);
+      return;
+    }
 
-		input.value = "";
-		pendingFiles = [];
-		renderAttachmentPreviews();
-		updateSendButton();
+    input.value = "";
+    pendingFiles = [];
+    renderAttachmentPreviews();
+    updateSendButton();
 
-		currentMessages.push(data.message);
-		renderMessages();
-		scrollToBottom();
-		loadConversations();
-	} catch (error) {
-		console.error("Failed to send message:", error);
-		toastQueue.add("Failed to send message");
-	}
+    currentMessages.push(data.message);
+    renderMessages();
+    scrollToBottom();
+    loadConversations();
+  } catch (error) {
+    console.error("Failed to send message:", error);
+    toastQueue.add("Failed to send message");
+  }
 }
 
 async function markConversationAsRead(conversationId) {
-	try {
-		await query(`/dm/conversations/${conversationId}/read`, {
-			method: "PATCH",
-			headers: { Authorization: `Bearer ${authToken}` },
-		});
-		loadConversations();
-	} catch (error) {
-		console.error("Failed to mark conversation as read:", error);
-	}
+  try {
+    await query(`/dm/conversations/${conversationId}/read`, {
+      method: "PATCH",
+      headers: { Authorization: `Bearer ${authToken}` },
+    });
+    loadConversations();
+  } catch (error) {
+    console.error("Failed to mark conversation as read:", error);
+  }
 }
 
 function scrollToBottom() {
-	const messagesElement = document.getElementById("dmMessages");
-	if (messagesElement) {
-		messagesElement.scrollTop = messagesElement.scrollHeight;
-	}
+  const messagesElement = document.getElementById("dmMessages");
+  if (messagesElement) {
+    messagesElement.scrollTop = messagesElement.scrollHeight;
+  }
 }
 
 function getCurrentUsername() {
-	try {
-		const payload = JSON.parse(atob(authToken.split(".")[1]));
-		return payload.username;
-	} catch {
-		return "";
-	}
+  try {
+    const payload = JSON.parse(atob(authToken.split(".")[1]));
+    return payload.username;
+  } catch {
+    return "";
+  }
 }
 
 function formatTime(date) {
-	const now = new Date();
-	const diff = now - date;
-	const daysDiff = Math.floor(diff / (1000 * 60 * 60 * 24));
+  const now = new Date();
+  const diff = now - date;
+  const daysDiff = Math.floor(diff / (1000 * 60 * 60 * 24));
 
-	if (daysDiff === 0) {
-		return date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
-	} else if (daysDiff === 1) {
-		return "Yesterday";
-	} else if (daysDiff < 7) {
-		return date.toLocaleDateString([], { weekday: "short" });
-	} else {
-		return date.toLocaleDateString([], { month: "short", day: "numeric" });
-	}
+  if (daysDiff === 0) {
+    return date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+  } else if (daysDiff === 1) {
+    return "Yesterday";
+  } else if (daysDiff < 7) {
+    return date.toLocaleDateString([], { weekday: "short" });
+  } else {
+    return date.toLocaleDateString([], { month: "short", day: "numeric" });
+  }
 }
 
 async function openDMList() {
-	if (!authToken) {
-		toastQueue.add("Please log in to access messages");
-		switchPage("timeline", { path: "/" });
-		return;
-	}
+  if (!authToken) {
+    toastQueue.add("Please log in to access messages");
+    switchPage("timeline", { path: "/" });
+    return;
+  }
 
-	switchPage("direct-messages", { path: "/dm" });
-	await loadConversations();
+  switchPage("direct-messages", { path: "/dm" });
+  await loadConversations();
 }
 
 function openNewMessageModal() {
-	const modal = document.getElementById("newMessageModal");
-	if (modal) {
-		modal.style.display = "flex";
-		selectedUsers = [];
-		renderSelectedUsers();
-		document.getElementById("newMessageTo").value = "";
-		document.getElementById("startConversation").disabled = true;
+  const modal = document.getElementById("newMessageModal");
+  if (modal) {
+    modal.style.display = "flex";
+    selectedUsers = [];
+    renderSelectedUsers();
+    document.getElementById("newMessageTo").value = "";
+    document.getElementById("startConversation").disabled = true;
 
-		const groupToggle = document.getElementById("groupChatToggle");
-		if (groupToggle) {
-			groupToggle.checked = false;
-		}
-	}
+    const groupToggle = document.getElementById("groupChatToggle");
+    if (groupToggle) {
+      groupToggle.checked = false;
+    }
+  }
 }
 
 function goBackToDMList() {
-	currentConversation = null;
-	currentMessages = [];
+  currentConversation = null;
+  currentMessages = [];
 
-	switchPage("direct-messages", { path: "/dm" });
+  switchPage("direct-messages", { path: "/dm" });
 
-	loadConversations();
+  loadConversations();
 }
 
 function openGroupSettings() {
-	if (!currentConversation || currentConversation.type !== "group") {
-		toastQueue.add("This feature is only available for group chats");
-		return;
-	}
+  if (!currentConversation || currentConversation.type !== "group") {
+    toastQueue.add("This feature is only available for group chats");
+    return;
+  }
 
-	const modal = document.getElementById("groupSettingsModal");
-	const groupNameInput = document.getElementById("groupNameInput");
+  const modal = document.getElementById("groupSettingsModal");
+  const groupNameInput = document.getElementById("groupNameInput");
 
-	if (modal && groupNameInput) {
-		groupNameInput.value = currentConversation.title || "";
-		renderParticipantsList();
-		modal.style.display = "flex";
-	}
+  if (modal && groupNameInput) {
+    groupNameInput.value = currentConversation.title || "";
+    renderParticipantsList();
+    modal.style.display = "flex";
+  }
 }
 
 function closeGroupSettings() {
-	const modal = document.getElementById("groupSettingsModal");
-	if (modal) {
-		modal.style.display = "none";
-	}
+  const modal = document.getElementById("groupSettingsModal");
+  if (modal) {
+    modal.style.display = "none";
+  }
 }
 
 function renderParticipantsList() {
-	if (!currentConversation) return;
+  if (!currentConversation) return;
 
-	const participantsList = document.getElementById("participantsList");
-	if (!participantsList) return;
+  const participantsList = document.getElementById("participantsList");
+  if (!participantsList) return;
 
-	const currentUsername = getCurrentUsername();
-	const allParticipants = currentConversation.participants;
+  const currentUsername = getCurrentUsername();
+  const allParticipants = currentConversation.participants;
 
-	participantsList.innerHTML = allParticipants
-		.map((participant) => {
-			const isCurrentUser = participant.username === currentUsername;
-			return `
+  participantsList.innerHTML = allParticipants
+    .map((participant) => {
+      const isCurrentUser = participant.username === currentUsername;
+      return `
         <div class="participant-item">
           <img src="${
-						participant.avatar || "/public/shared/default-avatar.png"
-					}" alt="${participant.name || participant.username}" />
+            participant.avatar || "/public/shared/default-avatar.png"
+          }" alt="${participant.name || participant.username}" />
           <div class="participant-info">
             <span class="participant-name">${
-							participant.name || participant.username
-						}</span>
+              participant.name || participant.username
+            }</span>
             <span class="participant-username">@${participant.username}</span>
           </div>
           ${
-						!isCurrentUser
-							? `
+            !isCurrentUser
+              ? `
             <button class="remove-participant-btn" onclick="removeParticipantFromGroup('${participant.id}', '${participant.username}')">
               Remove
             </button>
           `
-							: '<span class="current-user-badge">You</span>'
-					}
+              : '<span class="current-user-badge">You</span>'
+          }
         </div>
       `;
-		})
-		.join("");
+    })
+    .join("");
 }
 
 async function saveGroupSettings() {
-	if (!currentConversation) return;
+  if (!currentConversation) return;
 
-	const groupNameInput = document.getElementById("groupNameInput");
-	const newTitle = groupNameInput?.value?.trim() || null;
+  const groupNameInput = document.getElementById("groupNameInput");
+  const newTitle = groupNameInput?.value?.trim() || null;
 
-	if (newTitle !== (currentConversation.title || "")) {
-		try {
-			const data = await query(
-				`/dm/conversations/${currentConversation.id}/title`,
-				{
-					method: "PATCH",
-					headers: {
-						"Content-Type": "application/json",
-					},
-					body: JSON.stringify({ title: newTitle }),
-				},
-			);
+  if (newTitle !== (currentConversation.title || "")) {
+    try {
+      const data = await query(
+        `/dm/conversations/${currentConversation.id}/title`,
+        {
+          method: "PATCH",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ title: newTitle }),
+        }
+      );
 
-			if (data.error) {
-				toastQueue.add(data.error);
-				return;
-			}
+      if (data.error) {
+        toastQueue.add(data.error);
+        return;
+      }
 
-			currentConversation.title = newTitle;
-			renderConversationHeader();
-		} catch (error) {
-			console.error("Failed to update group settings:", error);
-			return;
-		}
-	}
+      currentConversation.title = newTitle;
+      renderConversationHeader();
+    } catch (error) {
+      console.error("Failed to update group settings:", error);
+      return;
+    }
+  }
 
-	closeGroupSettings();
-	loadConversations();
+  closeGroupSettings();
+  loadConversations();
 }
 
 async function removeParticipantFromGroup(userId, username) {
-	if (!currentConversation) return;
+  if (!currentConversation) return;
 
-	if (!confirm(`Remove ${username} from this group?`)) return;
+  if (!confirm(`Remove ${username} from this group?`)) return;
 
-	try {
-		const data = await query(
-			`/dm/conversations/${currentConversation.id}/participants/${userId}`,
-			{
-				method: "DELETE",
-			},
-		);
+  try {
+    const data = await query(
+      `/dm/conversations/${currentConversation.id}/participants/${userId}`,
+      {
+        method: "DELETE",
+      }
+    );
 
-		if (data.error) {
-			toastQueue.add(data.error);
-			return;
-		}
+    if (data.error) {
+      toastQueue.add(data.error);
+      return;
+    }
 
-		currentConversation.participants = currentConversation.participants.filter(
-			(p) => p.id !== userId,
-		);
-		renderParticipantsList();
-		renderConversationHeader();
-		loadConversations();
-	} catch (error) {
-		console.error("Failed to remove participant:", error);
-		toastQueue.add("Failed to remove participant");
-	}
+    currentConversation.participants = currentConversation.participants.filter(
+      (p) => p.id !== userId
+    );
+    renderParticipantsList();
+    renderConversationHeader();
+    loadConversations();
+  } catch (error) {
+    console.error("Failed to remove participant:", error);
+    toastQueue.add("Failed to remove participant");
+  }
 }
 
 let selectedParticipants = [];
 
 function openAddParticipantModal() {
-	if (!currentConversation || currentConversation.type !== "group") {
-		toastQueue.add("This feature is only available for group chats");
-		return;
-	}
+  if (!currentConversation || currentConversation.type !== "group") {
+    toastQueue.add("This feature is only available for group chats");
+    return;
+  }
 
-	const modal = document.getElementById("addParticipantModal");
-	if (modal) {
-		selectedParticipants = [];
-		renderSelectedParticipants();
-		document.getElementById("addParticipantTo").value = "";
-		document.getElementById("confirmAddParticipant").disabled = true;
-		modal.style.display = "flex";
-	}
+  const modal = document.getElementById("addParticipantModal");
+  if (modal) {
+    selectedParticipants = [];
+    renderSelectedParticipants();
+    document.getElementById("addParticipantTo").value = "";
+    document.getElementById("confirmAddParticipant").disabled = true;
+    modal.style.display = "flex";
+  }
 }
 
 function closeAddParticipantModal() {
-	const modal = document.getElementById("addParticipantModal");
-	if (modal) {
-		modal.style.display = "none";
-		selectedParticipants = [];
-	}
+  const modal = document.getElementById("addParticipantModal");
+  if (modal) {
+    modal.style.display = "none";
+    selectedParticipants = [];
+  }
 }
 
 function renderAddParticipantSuggestions(users) {
-	const suggestionsElement = document.getElementById(
-		"addParticipantSuggestions",
-	);
-	if (!suggestionsElement) return;
+  const suggestionsElement = document.getElementById(
+    "addParticipantSuggestions"
+  );
+  if (!suggestionsElement) return;
 
-	if (users.length === 0) {
-		suggestionsElement.classList.remove("show");
-		return;
-	}
+  if (users.length === 0) {
+    suggestionsElement.classList.remove("show");
+    return;
+  }
 
-	const existingUserIds = currentConversation.participants.map((p) => p.id);
-	const availableUsers = users.filter(
-		(user) => !existingUserIds.includes(user.id),
-	);
+  const existingUserIds = currentConversation.participants.map((p) => p.id);
+  const availableUsers = users.filter(
+    (user) => !existingUserIds.includes(user.id)
+  );
 
-	if (availableUsers.length === 0) {
-		suggestionsElement.innerHTML =
-			'<div class="no-suggestions">All users are already in this group</div>';
-		suggestionsElement.classList.add("show");
-		return;
-	}
+  if (availableUsers.length === 0) {
+    suggestionsElement.innerHTML =
+      '<div class="no-suggestions">All users are already in this group</div>';
+    suggestionsElement.classList.add("show");
+    return;
+  }
 
-	suggestionsElement.innerHTML = availableUsers
-		.map(
-			(user) => `
+  suggestionsElement.innerHTML = availableUsers
+    .map((user) => {
+      const radius =
+        user.avatar_radius !== null && user.avatar_radius !== undefined
+          ? `${user.avatar_radius}px`
+          : user.gold
+          ? `4px`
+          : `50px`;
+      return `
       <div class="suggestion-item" onclick="addParticipantUser('${
-				user.username
-			}', '${user.name || ""}', '${user.avatar || ""}', '${user.id}')">
+        user.username
+      }', '${user.name || ""}', '${user.avatar || ""}', '${user.id}')">
         <img src="${user.avatar || "/public/shared/default-avatar.png"}" alt="${
-					user.name || user.username
-				}" />
+        user.name || user.username
+      }" style="border-radius: ${radius};" />
         <div class="user-info">
           <p class="username">${user.name || user.username}</p>
           <p class="name">@${user.username}</p>
         </div>
       </div>
-    `,
-		)
-		.join("");
+    `;
+    })
+    .join("");
 
-	suggestionsElement.classList.add("show");
+  suggestionsElement.classList.add("show");
 }
 
 function addParticipantUser(username, name, avatar, id) {
-	if (selectedParticipants.find((u) => u.username === username)) return;
+  if (selectedParticipants.find((u) => u.username === username)) return;
 
-	selectedParticipants.push({ username, name, avatar, id });
-	renderSelectedParticipants();
-	document.getElementById("addParticipantTo").value = "";
-	document.getElementById("addParticipantSuggestions").classList.remove("show");
-	document.getElementById("confirmAddParticipant").disabled =
-		selectedParticipants.length === 0;
+  selectedParticipants.push({ username, name, avatar, id });
+  renderSelectedParticipants();
+  document.getElementById("addParticipantTo").value = "";
+  document.getElementById("addParticipantSuggestions").classList.remove("show");
+  document.getElementById("confirmAddParticipant").disabled =
+    selectedParticipants.length === 0;
 }
 
 function removeParticipantUser(username) {
-	selectedParticipants = selectedParticipants.filter(
-		(u) => u.username !== username,
-	);
-	renderSelectedParticipants();
-	document.getElementById("confirmAddParticipant").disabled =
-		selectedParticipants.length === 0;
+  selectedParticipants = selectedParticipants.filter(
+    (u) => u.username !== username
+  );
+  renderSelectedParticipants();
+  document.getElementById("confirmAddParticipant").disabled =
+    selectedParticipants.length === 0;
 }
 
 function renderSelectedParticipants() {
-	const element = document.getElementById("addParticipantSelectedUsers");
-	if (!element) return;
+  const element = document.getElementById("addParticipantSelectedUsers");
+  if (!element) return;
 
-	element.innerHTML = selectedParticipants
-		.map(
-			(user) => `
+  element.innerHTML = selectedParticipants
+    .map(
+      (user) => `
       <div class="selected-user">
         ${user.name || user.username}
         <button class="remove-user" onclick="removeParticipantUser('${
-					user.username
-				}')">&times;</button>
+          user.username
+        }')">&times;</button>
       </div>
-    `,
-		)
-		.join("");
+    `
+    )
+    .join("");
 }
 
 async function confirmAddParticipant() {
-	if (selectedParticipants.length === 0 || !currentConversation) return;
+  if (selectedParticipants.length === 0 || !currentConversation) return;
 
-	try {
-		const data = await query(
-			`/dm/conversations/${currentConversation.id}/participants`,
-			{
-				method: "POST",
-				headers: {
-					"Content-Type": "application/json",
-				},
-				body: JSON.stringify({
-					usernames: selectedParticipants.map((u) => u.username),
-				}),
-			},
-		);
+  try {
+    const data = await query(
+      `/dm/conversations/${currentConversation.id}/participants`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          usernames: selectedParticipants.map((u) => u.username),
+        }),
+      }
+    );
 
-		if (data.error) {
-			toastQueue.add(data.error);
-			return;
-		}
+    if (data.error) {
+      toastQueue.add(data.error);
+      return;
+    }
 
-		if (data.participants) {
-			currentConversation.participants.push(...data.participants);
-		}
+    if (data.participants) {
+      currentConversation.participants.push(...data.participants);
+    }
 
-		closeAddParticipantModal();
-		renderParticipantsList();
-		renderConversationHeader();
-		toastQueue.add(
-			"success",
-			`Added ${selectedParticipants.length} participant(s) to the group`,
-		);
-		loadConversations();
-	} catch (error) {
-		console.error("Failed to add participants:", error);
-		toastQueue.add("Failed to add participants");
-	}
+    closeAddParticipantModal();
+    renderParticipantsList();
+    renderConversationHeader();
+    toastQueue.add(
+      "success",
+      `Added ${selectedParticipants.length} participant(s) to the group`
+    );
+    loadConversations();
+  } catch (error) {
+    console.error("Failed to add participants:", error);
+    toastQueue.add("Failed to add participants");
+  }
 }
 function closeNewMessageModal() {
-	const modal = document.getElementById("newMessageModal");
-	if (modal) {
-		modal.style.display = "none";
-		selectedUsers = [];
-		renderSelectedUsers();
-	}
+  const modal = document.getElementById("newMessageModal");
+  if (modal) {
+    modal.style.display = "none";
+    selectedUsers = [];
+    renderSelectedUsers();
+  }
 }
 
 async function searchUsers(searchQuery) {
-	if (!searchQuery.trim()) return [];
+  if (!searchQuery.trim()) return [];
 
-	try {
-		const data = await query(
-			`/search/users?q=${encodeURIComponent(searchQuery)}&limit=5`,
-		);
-		return data.users || [];
-	} catch (error) {
-		console.error("Failed to search users:", error);
-		return [];
-	}
+  try {
+    const data = await query(
+      `/search/users?q=${encodeURIComponent(searchQuery)}&limit=5`
+    );
+    return data.users || [];
+  } catch (error) {
+    console.error("Failed to search users:", error);
+    return [];
+  }
 }
 
 function renderUserSuggestions(users) {
-	const suggestionsElement = document.getElementById("userSuggestions");
-	if (!suggestionsElement) return;
+  const suggestionsElement = document.getElementById("userSuggestions");
+  if (!suggestionsElement) return;
 
-	if (users.length === 0) {
-		suggestionsElement.classList.remove("show");
-		return;
-	}
+  if (users.length === 0) {
+    suggestionsElement.classList.remove("show");
+    return;
+  }
 
-	suggestionsElement.innerHTML = users
-		.map(
-			(user) => `
+  suggestionsElement.innerHTML = users
+    .map((user) => {
+      const radius =
+        user.avatar_radius !== null && user.avatar_radius !== undefined
+          ? `${user.avatar_radius}px`
+          : user.gold
+          ? `4px`
+          : `50px`;
+      return `
       <div class="suggestion-item" onclick="addUser('${user.username}', '${
-				user.name || ""
-			}', '${user.avatar || ""}')">
+        user.name || ""
+      }', '${user.avatar || ""}')">
         <img src="${user.avatar || "/public/shared/default-avatar.png"}" alt="${
-					user.name || user.username
-				}" />
+        user.name || user.username
+      }" style="border-radius: ${radius};" />
         <div class="user-info">
           <p class="username">${user.name || user.username}</p>
           <p class="name">@${user.username}</p>
         </div>
       </div>
-    `,
-		)
-		.join("");
+    `;
+    })
+    .join("");
 
-	suggestionsElement.classList.add("show");
+  suggestionsElement.classList.add("show");
 }
 
 function addUser(username, name, avatar) {
-	if (selectedUsers.find((u) => u.username === username)) return;
+  if (selectedUsers.find((u) => u.username === username)) return;
 
-	selectedUsers.push({ username, name, avatar });
-	renderSelectedUsers();
-	document.getElementById("newMessageTo").value = "";
-	document.getElementById("userSuggestions").classList.remove("show");
-	document.getElementById("startConversation").disabled =
-		selectedUsers.length === 0;
+  selectedUsers.push({ username, name, avatar });
+  renderSelectedUsers();
+  document.getElementById("newMessageTo").value = "";
+  document.getElementById("userSuggestions").classList.remove("show");
+  document.getElementById("startConversation").disabled =
+    selectedUsers.length === 0;
 
-	const groupToggle = document.getElementById("groupChatToggle");
-	const groupTitleInput = document.getElementById("groupTitleInput");
+  const groupToggle = document.getElementById("groupChatToggle");
+  const groupTitleInput = document.getElementById("groupTitleInput");
 
-	if (selectedUsers.length > 1 && groupToggle && !groupToggle.checked) {
-		groupToggle.checked = true;
-		if (groupTitleInput) {
-			groupTitleInput.style.display = "block";
-		}
-	}
+  if (selectedUsers.length > 1 && groupToggle && !groupToggle.checked) {
+    groupToggle.checked = true;
+    if (groupTitleInput) {
+      groupTitleInput.style.display = "block";
+    }
+  }
 }
 
 function removeUser(username) {
-	selectedUsers = selectedUsers.filter((u) => u.username !== username);
-	renderSelectedUsers();
-	document.getElementById("startConversation").disabled =
-		selectedUsers.length === 0;
+  selectedUsers = selectedUsers.filter((u) => u.username !== username);
+  renderSelectedUsers();
+  document.getElementById("startConversation").disabled =
+    selectedUsers.length === 0;
 }
 
 function renderSelectedUsers() {
-	const element = document.getElementById("selectedUsers");
-	if (!element) return;
+  const element = document.getElementById("selectedUsers");
+  if (!element) return;
 
-	element.innerHTML = selectedUsers
-		.map(
-			(user) => `
+  element.innerHTML = selectedUsers
+    .map(
+      (user) => `
       <div class="selected-user">
         ${user.name || user.username}
         <button class="remove-user" onclick="removeUser('${
-					user.username
-				}')">&times;</button>
+          user.username
+        }')">&times;</button>
       </div>
-    `,
-		)
-		.join("");
+    `
+    )
+    .join("");
 }
 
 async function startConversation() {
-	if (selectedUsers.length === 0) return;
+  if (selectedUsers.length === 0) return;
 
-	try {
-		const groupToggle = document.getElementById("groupChatToggle");
-		const isGroup = groupToggle?.checked || selectedUsers.length > 1;
-		const titleInput = document.getElementById("groupTitleInput");
-		const title = titleInput?.value?.trim() || null;
+  try {
+    const groupToggle = document.getElementById("groupChatToggle");
+    const isGroup = groupToggle?.checked || selectedUsers.length > 1;
+    const titleInput = document.getElementById("groupTitleInput");
+    const title = titleInput?.value?.trim() || null;
 
-		const data = await query("/dm/conversations", {
-			method: "POST",
-			headers: {
-				"Content-Type": "application/json",
-			},
-			body: JSON.stringify({
-				participantUsernames: selectedUsers.map((u) => u.username),
-				title: title,
-				isGroup: isGroup,
-			}),
-		});
+    const data = await query("/dm/conversations", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        participantUsernames: selectedUsers.map((u) => u.username),
+        title: title,
+        isGroup: isGroup,
+      }),
+    });
 
-		if (data.error) {
-			toastQueue.add(data.error);
-			return;
-		}
+    if (data.error) {
+      toastQueue.add(data.error);
+      return;
+    }
 
-		closeNewMessageModal();
-		await loadConversations();
-		openConversation(data.conversation.id);
-	} catch (error) {
-		console.error("Failed to start conversation:", error);
-		toastQueue.add("Failed to start conversation");
-	}
+    closeNewMessageModal();
+    await loadConversations();
+    openConversation(data.conversation.id);
+  } catch (error) {
+    console.error("Failed to start conversation:", error);
+    toastQueue.add("Failed to start conversation");
+  }
 }
 
 async function handleFileUpload(files) {
-	const allowedTypes = ["image/webp", "image/jpeg", "image/png", "image/gif"];
-	const maxSize = 10 * 1024 * 1024;
+  const allowedTypes = ["image/webp", "image/jpeg", "image/png", "image/gif"];
+  const maxSize = 10 * 1024 * 1024;
 
-	for (const file of files) {
-		if (!allowedTypes.includes(file.type)) {
-			toastQueue.add("Only image files are allowed");
-			continue;
-		}
+  for (const file of files) {
+    if (!allowedTypes.includes(file.type)) {
+      toastQueue.add("Only image files are allowed");
+      continue;
+    }
 
-		if (file.size > maxSize) {
-			toastQueue.add("File too large (max 10MB)");
-			continue;
-		}
+    if (file.size > maxSize) {
+      toastQueue.add("File too large (max 10MB)");
+      continue;
+    }
 
-		try {
-			const formData = new FormData();
-			formData.append("file", file);
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
 
-			const data = await query("/upload", {
-				method: "POST",
-				body: formData,
-			});
+      const data = await query("/upload", {
+        method: "POST",
+        body: formData,
+      });
 
-			if (data.error) {
-				toastQueue.add(data.error);
-				continue;
-			}
+      if (data.error) {
+        toastQueue.add(data.error);
+        continue;
+      }
 
-			pendingFiles.push({
-				hash: data.hash,
-				name: file.name,
-				type: file.type,
-				size: file.size,
-				url: data.url,
-			});
-		} catch (error) {
-			console.error("Failed to upload file:", error);
-			toastQueue.add("Failed to upload file");
-		}
-	}
+      pendingFiles.push({
+        hash: data.hash,
+        name: file.name,
+        type: file.type,
+        size: file.size,
+        url: data.url,
+      });
+    } catch (error) {
+      console.error("Failed to upload file:", error);
+      toastQueue.add("Failed to upload file");
+    }
+  }
 
-	renderAttachmentPreviews();
-	updateSendButton();
+  renderAttachmentPreviews();
+  updateSendButton();
 }
 
 function renderAttachmentPreviews() {
-	const element = document.getElementById("dmComposerAttachments");
-	if (!element) return;
+  const element = document.getElementById("dmComposerAttachments");
+  if (!element) return;
 
-	element.innerHTML = pendingFiles
-		.map(
-			(file, index) => `
+  element.innerHTML = pendingFiles
+    .map(
+      (file, index) => `
       <div class="dm-attachment-preview">
         <img src="${file.url}" alt="${file.name}" />
         <button class="remove-attachment" onclick="removePendingFile(${index})">&times;</button>
       </div>
-    `,
-		)
-		.join("");
+    `
+    )
+    .join("");
 }
 
 function removePendingFile(index) {
-	pendingFiles.splice(index, 1);
-	renderAttachmentPreviews();
-	updateSendButton();
+  pendingFiles.splice(index, 1);
+  renderAttachmentPreviews();
+  updateSendButton();
 }
 
 function updateSendButton() {
-	const button = document.getElementById("dmSendBtn");
-	const input = document.getElementById("dmMessageInput");
+  const button = document.getElementById("dmSendBtn");
+  const input = document.getElementById("dmMessageInput");
 
-	if (button && input) {
-		button.disabled = !input.value.trim() && pendingFiles.length === 0;
-	}
+  if (button && input) {
+    button.disabled = !input.value.trim() && pendingFiles.length === 0;
+  }
 }
 
 document.addEventListener("DOMContentLoaded", () => {
-	const dmBtn = document.getElementById("dmBtn");
-	if (dmBtn) {
-		dmBtn.addEventListener("click", openDMList);
-	} else {
-		console.error("DM button not found in DOM!");
-	}
+  const dmBtn = document.getElementById("dmBtn");
+  if (dmBtn) {
+    dmBtn.addEventListener("click", openDMList);
+  } else {
+    console.error("DM button not found in DOM!");
+  }
 
-	setTimeout(() => {
-		const dmBtnDelayed = document.getElementById("dmBtn");
-		if (dmBtnDelayed && !dmBtnDelayed.onclick) {
-			dmBtnDelayed.addEventListener("click", openDMList);
-		}
-	}, 1000);
+  setTimeout(() => {
+    const dmBtnDelayed = document.getElementById("dmBtn");
+    if (dmBtnDelayed && !dmBtnDelayed.onclick) {
+      dmBtnDelayed.addEventListener("click", openDMList);
+    }
+  }, 1000);
 
-	const newMessageBtn = document.getElementById("newMessageBtn");
-	const newMessageModalClose = document.getElementById("newMessageModalClose");
-	const cancelNewMessage = document.getElementById("cancelNewMessage");
-	const startConversationBtn = document.getElementById("startConversation");
-	const dmSendBtn = document.getElementById("dmSendBtn");
-	const dmMessageInput = document.getElementById("dmMessageInput");
-	const dmAttachmentBtn = document.getElementById("dmAttachmentBtn");
-	const dmFileInput = document.getElementById("dmFileInput");
-	const newMessageTo = document.getElementById("newMessageTo");
-	const groupChatToggle = document.getElementById("groupChatToggle");
-	const groupTitleInput = document.getElementById("groupTitleInput");
-	const groupSettingsModalClose = document.getElementById(
-		"groupSettingsModalClose",
-	);
-	const cancelGroupSettings = document.getElementById("cancelGroupSettings");
-	const saveGroupSettingsBtn = document.getElementById("saveGroupSettings");
-	const addParticipantBtn = document.getElementById("addParticipantBtn");
-	const addParticipantModalClose = document.getElementById(
-		"addParticipantModalClose",
-	);
-	const cancelAddParticipant = document.getElementById("cancelAddParticipant");
-	const confirmAddParticipantBtn = document.getElementById(
-		"confirmAddParticipant",
-	);
-	const addParticipantTo = document.getElementById("addParticipantTo");
+  const newMessageBtn = document.getElementById("newMessageBtn");
+  const newMessageModalClose = document.getElementById("newMessageModalClose");
+  const cancelNewMessage = document.getElementById("cancelNewMessage");
+  const startConversationBtn = document.getElementById("startConversation");
+  const dmSendBtn = document.getElementById("dmSendBtn");
+  const dmMessageInput = document.getElementById("dmMessageInput");
+  const dmAttachmentBtn = document.getElementById("dmAttachmentBtn");
+  const dmFileInput = document.getElementById("dmFileInput");
+  const newMessageTo = document.getElementById("newMessageTo");
+  const groupChatToggle = document.getElementById("groupChatToggle");
+  const groupTitleInput = document.getElementById("groupTitleInput");
+  const groupSettingsModalClose = document.getElementById(
+    "groupSettingsModalClose"
+  );
+  const cancelGroupSettings = document.getElementById("cancelGroupSettings");
+  const saveGroupSettingsBtn = document.getElementById("saveGroupSettings");
+  const addParticipantBtn = document.getElementById("addParticipantBtn");
+  const addParticipantModalClose = document.getElementById(
+    "addParticipantModalClose"
+  );
+  const cancelAddParticipant = document.getElementById("cancelAddParticipant");
+  const confirmAddParticipantBtn = document.getElementById(
+    "confirmAddParticipant"
+  );
+  const addParticipantTo = document.getElementById("addParticipantTo");
 
-	dmBtn?.addEventListener("click", openDMList);
-	newMessageBtn?.addEventListener("click", openNewMessageModal);
-	newMessageModalClose?.addEventListener("click", closeNewMessageModal);
-	cancelNewMessage?.addEventListener("click", closeNewMessageModal);
-	startConversationBtn?.addEventListener("click", startConversation);
-	dmSendBtn?.addEventListener("click", sendMessage);
-	dmAttachmentBtn?.addEventListener("click", () => dmFileInput?.click());
+  dmBtn?.addEventListener("click", openDMList);
+  newMessageBtn?.addEventListener("click", openNewMessageModal);
+  newMessageModalClose?.addEventListener("click", closeNewMessageModal);
+  cancelNewMessage?.addEventListener("click", closeNewMessageModal);
+  startConversationBtn?.addEventListener("click", startConversation);
+  dmSendBtn?.addEventListener("click", sendMessage);
+  dmAttachmentBtn?.addEventListener("click", () => dmFileInput?.click());
 
-	groupSettingsModalClose?.addEventListener("click", closeGroupSettings);
-	cancelGroupSettings?.addEventListener("click", closeGroupSettings);
-	saveGroupSettingsBtn?.addEventListener("click", saveGroupSettings);
-	addParticipantBtn?.addEventListener("click", openAddParticipantModal);
+  groupSettingsModalClose?.addEventListener("click", closeGroupSettings);
+  cancelGroupSettings?.addEventListener("click", closeGroupSettings);
+  saveGroupSettingsBtn?.addEventListener("click", saveGroupSettings);
+  addParticipantBtn?.addEventListener("click", openAddParticipantModal);
 
-	addParticipantModalClose?.addEventListener("click", closeAddParticipantModal);
-	cancelAddParticipant?.addEventListener("click", closeAddParticipantModal);
-	confirmAddParticipantBtn?.addEventListener("click", confirmAddParticipant);
+  addParticipantModalClose?.addEventListener("click", closeAddParticipantModal);
+  cancelAddParticipant?.addEventListener("click", closeAddParticipantModal);
+  confirmAddParticipantBtn?.addEventListener("click", confirmAddParticipant);
 
-	groupChatToggle?.addEventListener("change", (e) => {
-		if (groupTitleInput) {
-			groupTitleInput.style.display = e.target.checked ? "block" : "none";
-		}
-	});
-	dmFileInput?.addEventListener("change", (e) => {
-		if (e.target.files.length > 0) {
-			handleFileUpload(Array.from(e.target.files));
-			e.target.value = "";
-		}
-	});
+  groupChatToggle?.addEventListener("change", (e) => {
+    if (groupTitleInput) {
+      groupTitleInput.style.display = e.target.checked ? "block" : "none";
+    }
+  });
+  dmFileInput?.addEventListener("change", (e) => {
+    if (e.target.files.length > 0) {
+      handleFileUpload(Array.from(e.target.files));
+      e.target.value = "";
+    }
+  });
 
-	dmMessageInput?.addEventListener("input", updateSendButton);
-	dmMessageInput?.addEventListener("keydown", (e) => {
-		if (e.key === "Enter" && !e.shiftKey) {
-			e.preventDefault();
-			sendMessage();
-		}
-	});
+  dmMessageInput?.addEventListener("input", updateSendButton);
+  dmMessageInput?.addEventListener("keydown", (e) => {
+    if (e.key === "Enter" && !e.shiftKey) {
+      e.preventDefault();
+      sendMessage();
+    }
+  });
 
-	let searchTimeout;
-	newMessageTo?.addEventListener("input", (e) => {
-		clearTimeout(searchTimeout);
-		const query = e.target.value.trim();
+  let searchTimeout;
+  newMessageTo?.addEventListener("input", (e) => {
+    clearTimeout(searchTimeout);
+    const query = e.target.value.trim();
 
-		if (query.length === 0) {
-			document.getElementById("userSuggestions").classList.remove("show");
-			return;
-		}
+    if (query.length === 0) {
+      document.getElementById("userSuggestions").classList.remove("show");
+      return;
+    }
 
-		searchTimeout = setTimeout(async () => {
-			const users = await searchUsers(query);
-			renderUserSuggestions(users);
-		}, 300);
-	});
+    searchTimeout = setTimeout(async () => {
+      const users = await searchUsers(query);
+      renderUserSuggestions(users);
+    }, 300);
+  });
 
-	let addParticipantSearchTimeout;
-	addParticipantTo?.addEventListener("input", (e) => {
-		clearTimeout(addParticipantSearchTimeout);
-		const query = e.target.value.trim();
+  let addParticipantSearchTimeout;
+  addParticipantTo?.addEventListener("input", (e) => {
+    clearTimeout(addParticipantSearchTimeout);
+    const query = e.target.value.trim();
 
-		if (query.length === 0) {
-			document
-				.getElementById("addParticipantSuggestions")
-				.classList.remove("show");
-			return;
-		}
+    if (query.length === 0) {
+      document
+        .getElementById("addParticipantSuggestions")
+        .classList.remove("show");
+      return;
+    }
 
-		addParticipantSearchTimeout = setTimeout(async () => {
-			const users = await searchUsers(query);
-			renderAddParticipantSuggestions(users);
-		}, 300);
-	});
-	document.addEventListener("click", (e) => {
-		const suggestionsElement = document.getElementById("userSuggestions");
-		const inputElement = document.getElementById("newMessageTo");
-		const addParticipantSuggestionsElement = document.getElementById(
-			"addParticipantSuggestions",
-		);
-		const addParticipantInputElement =
-			document.getElementById("addParticipantTo");
+    addParticipantSearchTimeout = setTimeout(async () => {
+      const users = await searchUsers(query);
+      renderAddParticipantSuggestions(users);
+    }, 300);
+  });
+  document.addEventListener("click", (e) => {
+    const suggestionsElement = document.getElementById("userSuggestions");
+    const inputElement = document.getElementById("newMessageTo");
+    const addParticipantSuggestionsElement = document.getElementById(
+      "addParticipantSuggestions"
+    );
+    const addParticipantInputElement =
+      document.getElementById("addParticipantTo");
 
-		if (
-			suggestionsElement &&
-			!suggestionsElement.contains(e.target) &&
-			e.target !== inputElement
-		) {
-			suggestionsElement.classList.remove("show");
-		}
+    if (
+      suggestionsElement &&
+      !suggestionsElement.contains(e.target) &&
+      e.target !== inputElement
+    ) {
+      suggestionsElement.classList.remove("show");
+    }
 
-		if (
-			addParticipantSuggestionsElement &&
-			!addParticipantSuggestionsElement.contains(e.target) &&
-			e.target !== addParticipantInputElement
-		) {
-			addParticipantSuggestionsElement.classList.remove("show");
-		}
-	});
+    if (
+      addParticipantSuggestionsElement &&
+      !addParticipantSuggestionsElement.contains(e.target) &&
+      e.target !== addParticipantInputElement
+    ) {
+      addParticipantSuggestionsElement.classList.remove("show");
+    }
+  });
 
-	if (authToken) {
-		connectSSE();
-	}
+  if (authToken) {
+    connectSSE();
+  }
 });
 
 addRoute((pathname) => pathname === "/dm", openDMList);
 addRoute(
-	(pathname) => pathname.startsWith("/dm/"),
-	() => {
-		const conversationId = window.location.pathname.split("/dm/")[1];
-		if (conversationId) {
-			openConversation(conversationId);
-		}
-	},
+  (pathname) => pathname.startsWith("/dm/"),
+  () => {
+    const conversationId = window.location.pathname.split("/dm/")[1];
+    if (conversationId) {
+      openConversation(conversationId);
+    }
+  }
 );
 
 window.addEventListener("popstate", (event) => {
-	const currentPath = window.location.pathname;
+  const currentPath = window.location.pathname;
 
-	if (currentPath === "/dm") {
-		currentConversation = null;
-		currentMessages = [];
+  if (currentPath === "/dm") {
+    currentConversation = null;
+    currentMessages = [];
 
-		if (event.state && event.state.page === "direct-messages") {
-			setTimeout(() => loadConversations(), 0);
-		}
-	} else if (currentPath.startsWith("/dm/")) {
-		const conversationId = currentPath.split("/dm/")[1];
-		if (
-			conversationId &&
-			event.state &&
-			event.state.page === "dm-conversation"
-		) {
-			setTimeout(() => openConversation(conversationId), 0);
-		}
-	}
+    if (event.state && event.state.page === "direct-messages") {
+      setTimeout(() => loadConversations(), 0);
+    }
+  } else if (currentPath.startsWith("/dm/")) {
+    const conversationId = currentPath.split("/dm/")[1];
+    if (
+      conversationId &&
+      event.state &&
+      event.state.page === "dm-conversation"
+    ) {
+      setTimeout(() => openConversation(conversationId), 0);
+    }
+  }
 });
 
 window.openConversation = openConversation;
@@ -1160,56 +1200,56 @@ window.removeParticipantFromGroup = removeParticipantFromGroup;
 window.addParticipantUser = addParticipantUser;
 window.removeParticipantUser = removeParticipantUser;
 async function openOrCreateConversation(username) {
-	if (!authToken) {
-		toastQueue.add("Please log in to send messages");
-		return;
-	}
+  if (!authToken) {
+    toastQueue.add("Please log in to send messages");
+    return;
+  }
 
-	await loadConversations();
+  await loadConversations();
 
-	const currentUsername = getCurrentUsername();
-	const existing = currentConversations.find((conv) => {
-		if (conv.type === "group") return false;
-		return conv.participants.some(
-			(p) => p.username === username && p.username !== currentUsername,
-		);
-	});
+  const currentUsername = getCurrentUsername();
+  const existing = currentConversations.find((conv) => {
+    if (conv.type === "group") return false;
+    return conv.participants.some(
+      (p) => p.username === username && p.username !== currentUsername
+    );
+  });
 
-	if (existing) {
-		openConversation(existing.id);
-	} else {
-		try {
-			const data = await query("/dm/conversations", {
-				method: "POST",
-				headers: {
-					"Content-Type": "application/json",
-				},
-				body: JSON.stringify({
-					participantUsernames: [username],
-					isGroup: false,
-				}),
-			});
+  if (existing) {
+    openConversation(existing.id);
+  } else {
+    try {
+      const data = await query("/dm/conversations", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          participantUsernames: [username],
+          isGroup: false,
+        }),
+      });
 
-			if (data.error) {
-				toastQueue.add(data.error);
-				return;
-			}
+      if (data.error) {
+        toastQueue.add(data.error);
+        return;
+      }
 
-			await loadConversations();
-			openConversation(data.conversation.id);
-		} catch (error) {
-			console.error("Failed to create conversation:", error);
-			toastQueue.add("Failed to create conversation");
-		}
-	}
+      await loadConversations();
+      openConversation(data.conversation.id);
+    } catch (error) {
+      console.error("Failed to create conversation:", error);
+      toastQueue.add("Failed to create conversation");
+    }
+  }
 }
 
 window.goBackToDMList = goBackToDMList;
 window.openGroupSettings = openGroupSettings;
 
 export default {
-	loadConversations,
-	connectSSE,
+  loadConversations,
+  connectSSE,
 };
 
 export { openOrCreateConversation };

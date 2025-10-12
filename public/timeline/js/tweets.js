@@ -153,11 +153,31 @@ function formatInteractionTime(date) {
 }
 
 DOMPurify.addHook("uponSanitizeElement", (node, data) => {
-  if (!data.allowedTags[data.tagName]) {
-    const textNode = document.createTextNode(node.outerHTML);
-    node.parentNode.replaceChild(textNode, node);
+  if (!data.allowedTags || data.allowedTags[data.tagName]) {
+    return;
   }
+
+  const textNode = document.createTextNode(node.outerHTML);
+  node.parentNode.replaceChild(textNode, node);
 });
+
+// Cache per-author block status to avoid repeated network calls when rendering timelines
+const authorBlockCache = new Map();
+
+const checkAuthorBlockedByProfile = async (username) => {
+  try {
+    if (!username) return false;
+    if (authorBlockCache.has(username)) return authorBlockCache.get(username);
+
+    const resp = await query(`/profile/${username}`);
+    const blocked = !!resp?.profile?.blockedByProfile;
+    authorBlockCache.set(username, blocked);
+    return blocked;
+  } catch (_) {
+    authorBlockCache.set(username, false);
+    return false;
+  }
+};
 
 const linkifyText = (text) => {
   const mentionRegex = /@([a-zA-Z0-9_]+)/g;
@@ -349,6 +369,13 @@ const createPollElement = (poll, tweet) => {
       avatarEl.src = voter.avatar || `/public/shared/default-avatar.png`;
       avatarEl.alt = voter.name || voter.username;
       avatarEl.title = voter.name || voter.username;
+      const voterRadius =
+        voter.avatar_radius !== null && voter.avatar_radius !== undefined
+          ? `${voter.avatar_radius}px`
+          : voter.gold
+          ? "4px"
+          : "50px";
+      avatarEl.style.borderRadius = voterRadius;
       avatarEl.style.zIndex = poll.voters.length - index;
       voterAvatarsEl.appendChild(avatarEl);
     });
@@ -439,6 +466,13 @@ const updatePollDisplay = (pollElement, poll) => {
       avatarEl.src = voter.avatar || `/public/shared/default-avatar.png`;
       avatarEl.alt = voter.name || voter.username;
       avatarEl.title = voter.name || voter.username;
+      const voterRadius2 =
+        voter.avatar_radius !== null && voter.avatar_radius !== undefined
+          ? `${voter.avatar_radius}px`
+          : voter.gold
+          ? "4px"
+          : "50px";
+      avatarEl.style.borderRadius = voterRadius2;
       avatarEl.style.zIndex = poll.voters.length - index;
       voterAvatarsEl.appendChild(avatarEl);
     });
@@ -506,12 +540,19 @@ async function createExpandedStats(
 
       const avatars = stat.users
         .slice(0, 3)
-        .map(
-          (user) =>
-            `<img src="${
-              user.avatar || "/public/shared/default-avatar.png"
-            }" alt="${user.name || user.username}" class="stat-avatar" />`
-        )
+        .map((user) => {
+          const radius =
+            user.avatar_radius !== null && user.avatar_radius !== undefined
+              ? `${user.avatar_radius}px`
+              : user.gold
+              ? "4px"
+              : "50px";
+          return `<img src="${
+            user.avatar || "/public/shared/default-avatar.png"
+          }" alt="${
+            user.name || user.username
+          }" class="stat-avatar" style="border-radius: ${radius};" />`;
+        })
         .join("");
 
       const names = stat.users
@@ -565,6 +606,17 @@ export const createTweetElement = (tweet, config = {}) => {
   const tweetEl = document.createElement("div");
   tweetEl.className = isTopReply ? "tweet top-reply" : "tweet";
 
+  const isBlockedByProfile = (() => {
+    try {
+      const pc = document.getElementById("profileContainer");
+      return pc?.dataset?.blockedByProfile === "true";
+    } catch (_) {
+      return false;
+    }
+  })();
+
+  if (isBlockedByProfile) tweetEl.classList.add("blocked-by-profile");
+
   if (size === "preview") {
     tweetEl.classList.add("tweet-preview");
     tweetEl.classList.add("clickable");
@@ -578,10 +630,15 @@ export const createTweetElement = (tweet, config = {}) => {
     tweet.author.avatar || `/public/shared/default-avatar.png`;
   tweetHeaderAvatarEl.alt = tweet.author.name || tweet.author.username;
 
-  if (tweet.author.gold) {
+  if (
+    tweet.author.avatar_radius !== null &&
+    tweet.author.avatar_radius !== undefined
+  ) {
+    tweetHeaderAvatarEl.style.borderRadius = `${tweet.author.avatar_radius}px`;
+  } else if (tweet.author.gold) {
     tweetHeaderAvatarEl.style.borderRadius = "4px";
   } else {
-    tweetHeaderAvatarEl.style.borderRadius = "50%";
+    tweetHeaderAvatarEl.style.borderRadius = "50px";
   }
   tweetHeaderAvatarEl.loading = "lazy";
   tweetHeaderAvatarEl.style.cursor = "pointer";
@@ -898,14 +955,79 @@ export const createTweetElement = (tweet, config = {}) => {
       },
     ];
 
-    getUser().then((currentUser) => {
-      createPopup({
-        triggerElement: menuButtonEl,
-        items:
+    getUser().then(async (currentUser) => {
+      try {
+        // Build base items
+        const items =
           currentUser?.id === tweet.author.id
             ? [...defaultItems, ...userItems]
-            : defaultItems,
-      });
+            : [...defaultItems];
+
+        // If not the author, add block/unblock option
+        if (currentUser && tweet.author && currentUser.id !== tweet.author.id) {
+          const checkResp = await query(`/blocking/check/${tweet.author.id}`);
+          const isBlocked = checkResp?.blocked || false;
+
+          const blockItem = {
+            id: isBlocked ? "unblock-user" : "block-user",
+            icon: `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"></circle><line x1="15" y1="9" x2="9" y2="15"></line><line x1="9" y1="9" x2="15" y2="15"></line></svg>`,
+            title: isBlocked
+              ? `Unblock @${tweet.author.username}`
+              : `Block @${tweet.author.username}`,
+            onClick: async () => {
+              try {
+                if (
+                  !confirm(
+                    `${isBlocked ? "Unblock" : "Block"} @${
+                      tweet.author.username
+                    }?`
+                  )
+                )
+                  return;
+                const endpoint = isBlocked
+                  ? "/blocking/unblock"
+                  : "/blocking/block";
+                const result = await query(endpoint, {
+                  method: "POST",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify({ userId: tweet.author.id }),
+                });
+
+                if (result.success) {
+                  toastQueue.add(
+                    `<h1>${isBlocked ? "User unblocked" : "User blocked"}</h1>`
+                  );
+                } else {
+                  toastQueue.add(
+                    `<h1>${
+                      result.error || "Failed to update block status"
+                    }</h1>`
+                  );
+                }
+              } catch (err) {
+                console.error("Block/unblock error:", err);
+                toastQueue.add(`<h1>Network error. Please try again.</h1>`);
+              }
+            },
+          };
+
+          items.push(blockItem);
+        }
+
+        createPopup({
+          triggerElement: menuButtonEl,
+          items,
+        });
+      } catch (e) {
+        console.error("Error building menu items:", e);
+        createPopup({
+          triggerElement: menuButtonEl,
+          items:
+            currentUser?.id === tweet.author.id
+              ? [...defaultItems, ...userItems]
+              : defaultItems,
+        });
+      }
     });
 
     tweetEl.style.position = "relative";
@@ -916,87 +1038,179 @@ export const createTweetElement = (tweet, config = {}) => {
 
   tweetEl.appendChild(tweetHeaderEl);
 
-  const tweetContentEl = document.createElement("div");
-  tweetContentEl.className = "tweet-content";
+  const isArticlePost = Boolean(tweet.is_article && tweet.article_body_markdown);
 
-  const rawContent = tweet.content ? tweet.content.trim() : "";
+  if (isArticlePost) {
+    const articleContainer = document.createElement("div");
+    articleContainer.className = "tweet-content tweet-article";
+    articleContainer.style.display = "flex";
+    articleContainer.style.flexDirection = "column";
+    articleContainer.style.gap = "16px";
 
-  const isExpandedView = Boolean(showStats) || clickToOpen === false;
-  const shouldTrim =
-    rawContent.length > 300 &&
-    !isExpandedView &&
-    !tweet.extended &&
-    !tweet.isExpanded;
+    if (tweet.article_title) {
+      const titleEl = document.createElement("h2");
+      titleEl.textContent = tweet.article_title;
+      titleEl.style.margin = "0";
+      titleEl.style.fontSize = "22px";
+      titleEl.style.fontWeight = "600";
+      titleEl.style.lineHeight = "1.2";
+      articleContainer.appendChild(titleEl);
+    }
 
-  const applyLinkified = (text) => {
-    tweetContentEl.innerHTML = linkifyText(text);
-  };
+    const coverAttachment = Array.isArray(tweet.attachments)
+      ? tweet.attachments.find((item) => item.file_type?.startsWith("image/"))
+      : null;
 
-  if (shouldTrim) {
-    let trimmed = rawContent.slice(0, 300);
-    const lastSpace = Math.max(
-      trimmed.lastIndexOf(" "),
-      trimmed.lastIndexOf("\n")
+    if (coverAttachment) {
+      const coverEl = document.createElement("div");
+      coverEl.innerHTML = `<img src="${coverAttachment.file_url}" alt="${coverAttachment.file_name}" loading="lazy" />`;
+      coverEl.style.borderRadius = "18px";
+      coverEl.style.overflow = "hidden";
+      const coverImg = coverEl.querySelector("img");
+      if (coverImg) {
+        coverImg.style.width = "100%";
+        coverImg.style.display = "block";
+        coverImg.style.height = "auto";
+        coverImg.style.borderRadius = "18px";
+      }
+      articleContainer.appendChild(coverEl);
+    }
+
+    const articleBody = document.createElement("div");
+    articleBody.style.fontSize = "16px";
+    articleBody.style.lineHeight = "1.6";
+    articleBody.innerHTML = DOMPurify.sanitize(
+      marked.parse(tweet.article_body_markdown, {
+        breaks: true,
+        gfm: true,
+        headerIds: false,
+        mangle: false,
+      })
     );
-    if (lastSpace > 0) trimmed = trimmed.slice(0, lastSpace);
 
-    applyLinkified(trimmed);
+    articleBody.querySelectorAll("a").forEach((anchor) => {
+      anchor.setAttribute("target", "_blank");
+      anchor.setAttribute("rel", "noopener noreferrer");
+    });
 
-    const ellipsis = document.createElement("span");
-    ellipsis.className = "tweet-ellipsis";
-    ellipsis.innerText = "Show more…";
-    ellipsis.title = "Show more";
-    ellipsis.setAttribute("role", "button");
-    ellipsis.tabIndex = 0;
+    articleBody.querySelectorAll("img").forEach((img) => {
+      if (!img.hasAttribute("loading")) {
+        img.setAttribute("loading", "lazy");
+      }
+      img.style.maxWidth = "100%";
+      img.style.display = "block";
+      img.style.margin = "12px 0";
+      img.style.borderRadius = "14px";
+    });
 
-    const expand = () => {
-      applyLinkified(rawContent);
-      ellipsis.remove();
+    articleBody.querySelectorAll("pre").forEach((pre) => {
+      pre.style.backgroundColor = "var(--bg-secondary)";
+      pre.style.borderRadius = "14px";
+      pre.style.padding = "12px";
+      pre.style.overflowX = "auto";
+      pre.style.margin = "0 0 16px";
+    });
 
-      const collapse = document.createElement("button");
-      collapse.className = "tweet-collapse-btn";
-      collapse.type = "button";
-      collapse.innerText = "Show less";
-      collapse.addEventListener("click", (ev) => {
-        ev.preventDefault();
-        ev.stopPropagation();
-        applyLinkified(trimmed);
-        tweetContentEl.appendChild(ellipsis);
-        collapse.remove();
+    articleBody.querySelectorAll("blockquote").forEach((blockquote) => {
+      blockquote.style.margin = "0 0 16px";
+      blockquote.style.paddingLeft = "14px";
+      blockquote.style.borderLeft = "4px solid var(--border-color)";
+      blockquote.style.color = "var(--text-secondary)";
+    });
+
+    articleBody
+      .querySelectorAll("h1, h2, h3, h4, h5, h6")
+      .forEach((heading) => {
+        heading.style.margin = "18px 0 10px";
+        heading.style.fontWeight = "600";
+        heading.style.lineHeight = "1.25";
       });
 
-      tweetContentEl.appendChild(collapse);
+    articleContainer.appendChild(articleBody);
+    tweetEl.appendChild(articleContainer);
+  } else {
+    const tweetContentEl = document.createElement("div");
+    tweetContentEl.className = "tweet-content";
+
+    const rawContent = tweet.content ? tweet.content.trim() : "";
+
+    const isExpandedView = Boolean(showStats) || clickToOpen === false;
+    const shouldTrim =
+      rawContent.length > 300 &&
+      !isExpandedView &&
+      !tweet.extended &&
+      !tweet.isExpanded;
+
+    const applyLinkified = (text) => {
+      tweetContentEl.innerHTML = linkifyText(text);
     };
 
-    ellipsis.addEventListener("click", (e) => {
-      e.preventDefault();
-      e.stopPropagation();
-      expand();
-    });
-    ellipsis.addEventListener("keydown", (e) => {
-      if (e.key === "Enter" || e.key === " ") {
+    if (shouldTrim) {
+      let trimmed = rawContent.slice(0, 300);
+      const lastSpace = Math.max(
+        trimmed.lastIndexOf(" "),
+        trimmed.lastIndexOf("\n")
+      );
+      if (lastSpace > 0) trimmed = trimmed.slice(0, lastSpace);
+
+      applyLinkified(trimmed);
+
+      const ellipsis = document.createElement("span");
+      ellipsis.className = "tweet-ellipsis";
+      ellipsis.innerText = "Show more…";
+      ellipsis.title = "Show more";
+      ellipsis.setAttribute("role", "button");
+      ellipsis.tabIndex = 0;
+
+      const expand = () => {
+        applyLinkified(rawContent);
+        ellipsis.remove();
+
+        const collapse = document.createElement("button");
+        collapse.className = "tweet-collapse-btn";
+        collapse.type = "button";
+        collapse.innerText = "Show less";
+        collapse.addEventListener("click", (ev) => {
+          ev.preventDefault();
+          ev.stopPropagation();
+          applyLinkified(trimmed);
+          tweetContentEl.appendChild(ellipsis);
+          collapse.remove();
+        });
+
+        tweetContentEl.appendChild(collapse);
+      };
+
+      ellipsis.addEventListener("click", (e) => {
         e.preventDefault();
+        e.stopPropagation();
         expand();
+      });
+      ellipsis.addEventListener("keydown", (e) => {
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          expand();
+        }
+      });
+
+      tweetContentEl.appendChild(ellipsis);
+    } else {
+      applyLinkified(rawContent);
+    }
+
+    tweetContentEl.addEventListener("click", (e) => {
+      if (e.target.classList.contains("tweet-mention")) {
+        e.preventDefault();
+        e.stopPropagation();
+        const username = e.target.dataset.username;
+        import("./profile.js").then(({ default: openProfile }) => {
+          openProfile(username);
+        });
       }
     });
 
-    tweetContentEl.appendChild(ellipsis);
-  } else {
-    applyLinkified(rawContent);
+    tweetEl.appendChild(tweetContentEl);
   }
-
-  tweetContentEl.addEventListener("click", (e) => {
-    if (e.target.classList.contains("tweet-mention")) {
-      e.preventDefault();
-      e.stopPropagation();
-      const username = e.target.dataset.username;
-      import("./profile.js").then(({ default: openProfile }) => {
-        openProfile(username);
-      });
-    }
-  });
-
-  tweetEl.appendChild(tweetContentEl);
 
   if (tweet.poll) {
     const pollEl = createPollElement(tweet.poll, tweet);
@@ -1005,7 +1219,7 @@ export const createTweetElement = (tweet, config = {}) => {
     }
   }
 
-  if (tweet.attachments && tweet.attachments.length > 0) {
+  if (!isArticlePost && tweet.attachments && tweet.attachments.length > 0) {
     const attachmentsEl = document.createElement("div");
     attachmentsEl.className = "tweet-attachments";
 
@@ -1078,7 +1292,21 @@ export const createTweetElement = (tweet, config = {}) => {
     e.preventDefault();
     e.stopPropagation();
 
+    if (isBlockedByProfile) {
+      toastQueue.add(`<h1>You have been blocked by this user</h1>`);
+      return;
+    }
+
     try {
+      // Prevent like if blocked by author
+      const current = await getUser();
+      if (current && tweet.author && tweet.author.id) {
+        const profileResp = await query(`/profile/${tweet.author.username}`);
+        if (profileResp?.profile?.blockedByProfile) {
+          toastQueue.add(`<h1>You have been blocked by this user</h1>`);
+          return;
+        }
+      }
       const result = await query(`/tweets/${tweet.id}/like`, {
         method: "POST",
       });
@@ -1135,6 +1363,21 @@ export const createTweetElement = (tweet, config = {}) => {
     e.stopPropagation();
     e.preventDefault();
 
+    if (isBlockedByProfile) {
+      toastQueue.add(`<h1>You have been blocked by this user</h1>`);
+      return;
+    }
+
+    // Check if blocked by author before opening composer
+    const current = await getUser();
+    if (current && tweet.author && tweet.author.username) {
+      const profileResp = await query(`/profile/${tweet.author.username}`);
+      if (profileResp?.profile?.blockedByProfile) {
+        toastQueue.add(`<h1>You have been blocked by this user</h1>`);
+        return;
+      }
+    }
+
     await openTweet(tweet);
 
     requestAnimationFrame(() => {
@@ -1166,7 +1409,9 @@ export const createTweetElement = (tweet, config = {}) => {
                 stroke-linecap="round"
                 stroke-linejoin="round"
               />
-            </svg> <span class="retweet-count">${tweet.retweet_count || ""}</span>`;
+            </svg> <span class="retweet-count">${
+              tweet.retweet_count || ""
+            }</span>`;
 
   tweetInteractionsRetweetEl.addEventListener("click", async (e) => {
     e.preventDefault();
@@ -1181,6 +1426,20 @@ export const createTweetElement = (tweet, config = {}) => {
         title: "Retweet",
         onClick: async () => {
           try {
+            if (isBlockedByProfile) {
+              toastQueue.add(`<h1>You have been blocked by this user</h1>`);
+              return;
+            }
+            const current = await getUser();
+            if (current && tweet.author && tweet.author.username) {
+              const profileResp = await query(
+                `/profile/${tweet.author.username}`
+              );
+              if (profileResp?.profile?.blockedByProfile) {
+                toastQueue.add(`<h1>You have been blocked by this user</h1>`);
+                return;
+              }
+            }
             const result = await query(`/tweets/${tweet.id}/retweet`, {
               method: "POST",
             });
@@ -1193,7 +1452,9 @@ export const createTweetElement = (tweet, config = {}) => {
                 tweetInteractionsRetweetEl.querySelectorAll("svg path");
               const retweetCountSpan =
                 tweetInteractionsRetweetEl.querySelector(".retweet-count");
-              const currentCount = parseInt(retweetCountSpan.textContent || "0");
+              const currentCount = parseInt(
+                retweetCountSpan.textContent || "0"
+              );
 
               if (newIsRetweeted) {
                 svgPaths.forEach((path) =>
@@ -1344,6 +1605,14 @@ export const createTweetElement = (tweet, config = {}) => {
     }
 
     try {
+      const current = await getUser();
+      if (current && tweet.author && tweet.author.username) {
+        const profileResp = await query(`/profile/${tweet.author.username}`);
+        if (profileResp?.profile?.blockedByProfile) {
+          toastQueue.add(`<h1>You have been blocked by this user</h1>`);
+          return;
+        }
+      }
       const isBookmarked =
         tweetInteractionsBookmarkEl.dataset.bookmarked === "true";
       const endpoint = isBookmarked ? "/bookmarks/remove" : "/bookmarks/add";
@@ -1380,6 +1649,52 @@ export const createTweetElement = (tweet, config = {}) => {
       toastQueue.add(`<h1>Network error. Please try again.</h1>`);
     }
   });
+
+  // If profile blocked the viewer, disable interaction buttons for accessibility
+  if (isBlockedByProfile) {
+    [
+      tweetInteractionsLikeEl,
+      tweetInteractionsRetweetEl,
+      tweetInteractionsReplyEl,
+      tweetInteractionsBookmarkEl,
+      tweetInteractionsShareEl,
+    ].forEach((btn) => {
+      try {
+        btn.disabled = true;
+        btn.setAttribute("aria-disabled", "true");
+        btn.classList.add("blocked-interaction");
+      } catch (_) {}
+    });
+  }
+
+  // If we're not already in a profile-blocked context, check per-author block status for timeline/home feeds
+  (async () => {
+    try {
+      if (!isBlockedByProfile) {
+        const authorBlocked = await checkAuthorBlockedByProfile(
+          tweet.author.username
+        );
+        if (authorBlocked) {
+          [
+            tweetInteractionsLikeEl,
+            tweetInteractionsRetweetEl,
+            tweetInteractionsReplyEl,
+            tweetInteractionsBookmarkEl,
+            tweetInteractionsShareEl,
+          ].forEach((btn) => {
+            try {
+              btn.disabled = true;
+              btn.setAttribute("aria-disabled", "true");
+              btn.classList.add("blocked-interaction");
+            } catch (_) {}
+          });
+
+          // Also mark the tweet element visually so CSS can style it
+          tweetEl.classList.add("blocked-by-profile");
+        }
+      }
+    } catch (_) {}
+  })();
 
   const replyRestriction = tweet.reply_restriction || "everyone";
 

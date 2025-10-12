@@ -48,6 +48,14 @@ const getTweetById = db.query(`
   WHERE posts.id = ?
 `);
 
+const getArticlePreviewById = db.query(`
+	SELECT *
+	FROM posts
+	WHERE id = ? AND is_article = TRUE
+`);
+
+const getUserById = db.query("SELECT * FROM users WHERE id = ?");
+
 const getTweetWithThread = db.query(`
   WITH RECURSIVE thread_posts AS (
     SELECT *, 0 AS level
@@ -74,8 +82,8 @@ const getTweetReplies = db.query(`
 `);
 
 const createTweet = db.query(`
-	INSERT INTO posts (id, user_id, content, reply_to, source, poll_id, quote_tweet_id, reply_restriction) 
-  VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+	INSERT INTO posts (id, user_id, content, reply_to, source, poll_id, quote_tweet_id, reply_restriction, article_id) 
+  VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
 	RETURNING *
 `);
 
@@ -201,6 +209,29 @@ const getTweetAttachments = (tweetId) => {
 	return getAttachmentsByPostId.all(tweetId);
 };
 
+const summarizeArticle = (article) => {
+	if (!article) return "";
+	const trimmedContent = article.content?.trim();
+	if (trimmedContent) {
+		return trimmedContent;
+	}
+	if (!article.article_body_markdown) {
+		return "";
+	}
+	const stripped = article.article_body_markdown
+		.replace(/```[\s\S]*?```/g, " ")
+		.replace(/`[^`]*`/g, " ")
+		.replace(/!\[[^\]]*\]\([^)]*\)/g, " ")
+		.replace(/\[[^\]]*\]\([^)]*\)/g, " ")
+		.replace(/[>#*_~]/g, " ")
+		.replace(/\s+/g, " ")
+		.trim();
+	if (stripped.length <= 260) {
+		return stripped;
+	}
+	return `${stripped.slice(0, 257)}…`;
+};
+
 const getQuotedTweetData = (quoteTweetId, userId) => {
 	if (!quoteTweetId) return null;
 
@@ -313,16 +344,29 @@ export default new Elysia({ prefix: "/tweets" })
 				files,
 				reply_restriction,
 				gif_url,
+				article_id,
 			} = body;
-			const tweetContent = content;
+			const tweetContent = typeof content === "string" ? content : "";
+			const trimmedContent = tweetContent.trim();
+			const hasAttachments = Array.isArray(files) && files.length > 0;
+			const hasBody = trimmedContent.length > 0;
+			const targetArticleId = article_id ? String(article_id) : null;
 
-			if (!tweetContent || tweetContent.trim().length === 0) {
+			if (!hasBody && !hasAttachments && !gif_url && !poll && !targetArticleId) {
 				return { error: "Tweet content is required" };
+			}
+
+			let referencedArticle = null;
+			if (targetArticleId) {
+				referencedArticle = getArticlePreviewById.get(targetArticleId);
+				if (!referencedArticle) {
+					return { error: "Article not found" };
+				}
 			}
 
 			// Allow longer tweets for gold or verified users
 			const maxTweetLength = user.gold ? 16500 : user.verified ? 5500 : 400;
-			if (tweetContent.length > maxTweetLength) {
+			if (trimmedContent.length > maxTweetLength) {
 				return {
 					error: `Tweet content must be ${maxTweetLength} characters or less`,
 				};
@@ -426,15 +470,18 @@ export default new Elysia({ prefix: "/tweets" })
 			const tweet = createTweet.get(
 				tweetId,
 				user.id,
-				tweetContent.trim(),
+				trimmedContent,
 				reply_to || null,
 				source || null,
 				pollId,
 				quote_tweet_id || null,
 				replyRestriction,
+				targetArticleId,
 			);
 
-			extractAndSaveHashtags(tweetContent, tweetId);
+			if (trimmedContent.length > 0) {
+				extractAndSaveHashtags(trimmedContent, tweetId);
+			}
 
 			if (reply_to) {
 				updatePostCounts.run(reply_to);
@@ -519,6 +566,27 @@ export default new Elysia({ prefix: "/tweets" })
 				attachments.push(attachment);
 			}
 
+			let articlePreview = null;
+			if (targetArticleId) {
+				if (!referencedArticle) {
+					referencedArticle = getArticlePreviewById.get(targetArticleId);
+				}
+				if (referencedArticle) {
+					const articleAuthor = getUserById.get(referencedArticle.user_id);
+					const articleAttachments = getTweetAttachments(referencedArticle.id);
+					articlePreview = {
+						...referencedArticle,
+						author: articleAuthor || null,
+						attachments: articleAttachments,
+						cover:
+							articleAttachments.find((item) =>
+								item.file_type.startsWith("image/"),
+							) || null,
+						excerpt: summarizeArticle(referencedArticle),
+					};
+				}
+			}
+
 			return {
 				success: true,
 				tweet: {
@@ -528,6 +596,7 @@ export default new Elysia({ prefix: "/tweets" })
 					retweeted_by_user: false,
 					poll: getPollDataForTweet(tweet.id, user.id),
 					attachments: attachments,
+					article_preview: articlePreview,
 				},
 			};
 		} catch (error) {
@@ -601,6 +670,74 @@ export default new Elysia({ prefix: "/tweets" })
 
 		const userMap = new Map(users.map((user) => [user.id, user]));
 
+		const articleIds = new Set();
+		if (tweet.article_id) {
+			articleIds.add(tweet.article_id);
+		}
+		threadPosts.forEach((post) => {
+			if (post.article_id) {
+				articleIds.add(post.article_id);
+			}
+		});
+		replies.forEach((reply) => {
+			if (reply.article_id) {
+				articleIds.add(reply.article_id);
+			}
+		});
+
+		let articleMap = new Map();
+		if (articleIds.size > 0) {
+			const ids = [...articleIds];
+			const placeholders = ids.map(() => "?").join(",");
+			const articles = db
+				.query(
+					`SELECT * FROM posts WHERE id IN (${placeholders}) AND is_article = TRUE`,
+				)
+				.all(...ids);
+			const articleUserIds = [...new Set(articles.map((article) => article.user_id))];
+			const articleUsers = articleUserIds.length
+				? db
+						.query(
+							`SELECT * FROM users WHERE id IN (${articleUserIds
+								.map(() => "?")
+								.join(",")})`,
+						)
+						.all(...articleUserIds)
+				: [];
+			const articleUserMap = new Map(articleUsers.map((u) => [u.id, u]));
+			const attachmentPlaceholders = ids.map(() => "?").join(",");
+			const articleAttachments = db
+				.query(
+					`SELECT * FROM attachments WHERE post_id IN (${attachmentPlaceholders})`,
+				)
+				.all(...ids);
+			const attachmentMap = new Map();
+			articleAttachments.forEach((attachment) => {
+				if (!attachmentMap.has(attachment.post_id)) {
+					attachmentMap.set(attachment.post_id, []);
+				}
+				attachmentMap.get(attachment.post_id).push(attachment);
+			});
+			articleMap = new Map(
+				articles.map((article) => {
+					const attachmentsForArticle = attachmentMap.get(article.id) || [];
+					return [
+						article.id,
+						{
+							...article,
+							author: articleUserMap.get(article.user_id) || null,
+							attachments: attachmentsForArticle,
+							cover:
+								attachmentsForArticle.find((item) =>
+									item.file_type.startsWith("image/"),
+								) || null,
+							excerpt: summarizeArticle(article),
+						},
+					];
+				}),
+			);
+		}
+
 		const processedThreadPosts = threadPosts.map((post) => ({
 			...post,
 			liked_by_user: likedPosts.has(post.id),
@@ -609,6 +746,9 @@ export default new Elysia({ prefix: "/tweets" })
 			poll: getPollDataForTweet(post.id, currentUser.id),
 			quoted_tweet: getQuotedTweetData(post.quote_tweet_id, currentUser.id),
 			attachments: getTweetAttachments(post.id),
+			article_preview: post.article_id
+				? articleMap.get(post.article_id) || null
+				: null,
 		}));
 
 		const processedReplies = replies.map((reply) => ({
@@ -619,6 +759,9 @@ export default new Elysia({ prefix: "/tweets" })
 			poll: getPollDataForTweet(reply.id, currentUser.id),
 			quoted_tweet: getQuotedTweetData(reply.quote_tweet_id, currentUser.id),
 			attachments: getTweetAttachments(reply.id),
+			article_preview: reply.article_id
+				? articleMap.get(reply.article_id) || null
+				: null,
 		}));
 
 		const extendedStats = {
@@ -634,6 +777,9 @@ export default new Elysia({ prefix: "/tweets" })
 				poll: getPollDataForTweet(tweet.id, currentUser.id),
 				quoted_tweet: getQuotedTweetData(tweet.quote_tweet_id, currentUser.id),
 				attachments: getTweetAttachments(tweet.id),
+				article_preview: tweet.article_id
+					? articleMap.get(tweet.article_id) || null
+					: null,
 			},
 			threadPosts: processedThreadPosts,
 			replies: processedReplies,
@@ -652,6 +798,13 @@ export default new Elysia({ prefix: "/tweets" })
 			if (!user) return { error: "User not found" };
 
 			const { id } = params;
+			// Prevent liking if either party has blocked the other (blocker cannot be interacted with)
+			const blockCheck = db
+				.query("SELECT 1 FROM blocks WHERE (blocker_id = ? AND blocked_id = ?) OR (blocker_id = ? AND blocked_id = ?) ")
+				.get(user.id, (await getTweetById.get(id)).user_id, (await getTweetById.get(id)).user_id, user.id);
+			if (blockCheck) {
+				return { error: "You cannot interact with this user" };
+			}
 			const existingLike = checkLikeExists.get(user.id, id);
 
 			if (existingLike) {
@@ -694,6 +847,13 @@ export default new Elysia({ prefix: "/tweets" })
 			const { id } = params;
 			const tweet = getTweetById.get(id);
 			if (!tweet) return { error: "Tweet not found" };
+
+			const blockCheck = db
+				.query("SELECT 1 FROM blocks WHERE (blocker_id = ? AND blocked_id = ?) OR (blocker_id = ? AND blocked_id = ?) ")
+				.get(user.id, tweet.user_id, tweet.user_id, user.id);
+			if (blockCheck) {
+				return { error: "You cannot interact with this user" };
+			}
 
 			const existingRetweet = checkRetweetExists.get(user.id, id);
 
@@ -743,6 +903,15 @@ export default new Elysia({ prefix: "/tweets" })
 			const poll = getPollByPostId.get(tweetId);
 			if (!poll) {
 				return { error: "Poll not found" };
+			}
+
+			// Prevent voting if blocked by the tweet author or vice versa
+			const tweet = getTweetById.get(tweetId);
+			const blockCheck = db
+				.query("SELECT 1 FROM blocks WHERE (blocker_id = ? AND blocked_id = ?) OR (blocker_id = ? AND blocked_id = ?) ")
+				.get(user.id, tweet.user_id, tweet.user_id, user.id);
+			if (blockCheck) {
+				return { error: "You cannot interact with this user" };
 			}
 
 			if (new Date() > new Date(poll.expires_at)) {

@@ -6,7 +6,7 @@ import {
 import toastQueue from "../../shared/toasts.js";
 import { createModal, createPopup } from "../../shared/ui-utils.js";
 import query from "./api.js";
-import { authToken } from "./auth.js";
+import getUser, { authToken } from "./auth.js";
 import switchPage, { addRoute } from "./pages.js";
 import { createTweetElement } from "./tweets.js";
 
@@ -49,7 +49,7 @@ const renderPosts = async (posts, isReplies = false) => {
         }
       : {
           title: "No posts yet",
-          message: "When they post something, it'll show up here.",
+          message: "When they xeet something, it'll show up here.",
         };
 
     container.innerHTML = `
@@ -113,6 +113,7 @@ const renderPosts = async (posts, isReplies = false) => {
         username: post.username,
         name: authorProfile?.name || post.username,
         avatar: authorProfile?.avatar,
+        avatar_radius: authorProfile?.avatar_radius ?? null,
         verified: authorProfile?.verified || false,
         gold: authorProfile?.gold || false,
       },
@@ -190,10 +191,12 @@ const renderProfile = (data) => {
   const avatarImg = document.getElementById("profileAvatar");
   avatarImg.src = profile.avatar || `/public/shared/default-avatar.png`;
   avatarImg.alt = profile.name || profile.username;
-  if (profile.gold) {
-    avatarImg.style.borderRadius = "8px";
+  if (profile.avatar_radius !== null && profile.avatar_radius !== undefined) {
+    avatarImg.style.borderRadius = `${profile.avatar_radius}px`;
+  } else if (profile.gold) {
+    avatarImg.style.borderRadius = "4px";
   } else {
-    avatarImg.style.borderRadius = "50%";
+    avatarImg.style.borderRadius = "50px";
   }
 
   const profileNameEl = document.getElementById("profileDisplayName");
@@ -245,6 +248,24 @@ const renderProfile = (data) => {
 
   const usernameEl = document.getElementById("profileUsername");
   usernameEl.textContent = `@${profile.username}`;
+
+  // expose current profile username on the container for other modules
+  const profileContainerEl2 = document.getElementById("profileContainer");
+  if (profileContainerEl2)
+    profileContainerEl2.dataset.profileUsername = profile.username;
+
+  // show blocked banner if this profile has blocked the current viewer
+  const blockedBanner = document.getElementById("profileBlockedBanner");
+  if (blockedBanner) {
+    if (profile.blockedByProfile) {
+      blockedBanner.style.display = "flex";
+      profileContainerEl2.dataset.blockedByProfile = "true";
+    } else {
+      blockedBanner.style.display = "none";
+      if (profileContainerEl2)
+        delete profileContainerEl2.dataset.blockedByProfile;
+    }
+  }
 
   if (currentProfile.followsMe && !isOwnProfile) {
     const followsBadge = document.createElement("span");
@@ -320,6 +341,26 @@ const renderProfile = (data) => {
     document.getElementById("profileDropdown").style.display = "block";
     updateFollowButton(isFollowing);
     setupDmButton(profile.username);
+
+    // If profile has blocked the current viewer, disable DM button and annotate it
+    try {
+      const dmBtn = document.getElementById("profileDmBtn");
+      const pc = document.getElementById("profileContainer");
+      const isBlocked = pc?.dataset?.blockedByProfile === "true";
+      if (dmBtn) {
+        if (isBlocked) {
+          dmBtn.disabled = true;
+          dmBtn.setAttribute("aria-disabled", "true");
+          dmBtn.classList.add("blocked-interaction");
+          dmBtn.title = "You have been blocked by this user";
+        } else {
+          dmBtn.disabled = false;
+          dmBtn.removeAttribute("aria-disabled");
+          dmBtn.classList.remove("blocked-interaction");
+          dmBtn.title = "";
+        }
+      }
+    } catch (_) {}
   } else {
     document.getElementById("profileDmBtn").style.display = "flex";
     document.getElementById("profileDropdown").style.display = "none";
@@ -372,6 +413,16 @@ const updateFollowButton = (isFollowing) => {
         return;
       }
 
+      // prevent following if this profile has blocked the current viewer
+      try {
+        const pc = document.getElementById("profileContainer");
+        const isBlocked = pc?.dataset?.blockedByProfile === "true";
+        if (isBlocked) {
+          toastQueue.add(`<h1>You have been blocked by this user</h1>`);
+          return;
+        }
+      } catch (_) {}
+
       const { success } = await query(`/profile/${currentUsername}/follow`, {
         method: "POST",
       });
@@ -386,9 +437,26 @@ const updateFollowButton = (isFollowing) => {
   }
 };
 
+// Dismiss blocked banner
+document
+  .getElementById("profileBlockedBannerDismiss")
+  ?.addEventListener("click", () => {
+    const b = document.getElementById("profileBlockedBanner");
+    if (b) b.style.display = "none";
+  });
+
 const setupDmButton = (username) => {
   const btn = document.getElementById("profileDmBtn");
   btn.onclick = async () => {
+    try {
+      const pc = document.getElementById("profileContainer");
+      const isBlocked = pc?.dataset?.blockedByProfile === "true";
+      if (isBlocked) {
+        toastQueue.add(`<h1>You have been blocked by this user</h1>`);
+        return;
+      }
+    } catch (_) {}
+
     const { openOrCreateConversation } = await import("./dm.js");
     openOrCreateConversation(username);
   };
@@ -407,15 +475,104 @@ const showEditModal = () => {
   // Update avatar display
   updateEditAvatarDisplay();
 
-  // Update banner display
+  // Avatar radius controls
+  const avatarRadiusControls = document.getElementById("avatarRadiusControls");
+  const radiusInput = document.getElementById("radius-input");
+  const presetSquare = document.getElementById("radius-preset-square");
+  const presetDefault = document.getElementById("radius-preset-default");
+
+  avatarRadiusControls.style.display = "block";
+  const currentRadius =
+    profile.avatar_radius !== null && profile.avatar_radius !== undefined
+      ? profile.avatar_radius
+      : profile.gold
+      ? 4
+      : 50;
+  radiusInput.value = currentRadius;
+  const avatarImg = document.getElementById("edit-current-avatar");
+  const avatarPreviewContainer = document.querySelector(".avatar-preview");
+  if (avatarImg) avatarImg.style.borderRadius = `${currentRadius}px`;
+  if (avatarPreviewContainer)
+    avatarPreviewContainer.style.borderRadius = `${currentRadius}px`;
+
+  // If user is not gold, disable custom editing (presets + input)
+  if (!profile.gold) {
+    radiusInput.disabled = true;
+    presetSquare.disabled = true;
+    presetDefault.disabled = true;
+  } else {
+    radiusInput.disabled = false;
+    presetSquare.disabled = false;
+    presetDefault.disabled = false;
+  }
+
+  // Preset handlers
+  presetSquare?.addEventListener("click", () => {
+    radiusInput.value = 4;
+    const avatarImg = document.getElementById("edit-current-avatar");
+    const avatarPreviewContainer = document.querySelector(".avatar-preview");
+    if (avatarImg) avatarImg.style.borderRadius = `4px`;
+    if (avatarPreviewContainer)
+      avatarPreviewContainer.style.borderRadius = `4px`;
+  });
+
+  presetDefault?.addEventListener("click", () => {
+    radiusInput.value = 50;
+    const avatarImg = document.getElementById("edit-current-avatar");
+    const avatarPreviewContainer = document.querySelector(".avatar-preview");
+    if (avatarImg) avatarImg.style.borderRadius = `50px`;
+    if (avatarPreviewContainer)
+      avatarPreviewContainer.style.borderRadius = `50px`;
+  });
+
+  radiusInput?.addEventListener("input", () => {
+    const val = parseInt(radiusInput.value, 10);
+    if (Number.isNaN(val)) return;
+    const avatarImg = document.getElementById("edit-current-avatar");
+    const avatarPreviewContainer = document.querySelector(".avatar-preview");
+    if (avatarImg) avatarImg.style.borderRadius = `${val}px`;
+    if (avatarPreviewContainer)
+      avatarPreviewContainer.style.borderRadius = `${val}px`;
+  });
+
   updateEditBannerDisplay();
 
   updateCharCounts();
-  document.getElementById("editProfileModal").classList.add("show");
+  const modalEl = document.getElementById("editProfileModal");
+  modalEl.classList.add("show");
+
+  modalEl.setAttribute("role", "dialog");
+  modalEl.setAttribute("aria-modal", "true");
+  modalEl.setAttribute("aria-hidden", "false");
+  document
+    .querySelectorAll(".main-content, nav")
+    .forEach((el) => el.setAttribute("aria-hidden", "true"));
+
+  setTimeout(() => {
+    const firstInput = document.getElementById("editDisplayName");
+    if (firstInput) firstInput.focus();
+  }, 0);
+
+  const escHandler = (e) => {
+    if (e.key === "Escape") closeEditModal();
+  };
+  modalEl._escHandler = escHandler;
+  document.addEventListener("keydown", escHandler);
 };
 
 const closeEditModal = () => {
-  document.getElementById("editProfileModal").classList.remove("show");
+  const modalEl = document.getElementById("editProfileModal");
+  modalEl.classList.remove("show");
+
+  modalEl.setAttribute("aria-hidden", "true");
+  document
+    .querySelectorAll(".main-content, nav")
+    .forEach((el) => el.removeAttribute("aria-hidden"));
+
+  if (modalEl._escHandler) {
+    document.removeEventListener("keydown", modalEl._escHandler);
+    delete modalEl._escHandler;
+  }
 };
 
 const updateCharCounts = () => {
@@ -557,7 +714,7 @@ const handleEditBannerRemoval = async () => {
     if (result.success) {
       currentProfile.profile.banner = null;
       updateEditBannerDisplay();
-      // Also update the main profile display
+
       const profileBanner = document.querySelector(".profile-banner");
       if (profileBanner) {
         profileBanner.style.backgroundImage = "none";
@@ -592,11 +749,27 @@ const updateEditAvatarDisplay = () => {
   const { profile } = currentProfile;
   const avatarImg = document.getElementById("edit-current-avatar");
   const removeBtn = document.getElementById("edit-remove-avatar");
+  const avatarPreviewContainer = document.querySelector(".avatar-preview");
 
   if (avatarImg) {
     const avatarSrc = profile.avatar || `/public/shared/default-avatar.png`;
     avatarImg.src = avatarSrc;
     avatarImg.alt = profile.name || profile.username;
+  }
+
+  // Apply radius to both image and its container so preview shape updates
+  if (avatarPreviewContainer) {
+    if (profile.avatar_radius !== null && profile.avatar_radius !== undefined) {
+      avatarPreviewContainer.style.borderRadius = `${profile.avatar_radius}px`;
+      if (avatarImg)
+        avatarImg.style.borderRadius = `${profile.avatar_radius}px`;
+    } else if (profile.gold) {
+      avatarPreviewContainer.style.borderRadius = `4px`;
+      if (avatarImg) avatarImg.style.borderRadius = `4px`;
+    } else {
+      avatarPreviewContainer.style.borderRadius = `50px`;
+      if (avatarImg) avatarImg.style.borderRadius = `50px`;
+    }
   }
 
   if (removeBtn) {
@@ -655,6 +828,16 @@ const handleEditAvatarUpload = async (file) => {
       const profileAvatar = document.getElementById("profileAvatar");
       if (profileAvatar) {
         profileAvatar.src = result.avatar;
+        if (
+          currentProfile.profile.avatar_radius !== null &&
+          currentProfile.profile.avatar_radius !== undefined
+        ) {
+          profileAvatar.style.borderRadius = `${currentProfile.profile.avatar_radius}px`;
+        } else if (currentProfile.profile.gold) {
+          profileAvatar.style.borderRadius = `4px`;
+        } else {
+          profileAvatar.style.borderRadius = `50px`;
+        }
       }
       toastQueue.add(
         `<h1>Avatar updated!</h1><p>Your profile picture has been uploaded and changed.</p>`
@@ -702,6 +885,16 @@ const handleEditAvatarRemoval = async () => {
       const profileAvatar = document.getElementById("profileAvatar");
       if (profileAvatar) {
         profileAvatar.src = `/public/shared/default-avatar.png`;
+        if (
+          currentProfile.profile.avatar_radius !== null &&
+          currentProfile.profile.avatar_radius !== undefined
+        ) {
+          profileAvatar.style.borderRadius = `${currentProfile.profile.avatar_radius}px`;
+        } else if (currentProfile.profile.gold) {
+          profileAvatar.style.borderRadius = `4px`;
+        } else {
+          profileAvatar.style.borderRadius = `50px`;
+        }
       }
       toastQueue.add(
         `<h1>Avatar removed</h1><p>Your profile picture has been reset to default.</p>`
@@ -729,10 +922,13 @@ const handleEditAvatarRemoval = async () => {
 const saveProfile = async (event) => {
   event.preventDefault();
 
-  if (!authToken) {
+  if (!localStorage.getItem("authToken")) {
     switchPage("timeline", { path: "/" });
     return;
   }
+
+  if (!currentProfile || !currentProfile.profile) return;
+
   const formData = {
     name: document.getElementById("editDisplayName").value.trim(),
     bio: document.getElementById("editBio").value.trim(),
@@ -741,25 +937,46 @@ const saveProfile = async (event) => {
     website: document.getElementById("editWebsite").value.trim(),
   };
 
-  try {
+  const avatarRadiusControls = document.getElementById("avatarRadiusControls");
+  const radiusInput = document.getElementById("radius-input");
+  if (avatarRadiusControls && avatarRadiusControls.style.display !== "none") {
+    const val = parseInt(radiusInput.value, 10);
+    if (!Number.isNaN(val)) formData.avatar_radius = val;
+  }
 
-    const { success, error } = await query(`/profile/${currentUsername}`, {
+  try {
+    const result = await query(`/profile/${currentProfile.profile.username}`, {
       method: "PUT",
-      headers: {
-        "Content-Type": "application/json",
-      },
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify(formData),
     });
 
-    if (success) {
+    if (result?.success) {
+      if (result.profile) {
+        currentProfile = { ...(currentProfile || {}), profile: result.profile };
+        try {
+          renderProfile({
+            profile: result.profile,
+            posts: currentPosts,
+            isFollowing: false,
+            isOwnProfile: true,
+          });
+        } catch (_err) {
+          loadProfile(currentProfile.profile.username);
+        }
+      } else {
+        loadProfile(currentProfile.profile.username);
+      }
+
       closeEditModal();
       toastQueue.add(
         `<h1>Profile Updated!</h1><p>Your profile has been successfully updated</p>`
       );
-      loadProfile(currentUsername);
     } else {
       toastQueue.add(
-        `<h1>Update Failed</h1><p>${error || "Failed to update profile"}</p>`
+        `<h1>Update Failed</h1><p>${
+          result.error || "Failed to update profile"
+        }</p>`
       );
     }
   } catch (error) {
@@ -868,21 +1085,124 @@ document
     e.preventDefault();
     e.stopPropagation();
 
-    createPopup({
-      triggerElement: e.currentTarget,
-      items: [
-        {
-          title: "Copy link",
-          icon: `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-link"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg>`,
+    getUser()
+      .then(async (currentUser) => {
+        try {
+          const baseItems = [
+            {
+              title: "Copy link",
+              icon: `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-link"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg>`,
 
-          action: () => {
-            const profileUrl = `${location.origin}/@${currentUsername}`;
+              action: () => {
+                const profileUrl = `${location.origin}/@${currentUsername}`;
 
-            navigator.clipboard.writeText(profileUrl);
-          },
-        },
-      ],
-    });
+                navigator.clipboard.writeText(profileUrl);
+              },
+            },
+          ];
+
+          const items = [...baseItems];
+
+          if (
+            currentUser &&
+            currentProfile &&
+            currentProfile.profile &&
+            currentUser.id !== currentProfile.profile.id
+          ) {
+            const checkResp = await query(
+              `/blocking/check/${currentProfile.profile.id}`
+            );
+            const isBlocked = checkResp?.blocked || false;
+
+            const blockItem = {
+              id: isBlocked ? "unblock-user" : "block-user",
+              icon: `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"></circle><line x1="15" y1="9" x2="9" y2="15"></line><line x1="9" y1="9" x2="15" y2="15"></line></svg>`,
+              title: isBlocked
+                ? `Unblock @${currentProfile.profile.username}`
+                : `Block @${currentProfile.profile.username}`,
+              onClick: async () => {
+                try {
+                  const action = isBlocked ? "Unblock" : "Block";
+                  if (
+                    !confirm(
+                      `Do you want to ${action} @${currentProfile.profile.username}?`
+                    )
+                  )
+                    return;
+
+                  const endpoint = isBlocked
+                    ? "/blocking/unblock"
+                    : "/blocking/block";
+                  const result = await query(endpoint, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ userId: currentProfile.profile.id }),
+                  });
+
+                  if (result.success) {
+                    toastQueue.add(
+                      `<h1>${
+                        isBlocked ? "User unblocked" : "User blocked"
+                      }</h1>`
+                    );
+                  } else {
+                    toastQueue.add(
+                      `<h1>${
+                        result.error || "Failed to update block status"
+                      }</h1>`
+                    );
+                  }
+                } catch (err) {
+                  console.error("Block/unblock error:", err);
+                  toastQueue.add(`<h1>Network error. Please try again.</h1>`);
+                }
+              },
+            };
+
+            items.push(blockItem);
+          }
+
+          createPopup({
+            triggerElement: e.currentTarget,
+            items,
+          });
+        } catch (err) {
+          console.error("Error building profile dropdown:", err);
+          createPopup({
+            triggerElement: e.currentTarget,
+            items: [
+              {
+                title: "Copy link",
+                icon: `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-link"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg>`,
+
+                action: () => {
+                  const profileUrl = `${location.origin}/@${currentUsername}`;
+
+                  navigator.clipboard.writeText(profileUrl);
+                },
+              },
+            ],
+          });
+        }
+      })
+      .catch((err) => {
+        console.error("Error fetching current user for dropdown:", err);
+        createPopup({
+          triggerElement: e.currentTarget,
+          items: [
+            {
+              title: "Copy link",
+              icon: `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-link"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg>`,
+
+              action: () => {
+                const profileUrl = `${location.origin}/@${currentUsername}`;
+
+                navigator.clipboard.writeText(profileUrl);
+              },
+            },
+          ],
+        });
+      });
   });
 
 document.getElementById("editProfileModal").addEventListener("click", (e) => {
@@ -932,6 +1252,13 @@ async function showFollowersList(username, type) {
         avatar.src = user.avatar || "/avatars/default.png";
         avatar.alt = user.name;
         avatar.className = "follower-avatar";
+        const radius =
+          user.avatar_radius !== null && user.avatar_radius !== undefined
+            ? `${user.avatar_radius}px`
+            : user.gold
+            ? `4px`
+            : `50px`;
+        avatar.style.borderRadius = radius;
 
         const followerInfo = document.createElement("div");
         followerInfo.className = "follower-info";
@@ -980,31 +1307,5 @@ async function showFollowersList(username, type) {
     toastQueue.add(`<h1>Error loading ${type}</h1><p>Please try again</p>`);
   }
 }
-
-const handleUnblockUser = async () => {
-  if (!authToken || !currentUsername || !currentProfile) return;
-
-  try {
-    const { success } = await query(`/blocking/unblock`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({ userId: currentProfile.profile.id }),
-    });
-
-    if (success) {
-      updateBlockButton(false);
-      toastQueue.add(
-        `<h1>User unblocked</h1><p>@${currentUsername} has been unblocked.</p>`
-      );
-    } else {
-      toastQueue.add(`<h1>Failed to unblock user</h1>`);
-    }
-  } catch (error) {
-    console.error("Unblock user error:", error);
-    toastQueue.add(`<h1>Failed to unblock user</h1>`);
-  }
-};
 
 export { loadProfile };

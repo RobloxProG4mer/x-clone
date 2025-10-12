@@ -1,4 +1,4 @@
-import { authToken } from "./auth.js";
+// Read authToken from localStorage at request time to avoid stale module-level values
 
 // this is mostly a foundation to build upon
 // for easier further optimizations
@@ -17,13 +17,14 @@ function hash(str) {
 
 export default (url, options = {}) =>
   new Promise((resolve) => {
+    const token = localStorage.getItem("authToken");
     resolve(
       fetch(`/api${url}`, {
         ...options,
         headers: {
           ...(options.headers || {}),
-          Authorization: `Bearer ${authToken}`,
-          "X-Request-Token": hash(authToken || "public"),
+          Authorization: `Bearer ${token}`,
+          "X-Request-Token": hash(token || "public"),
         },
       }).then((r) => r.json())
     );

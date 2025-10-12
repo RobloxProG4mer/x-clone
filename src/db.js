@@ -24,6 +24,7 @@ CREATE TABLE IF NOT EXISTS users (
   pronouns TEXT DEFAULT NULL,
   theme TEXT DEFAULT NULL,
   accent_color TEXT DEFAULT NULL,
+  avatar_radius INTEGER DEFAULT NULL,
   gold BOOLEAN DEFAULT FALSE
 );
 
@@ -78,20 +79,27 @@ CREATE TABLE IF NOT EXISTS posts (
   user_id TEXT NOT NULL,
   content TEXT NOT NULL,
   reply_to TEXT,
-  poll_id TEXT,
-  quote_tweet_id TEXT,
   created_at TIMESTAMP DEFAULT (datetime('now', 'utc')),
   like_count INTEGER DEFAULT 0,
   reply_count INTEGER DEFAULT 0,
   retweet_count INTEGER DEFAULT 0,
-  quote_count INTEGER DEFAULT 0,
   source TEXT DEFAULT NULL,
+  poll_id TEXT DEFAULT NULL,
+  quote_tweet_id TEXT DEFAULT NULL,
+  quote_count INTEGER DEFAULT 0,
   pinned BOOLEAN DEFAULT FALSE,
   reply_restriction TEXT DEFAULT 'everyone',
+  scheduled_post_id TEXT DEFAULT NULL,
+  article_id TEXT DEFAULT NULL,
+  is_article BOOLEAN DEFAULT FALSE,
+  article_title TEXT DEFAULT NULL,
+  article_body_markdown TEXT DEFAULT NULL,
   FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
   FOREIGN KEY (poll_id) REFERENCES polls(id) ON DELETE CASCADE,
   FOREIGN KEY (quote_tweet_id) REFERENCES posts(id) ON DELETE CASCADE
 );
+
+CREATE INDEX IF NOT EXISTS idx_posts_article_id ON posts(article_id);
 
 CREATE INDEX IF NOT EXISTS idx_posts_user_id ON posts(user_id);
 CREATE INDEX IF NOT EXISTS idx_posts_created_at ON posts(created_at);

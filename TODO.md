@@ -1,8 +1,8 @@
-- better edit profile modal
+- better edit profile modal (done i guess)
 
 ## others
 
-- tweetapus Gronk ✨
+- tweetapus happies robot ✨
 - communities
 
 ## later
