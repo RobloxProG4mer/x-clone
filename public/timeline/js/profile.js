@@ -187,9 +187,7 @@ const renderProfile = (data) => {
   }
 
   const avatarImg = document.getElementById("profileAvatar");
-  avatarImg.src =
-    profile.avatar ||
-    `https://upload.wikimedia.org/wikipedia/commons/0/03/Twitter_default_profile_400x400.png`;
+  avatarImg.src = profile.avatar || `/public/shared/default-avatar.png`;
   avatarImg.alt = profile.name || profile.username;
 
   const profileNameEl = document.getElementById("profileDisplayName");
@@ -585,9 +583,7 @@ const updateEditAvatarDisplay = () => {
   const removeBtn = document.getElementById("edit-remove-avatar");
 
   if (avatarImg) {
-    const avatarSrc =
-      profile.avatar ||
-      `https://upload.wikimedia.org/wikipedia/commons/0/03/Twitter_default_profile_400x400.png`;
+    const avatarSrc = profile.avatar || `/public/shared/default-avatar.png`;
     avatarImg.src = avatarSrc;
     avatarImg.alt = profile.name || profile.username;
   }
@@ -694,7 +690,7 @@ const handleEditAvatarRemoval = async () => {
       updateEditAvatarDisplay();
       const profileAvatar = document.getElementById("profileAvatar");
       if (profileAvatar) {
-        profileAvatar.src = `https://upload.wikimedia.org/wikipedia/commons/0/03/Twitter_default_profile_400x400.png`;
+        profileAvatar.src = `/public/shared/default-avatar.png`;
       }
       toastQueue.add(
         `<h1>Avatar removed</h1><p>Your profile picture has been reset to default.</p>`

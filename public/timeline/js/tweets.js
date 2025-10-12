@@ -320,9 +320,7 @@ const createPollElement = (poll, tweet) => {
     poll.voters.slice(0, 3).forEach((voter, index) => {
       const avatarEl = document.createElement("img");
       avatarEl.className = "voter-avatar";
-      avatarEl.src =
-        voter.avatar ||
-        `https://upload.wikimedia.org/wikipedia/commons/0/03/Twitter_default_profile_400x400.png`;
+      avatarEl.src = voter.avatar || `/public/shared/default-avatar.png`;
       avatarEl.alt = voter.name || voter.username;
       avatarEl.title = voter.name || voter.username;
       avatarEl.style.zIndex = poll.voters.length - index;
@@ -412,9 +410,7 @@ const updatePollDisplay = (pollElement, poll) => {
     poll.voters.slice(0, 3).forEach((voter, index) => {
       const avatarEl = document.createElement("img");
       avatarEl.className = "voter-avatar";
-      avatarEl.src =
-        voter.avatar ||
-        `https://upload.wikimedia.org/wikipedia/commons/0/03/Twitter_default_profile_400x400.png`;
+      avatarEl.src = voter.avatar || `/public/shared/default-avatar.png`;
       avatarEl.alt = voter.name || voter.username;
       avatarEl.title = voter.name || voter.username;
       avatarEl.style.zIndex = poll.voters.length - index;
@@ -553,8 +549,7 @@ export const createTweetElement = (tweet, config = {}) => {
 
   const tweetHeaderAvatarEl = document.createElement("img");
   tweetHeaderAvatarEl.src =
-    tweet.author.avatar ||
-    `https://upload.wikimedia.org/wikipedia/commons/0/03/Twitter_default_profile_400x400.png`;
+    tweet.author.avatar || `/public/shared/default-avatar.png`;
   tweetHeaderAvatarEl.alt = tweet.author.name || tweet.author.username;
   tweetHeaderAvatarEl.loading = "lazy";
   tweetHeaderAvatarEl.style.cursor = "pointer";
@@ -914,8 +909,6 @@ export const createTweetElement = (tweet, config = {}) => {
         openProfile(username);
       });
     }
-
-
   });
 
   tweetEl.appendChild(tweetContentEl);

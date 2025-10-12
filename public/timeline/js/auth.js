@@ -120,8 +120,7 @@ let _user;
   }
 
   document.querySelector(".account img").src =
-    user.avatar ||
-    `https://upload.wikimedia.org/wikipedia/commons/0/03/Twitter_default_profile_400x400.png`;
+    user.avatar || `/public/shared/default-avatar.png`;
 
   const accountBtn = document.querySelector(".account");
   accountBtn.addEventListener("click", (e) => {
