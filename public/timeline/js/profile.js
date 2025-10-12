@@ -269,7 +269,6 @@ const renderProfile = (data) => {
   document.getElementById("profileFollowerCount").textContent =
     profile.follower_count || 0;
 
-  // Add click handlers for followers/following links
   document.getElementById("profileFollowersLink").onclick = () => {
     showFollowersList(profile.username, "followers");
   };
@@ -321,7 +320,6 @@ const renderProfile = (data) => {
     document.getElementById("profileDropdown").style.display = "block";
     updateFollowButton(isFollowing);
     setupDmButton(profile.username);
-    checkBlockStatus(profile.username);
   } else {
     document.getElementById("profileDmBtn").style.display = "flex";
     document.getElementById("profileDropdown").style.display = "none";
@@ -926,26 +924,17 @@ document
     e.preventDefault();
     e.stopPropagation();
 
-    const isBlocked = document
-      .getElementById("blockUserBtn")
-      ?.textContent.includes("Unblock");
-
     createPopup({
       triggerElement: e.currentTarget,
       items: [
         {
-          id: "block-user-option",
-          icon: `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <circle cx="12" cy="12" r="10"/>
-            <path d="M4.93 4.93l14.14 14.14"/>
-          </svg>`,
-          title: isBlocked ? "Unblock" : "Block",
-          onClick: () => {
-            if (isBlocked) {
-              handleUnblockUser();
-            } else {
-              handleBlockUser();
-            }
+          title: "Copy link",
+          icon: `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-link"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg>`,
+
+          action: () => {
+            const profileUrl = `${location.origin}/@${currentUsername}`;
+
+            navigator.clipboard.writeText(profileUrl);
           },
         },
       ],
@@ -1047,70 +1036,6 @@ async function showFollowersList(username, type) {
     toastQueue.add(`<h1>Error loading ${type}</h1><p>Please try again</p>`);
   }
 }
-
-const checkBlockStatus = async () => {
-  if (!authToken || !currentProfile) return;
-
-  try {
-    const { blocked } = await query(
-      `/blocking/check/${currentProfile.profile.id}`
-    );
-
-    updateBlockButton(blocked);
-  } catch (error) {
-    console.error("Error checking block status:", error);
-  }
-};
-
-const updateBlockButton = (isBlocked) => {
-  const blockBtn = document.getElementById("blockUserBtn");
-
-  if (isBlocked) {
-    blockBtn.innerHTML = `
-			<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-				<circle cx="12" cy="12" r="10"/>
-				<path d="M4.93 4.93l14.14 14.14"/>
-			</svg>
-			Unblock
-		`;
-    blockBtn.onclick = () => handleUnblockUser();
-  } else {
-    blockBtn.innerHTML = `
-			<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-				<circle cx="12" cy="12" r="10"/>
-				<path d="M4.93 4.93l14.14 14.14"/>
-			</svg>
-			Block
-		`;
-    blockBtn.onclick = () => handleBlockUser();
-  }
-};
-
-const handleBlockUser = async () => {
-  if (!authToken || !currentUsername || !currentProfile) return;
-
-  try {
-    const { success } = await query(`/blocking/block`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({ userId: currentProfile.profile.id }),
-    });
-
-    if (success) {
-      updateBlockButton(true);
-      toastQueue.add(
-        `<h1>User blocked</h1><p>@${currentUsername} has been blocked.</p>`
-      );
-    } else {
-      toastQueue.add(`<h1>Failed to block user</h1>`);
-    }
-  } catch (error) {
-    console.error("Block user error:", error);
-    toastQueue.add(`<h1>Failed to block user</h1>`);
-  }
-};
 
 const handleUnblockUser = async () => {
   if (!authToken || !currentUsername || !currentProfile) return;
