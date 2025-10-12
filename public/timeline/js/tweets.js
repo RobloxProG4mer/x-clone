@@ -711,18 +711,6 @@ export const createTweetElement = (tweet, config = {}) => {
       `;
 	menuButtonEl.title = "More options";
 
-	menuButtonEl.addEventListener("mouseover", () => {
-		menuButtonEl.style.backgroundColor = "rgba(29, 161, 242, 0.1)";
-		menuButtonEl.style.color = "#1da1f2";
-		menuButtonEl.style.opacity = "1";
-	});
-
-	menuButtonEl.addEventListener("mouseout", () => {
-		menuButtonEl.style.backgroundColor = "transparent";
-		menuButtonEl.style.color = "#777";
-		menuButtonEl.style.opacity = "0.7";
-	});
-
 	menuButtonEl.addEventListener("click", (e) => {
 		e.preventDefault();
 		e.stopPropagation();

@@ -308,6 +308,12 @@ class AdminPanel {
 												: ""
 										}
                     ${
+											// add account switching @tiagozip
+											user.gold
+												? '<span class="badge bg-yellow">Gold</span>'
+												: ""
+										}
+                    ${
 											user.suspended
 												? '<span class="badge bg-danger">Suspended</span>'
 												: ""
