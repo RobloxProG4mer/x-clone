@@ -150,8 +150,9 @@ const adminQueries = {
   updatePost: db.query(
     "UPDATE posts SET content = ?, like_count = ?, retweet_count = ?, reply_count = ? WHERE id = ?"
   ),
+  // now supports optional reply_to so admin can create replies on behalf of users
   createPostAsUser: db.query(
-    "INSERT INTO posts (id, user_id, content, created_at) VALUES (?, ?, ?, datetime('now'))"
+    "INSERT INTO posts (id, user_id, content, reply_to, created_at) VALUES (?, ?, ?, ?, datetime('now'))"
   ),
   updateUser: db.query(
     "UPDATE users SET username = ?, name = ?, bio = ?, verified = ?, admin = ?, gold = ? WHERE id = ?"
@@ -652,28 +653,49 @@ export default new Elysia({ prefix: "/admin" })
       const targetUser = adminQueries.findUserById.get(body.userId);
       if (!targetUser) return { error: "User not found" };
 
+      // allow admins to bypass character limits with noCharLimit flag
+      const noCharLimit = !!body.noCharLimit;
+
       const maxLength = targetUser.gold
         ? 16500
         : targetUser.verified
         ? 5500
         : 400;
+
       if (!body.content || body.content.trim().length === 0) {
         return { error: "Content is required" };
       }
-      if (body.content.length > maxLength) {
+
+      if (!noCharLimit && body.content.length > maxLength) {
         return { error: `Content must be ${maxLength} characters or less` };
       }
+
+      // support optional replyTo so admin can post replies as the user
+      const replyTo = body.replyTo || null;
 
       adminQueries.createPostAsUser.run(
         postId,
         body.userId,
-        body.content.trim()
+        body.content.trim(),
+        replyTo
       );
 
       logModerationAction(user.id, "create_post_as_user", "post", postId, {
         targetUser: targetUser.username,
         content: body.content.substring(0, 100),
+        replyTo,
+        noCharLimit,
       });
+
+      // if it's a reply, increment reply count for the parent
+      if (replyTo) {
+        try {
+          db.query("UPDATE posts SET reply_count = reply_count + 1 WHERE id = ?").run(replyTo);
+        } catch (e) {
+          // ignore failures silently but log
+          console.error("Failed to update parent reply count:", e);
+        }
+      }
 
       return { success: true, id: postId };
     },
@@ -681,6 +703,8 @@ export default new Elysia({ prefix: "/admin" })
       body: t.Object({
         userId: t.String(),
         content: t.String(),
+        replyTo: t.Optional(t.String()),
+        noCharLimit: t.Optional(t.Boolean()),
       }),
     }
   )

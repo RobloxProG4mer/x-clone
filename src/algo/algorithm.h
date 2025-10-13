@@ -10,6 +10,14 @@ typedef struct {
     int retweet_count;
     int reply_count;
     int quote_count;
+    int has_media;
+    int seen_count;
+    double hours_since_seen;
+    int author_repeats;
+    int content_repeats;
+    double novelty_factor;
+    double random_factor;
+    int all_seen_flag;
     double score;
 } Tweet;
 
@@ -23,7 +31,14 @@ double calculate_score(
     int like_count, 
     int retweet_count,
     int reply_count,
-    int quote_count
+    int quote_count,
+    int has_media,
+    double hours_since_seen,
+    int author_repeats,
+    int content_repeats,
+    double novelty_factor,
+    double random_factor,
+    int all_seen_flag
 );
 
 void rank_tweets(Tweet *tweets, size_t count);

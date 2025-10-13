@@ -1206,6 +1206,12 @@ class AdminPanel {
         document.getElementById("tweetOnBehalfModal")
       );
       modal.show();
+      // setup char count UI (admin default: unlimited)
+      this.updateTweetCharCount();
+      const textarea = document.getElementById("tweetContent");
+      if (textarea) {
+        textarea.addEventListener("input", () => this.updateTweetCharCount());
+      }
     } catch (error) {
       console.error(error);
       this.showError("Failed to load user details");
@@ -1215,6 +1221,10 @@ class AdminPanel {
   async postTweetOnBehalf() {
     const userId = document.getElementById("tweetUserId").value;
     const content = document.getElementById("tweetContent").value;
+    const replyToRaw = document.getElementById("tweetReplyTo")?.value;
+    const replyTo = replyToRaw && replyToRaw.trim() ? replyToRaw.trim() : undefined;
+    // Admin panel: unlimited by default
+    const noCharLimit = true;
 
     if (!content.trim()) {
       this.showError("Tweet content cannot be empty");
@@ -1222,12 +1232,17 @@ class AdminPanel {
     }
 
     try {
+      // Build payload, omitting replyTo when not provided to avoid sending null
+      const payload = {
+        content: content.trim(),
+        userId,
+        noCharLimit,
+      };
+      if (replyTo !== undefined) payload.replyTo = replyTo;
+
       await this.apiCall("/api/admin/tweets", {
         method: "POST",
-        body: JSON.stringify({
-          content: content.trim(),
-          userId,
-        }),
+        body: JSON.stringify(payload),
       });
 
       bootstrap.Modal.getInstance(
@@ -1238,6 +1253,14 @@ class AdminPanel {
     } catch (error) {
       this.showError(error.message);
     }
+  }
+
+  updateTweetCharCount() {
+    const textarea = document.getElementById("tweetContent");
+    const countEl = document.getElementById("charCount");
+    const limitEl = document.getElementById("charLimitDisplay");
+    if (!textarea || !countEl || !limitEl) return;
+    countEl.textContent = textarea.value.length;
   }
 
   showError(message) {

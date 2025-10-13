@@ -638,17 +638,21 @@ const createExperimentsContent = () => {
 
   setTimeout(async () => {
     const checkbox = document.getElementById("c-algorithm-toggle");
+    if (!checkbox) return;
 
     try {
       const data = await query("/auth/me");
-      if (data.user?.use_c_algorithm) {
-        checkbox.checked = true;
-        window._cAlgoEnabled = true;
-      } else {
-        window._cAlgoEnabled = false;
-      }
+      const serverEnabled = !!data.user?.use_c_algorithm;
+      checkbox.checked = serverEnabled;
+      checkbox.defaultChecked = serverEnabled;
+      checkbox.dataset.serverState = serverEnabled ? "on" : "off";
+      checkbox.setAttribute("aria-checked", serverEnabled ? "true" : "false");
     } catch (error) {
       console.error("Failed to load C algorithm setting:", error);
+      checkbox.checked = false;
+      checkbox.defaultChecked = false;
+      checkbox.dataset.serverState = "off";
+      checkbox.setAttribute("aria-checked", "false");
     }
 
     checkbox.addEventListener("change", async (e) => {
@@ -663,21 +667,27 @@ const createExperimentsContent = () => {
         });
 
         if (result.success) {
-          window._cAlgoEnabled = enabled;
+          checkbox.dataset.serverState = enabled ? "on" : "off";
+          checkbox.setAttribute("aria-checked", enabled ? "true" : "false");
           toastQueue.add(
             `<h1>C Algorithm ${enabled ? "Enabled" : "Disabled"}</h1><p>${
               enabled
-                ? "Timeline will now use the C-based ranking algorithm. Refresh to see changes."
-                : "Timeline will use chronological sorting. Refresh to see changes."
+                ? "Timeline will now use the C-based ranking algorithm"
+                : "Timeline will use chronological sorting"
             }</p>`
           );
+
+          if (window.location.pathname === "/") {
+            window.location.reload();
+          }
         } else {
           e.target.checked = !enabled;
+          checkbox.setAttribute("aria-checked", !enabled ? "true" : "false");
           toastQueue.add(`<h1>Failed to update setting</h1>`);
         }
-      } catch (error) {
-        console.error("Error updating C algorithm setting:", error);
+      } catch {
         e.target.checked = !enabled;
+        checkbox.setAttribute("aria-checked", !enabled ? "true" : "false");
         toastQueue.add(`<h1>Failed to update setting</h1>`);
       }
     });

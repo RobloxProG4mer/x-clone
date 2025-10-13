@@ -543,13 +543,16 @@
                   class="form-control"
                   id="tweetContent"
                   rows="4"
-                  maxlength="280"
                   required
                 ></textarea>
                 <div class="form-text">
                   <span id="charCount">0</span>
-                  / 280
+                  / <span id="charLimitDisplay">unlimited</span>
                 </div>
+              </div>
+              <div class="mb-3">
+                <label class="form-label">Replying to (Tweet ID, optional)</label>
+                <input type="text" id="tweetReplyTo" class="form-control" placeholder="Enter tweet ID to reply to (optional)" />
               </div>
             </form>
           </div>
