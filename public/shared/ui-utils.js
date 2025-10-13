@@ -1,5 +1,32 @@
 export function createPopup(options) {
-  const { items = [], triggerElement = null, onClose = () => {} } = options;
+  const {
+    items = [],
+    triggerElement = null,
+    anchorPoint = null,
+    onClose = () => {},
+  } = options;
+
+  const storedTriggerRect = (() => {
+    if (!triggerElement || typeof triggerElement.getBoundingClientRect !== "function") {
+      return null;
+    }
+    const rect = triggerElement.getBoundingClientRect();
+    if (!rect || rect.width === 0 || rect.height === 0) {
+      return null;
+    }
+    return {
+      top: rect.top,
+      left: rect.left,
+      right: rect.right,
+      bottom: rect.bottom,
+      width: rect.width,
+      height: rect.height,
+    };
+  })();
+
+  const anchor = anchorPoint
+    ? { x: anchorPoint.x ?? 0, y: anchorPoint.y ?? 0 }
+    : null;
 
   const overlay = document.createElement("div");
   overlay.className = "popup-overlay";
@@ -61,25 +88,80 @@ export function createPopup(options) {
       const viewportHeight = window.innerHeight;
       const popupRect = popup.getBoundingClientRect();
 
-      let triggerRect = null;
-      if (triggerElement) {
-        triggerRect = triggerElement.getBoundingClientRect();
-        if (triggerRect.width === 0 && triggerRect.height === 0) {
-          const rects = triggerElement.getClientRects();
-          if (rects.length > 0) {
-            triggerRect = rects[0];
-          }
+      let triggerRect = storedTriggerRect;
+      if ((!triggerRect || triggerRect.width === 0 || triggerRect.height === 0) && triggerElement) {
+        const liveRect = triggerElement.getBoundingClientRect?.();
+        if (liveRect && liveRect.width > 0 && liveRect.height > 0) {
+          triggerRect = {
+            top: liveRect.top,
+            left: liveRect.left,
+            right: liveRect.right,
+            bottom: liveRect.bottom,
+            width: liveRect.width,
+            height: liveRect.height,
+          };
         }
       }
 
+      if ((!triggerRect || triggerRect.width === 0 || triggerRect.height === 0) && triggerElement) {
+        const rects = triggerElement.getClientRects?.();
+        if (rects && rects.length > 0) {
+          const rect = rects[0];
+          triggerRect = {
+            top: rect.top,
+            left: rect.left,
+            right: rect.right,
+            bottom: rect.bottom,
+            width: rect.width,
+            height: rect.height,
+          };
+        }
+      }
+
+      if ((!triggerRect || (triggerRect.width === 0 && triggerRect.height === 0)) && triggerElement?.parentElement) {
+        const parentRect = triggerElement.parentElement.getBoundingClientRect?.();
+        if (parentRect && parentRect.width > 0 && parentRect.height > 0) {
+          triggerRect = {
+            top: parentRect.top,
+            left: parentRect.left,
+            right: parentRect.right,
+            bottom: parentRect.bottom,
+            width: parentRect.width,
+            height: parentRect.height,
+          };
+        }
+      }
+
+      if (!triggerRect && anchor) {
+        triggerRect = {
+          top: anchor.y,
+          left: anchor.x,
+          right: anchor.x,
+          bottom: anchor.y,
+          width: 0,
+          height: 0,
+        };
+      }
+
       if (triggerRect && (triggerRect.width > 0 || triggerRect.height > 0)) {
-        let left = triggerRect.left;
+        let left = triggerRect.right - popupRect.width;
         let top = triggerRect.bottom + 8;
-        let transformOriginX = "left";
+        let transformOriginX = "right";
         let transformOriginY = "top";
 
+        if (triggerRect.width === 0 && triggerRect.height === 0 && anchor) {
+          left = anchor.x - popupRect.width / 2;
+          top = anchor.y + 10;
+          transformOriginX = "center";
+        }
+
+        if (left < 12) {
+          left = Math.max(12, triggerRect.left);
+          transformOriginX = left === triggerRect.left ? "left" : transformOriginX;
+        }
+
         if (left + popupRect.width > viewportWidth - 12) {
-          left = triggerRect.right - popupRect.width;
+          left = viewportWidth - popupRect.width - 12;
           transformOriginX = "right";
         }
 
@@ -88,14 +170,10 @@ export function createPopup(options) {
           transformOriginY = "bottom";
         }
 
-        left = Math.max(
-          12,
-          Math.min(left, viewportWidth - popupRect.width - 12)
-        );
-        top = Math.max(
-          12,
-          Math.min(top, viewportHeight - popupRect.height - 12)
-        );
+        if (top < 12) {
+          top = 12;
+          transformOriginY = "top";
+        }
 
         popup.style.left = `${left}px`;
         popup.style.top = `${top}px`;

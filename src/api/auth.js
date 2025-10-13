@@ -108,6 +108,7 @@ export default new Elysia({ prefix: "/auth" })
           admin: user.admin || false,
           theme: user.theme || null,
           accent_color: user.accent_color || null,
+          use_c_algorithm: user.use_c_algorithm === 1 || user.use_c_algorithm === true,
         },
         passkeys: passkeys.map((passkey) => ({
           id: passkey.cred_id,

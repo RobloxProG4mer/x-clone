@@ -638,14 +638,21 @@ const createExperimentsContent = () => {
 
   setTimeout(async () => {
     const checkbox = document.getElementById("c-algorithm-toggle");
+    if (!checkbox) return;
 
     try {
       const data = await query("/auth/me");
-      if (data.user?.use_c_algorithm) {
-        checkbox.checked = true;
-      }
+      const serverEnabled = !!data.user?.use_c_algorithm;
+      checkbox.checked = serverEnabled;
+      checkbox.defaultChecked = serverEnabled;
+      checkbox.dataset.serverState = serverEnabled ? "on" : "off";
+      checkbox.setAttribute("aria-checked", serverEnabled ? "true" : "false");
     } catch (error) {
       console.error("Failed to load C algorithm setting:", error);
+      checkbox.checked = false;
+      checkbox.defaultChecked = false;
+      checkbox.dataset.serverState = "off";
+      checkbox.setAttribute("aria-checked", "false");
     }
 
     checkbox.addEventListener("change", async (e) => {
@@ -660,6 +667,8 @@ const createExperimentsContent = () => {
         });
 
         if (result.success) {
+          checkbox.dataset.serverState = enabled ? "on" : "off";
+          checkbox.setAttribute("aria-checked", enabled ? "true" : "false");
           toastQueue.add(
             `<h1>C Algorithm ${enabled ? "Enabled" : "Disabled"}</h1><p>${
               enabled
@@ -673,10 +682,12 @@ const createExperimentsContent = () => {
           }
         } else {
           e.target.checked = !enabled;
+          checkbox.setAttribute("aria-checked", !enabled ? "true" : "false");
           toastQueue.add(`<h1>Failed to update setting</h1>`);
         }
       } catch {
         e.target.checked = !enabled;
+        checkbox.setAttribute("aria-checked", !enabled ? "true" : "false");
         toastQueue.add(`<h1>Failed to update setting</h1>`);
       }
     });

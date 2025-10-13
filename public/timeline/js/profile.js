@@ -1164,12 +1164,14 @@ document
 
           createPopup({
             triggerElement: e.currentTarget,
+            anchorPoint: { x: e.clientX, y: e.clientY },
             items,
           });
         } catch (err) {
           console.error("Error building profile dropdown:", err);
           createPopup({
             triggerElement: e.currentTarget,
+            anchorPoint: { x: e.clientX, y: e.clientY },
             items: [
               {
                 title: "Copy link",
@@ -1189,6 +1191,7 @@ document
         console.error("Error fetching current user for dropdown:", err);
         createPopup({
           triggerElement: e.currentTarget,
+          anchorPoint: { x: e.clientX, y: e.clientY },
           items: [
             {
               title: "Copy link",

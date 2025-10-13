@@ -10,7 +10,20 @@ if (existsSync(libPath)) {
   try {
     lib = dlopen(libPath, {
       calculate_score: {
-        args: [FFIType.i64, FFIType.i32, FFIType.i32],
+        args: [
+          FFIType.i64,
+          FFIType.i32,
+          FFIType.i32,
+          FFIType.i32,
+          FFIType.i32,
+          FFIType.i32,
+          FFIType.double,
+          FFIType.i32,
+          FFIType.i32,
+          FFIType.double,
+          FFIType.double,
+          FFIType.i32,
+        ],
         returns: FFIType.double,
       },
     });
@@ -33,14 +46,21 @@ export const calculateScore = (
   like_count,
   retweet_count,
   reply_count = 0,
-  quote_count = 0
+  quote_count = 0,
+  has_media = 0,
+  hours_since_seen = -1,
+  author_repeats = 0,
+  content_repeats = 0,
+  novelty_factor = 1,
+  random_factor = Math.random(),
+  is_all_seen = 0
 ) => {
   if (!lib) {
     const now = Math.floor(Date.now() / 1000);
     const ageHours = (now - created_at) / 3600;
 
     const MAX_AGE_HOURS = 72;
-    const FRESH_TWEET_HOURS = 6;
+    const FRESH_TWEET_HOURS = 12;
 
     const totalEngagement =
       like_count + retweet_count + reply_count + quote_count;
@@ -101,11 +121,72 @@ export const calculateScore = (
     if (quote_count > 0) engagementTypes++;
     const diversityBonus = 1.0 + (engagementTypes - 1) * 0.15;
 
+    let mediaBoost = 1.0;
+    if (has_media > 0) {
+      mediaBoost = 1.15;
+    }
+    if (quote_count > 0 && has_media > 0) {
+      mediaBoost *= 1.1;
+    }
+
     const timeDecay = calculateTimeDecay(ageHours);
+
+    let seenPenalty = 1.0;
+    if (Number.isFinite(hours_since_seen) && hours_since_seen >= 0) {
+      if (hours_since_seen < 0.5) seenPenalty = 0.14;
+      else if (hours_since_seen < 2) seenPenalty = 0.22;
+      else if (hours_since_seen < 6) seenPenalty = 0.34;
+      else if (hours_since_seen < 12) seenPenalty = 0.48;
+      else if (hours_since_seen < 24) seenPenalty = 0.65;
+      else if (hours_since_seen < 48) seenPenalty = 0.8;
+      else if (hours_since_seen < 96) seenPenalty = 0.9;
+      else seenPenalty = 0.96;
+    }
+
+    const authorPenalty = Math.max(0.38, 1 / (1 + Math.max(0, author_repeats) * 0.45));
+    const contentPenalty = Math.max(0.28, 1 / (1 + Math.max(0, content_repeats) * 0.6));
+
+    let recencyAdjust = 1.0;
+    if (ageHours < 0.5) recencyAdjust = 1.12;
+    else if (ageHours < 3) recencyAdjust = 1.06;
+    else if (ageHours > 72) recencyAdjust = 0.7;
+    else if (ageHours > 48) recencyAdjust = 0.82;
+
+    let discussionBoost = 1.0;
+    if (reply_count > 0 && like_count > 0) {
+      const replyRatio = Math.min(reply_count / Math.max(like_count, 1), 0.5);
+      discussionBoost += replyRatio * 0.7;
+    }
+
+    let noveltyBoost = novelty_factor;
+    if (!Number.isFinite(noveltyBoost) || noveltyBoost <= 0) noveltyBoost = 1.0;
+    if (hours_since_seen < 0) {
+      noveltyBoost += 0.12;
+    }
+    noveltyBoost = Math.min(Math.max(noveltyBoost, 0.75), 1.5);
+
+    const boundedRandom = Math.min(Math.max(random_factor || 0, 0), 1);
+    const randomSpan = is_all_seen ? 0.55 : 0.1;
+    const randomOffset = is_all_seen ? 0.25 : 0.04;
+    const randomComponent = randomOffset + boundedRandom * randomSpan;
+    const randomMultiplier = 1 + randomComponent * 0.08;
 
     return Math.max(
       0,
-      baseScore * timeDecay * qualityScore * viralityBoost * diversityBonus
+      baseScore *
+        timeDecay *
+        qualityScore *
+        viralityBoost *
+        diversityBonus *
+        mediaBoost *
+        seenPenalty *
+        authorPenalty *
+        contentPenalty *
+        recencyAdjust *
+        discussionBoost *
+        noveltyBoost *
+        randomMultiplier +
+        randomComponent
     );
   }
 
@@ -119,36 +200,136 @@ export const calculateScore = (
     like_count,
     retweet_count,
     reply_count,
-    quote_count
+    quote_count,
+    has_media,
+    hours_since_seen,
+    author_repeats,
+    content_repeats,
+    novelty_factor,
+    random_factor,
+    is_all_seen
   );
 };
 
-export const rankTweets = (tweets, seenIds = new Set()) => {
-  const unseenTweets = tweets.filter((tweet) => !seenIds.has(tweet.id));
+const normalizeContent = (value) => {
+  if (typeof value !== "string") return "";
+  return value
+    .toLowerCase()
+    .replace(/https?:\/\/\S+/g, "")
+    .replace(/\s+/g, " ")
+    .trim();
+};
 
-  const tweetsWithScores = unseenTweets.map((tweet) => {
-    const timestamp =
+export const rankTweets = (tweets, seenInput = new Map()) => {
+  if (!Array.isArray(tweets) || tweets.length === 0) return [];
+
+  let seenMap;
+  if (seenInput instanceof Map) {
+    seenMap = seenInput;
+  } else if (seenInput instanceof Set) {
+    seenMap = new Map();
+    seenInput.forEach((id) => seenMap.set(id, null));
+  } else {
+    seenMap = new Map();
+  }
+
+  const nowMillis = Date.now();
+  const nowSeconds = Math.floor(nowMillis / 1000);
+
+  const authorCounts = new Map();
+  const contentCounts = new Map();
+
+  tweets.forEach((tweet) => {
+    const authorKey =
+      tweet.user_id ||
+      tweet.author_id ||
+      tweet.author?.id ||
+      tweet.username ||
+      tweet.author?.username;
+    if (authorKey) {
+      authorCounts.set(authorKey, (authorCounts.get(authorKey) || 0) + 1);
+    }
+
+    const contentKey = normalizeContent(tweet.content);
+    if (contentKey) {
+      contentCounts.set(contentKey, (contentCounts.get(contentKey) || 0) + 1);
+    }
+  });
+
+  const allSeen = tweets.every((tweet) => seenMap.has(tweet.id));
+
+  const scored = tweets.map((tweet) => {
+    let timestamp =
       typeof tweet.created_at === "string"
         ? Math.floor(new Date(tweet.created_at).getTime() / 1000)
         : tweet.created_at;
+    if (!Number.isFinite(timestamp)) {
+      timestamp = nowSeconds;
+    }
 
-    return {
-      ...tweet,
-      _score: calculateScore(
-        timestamp,
-        tweet.like_count || 0,
-        tweet.retweet_count || 0,
-        tweet.reply_count || 0,
-        tweet.quote_count || 0
-      ),
-    };
+    const attachments = Array.isArray(tweet.attachments)
+      ? tweet.attachments
+      : [];
+    const hasQuotedMedia =
+      tweet.quoted_tweet &&
+      Array.isArray(tweet.quoted_tweet.attachments) &&
+      tweet.quoted_tweet.attachments.length > 0;
+    const hasMedia = attachments.length > 0 || hasQuotedMedia ? 1 : 0;
+
+    const authorKey =
+      tweet.user_id ||
+      tweet.author_id ||
+      tweet.author?.id ||
+      tweet.username ||
+      tweet.author?.username;
+    const authorCount = authorKey ? authorCounts.get(authorKey) || 0 : 0;
+
+    const contentKey = normalizeContent(tweet.content);
+    const contentCount = contentKey ? contentCounts.get(contentKey) || 0 : 0;
+
+    const seenMeta = seenMap.get(tweet.id);
+    let hoursSinceSeen = -1;
+    if (seenMeta !== undefined && seenMeta !== null) {
+      const parsed = Date.parse(
+        typeof seenMeta === "string" && !seenMeta.endsWith("Z")
+          ? `${seenMeta}Z`
+          : seenMeta
+      );
+      if (Number.isFinite(parsed)) {
+        hoursSinceSeen = Math.max(0, (nowMillis - parsed) / 3600000);
+      }
+    }
+
+    let noveltyFactor = 1.0;
+    if (hoursSinceSeen < 0) {
+      noveltyFactor = 1.2;
+    } else if (hoursSinceSeen > 72) {
+      noveltyFactor = 1.05;
+    }
+
+    const randomFactor = Math.random();
+
+    const score = calculateScore(
+      timestamp,
+      tweet.like_count || 0,
+      tweet.retweet_count || 0,
+      tweet.reply_count || 0,
+      tweet.quote_count || 0,
+      hasMedia,
+      hoursSinceSeen,
+      Math.max(0, authorCount - 1),
+      Math.max(0, contentCount - 1),
+      noveltyFactor,
+      randomFactor,
+      allSeen ? 1 : 0
+    );
+
+    return { ...tweet, _score: score };
   });
 
-  tweetsWithScores.sort((a, b) => b._score - a._score);
+  scored.sort((a, b) => b._score - a._score);
 
-  tweetsWithScores.forEach((tweet) => delete tweet._score);
-
-  return tweetsWithScores;
+  return scored.map(({ _score, ...rest }) => rest);
 };
 
 export const isAlgorithmAvailable = () => lib !== null;

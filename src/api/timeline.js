@@ -47,14 +47,16 @@ const getFollowingTimelinePostsBefore = db.query(`
 
 const getUserByUsername = db.query("SELECT * FROM users WHERE username = ?");
 
-const getSeenTweetIds = db.query(`
-  SELECT tweet_id FROM seen_tweets 
+const getSeenTweets = db.query(`
+  SELECT tweet_id, seen_at FROM seen_tweets 
   WHERE user_id = ? AND seen_at > datetime('now', '-7 days')
 `);
 
 const markTweetsAsSeen = db.prepare(`
-  INSERT OR IGNORE INTO seen_tweets (id, user_id, tweet_id)
-  VALUES (?, ?, ?)
+  INSERT INTO seen_tweets (id, user_id, tweet_id, seen_at)
+  VALUES (?, ?, ?, datetime('now', 'utc'))
+  ON CONFLICT(user_id, tweet_id)
+  DO UPDATE SET seen_at = excluded.seen_at
 `);
 
 const getPollByPostId = db.query(`
@@ -222,9 +224,33 @@ export default new Elysia({ prefix: "/timeline" })
       : getTimelinePosts.all(user.id);
 
     if (user.use_c_algorithm && isAlgorithmAvailable()) {
-      const seenTweets = getSeenTweetIds.all(user.id);
-      const seenIds = new Set(seenTweets.map((s) => s.tweet_id));
-      posts = rankTweets(posts, seenIds);
+      const postIds = posts.map((p) => p.id);
+      if (postIds.length > 0) {
+        const attachmentPlaceholders = postIds.map(() => "?").join(",");
+        const allAttachments = db
+          .query(
+            `SELECT * FROM attachments WHERE post_id IN (${attachmentPlaceholders})`
+          )
+          .all(...postIds);
+        
+        const attachmentMap = new Map();
+        allAttachments.forEach((attachment) => {
+          if (!attachmentMap.has(attachment.post_id)) {
+            attachmentMap.set(attachment.post_id, []);
+          }
+          attachmentMap.get(attachment.post_id).push(attachment);
+        });
+
+        posts.forEach((post) => {
+          post.attachments = attachmentMap.get(post.id) || [];
+        });
+      }
+
+      const seenTweets = getSeenTweets.all(user.id);
+      const seenMeta = new Map(
+        seenTweets.map((row) => [row.tweet_id, row.seen_at])
+      );
+      posts = rankTweets(posts, seenMeta);
 
       for (const post of posts.slice(0, 10)) {
         markTweetsAsSeen.run(Bun.randomUUIDv7(), user.id, post.id);
@@ -411,9 +437,33 @@ export default new Elysia({ prefix: "/timeline" })
     }
 
     if (user.use_c_algorithm && isAlgorithmAvailable()) {
-      const seenTweets = getSeenTweetIds.all(user.id);
-      const seenIds = new Set(seenTweets.map((s) => s.tweet_id));
-      posts = rankTweets(posts, seenIds);
+      const postIds = posts.map((p) => p.id);
+      if (postIds.length > 0) {
+        const attachmentPlaceholders = postIds.map(() => "?").join(",");
+        const allAttachments = db
+          .query(
+            `SELECT * FROM attachments WHERE post_id IN (${attachmentPlaceholders})`
+          )
+          .all(...postIds);
+        
+        const attachmentMap = new Map();
+        allAttachments.forEach((attachment) => {
+          if (!attachmentMap.has(attachment.post_id)) {
+            attachmentMap.set(attachment.post_id, []);
+          }
+          attachmentMap.get(attachment.post_id).push(attachment);
+        });
+
+        posts.forEach((post) => {
+          post.attachments = attachmentMap.get(post.id) || [];
+        });
+      }
+
+      const seenTweets = getSeenTweets.all(user.id);
+      const seenMeta = new Map(
+        seenTweets.map((row) => [row.tweet_id, row.seen_at])
+      );
+      posts = rankTweets(posts, seenMeta);
 
       for (const post of posts.slice(0, 10)) {
         markTweetsAsSeen.run(Bun.randomUUIDv7(), user.id, post.id);
