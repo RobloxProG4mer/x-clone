@@ -249,6 +249,22 @@ const renderProfile = (data) => {
   const usernameEl = document.getElementById("profileUsername");
   usernameEl.textContent = `@${profile.username}`;
 
+  if (profile.label_type) {
+    const labelEl = document.createElement("span");
+    labelEl.className = `profile-label label-${profile.label_type}`;
+    const labelText =
+      profile.label_type.charAt(0).toUpperCase() + profile.label_type.slice(1);
+    labelEl.textContent = labelText;
+    usernameEl.appendChild(labelEl);
+  }
+
+  if (profile.label_automated) {
+    const automatedEl = document.createElement("span");
+    automatedEl.className = "profile-label label-automated";
+    automatedEl.textContent = "Automated";
+    usernameEl.appendChild(automatedEl);
+  }
+
   // expose current profile username on the container for other modules
   const profileContainerEl2 = document.getElementById("profileContainer");
   if (profileContainerEl2)
@@ -471,6 +487,9 @@ const showEditModal = () => {
   document.getElementById("editPronouns").value = profile.pronouns || "";
   document.getElementById("editLocation").value = profile.location || "";
   document.getElementById("editWebsite").value = profile.website || "";
+  document.getElementById("editLabelType").value = profile.label_type || "";
+  document.getElementById("editLabelAutomated").checked =
+    profile.label_automated || false;
 
   // Update avatar display
   updateEditAvatarDisplay();
@@ -942,6 +961,8 @@ const saveProfile = async (event) => {
     pronouns: document.getElementById("editPronouns").value.trim(),
     location: document.getElementById("editLocation").value.trim(),
     website: document.getElementById("editWebsite").value.trim(),
+    label_type: document.getElementById("editLabelType").value || null,
+    label_automated: document.getElementById("editLabelAutomated").checked,
   };
 
   const avatarRadiusControls = document.getElementById("avatarRadiusControls");

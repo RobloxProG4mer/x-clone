@@ -206,6 +206,12 @@ const linkifyText = (text) => {
     return lines.join("\n");
   };
 
+  const processCustomMarkdown = (text) => {
+    return text
+      .replace(/~([^~\n]+)~/g, "<sub>$1</sub>")
+      .replace(/\^([^^\n]+)\^/g, "<sup>$1</sup>");
+  };
+
   const html = marked.parse(normalizeListMarkers(text.trim()), {
     breaks: true,
     gfm: true,
@@ -226,6 +232,8 @@ const linkifyText = (text) => {
       return `<a href="javascript:" class="tweet-hashtag" data-hashtag="${tag}">#${tag}</a>`;
     }
   );
+
+  processedHtml = processCustomMarkdown(processedHtml);
 
   const el = document.createElement("div");
 
@@ -255,6 +263,8 @@ const linkifyText = (text) => {
       "li",
       "span",
       "big",
+      "sub",
+      "sup",
     ],
     ALLOWED_ATTR: ["href", "target", "rel", "class"],
   });
@@ -715,6 +725,23 @@ export const createTweetElement = (tweet, config = {}) => {
               stroke-linejoin="round"
             />
           </svg>`;
+  }
+
+  if (tweet.author.label_type) {
+    const labelEl = document.createElement("span");
+    labelEl.className = `tweet-label label-${tweet.author.label_type}`;
+    const labelText =
+      tweet.author.label_type.charAt(0).toUpperCase() +
+      tweet.author.label_type.slice(1);
+    labelEl.textContent = labelText;
+    tweetHeaderNameEl.appendChild(labelEl);
+  }
+
+  if (tweet.author.label_automated) {
+    const automatedEl = document.createElement("span");
+    automatedEl.className = "tweet-label label-automated";
+    automatedEl.textContent = "Automated";
+    tweetHeaderNameEl.appendChild(automatedEl);
   }
 
   const source_icons = {

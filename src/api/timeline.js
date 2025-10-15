@@ -76,7 +76,7 @@ const getTotalPollVotes = db.query(`
 `);
 
 const getPollVoters = db.query(`
-  SELECT DISTINCT users.username, users.name, users.avatar, users.verified
+  SELECT DISTINCT users.username, users.name, users.avatar, users.verified, users.gold, users.avatar_radius
   FROM poll_votes 
   JOIN users ON poll_votes.user_id = users.id 
   WHERE poll_votes.poll_id = ?
@@ -89,14 +89,14 @@ const getAttachmentsByPostId = db.query(`
 `);
 
 const getQuotedTweet = db.query(`
-  SELECT posts.*, users.username, users.name, users.avatar, users.verified
+  SELECT posts.*, users.username, users.name, users.avatar, users.verified, users.gold, users.avatar_radius
   FROM posts
   JOIN users ON posts.user_id = users.id
   WHERE posts.id = ?
 `);
 
 const getTopReply = db.query(`
-  SELECT posts.*, users.username, users.name, users.avatar, users.verified
+  SELECT posts.*, users.username, users.name, users.avatar, users.verified, users.gold, users.avatar_radius
   FROM posts
   JOIN users ON posts.user_id = users.id
   WHERE posts.reply_to = ?
@@ -145,6 +145,8 @@ const getQuotedTweetData = (quoteTweetId, userId) => {
       name: quotedTweet.name,
       avatar: quotedTweet.avatar,
       verified: quotedTweet.verified || false,
+      gold: quotedTweet.gold || false,
+      avatar_radius: quotedTweet.avatar_radius || null,
     },
     poll: getPollDataForTweet(quotedTweet.id, userId),
     attachments: getTweetAttachments(quotedTweet.id),
@@ -162,6 +164,8 @@ const getTopReplyData = (tweetId, userId) => {
       name: topReply.name,
       avatar: topReply.avatar,
       verified: topReply.verified || false,
+      gold: topReply.gold || false,
+      avatar_radius: topReply.avatar_radius || null,
     },
     poll: getPollDataForTweet(topReply.id, userId),
     quoted_tweet: getQuotedTweetData(topReply.quote_tweet_id, userId),
@@ -243,8 +247,12 @@ export default new Elysia({ prefix: "/timeline" })
 
         const userIds = [...new Set(posts.map((p) => p.user_id))];
         const userPlaceholders = userIds.map(() => "?").join(",");
-        const postUsers = db.query(`SELECT id, verified, gold, follower_count FROM users WHERE id IN (${userPlaceholders})`).all(...userIds);
-        const userDataMap = new Map(postUsers.map(u => [u.id, u]));
+        const postUsers = db
+          .query(
+            `SELECT id, verified, gold, follower_count FROM users WHERE id IN (${userPlaceholders})`
+          )
+          .all(...userIds);
+        const userDataMap = new Map(postUsers.map((u) => [u.id, u]));
 
         posts.forEach((post) => {
           post.attachments = attachmentMap.get(post.id) || [];
@@ -467,8 +475,12 @@ export default new Elysia({ prefix: "/timeline" })
 
         const userIds = [...new Set(posts.map((p) => p.user_id))];
         const userPlaceholders = userIds.map(() => "?").join(",");
-        const postUsers = db.query(`SELECT id, verified, gold, follower_count FROM users WHERE id IN (${userPlaceholders})`).all(...userIds);
-        const userDataMap = new Map(postUsers.map(u => [u.id, u]));
+        const postUsers = db
+          .query(
+            `SELECT id, verified, gold, follower_count FROM users WHERE id IN (${userPlaceholders})`
+          )
+          .all(...userIds);
+        const userDataMap = new Map(postUsers.map((u) => [u.id, u]));
 
         posts.forEach((post) => {
           post.attachments = attachmentMap.get(post.id) || [];

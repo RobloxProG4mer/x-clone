@@ -278,16 +278,17 @@ class AdminPanel {
                   <div class="d-flex align-items-center">
                     ${
                       user.avatar
-                          ? (() => {
-                              const radius =
-                                user.avatar_radius !== null && user.avatar_radius !== undefined
-                                  ? `${user.avatar_radius}px`
-                                  : user.gold
-                                  ? `4px`
-                                  : `50px`;
-                              return `<img src="${user.avatar}" class="user-avatar me-2" alt="Avatar" style="border-radius: ${radius};">`;
-                            })()
-                          : `<div class="user-avatar me-2 bg-secondary rounded-circle d-flex align-items-center justify-content-center">
+                        ? (() => {
+                            const radius =
+                              user.avatar_radius !== null &&
+                              user.avatar_radius !== undefined
+                                ? `${user.avatar_radius}px`
+                                : user.gold
+                                ? `4px`
+                                : `50px`;
+                            return `<img src="${user.avatar}" class="user-avatar me-2" alt="Avatar" style="border-radius: ${radius};">`;
+                          })()
+                        : `<div class="user-avatar me-2 bg-secondary rounded-circle d-flex align-items-center justify-content-center">
                           <i class="bi bi-person text-white"></i>
                         </div>`
                     }
@@ -428,7 +429,8 @@ class AdminPanel {
                       post.avatar
                         ? (() => {
                             const radius =
-                              post.avatar_radius !== null && post.avatar_radius !== undefined
+                              post.avatar_radius !== null &&
+                              post.avatar_radius !== undefined
                                 ? `${post.avatar_radius}px`
                                 : post.gold
                                 ? `4px`
@@ -547,7 +549,8 @@ class AdminPanel {
                       suspension.avatar
                         ? (() => {
                             const radius =
-                              suspension.avatar_radius !== null && suspension.avatar_radius !== undefined
+                              suspension.avatar_radius !== null &&
+                              suspension.avatar_radius !== undefined
                                 ? `${suspension.avatar_radius}px`
                                 : suspension.gold
                                 ? `4px`
@@ -689,7 +692,13 @@ class AdminPanel {
           <div class="col-md-4 text-center">
             <img src="${
               user.avatar || "/img/default-avatar.png"
-            }" class="img-fluid rounded-circle mb-3" style="max-width: 150px;" alt="Avatar">
+            }" class="img-fluid mb-3" style="max-width: 150px; border-radius: ${
+        user.avatar_radius !== null && user.avatar_radius !== undefined
+          ? `${user.avatar_radius}px`
+          : user.gold
+          ? "4px"
+          : "50%"
+      };" alt="Avatar">
             <h4>@${user.username}</h4>
             <p class="text-muted">${user.name || ""}</p>
             <div class="d-flex justify-content-center gap-2 mb-3">
@@ -765,6 +774,23 @@ class AdminPanel {
                   user.admin ? "checked" : ""
                 }>
                 <label class="form-check-label">Admin</label>
+              </div>
+              <div class="mb-3">
+                <label class="form-label">Character Limit Override</label>
+                <p style="font-size: 12px; color: var(--text-secondary); margin-bottom: 8px;">
+                  Current: ${
+                    user.character_limit ||
+                    (user.gold
+                      ? "16,500 (Gold Default)"
+                      : user.verified
+                      ? "5,500 (Verified Default)"
+                      : "400 (Standard Default)")
+                  }
+                </p>
+                <input type="number" class="form-control" id="editProfileCharacterLimit" value="${
+                  user.character_limit || ""
+                }" placeholder="Leave empty to use tier default" min="1">
+                <small style="color: var(--text-secondary);">Tier defaults: 400 (Standard) | 5,500 (Verified) | 16,500 (Gold)</small>
               </div>
             </form>
             
@@ -981,9 +1007,23 @@ class AdminPanel {
       verified: document.getElementById("editProfileVerified").checked,
       gold: document.getElementById("editProfileGold").checked,
       admin: document.getElementById("editProfileAdmin").checked,
-      follower_count: parseInt(document.getElementById("editProfileFollowers").value) || 0,
-      following_count: parseInt(document.getElementById("editProfileFollowing").value) || 0,
+      follower_count:
+        parseInt(document.getElementById("editProfileFollowers").value) || 0,
+      following_count:
+        parseInt(document.getElementById("editProfileFollowing").value) || 0,
     };
+
+    const characterLimitInput = document.getElementById(
+      "editProfileCharacterLimit"
+    );
+    if (characterLimitInput?.value?.trim()) {
+      const charLimit = parseInt(characterLimitInput.value);
+      if (!Number.isNaN(charLimit) && charLimit > 0) {
+        payload.character_limit = charLimit;
+      }
+    } else {
+      payload.character_limit = null;
+    }
 
     try {
       await this.apiCall(`/api/admin/users/${userId}`, {
@@ -1224,7 +1264,8 @@ class AdminPanel {
     const userId = document.getElementById("tweetUserId").value;
     const content = document.getElementById("tweetContent").value;
     const replyToRaw = document.getElementById("tweetReplyTo")?.value;
-    const replyTo = replyToRaw && replyToRaw.trim() ? replyToRaw.trim() : undefined;
+    const replyTo =
+      replyToRaw && replyToRaw.trim() ? replyToRaw.trim() : undefined;
     // Admin panel: unlimited by default
     const noCharLimit = true;
 

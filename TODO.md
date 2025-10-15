@@ -4,6 +4,7 @@
 
 - tweetapus happies robot ✨
 - communities
+- custom emojis
 
 ## later
 

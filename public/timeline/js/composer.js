@@ -2,6 +2,7 @@ import { isConvertibleImage } from "../../shared/image-utils.js";
 import toastQueue from "../../shared/toasts.js";
 import query from "./api.js";
 import getUser from "./auth.js";
+import { showEmojiPickerPopup } from "../../shared/emoji-picker.js";
 
 export const useComposer = (
   element,
@@ -34,6 +35,7 @@ export const useComposer = (
   const scheduleTimeInput = element.querySelector("#schedule-time");
   const confirmScheduleBtn = element.querySelector("#confirm-schedule-btn");
   const clearScheduleBtn = element.querySelector("#clear-schedule-btn");
+  const emojiBtn = element.querySelector("#emoji-btn");
 
   let pollEnabled = false;
   let pendingFiles = [];
@@ -128,6 +130,20 @@ export const useComposer = (
 
   if (pollToggle) {
     pollToggle.addEventListener("click", togglePoll);
+  }
+
+  if (emojiBtn) {
+    emojiBtn.addEventListener("click", () => {
+      const btnRect = emojiBtn.getBoundingClientRect();
+      showEmojiPickerPopup((emoji) => {
+        textarea.value += emoji;
+        textarea.dispatchEvent(new Event("input", { bubbles: true }));
+        updateCharacterCount();
+      }, {
+        x: btnRect.left,
+        y: btnRect.bottom + 8,
+      });
+    });
   }
 
   const convertToWebP = (file, quality = 0.8) => {
@@ -929,6 +945,9 @@ export const createComposer = async ({
                   <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" viewBox="0 0 256 256"><path d="M144,72V184a8,8,0,0,1-16,0V72a8,8,0,0,1,16,0Zm88-8H176a8,8,0,0,0-8,8V184a8,8,0,0,0,16,0V136h40a8,8,0,0,0,0-16H184V80h48a8,8,0,0,0,0-16ZM96,120H72a8,8,0,0,0,0,16H88v16a24,24,0,0,1-48,0V104A24,24,0,0,1,64,80c11.19,0,21.61,7.74,24.25,18a8,8,0,0,0,15.5-4C99.27,76.62,82.56,64,64,64a40,40,0,0,0-40,40v48a40,40,0,0,0,80,0V128A8,8,0,0,0,96,120Z"></path></svg>
                 </button>
                 <button type="button" id="poll-toggle"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-chart-bar-big-icon lucide-chart-bar-big"><path d="M3 3v16a2 2 0 0 0 2 2h16"></path><rect x="7" y="13" width="9" height="4" rx="1"></rect><rect x="7" y="5" width="12" height="4" rx="1"></rect></svg></button>
+                <button type="button" id="emoji-btn" title="Add emoji">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M8 14s1.5 2 4 2 4-2 4-2"/><line x1="9" y1="9" x2="9.01" y2="9"/><line x1="15" y1="9" x2="15.01" y2="9"/></svg>
+                </button>
                 <button type="button" id="schedule-btn" title="Schedule tweet">
                   <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                     <circle cx="12" cy="12" r="10"/>
@@ -1006,18 +1025,24 @@ export const createComposer = async ({
 
   try {
     const user = await getUser();
-    el.querySelector(".compose-header img").src =
-      user?.avatar || "/public/shared/default-avatar.png";
+    const avatarImg = el.querySelector(".compose-header img");
+    avatarImg.src = user?.avatar || "/public/shared/default-avatar.png";
+    
+    const radius = user?.avatar_radius ?? (user?.gold ? 4 : 50);
+    avatarImg.style.borderRadius = `${radius}%`;
   } catch (error) {
     console.error("Error loading user avatar:", error);
-    el.querySelector(".compose-header img").src =
-      "/public/shared/default-avatar.png";
+    const avatarImg = el.querySelector(".compose-header img");
+    avatarImg.src = "/public/shared/default-avatar.png";
+    avatarImg.style.borderRadius = "50%";
   }
 
-  // Determine max characters based on whether user is verified
+  // Determine max characters based on user's character_limit or tier
   try {
     const user = await getUser();
-    const maxChars = user?.gold ? 16500 : user?.verified ? 5500 : 400;
+    const maxChars = user?.character_limit !== null && user?.character_limit !== undefined
+      ? user.character_limit
+      : (user?.gold ? 16500 : user?.verified ? 5500 : 400);
 
     // update the counter display to show the right max
     const counter = el.querySelector(".character-counter");

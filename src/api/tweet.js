@@ -112,7 +112,7 @@ const updateQuoteCount = db.query(`
 `);
 
 const getQuotedTweet = db.query(`
-  SELECT posts.*, users.username, users.name, users.avatar, users.verified
+  SELECT posts.*, users.username, users.name, users.avatar, users.verified, users.gold, users.avatar_radius
   FROM posts
   JOIN users ON posts.user_id = users.id
   WHERE posts.id = ?
@@ -156,7 +156,7 @@ const getTotalPollVotes = db.query(`
 `);
 
 const getPollVoters = db.query(`
-  SELECT DISTINCT users.username, users.name, users.avatar, users.verified
+  SELECT DISTINCT users.username, users.name, users.avatar, users.verified, users.gold, users.avatar_radius
   FROM poll_votes 
   JOIN users ON poll_votes.user_id = users.id 
   WHERE poll_votes.poll_id = ?
@@ -165,7 +165,7 @@ const getPollVoters = db.query(`
 `);
 
 const getTweetLikes = db.query(`
-  SELECT users.username, users.name, users.avatar, users.verified
+  SELECT users.username, users.name, users.avatar, users.verified, users.gold, users.avatar_radius
   FROM likes
   JOIN users ON likes.user_id = users.id
   WHERE likes.post_id = ?
@@ -174,7 +174,7 @@ const getTweetLikes = db.query(`
 `);
 
 const getTweetRetweets = db.query(`
-  SELECT users.username, users.name, users.avatar, users.verified
+  SELECT users.username, users.name, users.avatar, users.verified, users.gold, users.avatar_radius
   FROM retweets
   JOIN users ON retweets.user_id = users.id
   WHERE retweets.post_id = ?
@@ -183,7 +183,7 @@ const getTweetRetweets = db.query(`
 `);
 
 const getTweetQuotes = db.query(`
-  SELECT users.username, users.name, users.avatar, users.verified
+  SELECT users.username, users.name, users.avatar, users.verified, users.gold, users.avatar_radius
   FROM posts
   JOIN users ON posts.user_id = users.id
   WHERE posts.quote_tweet_id = ?
@@ -255,6 +255,8 @@ const getQuotedTweetData = (quoteTweetId, userId) => {
       name: quotedTweet.name,
       avatar: quotedTweet.avatar,
       verified: quotedTweet.verified || false,
+      gold: quotedTweet.gold || false,
+      avatar_radius: quotedTweet.avatar_radius || null,
     },
     poll: getPollDataForTweet(quotedTweet.id, userId),
     attachments: getTweetAttachments(quotedTweet.id),
@@ -380,8 +382,11 @@ export default new Elysia({ prefix: "/tweets" })
         }
       }
 
-      // Allow longer tweets for gold or verified users
-      const maxTweetLength = user.gold ? 16500 : user.verified ? 5500 : 400;
+      // Allow longer tweets for gold or verified users, or use custom limit
+      let maxTweetLength = user.character_limit || 400;
+      if (!user.character_limit) {
+        maxTweetLength = user.gold ? 16500 : user.verified ? 5500 : 400;
+      }
       if (trimmedContent.length > maxTweetLength) {
         return {
           error: `Tweet content must be ${maxTweetLength} characters or less`,

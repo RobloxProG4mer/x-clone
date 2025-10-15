@@ -155,7 +155,7 @@ const adminQueries = {
     "INSERT INTO posts (id, user_id, content, reply_to, created_at) VALUES (?, ?, ?, ?, datetime('now'))"
   ),
   updateUser: db.query(
-    "UPDATE users SET username = ?, name = ?, bio = ?, verified = ?, admin = ?, gold = ?, follower_count = ?, following_count = ? WHERE id = ?"
+    "UPDATE users SET username = ?, name = ?, bio = ?, verified = ?, admin = ?, gold = ?, follower_count = ?, following_count = ?, character_limit = ? WHERE id = ?"
   ),
 
   // DM Management queries
@@ -690,7 +690,9 @@ export default new Elysia({ prefix: "/admin" })
       // if it's a reply, increment reply count for the parent
       if (replyTo) {
         try {
-          db.query("UPDATE posts SET reply_count = reply_count + 1 WHERE id = ?").run(replyTo);
+          db.query(
+            "UPDATE posts SET reply_count = reply_count + 1 WHERE id = ?"
+          ).run(replyTo);
         } catch (e) {
           // ignore failures silently but log
           console.error("Failed to update parent reply count:", e);
@@ -741,10 +743,30 @@ export default new Elysia({ prefix: "/admin" })
         changes.gold = { old: user.gold, new: body.gold };
       if (body.admin !== undefined && body.admin !== user.admin)
         changes.admin = { old: user.admin, new: body.admin };
-      if (body.follower_count !== undefined && body.follower_count !== user.follower_count)
-        changes.follower_count = { old: user.follower_count, new: body.follower_count };
-      if (body.following_count !== undefined && body.following_count !== user.following_count)
-        changes.following_count = { old: user.following_count, new: body.following_count };
+      if (
+        body.follower_count !== undefined &&
+        body.follower_count !== user.follower_count
+      )
+        changes.follower_count = {
+          old: user.follower_count,
+          new: body.follower_count,
+        };
+      if (
+        body.following_count !== undefined &&
+        body.following_count !== user.following_count
+      )
+        changes.following_count = {
+          old: user.following_count,
+          new: body.following_count,
+        };
+      if (
+        body.character_limit !== undefined &&
+        body.character_limit !== user.character_limit
+      )
+        changes.character_limit = {
+          old: user.character_limit,
+          new: body.character_limit,
+        };
 
       let newVerified =
         body.verified !== undefined
@@ -766,8 +788,15 @@ export default new Elysia({ prefix: "/admin" })
         newVerified,
         body.admin !== undefined ? body.admin : user.admin,
         newGold,
-        body.follower_count !== undefined ? body.follower_count : user.follower_count,
-        body.following_count !== undefined ? body.following_count : user.following_count,
+        body.follower_count !== undefined
+          ? body.follower_count
+          : user.follower_count,
+        body.following_count !== undefined
+          ? body.following_count
+          : user.following_count,
+        body.character_limit !== undefined
+          ? body.character_limit
+          : user.character_limit,
         params.id
       );
 
@@ -791,6 +820,7 @@ export default new Elysia({ prefix: "/admin" })
         admin: t.Optional(t.Boolean()),
         follower_count: t.Optional(t.Number()),
         following_count: t.Optional(t.Number()),
+        character_limit: t.Optional(t.Union([t.Number(), t.Null()])),
       }),
     }
   )

@@ -59,7 +59,9 @@ let _user;
 		<p>You may also pursue alternative forms of redress, including out-of-court dispute settlement or judicial redress.</p>
 		
 		<p><a href="javascript:" onclick="localStorage.removeItem("authToken");window.location.href = "/";">Log out</a></p>`;
-    document.body.querySelectorAll("p").forEach((p) => { p.style.marginBottom = "0px" });
+    document.body.querySelectorAll("p").forEach((p) => {
+      p.style.marginBottom = "0px";
+    });
     return;
   }
 
@@ -130,6 +132,15 @@ let _user;
 
   document.querySelector(".account img").src =
     user.avatar || `/public/shared/default-avatar.png`;
+
+  const accountAvatarImg = document.querySelector(".account img");
+  if (user.avatar_radius !== null && user.avatar_radius !== undefined) {
+    accountAvatarImg.style.borderRadius = `${user.avatar_radius}px`;
+  } else if (user.gold) {
+    accountAvatarImg.style.borderRadius = "4px";
+  } else {
+    accountAvatarImg.style.borderRadius = "50px";
+  }
 
   const accountBtn = document.querySelector(".account");
   accountBtn.addEventListener("click", (e) => {

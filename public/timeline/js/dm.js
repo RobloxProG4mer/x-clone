@@ -2,6 +2,7 @@ import toastQueue from "../../shared/toasts.js";
 import query from "./api.js";
 import { authToken } from "./auth.js";
 import switchPage, { addRoute } from "./pages.js";
+import { showEmojiPickerPopup } from "../../shared/emoji-picker.js";
 
 function sanitizeHTML(str) {
   const div = document.createElement("div");
@@ -1368,38 +1369,23 @@ async function toggleReaction(messageId, emoji) {
 }
 
 function showReactionPicker(messageId) {
-  const commonEmojis = ["❤️", "👍", "😂", "😮", "😢", "🙏", "🎉", "🔥"];
+  const messageEl = document.querySelector(`[data-message-id="${messageId}"]`);
+  if (!messageEl) return;
+
+  const btnRect = messageEl.querySelector(".dm-add-reaction")?.getBoundingClientRect();
+  if (!btnRect) return;
 
   const existingPicker = document.getElementById("reactionPicker");
   if (existingPicker) {
     existingPicker.remove();
   }
 
-  const messageEl = document.querySelector(`[data-message-id="${messageId}"]`);
-  if (!messageEl) return;
-
-  const picker = document.createElement("div");
-  picker.id = "reactionPicker";
-  picker.className = "dm-reaction-picker";
-  picker.innerHTML = commonEmojis
-    .map(
-      (emoji) =>
-        `<button class="dm-reaction-picker-emoji" onclick="toggleReaction('${messageId}', '${emoji}')">${emoji}</button>`
-    )
-    .join("");
-
-  messageEl.appendChild(picker);
-
-  const closePicker = (e) => {
-    if (!picker.contains(e.target)) {
-      picker.remove();
-      document.removeEventListener("click", closePicker);
-    }
-  };
-
-  setTimeout(() => {
-    document.addEventListener("click", closePicker);
-  }, 10);
+  showEmojiPickerPopup((emoji) => {
+    toggleReaction(messageId, emoji);
+  }, {
+    x: btnRect.left,
+    y: btnRect.bottom + 8,
+  });
 }
 
 function replyToMessage(messageId, authorName, messagePreview) {

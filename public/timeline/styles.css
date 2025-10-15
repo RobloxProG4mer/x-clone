@@ -2103,7 +2103,8 @@ nav {
   }
 
   input,
-  textarea {
+  textarea,
+  select {
     width: 100%;
     padding: 12px 16px;
     border: 1px solid var(--border-primary);
@@ -2124,6 +2125,15 @@ nav {
     }
   }
 
+  select {
+    cursor: pointer;
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23999' d='M6 9L1 4h10z'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 12px center;
+    padding-right: 36px;
+  }
+
   textarea {
     resize: vertical;
     min-height: 80px;
@@ -2134,6 +2144,26 @@ nav {
     font-size: 12px;
     color: var(--text-secondary);
     margin-top: 4px;
+  }
+
+  .checkbox-label {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    cursor: pointer;
+    font-weight: 500;
+    margin-bottom: 0;
+
+    input[type="checkbox"] {
+      width: auto;
+      cursor: pointer;
+      margin: 0;
+      accent-color: var(--primary);
+    }
+
+    span {
+      font-weight: 500;
+    }
   }
 }
 
@@ -5012,4 +5042,164 @@ nav {
       background-color: rgba(var(--primary-rgb), 0.08);
     }
   }
+}
+
+.emoji-picker {
+  background: var(--bg-primary);
+  border: 1px solid var(--border-primary);
+  border-radius: 12px;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
+  z-index: 10001;
+  font-family: inherit;
+
+  .emoji-picker-content {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+  }
+
+  .emoji-picker-search {
+    padding: 12px;
+    border-bottom: 1px solid var(--border-primary);
+
+    .emoji-picker-search-input {
+      width: 100%;
+      padding: 8px 12px;
+      border: 1px solid var(--border-primary);
+      border-radius: 8px;
+      background: var(--bg-secondary);
+      color: var(--text-primary);
+      font-family: inherit;
+      font-size: 14px;
+
+      &::placeholder {
+        color: var(--text-secondary);
+      }
+
+      &:focus {
+        outline: none;
+        border-color: var(--primary);
+      }
+    }
+  }
+
+  .emoji-picker-tabs {
+    display: flex;
+    gap: 4px;
+    padding: 8px 12px;
+    border-bottom: 1px solid var(--border-primary);
+    overflow-x: auto;
+
+    .emoji-picker-tab {
+      width: 40px;
+      height: 40px;
+      border: 1px solid transparent;
+      background: transparent;
+      border-radius: 8px;
+      font-size: 20px;
+      cursor: pointer;
+      transition: all 0.15s ease;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+
+      &:hover {
+        background: var(--bg-secondary);
+      }
+
+      &.active {
+        background: var(--bg-secondary);
+        border-color: var(--primary);
+      }
+    }
+  }
+
+  .emoji-picker-grid {
+    display: grid;
+    grid-template-columns: repeat(8, 1fr);
+    gap: 4px;
+    padding: 12px;
+    max-height: 300px;
+    overflow-y: auto;
+    width: 340px;
+
+    .emoji-button {
+      aspect-ratio: 1;
+      border: none;
+      background: transparent;
+      font-size: 24px;
+      cursor: pointer;
+      border-radius: 6px;
+      transition: all 0.15s ease;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+
+      &:hover {
+        background: var(--bg-secondary);
+        transform: scale(1.1);
+      }
+
+      &:active {
+        transform: scale(0.95);
+      }
+    }
+
+    .emoji-no-results {
+      grid-column: 1 / -1;
+      text-align: center;
+      padding: 32px 16px;
+      color: var(--text-secondary);
+      font-size: 14px;
+    }
+  }
+}
+
+.emoji-picker-popup {
+  position: fixed;
+  max-width: 340px;
+}
+
+.profile-label,
+.tweet-label {
+  display: inline-block;
+  margin-left: 6px;
+  padding: 2px 6px;
+  font-size: 11px;
+  font-weight: 600;
+  border-radius: 3px;
+  text-transform: capitalize;
+  letter-spacing: 0.3px;
+  vertical-align: middle;
+}
+
+.profile-label {
+  padding: 4px 8px;
+  font-size: 12px;
+}
+
+.label-parody {
+  background-color: rgba(218, 165, 32, 0.15);
+  color: #B8860B;
+  border: 1px solid rgba(218, 165, 32, 0.3);
+}
+
+.label-fan {
+  background-color: rgba(219, 39, 119, 0.15);
+  color: #DB2777;
+  border: 1px solid rgba(219, 39, 119, 0.3);
+}
+
+.label-commentary {
+  background-color: rgba(59, 130, 246, 0.15);
+  color: #3B82F6;
+  border: 1px solid rgba(59, 130, 246, 0.3);
+}
+
+.label-automated {
+  background-color: rgba(107, 114, 128, 0.15);
+  color: #6B7280;
+  border: 1px solid rgba(107, 114, 128, 0.3);
 }

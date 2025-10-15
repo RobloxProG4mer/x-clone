@@ -8,7 +8,7 @@ import { addNotification } from "./notifications.js";
 const JWT_SECRET = process.env.JWT_SECRET;
 
 const getFollowers = db.query(`
-  SELECT users.id, users.username, users.name, users.avatar, users.verified, users.gold, users.bio
+  SELECT users.id, users.username, users.name, users.avatar, users.verified, users.gold, users.avatar_radius, users.bio
   FROM follows
   JOIN users ON follows.follower_id = users.id
   WHERE follows.following_id = ? AND users.suspended = 0
@@ -17,7 +17,7 @@ const getFollowers = db.query(`
 `);
 
 const getFollowing = db.query(`
-  SELECT users.id, users.username, users.name, users.avatar, users.verified, users.gold, users.bio
+  SELECT users.id, users.username, users.name, users.avatar, users.verified, users.gold, users.avatar_radius, users.bio
   FROM follows
   JOIN users ON follows.following_id = users.id
   WHERE follows.follower_id = ? AND users.suspended = 0
@@ -37,6 +37,12 @@ const updateThemeAccent = db.query(`
 	UPDATE users
 	SET theme = ?, accent_color = ?
 	WHERE id = ?
+`);
+
+const updateLabels = db.query(`
+  UPDATE users
+  SET label_type = ?, label_automated = ?
+  WHERE id = ?
 `);
 
 const updateBanner = db.query(`
@@ -134,7 +140,7 @@ const deleteFollowRequest = db.query(`
 `);
 
 const getPendingFollowRequests = db.query(`
-  SELECT fr.*, u.username, u.name, u.avatar, u.verified, u.gold, u.bio
+  SELECT fr.*, u.username, u.name, u.avatar, u.verified, u.gold, u.avatar_radius, u.bio
   FROM follow_requests fr
   JOIN users u ON fr.requester_id = u.id
   WHERE fr.target_id = ? AND fr.status = 'pending'
@@ -165,7 +171,7 @@ const getTotalPollVotes = db.query(`
 `);
 
 const getPollVoters = db.query(`
-  SELECT DISTINCT users.username, users.name, users.avatar, users.verified, users.gold
+  SELECT DISTINCT users.username, users.name, users.avatar, users.verified, users.gold, users.avatar_radius
   FROM poll_votes 
   JOIN users ON poll_votes.user_id = users.id 
   WHERE poll_votes.poll_id = ?
@@ -174,7 +180,7 @@ const getPollVoters = db.query(`
 `);
 
 const getQuotedTweet = db.query(`
-  SELECT posts.*, users.username, users.name, users.avatar, users.verified, users.gold
+  SELECT posts.*, users.username, users.name, users.avatar, users.verified, users.gold, users.avatar_radius
   FROM posts
   JOIN users ON posts.user_id = users.id
   WHERE posts.id = ?
@@ -204,6 +210,8 @@ const getQuotedTweetData = (quoteTweetId, userId) => {
       name: quotedTweet.name,
       avatar: quotedTweet.avatar,
       verified: quotedTweet.verified || false,
+      gold: quotedTweet.gold || false,
+      avatar_radius: quotedTweet.avatar_radius || null,
     },
     poll: getPollDataForTweet(quotedTweet.id, userId),
     attachments: getTweetAttachments(quotedTweet.id),
@@ -486,8 +494,15 @@ export default new Elysia({ prefix: "/profile" })
 
       const { theme, accent_color } = body;
 
+      const { label_type, label_automated } = body;
+
       let radiusToStore = currentUser.avatar_radius;
       if (body.avatar_radius !== undefined) {
+        if (!currentUser.gold) {
+          return {
+            error: "Only gold accounts can customize avatar corner radius",
+          };
+        }
         const parsed = parseInt(body.avatar_radius, 10);
         if (Number.isNaN(parsed) || parsed < 0 || parsed > 1000) {
           return { error: "Invalid avatar radius" };
@@ -515,6 +530,23 @@ export default new Elysia({ prefix: "/profile" })
         return { error: "Pronouns must be 30 characters or less" };
       }
 
+      if (label_type !== undefined) {
+        const validLabels = ["parody", "fan", "commentary", null];
+        if (!validLabels.includes(label_type)) {
+          return {
+            error:
+              "Invalid label type. Must be parody, fan, commentary, or none",
+          };
+        }
+      }
+
+      const labelTypeToStore =
+        label_type !== undefined ? label_type : currentUser.label_type;
+      const labelAutomatedToStore =
+        label_automated !== undefined
+          ? !!label_automated
+          : currentUser.label_automated || false;
+
       updateProfile.run(
         name || currentUser.name,
         bio !== undefined ? bio : currentUser.bio,
@@ -528,6 +560,14 @@ export default new Elysia({ prefix: "/profile" })
         updateThemeAccent.run(
           theme !== undefined ? theme : currentUser.theme,
           accent_color !== undefined ? accent_color : currentUser.accent_color,
+          currentUser.id
+        );
+      }
+
+      if (label_type !== undefined || label_automated !== undefined) {
+        updateLabels.run(
+          labelTypeToStore,
+          labelAutomatedToStore,
           currentUser.id
         );
       }
