@@ -1647,6 +1647,17 @@ export const createTweetElement = (tweet, config = {}) => {
           });
 
           // Also mark the tweet element visually so CSS can style it
+          // done ok
+          // what do we trying doing RN on tweetapus???
+          // Tr, a the answer
+          // idk, OpuaYT, but i pulled the changes
+          // ok
+
+          // maybe the algorithm
+          // algo but in Bun?
+
+          // maybe idk Tr Happies
+          // maybe we fix SQLiteError: no such column: view_count yes
           tweetEl.classList.add("blocked-by-profile");
         }
       }

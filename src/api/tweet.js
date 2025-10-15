@@ -5,6 +5,7 @@ import db from "./../db.js";
 import ratelimit from "../helpers/ratelimit.js";
 import { extractAndSaveHashtags } from "./hashtags.js";
 import { addNotification } from "./notifications.js";
+import { generateAIResponse } from "../helpers/ai-assistant.js";
 
 const JWT_SECRET = process.env.JWT_SECRET;
 
@@ -538,6 +539,51 @@ export default new Elysia({ prefix: "/tweets" })
             `${user.name || user.username} mentioned you in a tweet`,
             tweetId
           );
+        }
+      }
+
+      const shouldTriggerAI = mentions.has("h") || mentions.has("H");
+      let isReplyToAIThread = false;
+      
+      if (!shouldTriggerAI && reply_to) {
+        const aiUser = getUserByUsername.get("h");
+        if (aiUser) {
+          const threadPosts = getTweetWithThread.all(reply_to);
+          isReplyToAIThread = threadPosts.some(post => post.user_id === aiUser.id);
+        }
+      }
+
+      if (shouldTriggerAI || isReplyToAIThread) {
+        const aiUser = getUserByUsername.get("h");
+        if (aiUser) {
+          (async () => {
+            try {
+              const aiResponse = await generateAIResponse(tweetId, trimmedContent, db);
+              if (aiResponse) {
+                const aiTweetId = Bun.randomUUIDv7();
+                createTweet.get(
+                  aiTweetId,
+                  aiUser.id,
+                  aiResponse,
+                  tweetId,
+                  null,
+                  null,
+                  null,
+                  "everyone",
+                  null
+                );
+                updatePostCounts.run(tweetId);
+                addNotification(
+                  user.id,
+                  "reply",
+                  `${aiUser.name || aiUser.username} replied to your tweet`,
+                  aiTweetId
+                );
+              }
+            } catch (error) {
+              console.error("Failed to generate AI response:", error);
+            }
+          })();
         }
       }
 
