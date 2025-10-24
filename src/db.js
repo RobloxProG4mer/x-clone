@@ -205,6 +205,7 @@ CREATE TABLE IF NOT EXISTS attachments (
   file_type TEXT NOT NULL,
   file_size INTEGER NOT NULL,
   file_url TEXT NOT NULL,
+  is_spoiler BOOLEAN DEFAULT FALSE,
   created_at TIMESTAMP DEFAULT (datetime('now', 'utc')),
   FOREIGN KEY (post_id) REFERENCES posts(id) ON DELETE CASCADE
 );

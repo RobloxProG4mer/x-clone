@@ -1040,7 +1040,35 @@ export const createTweetElement = (tweet, config = {}) => {
         img.src = attachment.file_url;
         img.alt = attachment.file_name;
         img.loading = "lazy";
+
+        if (attachment.is_spoiler) {
+          attachmentEl.classList.add("spoiler");
+          const spoilerOverlay = document.createElement("div");
+          spoilerOverlay.className = "spoiler-overlay";
+          spoilerOverlay.innerHTML = `
+            <div class="spoiler-content">
+              <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="10"></circle>
+                <line x1="12" y1="8" x2="12" y2="12"></line>
+                <line x1="12" y1="16" x2="12.01" y2="16"></line>
+              </svg>
+              <span>Spoiler</span>
+            </div>
+          `;
+          spoilerOverlay.addEventListener("click", (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            attachmentEl.classList.toggle("spoiler-revealed");
+          });
+          attachmentEl.appendChild(spoilerOverlay);
+        }
+
         img.addEventListener("click", async (e) => {
+          if (attachment.is_spoiler && !attachmentEl.classList.contains("spoiler-revealed")) {
+            e.preventDefault();
+            e.stopPropagation();
+            return;
+          }
           e.preventDefault();
           e.stopPropagation();
           const { openImageFullscreen } = await import(
@@ -1696,8 +1724,16 @@ export const createTweetElement = (tweet, config = {}) => {
               padding: 12px;
               margin-bottom: 8px;
               text-align: left;
-              border: 1px solid ${option.value === currentRestriction ? "var(--primary)" : "var(--border-primary)"};
-              background: ${option.value === currentRestriction ? "rgba(var(--primary-rgb), 0.1)" : "transparent"};
+              border: 1px solid ${
+                option.value === currentRestriction
+                  ? "var(--primary)"
+                  : "var(--border-primary)"
+              };
+              background: ${
+                option.value === currentRestriction
+                  ? "rgba(var(--primary-rgb), 0.1)"
+                  : "transparent"
+              };
               border-radius: 8px;
               cursor: pointer;
               color: var(--text-primary);
@@ -1713,18 +1749,25 @@ export const createTweetElement = (tweet, config = {}) => {
 
             optionBtn.addEventListener("click", async () => {
               try {
-                const result = await query(`/tweets/${tweet.id}/reply-restriction`, {
-                  method: "PATCH",
-                  headers: { "Content-Type": "application/json" },
-                  body: JSON.stringify({ reply_restriction: option.value }),
-                });
+                const result = await query(
+                  `/tweets/${tweet.id}/reply-restriction`,
+                  {
+                    method: "PATCH",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ reply_restriction: option.value }),
+                  }
+                );
 
                 if (result.success) {
                   tweet.reply_restriction = option.value;
                   closeModal();
                   toastQueue.add(`<h1>Reply restriction updated</h1>`);
                 } else {
-                  toastQueue.add(`<h1>${result.error || "Failed to update reply restriction"}</h1>`);
+                  toastQueue.add(
+                    `<h1>${
+                      result.error || "Failed to update reply restriction"
+                    }</h1>`
+                  );
                 }
               } catch (err) {
                 console.error("Error updating reply restriction:", err);
@@ -1906,7 +1949,9 @@ export const createTweetElement = (tweet, config = {}) => {
             if (!restrictionEl) {
               restrictionEl = document.createElement("div");
               restrictionEl.className = "reply-restriction-info";
-              const existingRestriction = tweetEl.querySelector(".reply-restriction-info");
+              const existingRestriction = tweetEl.querySelector(
+                ".reply-restriction-info"
+              );
               if (!existingRestriction && tweetInteractionsEl.parentNode) {
                 tweetEl.insertBefore(restrictionEl, tweetInteractionsEl);
               }
@@ -1920,14 +1965,17 @@ export const createTweetElement = (tweet, config = {}) => {
               if (!allowed) {
                 tweetInteractionsReplyEl.disabled = true;
                 tweetInteractionsReplyEl.classList.add("reply-restricted");
-                tweetInteractionsReplyEl.title = "You cannot reply to this tweet";
+                tweetInteractionsReplyEl.title =
+                  "You cannot reply to this tweet";
               }
 
               if (restrictionText) {
                 if (!restrictionEl) {
                   restrictionEl = document.createElement("div");
                   restrictionEl.className = "reply-restriction-info";
-                  const existingRestriction = tweetEl.querySelector(".reply-restriction-info");
+                  const existingRestriction = tweetEl.querySelector(
+                    ".reply-restriction-info"
+                  );
                   if (!existingRestriction && tweetInteractionsEl.parentNode) {
                     tweetEl.insertBefore(restrictionEl, tweetInteractionsEl);
                   }

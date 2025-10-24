@@ -121,7 +121,7 @@ body {
   border-radius: 12px;
   overflow: hidden;
   cursor: pointer;
-  transition: border-color 0.2s;
+  /* removed transition to avoid subtle hover animations */
 
   &:hover {
     border-color: var(--primary);
@@ -131,12 +131,13 @@ body {
 .community-banner {
   width: 100%;
   height: 120px;
-  background: linear-gradient(135deg, var(--primary), #6366f1);
+  /* use a neutral solid background instead of a gradient */
+  background-color: var(--bg-secondary);
   background-size: cover;
   background-position: center;
 
   &.default {
-    background: linear-gradient(135deg, var(--primary), #6366f1);
+    background-color: var(--bg-secondary);
   }
 }
 
@@ -311,7 +312,7 @@ body {
   align-items: center;
   justify-content: center;
   border-radius: 50%;
-  transition: all 0.2s;
+  /* removed transition to avoid subtle hover animations */
 
   &:hover {
     background: var(--bg-secondary);
@@ -368,12 +369,13 @@ body {
 .community-modal-banner {
   width: 100%;
   height: 150px;
-  background: linear-gradient(135deg, var(--primary), #6366f1);
+  /* use a neutral solid background instead of a gradient */
+  background-color: var(--bg-secondary);
   background-size: cover;
   background-position: center;
 
   &.default {
-    background: linear-gradient(135deg, var(--primary), #6366f1);
+    background-color: var(--bg-secondary);
   }
 }
 
@@ -574,4 +576,67 @@ body {
     border-radius: 8px;
     border: 1px solid var(--border-primary);
   }
+}
+
+/* Motion-free override scoped to the standalone Communities page only
+   - Uses a unique body-level class to avoid collisions with SPA selectors
+*/
+.communities-standalone * {
+  /* disable keyframe animations and transitions, but allow layout transforms */
+  animation: none !important;
+  transition: none !important;
+  will-change: auto !important;
+}
+
+/* disable hover/active transform motion and pseudo-element animations */
+.communities-standalone *:hover,
+.communities-standalone *:active,
+.communities-standalone *:focus {
+  transform: none !important;
+}
+
+.communities-standalone *::before,
+.communities-standalone *::after {
+  animation: none !important;
+  transform: none !important;
+}
+
+/* Targeted overrides for known problematic elements mentioned by user */
+.communities-standalone .create-community-btn,
+.communities-standalone #createCommunityBtn {
+  /* Remove transitions/animations for the create button */
+  transition: none !important;
+  animation: none !important;
+  transform: none !important;
+  /* Keep visual affordance via color-change only (no motion) */
+}
+
+.communities-standalone .community-card {
+  /* Ensure cards don't animate or shift on hover */
+  transition: none !important;
+  animation: none !important;
+  transform: none !important;
+  /* Make sure border/color stays stable on hover */
+  border-color: var(--border-primary) !important;
+}
+
+.communities-standalone .community-card:hover {
+  /* prevent translate/scale lift on hover while allowing color change if any */
+  transform: none !important;
+  box-shadow: none !important;
+  border-color: var(--border-primary) !important;
+}
+
+.communities-standalone .community-banner {
+  /* Remove gradient/background-image, use neutral solid background */
+  background-image: none !important;
+  background: var(--bg-secondary) !important;
+  background-color: var(--bg-secondary) !important;
+  transition: none !important;
+  animation: none !important;
+}
+
+.communities-standalone .community-banner.default {
+  background-image: none !important;
+  background: var(--bg-secondary) !important;
 }

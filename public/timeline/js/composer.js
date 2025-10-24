@@ -255,13 +255,27 @@ export const useComposer = (
     const previewEl = document.createElement("div");
     previewEl.className = "attachment-preview-item";
     previewEl.dataset.tempId = fileData.tempId;
+    previewEl.dataset.isSpoiler = "false";
 
     if (fileData.type.startsWith("image/")) {
       const objectUrl = URL.createObjectURL(fileData.file);
       previewEl.innerHTML = `
 				<img src="${objectUrl}" alt="${fileData.name}" />
+				<button type="button" class="toggle-spoiler" title="Mark as spoiler">🚫</button>
 				<button type="button" class="remove-attachment">×</button>
 			`;
+      previewEl
+        .querySelector(".toggle-spoiler")
+        ?.addEventListener("click", (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          const isSpoiler = previewEl.dataset.isSpoiler === "true";
+          previewEl.dataset.isSpoiler = isSpoiler ? "false" : "true";
+          const btn = previewEl.querySelector(".toggle-spoiler");
+          btn.textContent = isSpoiler ? "🚫" : "⚠️";
+          btn.title = isSpoiler ? "Mark as spoiler" : "Unmark as spoiler";
+          previewEl.classList.toggle("spoiler-marked", !isSpoiler);
+        });
     } else if (fileData.type === "video/mp4") {
       const objectUrl = URL.createObjectURL(fileData.file);
       previewEl.innerHTML = `
@@ -275,7 +289,6 @@ export const useComposer = (
       ?.addEventListener("click", () => {
         pendingFiles = pendingFiles.filter((f) => f.tempId !== fileData.tempId);
         previewEl.remove();
-        // update button state after removing an attachment
         updateCharacterCount();
       });
 
@@ -736,75 +749,74 @@ export const useComposer = (
   let communityOnly = false;
 
   if (communityId) {
-      const communityOnlyContainer = document.createElement("div");
-      communityOnlyContainer.className = "community-only-container";
+    const communityOnlyContainer = document.createElement("div");
+    communityOnlyContainer.className = "community-only-container";
 
-      const checkbox = document.createElement("input");
-      checkbox.type = "checkbox";
-      checkbox.id = "community-only-checkbox";
-      checkbox.className = "community-only-checkbox";
-      checkbox.addEventListener("change", (e) => {
-        communityOnly = e.target.checked;
-      });
+    const checkbox = document.createElement("input");
+    checkbox.type = "checkbox";
+    checkbox.id = "community-only-checkbox";
+    checkbox.className = "community-only-checkbox";
+    checkbox.addEventListener("change", (e) => {
+      communityOnly = e.target.checked;
+    });
 
-      const label = document.createElement("label");
-      label.htmlFor = "community-only-checkbox";
-      label.textContent =
-        "Only show in this community (hide from main timeline)";
-      label.className = "community-only-label";
+    const label = document.createElement("label");
+    label.htmlFor = "community-only-checkbox";
+    label.textContent = "Only show in this community (hide from main timeline)";
+    label.className = "community-only-label";
 
-      communityOnlyContainer.appendChild(checkbox);
-      communityOnlyContainer.appendChild(label);
+    communityOnlyContainer.appendChild(checkbox);
+    communityOnlyContainer.appendChild(label);
 
-      const composeInput = element.querySelector(".compose-input");
-      composeInput.appendChild(communityOnlyContainer);
-    }
+    const composeInput = element.querySelector(".compose-input");
+    composeInput.appendChild(communityOnlyContainer);
+  }
 
-    if (communitySelector) {
-      const communitySelectorBtn = element.querySelector(
-        "#community-selector-btn"
-      );
-      const communitySelectorDropdown = element.querySelector(
-        "#community-selector-dropdown"
-      );
+  if (communitySelector) {
+    const communitySelectorBtn = element.querySelector(
+      "#community-selector-btn"
+    );
+    const communitySelectorDropdown = element.querySelector(
+      "#community-selector-dropdown"
+    );
 
-      if (communitySelectorBtn && communitySelectorDropdown) {
-        communitySelectorBtn.addEventListener("click", async () => {
-          const isVisible = communitySelectorDropdown.style.display !== "none";
-          if (isVisible) {
-            communitySelectorDropdown.style.display = "none";
+    if (communitySelectorBtn && communitySelectorDropdown) {
+      communitySelectorBtn.addEventListener("click", async () => {
+        const isVisible = communitySelectorDropdown.style.display !== "none";
+        if (isVisible) {
+          communitySelectorDropdown.style.display = "none";
+          return;
+        }
+
+        communitySelectorDropdown.innerHTML =
+          '<div style="padding: 12px; color: var(--text-secondary);">Loading...</div>';
+        communitySelectorDropdown.style.display = "block";
+
+        try {
+          const user = await getUser();
+          console.log("Fetching communities for user:", user.userId);
+          const result = await query(
+            `/users/${user.userId}/communities?limit=50`
+          );
+
+          console.log("Communities API response:", result);
+
+          if (result.error) {
+            communitySelectorDropdown.innerHTML = `<div style="padding: 12px; color: var(--error-color); font-size: 14px;">Error: ${result.error}</div>`;
+            console.error("Communities API error:", result.error);
             return;
           }
 
-          communitySelectorDropdown.innerHTML =
-            '<div style="padding: 12px; color: var(--text-secondary);">Loading...</div>';
-          communitySelectorDropdown.style.display = "block";
+          const communities = result.communities || [];
+          console.log("Communities found:", communities.length, communities);
 
-          try {
-            const user = await getUser();
-            console.log("Fetching communities for user:", user.userId);
-            const result = await query(
-              `/users/${user.userId}/communities?limit=50`
-            );
+          if (communities.length === 0) {
+            communitySelectorDropdown.innerHTML =
+              '<div style="padding: 12px; color: var(--text-secondary); font-size: 14px;">No communities joined yet</div>';
+            return;
+          }
 
-            console.log("Communities API response:", result);
-
-            if (result.error) {
-              communitySelectorDropdown.innerHTML = `<div style="padding: 12px; color: var(--error-color); font-size: 14px;">Error: ${result.error}</div>`;
-              console.error("Communities API error:", result.error);
-              return;
-            }
-
-            const communities = result.communities || [];
-            console.log("Communities found:", communities.length, communities);
-
-            if (communities.length === 0) {
-              communitySelectorDropdown.innerHTML =
-                '<div style="padding: 12px; color: var(--text-secondary); font-size: 14px;">No communities joined yet</div>';
-              return;
-            }
-
-            communitySelectorDropdown.innerHTML = `
+          communitySelectorDropdown.innerHTML = `
             <div style="padding: 8px; border-bottom: 1px solid var(--border-primary);">
               <div class="community-option" data-community-id="" style="padding: 8px; cursor: pointer; border-radius: 6px; font-size: 14px; color: var(--text-primary); font-weight: 500;">
                 <strong>Everyone</strong>
@@ -830,184 +842,126 @@ export const useComposer = (
               .join("")}
           `;
 
-            communitySelectorDropdown
-              .querySelectorAll(".community-option")
-              .forEach((option) => {
-                option.addEventListener("mouseenter", () => {
-                  option.style.background = "var(--bg-secondary)";
-                });
-                option.addEventListener("mouseleave", () => {
-                  option.style.background = "transparent";
-                });
-                option.addEventListener("click", () => {
-                  const communityId = option.dataset.communityId;
-                  communitySelector.selectedCommunityId = communityId || null;
-
-                  const communityName = communityId
-                    ? communities.find((c) => c.id === communityId)?.name
-                    : "Everyone";
-                  communitySelectorBtn.title = communityId
-                    ? `Posting to ${communityName}`
-                    : "Select community";
-
-                  if (communityId) {
-                    communitySelectorBtn.style.color = "var(--primary)";
-                  } else {
-                    communitySelectorBtn.style.color = "";
-                  }
-
-                  communitySelectorDropdown.style.display = "none";
-                });
+          communitySelectorDropdown
+            .querySelectorAll(".community-option")
+            .forEach((option) => {
+              option.addEventListener("mouseenter", () => {
+                option.style.background = "var(--bg-secondary)";
               });
-          } catch (error) {
-            console.error("Failed to load communities:", error);
-            communitySelectorDropdown.innerHTML = `<div style="padding: 12px; color: var(--error-color); font-size: 14px;">Failed to load: ${error.message}</div>`;
-          }
-        });
+              option.addEventListener("mouseleave", () => {
+                option.style.background = "transparent";
+              });
+              option.addEventListener("click", () => {
+                const communityId = option.dataset.communityId;
+                communitySelector.selectedCommunityId = communityId || null;
 
-        document.addEventListener("click", (e) => {
-          if (
-            !communitySelectorBtn.contains(e.target) &&
-            !communitySelectorDropdown.contains(e.target)
-          ) {
-            communitySelectorDropdown.style.display = "none";
-          }
-        });
-      }
+                const communityName = communityId
+                  ? communities.find((c) => c.id === communityId)?.name
+                  : "Everyone";
+                communitySelectorBtn.title = communityId
+                  ? `Posting to ${communityName}`
+                  : "Select community";
+
+                if (communityId) {
+                  communitySelectorBtn.style.color = "var(--primary)";
+                } else {
+                  communitySelectorBtn.style.color = "";
+                }
+
+                communitySelectorDropdown.style.display = "none";
+              });
+            });
+        } catch (error) {
+          console.error("Failed to load communities:", error);
+          communitySelectorDropdown.innerHTML = `<div style="padding: 12px; color: var(--error-color); font-size: 14px;">Failed to load: ${error.message}</div>`;
+        }
+      });
+
+      document.addEventListener("click", (e) => {
+        if (
+          !communitySelectorBtn.contains(e.target) &&
+          !communitySelectorDropdown.contains(e.target)
+        ) {
+          communitySelectorDropdown.style.display = "none";
+        }
+      });
+    }
+  }
+
+  tweetButton.addEventListener("click", async () => {
+    const content = textarea.value.trim();
+    const hasExtras =
+      (pendingFiles && pendingFiles.length > 0) ||
+      !!selectedGif ||
+      pollEnabled ||
+      !!article;
+
+    if ((content.length === 0 && !hasExtras) || content.length > maxChars) {
+      toastQueue.add(
+        `<h1>Invalid tweet</h1><p>Make sure your tweet is 1 to ${maxChars} characters long.</p>`
+      );
+      return;
     }
 
-    tweetButton.addEventListener("click", async () => {
-      const content = textarea.value.trim();
-      const hasExtras =
-        (pendingFiles && pendingFiles.length > 0) ||
-        !!selectedGif ||
-        pollEnabled ||
-        !!article;
+    let poll = null;
+    if (pollEnabled && pollContainer && pollDuration) {
+      const pollOptions = Array.from(
+        pollContainer.querySelectorAll(".poll-option input")
+      )
+        .map((input) => input.value.trim())
+        .filter((value) => value.length > 0);
 
-      if ((content.length === 0 && !hasExtras) || content.length > maxChars) {
+      if (pollOptions.length < 2) {
         toastQueue.add(
-          `<h1>Invalid tweet</h1><p>Make sure your tweet is 1 to ${maxChars} characters long.</p>`
+          `<h1>Invalid poll</h1><p>Please provide at least 2 poll options.</p>`
         );
         return;
       }
 
-      let poll = null;
-      if (pollEnabled && pollContainer && pollDuration) {
-        const pollOptions = Array.from(
-          pollContainer.querySelectorAll(".poll-option input")
-        )
-          .map((input) => input.value.trim())
-          .filter((value) => value.length > 0);
+      poll = {
+        options: pollOptions,
+        duration: parseInt(pollDuration.value),
+      };
+    }
 
-        if (pollOptions.length < 2) {
-          toastQueue.add(
-            `<h1>Invalid poll</h1><p>Please provide at least 2 poll options.</p>`
-          );
+    tweetButton.disabled = true;
+
+    try {
+      const uploadedFiles = [];
+      for (const fileData of pendingFiles) {
+        const formData = new FormData();
+        formData.append("file", fileData.file);
+
+        const uploadResult = await query("/upload", {
+          method: "POST",
+          body: formData,
+        });
+
+        if (uploadResult.success) {
+          uploadedFiles.push(uploadResult.file);
+        } else {
+          toastQueue.add(`<h1>Upload failed</h1><p>${uploadResult.error}</p>`);
           return;
         }
-
-        poll = {
-          options: pollOptions,
-          duration: parseInt(pollDuration.value),
-        };
       }
 
-      tweetButton.disabled = true;
-
-      try {
-        const uploadedFiles = [];
-        for (const fileData of pendingFiles) {
-          const formData = new FormData();
-          formData.append("file", fileData.file);
-
-          const uploadResult = await query("/upload", {
-            method: "POST",
-            body: formData,
-          });
-
-          if (uploadResult.success) {
-            uploadedFiles.push(uploadResult.file);
-          } else {
-            toastQueue.add(
-              `<h1>Upload failed</h1><p>${uploadResult.error}</p>`
-            );
-            return;
-          }
-        }
-
-        if (scheduledFor) {
-          const requestBody = {
-            content,
-            scheduled_for: scheduledFor.toISOString(),
-            files: uploadedFiles,
-            reply_restriction: replyRestriction,
-          };
-
-          if (selectedGif) {
-            requestBody.gif_url = selectedGif;
-          }
-
-          if (poll) {
-            requestBody.poll = poll;
-          }
-
-          const { error, scheduledPost } = await query("/scheduled/", {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify(requestBody),
-          });
-
-          if (!scheduledPost) {
-            toastQueue.add(`<h1>${error || "Failed to schedule tweet"}</h1>`);
-            return;
-          }
-
-          textarea.value = "";
-          charCount.textContent = "0";
-          textarea.style.height = "25px";
-
-          pendingFiles = [];
-          selectedGif = null;
-          scheduledFor = null;
-          attachmentPreview.innerHTML = "";
-
-          if (scheduleBtn) {
-            scheduleBtn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>`;
-            scheduleBtn.style.color = "";
-            scheduleBtn.title = "Schedule tweet";
-          }
-
-          if (pollEnabled && pollContainer) {
-            pollContainer
-              .querySelectorAll(".poll-option")
-              .forEach((option) => option.remove());
-            togglePoll();
-          }
-
-          toastQueue.add(
-            `<h1>Tweet Scheduled!</h1><p>Your tweet will be posted at ${new Date(
-              scheduledPost.scheduled_for
-            ).toLocaleString()}</p>`
-          );
-
-          return;
-        }
-
+      if (scheduledFor) {
         const requestBody = {
           content,
-          reply_to: replyTo,
-          quote_tweet_id: quoteTweet?.id || null,
-          source: /Mobi|Android|iPhone|iPad|iPod/i.test(navigator.userAgent)
-            ? "mobile_web"
-            : "desktop_web",
+          scheduled_for: scheduledFor.toISOString(),
           files: uploadedFiles,
           reply_restriction: replyRestriction,
-          article_id: article?.id || null,
-          community_id: communitySelector?.selectedCommunityId || communityId,
-          community_only: communityOnly,
         };
+
+        const spoilerFlags = [];
+        document.querySelectorAll(".attachment-preview-item").forEach((el, index) => {
+          if (el.dataset.isSpoiler === "true") {
+            spoilerFlags.push(index);
+          }
+        });
+        if (spoilerFlags.length > 0) {
+          requestBody.spoiler_flags = spoilerFlags;
+        }
 
         if (selectedGif) {
           requestBody.gif_url = selectedGif;
@@ -1017,7 +971,7 @@ export const useComposer = (
           requestBody.poll = poll;
         }
 
-        const { error, tweet } = await query("/tweets/", {
+        const { error, scheduledPost } = await query("/scheduled/", {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
@@ -1025,8 +979,8 @@ export const useComposer = (
           body: JSON.stringify(requestBody),
         });
 
-        if (!tweet) {
-          toastQueue.add(`<h1>${error || "Failed to post tweet"}</h1>`);
+        if (!scheduledPost) {
+          toastQueue.add(`<h1>${error || "Failed to schedule tweet"}</h1>`);
           return;
         }
 
@@ -1036,7 +990,14 @@ export const useComposer = (
 
         pendingFiles = [];
         selectedGif = null;
+        scheduledFor = null;
         attachmentPreview.innerHTML = "";
+
+        if (scheduleBtn) {
+          scheduleBtn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>`;
+          scheduleBtn.style.color = "";
+          scheduleBtn.title = "Schedule tweet";
+        }
 
         if (pollEnabled && pollContainer) {
           pollContainer
@@ -1045,25 +1006,94 @@ export const useComposer = (
           togglePoll();
         }
 
-        callback(tweet);
-      } catch {
-        toastQueue.add(`<h1>Network error. Please try again.</h1>`);
-      } finally {
-        tweetButton.disabled = false;
-      }
-    });
+        toastQueue.add(
+          `<h1>Tweet Scheduled!</h1><p>Your tweet will be posted at ${new Date(
+            scheduledPost.scheduled_for
+          ).toLocaleString()}</p>`
+        );
 
-    textarea.addEventListener("keydown", (e) => {
-      if ((e.ctrlKey || e.metaKey) && e.key === "Enter") {
-        e.preventDefault();
-        if (!tweetButton.disabled) {
-          tweetButton.click();
+        return;
+      }
+
+      const requestBody = {
+        content,
+        reply_to: replyTo,
+        quote_tweet_id: quoteTweet?.id || null,
+        source: /Mobi|Android|iPhone|iPad|iPod/i.test(navigator.userAgent)
+          ? "mobile_web"
+          : "desktop_web",
+        files: uploadedFiles,
+        reply_restriction: replyRestriction,
+        article_id: article?.id || null,
+        community_id: communitySelector?.selectedCommunityId || communityId,
+        community_only: communityOnly,
+      };
+
+      const spoilerFlags = [];
+      document.querySelectorAll(".attachment-preview-item").forEach((el, index) => {
+        if (el.dataset.isSpoiler === "true") {
+          spoilerFlags.push(index);
         }
+      });
+      if (spoilerFlags.length > 0) {
+        requestBody.spoiler_flags = spoilerFlags;
       }
-    });
 
-    updateCharacterCount();
-  }
+      if (selectedGif) {
+        requestBody.gif_url = selectedGif;
+      }
+
+      if (poll) {
+        requestBody.poll = poll;
+      }
+
+      const { error, tweet } = await query("/tweets/", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(requestBody),
+      });
+
+      if (!tweet) {
+        toastQueue.add(`<h1>${error || "Failed to post tweet"}</h1>`);
+        return;
+      }
+
+      textarea.value = "";
+      charCount.textContent = "0";
+      textarea.style.height = "25px";
+
+      pendingFiles = [];
+      selectedGif = null;
+      attachmentPreview.innerHTML = "";
+
+      if (pollEnabled && pollContainer) {
+        pollContainer
+          .querySelectorAll(".poll-option")
+          .forEach((option) => option.remove());
+        togglePoll();
+      }
+
+      callback(tweet);
+    } catch {
+      toastQueue.add(`<h1>Network error. Please try again.</h1>`);
+    } finally {
+      tweetButton.disabled = false;
+    }
+  });
+
+  textarea.addEventListener("keydown", (e) => {
+    if ((e.ctrlKey || e.metaKey) && e.key === "Enter") {
+      e.preventDefault();
+      if (!tweetButton.disabled) {
+        tweetButton.click();
+      }
+    }
+  });
+
+  updateCharacterCount();
+};
 
 export const createComposer = async ({
   callback = () => {},

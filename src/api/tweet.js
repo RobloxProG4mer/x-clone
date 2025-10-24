@@ -98,8 +98,8 @@ const createTweet = db.query(`
 `);
 
 const saveAttachment = db.query(`
-  INSERT INTO attachments (id, post_id, file_hash, file_name, file_type, file_size, file_url)
-  VALUES (?, ?, ?, ?, ?, ?, ?)
+  INSERT INTO attachments (id, post_id, file_hash, file_name, file_type, file_size, file_url, is_spoiler)
+  VALUES (?, ?, ?, ?, ?, ?, ?, ?)
   RETURNING *
 `);
 
@@ -384,6 +384,7 @@ export default new Elysia({ prefix: "/tweets" })
         article_id,
         community_id,
         community_only,
+        spoiler_flags,
       } = body;
       const tweetContent = typeof content === "string" ? content : "";
       const trimmedContent = tweetContent.trim();
@@ -653,8 +654,9 @@ export default new Elysia({ prefix: "/tweets" })
 
       const attachments = [];
       if (files && Array.isArray(files)) {
-        files.forEach((file) => {
+        files.forEach((file, index) => {
           const attachmentId = Bun.randomUUIDv7();
+          const isSpoiler = Array.isArray(spoiler_flags) && spoiler_flags.includes(index);
           const attachment = saveAttachment.get(
             attachmentId,
             tweetId,
@@ -662,7 +664,8 @@ export default new Elysia({ prefix: "/tweets" })
             file.name,
             file.type,
             file.size,
-            file.url
+            file.url,
+            isSpoiler
           );
           attachments.push(attachment);
         });
@@ -677,7 +680,8 @@ export default new Elysia({ prefix: "/tweets" })
           "tenor.gif",
           "image/gif",
           0,
-          gif_url
+          gif_url,
+          false
         );
         attachments.push(attachment);
       }
