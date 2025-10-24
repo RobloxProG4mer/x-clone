@@ -57,17 +57,7 @@ body {
 }
 
 .page-active {
-  animation: fadeIn 0.15s ease-in-out;
-}
-
-@keyframes fadeIn {
-  from {
-    opacity: 0;
-    filter: blur(1px);
-  }
-  to {
-    opacity: 1;
-  }
+  opacity: 1;
 }
 
 nav {
@@ -93,18 +83,18 @@ nav {
     gap: 12px;
     color: inherit;
     border-radius: 9999px;
-    transition: background-color 0.2s ease;
+    transition: background-color 0.15s ease, color 0.15s ease;
     font-size: 20px;
     font-weight: 400;
     justify-content: flex-start;
     width: fit-content;
 
     &:hover {
-      background-color: rgba(var(--primary-rgb), 0.1);
+      background-color: rgba(var(--primary-rgb), 0.08);
     }
 
     &:active {
-      background-color: rgba(var(--primary-rgb), 0.15);
+      background-color: rgba(var(--primary-rgb), 0.12);
     }
 
     svg {
@@ -184,91 +174,7 @@ nav {
   }
 }
 .background {
-  position: absolute;
-  top: -10px;
-  left: 0;
-  bottom: 10px;
-  right: 0;
-  pointer-events: none;
-  transform: rotate(180deg);
-
-  div {
-    position: absolute;
-    top: 0;
-    left: 0;
-    bottom: 0;
-    right: 0;
-
-    &:nth-child(1) {
-      backdrop-filter: blur(1px);
-      mask: linear-gradient(
-        rgba(0, 0, 0, 0),
-        rgba(0, 0, 0, 1) 10%,
-        rgba(0, 0, 0, 1) 30%,
-        rgba(0, 0, 0, 0) 40%
-      );
-    }
-
-    &:nth-child(2) {
-      backdrop-filter: blur(2px);
-      mask: linear-gradient(
-        rgba(0, 0, 0, 0) 10%,
-        rgba(0, 0, 0, 1) 20%,
-        rgba(0, 0, 0, 1) 40%,
-        rgba(0, 0, 0, 0) 50%
-      );
-    }
-
-    &:nth-child(3) {
-      backdrop-filter: blur(4px);
-      mask: linear-gradient(
-        rgba(0, 0, 0, 0) 15%,
-        rgba(0, 0, 0, 1) 30%,
-        rgba(0, 0, 0, 1) 50%,
-        rgba(0, 0, 0, 0) 60%
-      );
-    }
-
-    &:nth-child(4) {
-      backdrop-filter: blur(8px);
-      mask: linear-gradient(
-        rgba(0, 0, 0, 0) 20%,
-        rgba(0, 0, 0, 1) 40%,
-        rgba(0, 0, 0, 1) 60%,
-        rgba(0, 0, 0, 0) 70%
-      );
-    }
-
-    &:nth-child(5) {
-      backdrop-filter: blur(16px);
-      mask: linear-gradient(
-        rgba(0, 0, 0, 0) 40%,
-        rgba(0, 0, 0, 1) 60%,
-        rgba(0, 0, 0, 1) 80%,
-        rgba(0, 0, 0, 0) 90%
-      );
-    }
-
-    &:nth-child(6) {
-      backdrop-filter: blur(32px);
-      mask: linear-gradient(rgba(0, 0, 0, 0) 60%, rgba(0, 0, 0, 1) 80%);
-    }
-
-    &:nth-child(7) {
-      z-index: 10;
-      backdrop-filter: blur(64px);
-      mask: linear-gradient(rgba(0, 0, 0, 0) 70%, rgba(0, 0, 0, 1) 100%);
-    }
-
-    &:nth-child(8) {
-      z-index: 11;
-      background-image: linear-gradient(
-        to top,
-        rgba(var(--bg-rgb)),
-        rgba(var(--bg-rgb), 0)
-      );
-    }
-  }
+  display: none;
 }
 
 .icon {
@@ -324,7 +230,7 @@ nav {
   width: 90vw;
   max-height: 80vh;
   overflow: hidden;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
 }
 
 .followers-modal-header {
@@ -420,7 +326,7 @@ nav {
   left: 0;
   right: 0;
   bottom: 0;
-  background: rgba(0, 0, 0, 0.5);
+  background: rgba(0, 0, 0, 0.4);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -587,11 +493,10 @@ nav {
           font-size: 15px;
           font-weight: 600;
           cursor: pointer;
-          transition: transform 0.2s, background-color 0.2s;
+          transition: background-color 0.15s ease, opacity 0.15s ease;
 
           &:hover:not(:disabled) {
             background-color: var(--primary-hover);
-            transform: translateY(-1px);
           }
 
           &:disabled {
@@ -600,7 +505,7 @@ nav {
           }
 
           &:active:not(:disabled) {
-            transform: translateY(0) scale(0.98);
+            opacity: 0.85;
           }
         }
       }
@@ -1067,16 +972,9 @@ nav {
 .tweets {
   display: flex;
   flex-direction: column;
-  gap: 26px;
+  gap: 16px;
   & > .tweet {
-    margin-bottom: 4px;
-  }
-  @starting-style {
-    .tweet.created {
-      opacity: 0;
-      filter: blur(1px);
-      transform: scale(1, 0.98);
-    }
+    margin-bottom: 0;
   }
 }
 
@@ -1085,9 +983,8 @@ nav {
   flex-direction: column;
   gap: 12px;
   height: auto;
-  transform-origin: top;
-  transition: opacity 0.3s, filter 0.3s, transform 0.3s;
   position: relative;
+  transition: none;
 
   &.clickable {
     cursor: pointer;
@@ -1385,9 +1282,10 @@ nav {
   }
 
   .tweet-attachments {
-    border-radius: 16px;
+    border-radius: 12px;
     overflow: hidden;
     border: 1px solid var(--border-primary);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
 
     .tweet-attachment {
       width: 100%;
@@ -1463,7 +1361,7 @@ nav {
       border: 1px solid var(--primary);
       margin-bottom: 5px;
       border-radius: 100px;
-      transition: background-color 0.2s, opacity 0.2s, transform 0.2s;
+      transition: background-color 0.15s ease, opacity 0.15s ease;
 
       &.poll-option-clickable {
         cursor: pointer;
@@ -1741,8 +1639,7 @@ nav {
         font-size: 14px;
         font-weight: 500;
         font-family: inherit;
-        transition: background-color 0.2s, color 0.2s, border-color 0.2s,
-          transform 0.15s, width 0.2s;
+        transition: background-color 0.15s ease, color 0.15s ease, border-color 0.15s ease, width 0.2s ease;
 
         &#profileDmBtn {
           width: 40px;
@@ -1757,7 +1654,7 @@ nav {
         }
 
         &:active {
-          transform: scale(0.97);
+          opacity: 0.85;
         }
 
         &.profile-btn-primary {
@@ -2055,7 +1952,7 @@ nav {
     overflow: hidden;
     display: flex;
     flex-direction: column;
-    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
   }
 
   .modal-header {
@@ -2476,12 +2373,12 @@ nav {
   left: 0;
   right: 0;
   bottom: 0;
-  background: rgba(0, 0, 0, 0.5);
+  background: rgba(0, 0, 0, 0.4);
   display: flex;
   align-items: center;
   justify-content: center;
   z-index: 1000;
-  transition: opacity 0.25s;
+  transition: opacity 0.15s ease;
 
   @starting-style {
     & {
@@ -2491,7 +2388,7 @@ nav {
 
   .modal {
     position: relative;
-    transition: transform 0.15s;
+    transition: none;
 
     @starting-style {
       & {
@@ -3420,14 +3317,18 @@ nav {
   display: flex;
   align-items: center;
   gap: 12px;
-  padding-bottom: 16px;
-  padding-top: 16px;
+  padding: 12px 0;
   border-bottom: 1px solid var(--border-primary);
   cursor: pointer;
   text-decoration: none;
   color: inherit;
   position: relative;
   overflow: hidden;
+  transition: background-color 0.1s ease;
+
+  &:hover {
+    background-color: rgba(var(--primary-rgb), 0.03);
+  }
 
   .dm-avatar {
     width: 48px;
@@ -3436,12 +3337,6 @@ nav {
     flex-shrink: 0;
     object-fit: cover;
     background-color: var(--bg-tertiary);
-    transition: border-color 0.15s ease, transform 0.15s ease;
-  }
-
-  &:hover .dm-avatar {
-    border-color: rgba(var(--primary-rgb), 0.3);
-    transform: scale(1.02);
   }
 
   .dm-conversation-info {
@@ -3602,64 +3497,92 @@ nav {
   padding: 16px 12px;
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: 6px;
+  background-color: var(--bg-primary);
 }
 
 .dm-message {
   display: flex;
-  gap: 12px;
-  padding: 4px 8px;
+  gap: 8px;
+  padding: 0;
   position: relative;
-  transition: background-color 0.1s ease;
-  border-radius: 4px;
+  justify-content: flex-start;
+  align-items: flex-end;
 
-  &:hover {
-    background-color: rgba(var(--primary-rgb), 0.02);
-
-    .dm-message-actions {
-      opacity: 1;
-    }
+  &:hover .dm-message-actions {
+    opacity: 1;
   }
 
   &.own {
+    justify-content: flex-end;
+    
+    .dm-message-avatar {
+      display: none;
+    }
+
     .dm-message-wrapper {
-      align-items: flex-start;
+      align-items: flex-end;
+      max-width: 70%;
+    }
+
+    .dm-message-content {
+      .dm-message-text {
+        background-color: var(--primary);
+        color: white;
+        padding: 8px 12px;
+        border-radius: 18px;
+        border-bottom-right-radius: 4px;
+      }
     }
 
     .dm-reactions {
-      justify-content: flex-start;
+      justify-content: flex-end;
+    }
+  }
+
+  &:not(.own) {
+    .dm-message-wrapper {
+      max-width: 70%;
+    }
+
+    .dm-message-content {
+      .dm-message-text {
+        background-color: var(--bg-secondary);
+        color: var(--text-primary);
+        padding: 8px 12px;
+        border-radius: 18px;
+        border-bottom-left-radius: 4px;
+      }
     }
   }
 
   .dm-message-avatar {
-    width: 40px;
-    height: 40px;
+    width: 32px;
+    height: 32px;
     border-radius: 50%;
     flex-shrink: 0;
     object-fit: cover;
     background-color: var(--bg-tertiary);
-    margin-top: 2px;
   }
 
   .dm-message-wrapper {
     display: flex;
     flex-direction: column;
-    gap: 2px;
-    flex: 1;
-    min-width: 0;
+    gap: 4px;
+    align-items: flex-start;
   }
 
   .dm-message-content {
-    flex: 1;
-    color: var(--text-primary);
     word-wrap: break-word;
     word-break: break-word;
 
     .dm-message-text {
       margin: 0;
       font-size: 15px;
-      line-height: 1.45;
+      line-height: 1.4;
       font-weight: 400;
+      display: inline-block;
+      max-width: 100%;
     }
 
     .dm-message-attachments {
@@ -3709,29 +3632,26 @@ nav {
     align-items: center;
     margin-top: 2px;
 
-    .dm-reaction {
-      display: flex;
-      align-items: center;
-      gap: 3px;
-      padding: 1px 6px;
-      border-radius: 8px;
-      border: 1px solid transparent;
-      background: rgba(var(--primary-rgb), 0.08);
-      font-size: 13px;
-      cursor: pointer;
-      transition: all 0.15s ease;
+      .dm-reaction {
+        display: flex;
+        align-items: center;
+        gap: 3px;
+        padding: 1px 6px;
+        border-radius: 8px;
+        border: 1px solid transparent;
+        background: rgba(var(--primary-rgb), 0.08);
+        font-size: 13px;
+        cursor: pointer;
+        transition: background-color 0.1s ease, border-color 0.1s ease;
 
-      &:hover {
-        background: rgba(var(--primary-rgb), 0.12);
-        transform: scale(1.05);
-      }
+        &:hover {
+          background: rgba(var(--primary-rgb), 0.12);
+        }
 
-      &.reacted {
-        background: rgba(var(--primary-rgb), 0.2);
-        border-color: rgba(var(--primary-rgb), 0.3);
-      }
-
-      .dm-reaction-emoji {
+        &.reacted {
+          background: rgba(var(--primary-rgb), 0.2);
+          border-color: rgba(var(--primary-rgb), 0.3);
+        }      .dm-reaction-emoji {
         font-size: 13px;
       }
 
@@ -3799,10 +3719,10 @@ nav {
   .dm-message-actions {
     display: flex;
     align-items: center;
-    gap: 6px;
+    gap: 4px;
     margin-top: 0;
     opacity: 0;
-    transition: opacity 0.15s ease;
+    transition: opacity 0.1s ease;
 
     .dm-message-action-btn {
       background: transparent;
@@ -3886,7 +3806,7 @@ nav {
       align-items: center;
       justify-content: center;
       border-radius: 4px;
-      transition: all 0.2s ease;
+      transition: background-color 0.1s ease;
       flex-shrink: 0;
 
       &:hover {
@@ -3955,7 +3875,7 @@ nav {
       justify-content: center;
       color: var(--text-secondary);
       border-radius: 4px;
-      transition: all 0.15s ease;
+      transition: background-color 0.1s ease, color 0.1s ease;
 
       &:hover {
         background-color: rgba(var(--primary-rgb), 0.1);
@@ -3966,17 +3886,17 @@ nav {
     #dmMessageInput {
       flex: 1;
       border: none;
-      border-radius: 8px;
-      padding: 11px 14px;
+      border-radius: 20px;
+      padding: 10px 16px;
       font-family: inherit;
       font-size: 15px;
       color: var(--text-primary);
       background-color: var(--bg-secondary);
       resize: none;
-      min-height: 44px;
-      max-height: 120px;
+      min-height: 40px;
+      max-height: 100px;
       outline: none;
-      transition: background-color 0.15s ease;
+      transition: background-color 0.1s ease;
 
       &::placeholder {
         color: var(--text-secondary);
@@ -3992,7 +3912,7 @@ nav {
       background-color: transparent;
       border: none;
       cursor: pointer;
-      padding: 8px;
+      padding: 6px;
       display: flex;
       align-items: center;
       justify-content: center;

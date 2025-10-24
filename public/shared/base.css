@@ -37,11 +37,11 @@ img {
   border: none;
   border-radius: 8px;
   cursor: pointer;
-  transition: transform 0.15s;
+  transition: background-color 0.15s ease;
   margin-bottom: 16px;
 
   &:not(:disabled):active {
-    transform: scale(0.99);
+    opacity: 0.85;
   }
 
   &.primary {
@@ -118,7 +118,7 @@ img {
   align-items: flex-start;
   justify-content: flex-start;
   opacity: 0;
-  transition: opacity 0.12s ease-out;
+  transition: opacity 0.1s ease-out;
 }
 
 .popup-overlay.visible {
@@ -135,10 +135,10 @@ img {
   border-radius: 12px;
   padding: 0;
   min-width: 160px;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
   --popup-translate-x: 0px;
   --popup-translate-y: 0px;
-  transition: opacity 0.18s cubic-bezier(0.16, 1, 0.3, 1);
+  transition: opacity 0.15s cubic-bezier(0.16, 1, 0.3, 1);
   pointer-events: auto;
   transform-origin: top center;
   opacity: 0;
@@ -168,7 +168,7 @@ img {
   align-items: center;
   gap: 8px;
   cursor: pointer;
-  transition: transform 0.15s, background-color 0.15s;
+  transition: background-color 0.1s ease;
   font-family: inherit;
   text-align: left;
   border-radius: 7px;
@@ -180,7 +180,7 @@ img {
   }
 
   &:active {
-    transform: scale(0.99);
+    background-color: var(--bg-overlay-light);
   }
 
   .popup-option-icon {
@@ -222,7 +222,7 @@ img {
   background: var(--bg-primary);
   border: 1px solid var(--border-primary);
   border-radius: 12px;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.18);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
   z-index: 1000;
   max-height: 260px;
   overflow-y: auto;
@@ -240,7 +240,7 @@ img {
   align-items: center;
   gap: 10px;
   cursor: pointer;
-  transition: transform 0.12s, background-color 0.12s;
+  transition: background-color 0.1s ease;
   font-family: inherit;
   text-align: left;
   border-radius: 8px;
