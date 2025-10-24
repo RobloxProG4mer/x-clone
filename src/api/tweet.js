@@ -656,7 +656,8 @@ export default new Elysia({ prefix: "/tweets" })
       if (files && Array.isArray(files)) {
         files.forEach((file, index) => {
           const attachmentId = Bun.randomUUIDv7();
-          const isSpoiler = Array.isArray(spoiler_flags) && spoiler_flags.includes(index);
+          const isSpoiler =
+            Array.isArray(spoiler_flags) && spoiler_flags.includes(index);
           const attachment = saveAttachment.get(
             attachmentId,
             tweetId,

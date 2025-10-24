@@ -2776,7 +2776,7 @@ nav {
     width: 90%;
     max-height: 80vh;
     overflow-y: auto;
-    transition: transform .2s;
+    transition: transform 0.2s;
 
     @starting-style {
       & {
@@ -5543,6 +5543,7 @@ nav {
   align-items: center;
   gap: 6px;
 
+  /* keep simple color-change on hover only; avoid motion */
   &:hover {
     background: var(--primary-hover);
   }
@@ -5582,6 +5583,13 @@ nav {
   overflow-y: auto;
 }
 
+/* Targeted motion/gradient overrides for SPA Communities tab */
+.communities-page .create-community-btn {
+  transition: none !important;
+  animation: none !important;
+  transform: none !important;
+}
+
 .communities-list {
   display: grid;
   gap: 16px;
@@ -5597,19 +5605,22 @@ nav {
   border-radius: 12px;
   overflow: hidden;
   cursor: pointer;
-  transition: all 0.2s;
+  /* only transition border-color to keep visual affordance; remove transform/box-shadow motion */
+  transition: border-color 0.15s ease;
 
   &:hover {
     border-color: var(--primary);
-    transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(var(--primary-rgb), 0.1);
+    /* explicitly prevent movement and shadow */
+    transform: none !important;
+    box-shadow: none !important;
   }
 }
 
 .community-banner {
   width: 100%;
   height: 100px;
-  background: linear-gradient(135deg, var(--primary), #6366f1);
+  /* use a neutral solid background instead of a gradient; allow inline images to show */
+  background-color: var(--bg-secondary);
   background-size: cover;
   background-position: center;
 }
@@ -5805,7 +5816,8 @@ nav {
 
 .community-detail-banner {
   width: 100%;
-  background: linear-gradient(135deg, var(--primary), #6366f1);
+  /* neutral fallback background instead of a gradient */
+  background-color: var(--bg-secondary);
   background-size: cover;
   background-position: center;
 }
@@ -5887,6 +5899,63 @@ nav {
   outline: none !important;
   box-shadow: none !important;
   border-color: transparent !important;
+}
+
+/* Tweets-tab specific styling: apply only when the Tweets tab is active
+   (the JS toggles `.tab-tweets-active` on `.community-detail-content`).
+   - Hide any horizontal overflow
+   - Provide a subtle custom vertical scrollbar
+   - Ensure children don't force a horizontal scrollbar
+*/
+.community-detail-content.tab-tweets-active .community-detail-tab-content {
+  overflow-x: hidden;
+  /* give a small inset so content doesn't butt up against the custom scrollbar */
+  padding-right: 12px;
+}
+
+/* WebKit / Blink custom scrollbar */
+.community-detail-content.tab-tweets-active
+  .community-detail-tab-content::-webkit-scrollbar {
+  width: 12px;
+}
+.community-detail-content.tab-tweets-active
+  .community-detail-tab-content::-webkit-scrollbar-track {
+  background: transparent;
+}
+.community-detail-content.tab-tweets-active
+  .community-detail-tab-content::-webkit-scrollbar-thumb {
+  background-color: rgba(100, 100, 100, 0.18);
+  border-radius: 8px;
+  border: 3px solid transparent; /* creates padding around thumb */
+  background-clip: padding-box;
+}
+
+/* Firefox scrollbar styling */
+.community-detail-content.tab-tweets-active .community-detail-tab-content {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(100, 100, 100, 0.18) transparent;
+}
+
+/* Prevent children from forcing horizontal scroll while Tweets is active */
+.community-detail-content.tab-tweets-active .community-detail-tab-content > * {
+  max-width: 100%;
+  box-sizing: border-box;
+  overflow-wrap: anywhere;
+}
+
+/* When Tweets tab is active and there's no composer, give the tweets area
+   some extra breathing room so content doesn't feel cramped. We add a
+   container-level class `tweets-no-composer` from JS when appropriate.
+*/
+.community-detail-content.tab-tweets-active.tweets-no-composer
+  .community-detail-tab-content {
+  padding: 20px 16px;
+}
+
+.community-detail-content.tab-tweets-active.tweets-no-composer
+  .community-tweets {
+  gap: 20px;
+  padding-top: 8px;
 }
 
 /* Force community actions into a horizontal layout and keep them on the right

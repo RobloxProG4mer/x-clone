@@ -31,14 +31,14 @@ if (existsSync(libPath)) {
         returns: FFIType.double,
       },
     });
-    console.log("✓ C algorithm library loaded successfully");
+    // console.log("✓ C algorithm library loaded successfully");
   } catch (error) {
     console.warn("Failed to load C algorithm library");
     console.warn("Error:", error.message);
   }
 } else {
-  console.warn(`C algorithm library not found at ${libPath}`);
-  console.warn("Run 'make' in src/algo/ to compile the C algorithm");
+  console.warn(`C algorithm library not found at ${libPath} (possibly not compiled?)`);
+  console.warn("Run 'make' in src/algo/ to compile the C algorithm (optional, but C algorithm experiment won't work");
 }
 
 export const calculateScore = (
@@ -189,7 +189,8 @@ export const rankTweets = (tweets, seenInput = new Map()) => {
 
     const userVerified = tweet.verified || tweet.author?.verified ? 1 : 0;
     const userGold = tweet.gold || tweet.author?.gold ? 1 : 0;
-    const followerCount = tweet.follower_count || tweet.author?.follower_count || 0;
+    const followerCount =
+      tweet.follower_count || tweet.author?.follower_count || 0;
 
     const score = calculateScore(
       timestamp,

@@ -1064,7 +1064,10 @@ export const createTweetElement = (tweet, config = {}) => {
         }
 
         img.addEventListener("click", async (e) => {
-          if (attachment.is_spoiler && !attachmentEl.classList.contains("spoiler-revealed")) {
+          if (
+            attachment.is_spoiler &&
+            !attachmentEl.classList.contains("spoiler-revealed")
+          ) {
             e.preventDefault();
             e.stopPropagation();
             return;

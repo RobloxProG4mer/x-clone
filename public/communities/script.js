@@ -1,5 +1,15 @@
 import { convertImageToWebP } from "../shared/image-utils.js";
-import { showToast } from "../shared/toasts.js";
+import toastQueue from "../shared/toasts.js";
+
+const showToast = (message, type = "info") => {
+  const typeMap = {
+    success: "<h1>✓ Success</h1>",
+    error: "<h1>✗ Error</h1>",
+    info: "<h1>ℹ Info</h1>",
+  };
+  toastQueue.add(`${typeMap[type] || typeMap.info}<p>${message}</p>`);
+};
+
 import api from "../timeline/js/api.js";
 
 let currentCommunity = null;

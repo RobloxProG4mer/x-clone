@@ -954,11 +954,13 @@ export const useComposer = (
         };
 
         const spoilerFlags = [];
-        document.querySelectorAll(".attachment-preview-item").forEach((el, index) => {
-          if (el.dataset.isSpoiler === "true") {
-            spoilerFlags.push(index);
-          }
-        });
+        document
+          .querySelectorAll(".attachment-preview-item")
+          .forEach((el, index) => {
+            if (el.dataset.isSpoiler === "true") {
+              spoilerFlags.push(index);
+            }
+          });
         if (spoilerFlags.length > 0) {
           requestBody.spoiler_flags = spoilerFlags;
         }
@@ -1030,11 +1032,13 @@ export const useComposer = (
       };
 
       const spoilerFlags = [];
-      document.querySelectorAll(".attachment-preview-item").forEach((el, index) => {
-        if (el.dataset.isSpoiler === "true") {
-          spoilerFlags.push(index);
-        }
-      });
+      document
+        .querySelectorAll(".attachment-preview-item")
+        .forEach((el, index) => {
+          if (el.dataset.isSpoiler === "true") {
+            spoilerFlags.push(index);
+          }
+        });
       if (spoilerFlags.length > 0) {
         requestBody.spoiler_flags = spoilerFlags;
       }

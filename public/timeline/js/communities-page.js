@@ -1,5 +1,15 @@
 import { convertImageToWebP } from "../../shared/image-utils.js";
-import { showToast } from "../../shared/toasts.js";
+import toastQueue from "../../shared/toasts.js";
+
+const showToast = (message, type = "info") => {
+  const typeMap = {
+    success: "<h1>✓ Success</h1>",
+    error: "<h1>✗ Error</h1>",
+    info: "<h1>ℹ Info</h1>",
+  };
+  toastQueue.add(`${typeMap[type] || typeMap.info}<p>${message}</p>`);
+};
+
 import api from "./api.js";
 import switchPage from "./pages.js";
 
@@ -201,6 +211,15 @@ function createCommunityCard(community, showRole = false) {
 }
 
 export async function loadCommunityDetail(communityId) {
+  // Ensure the community-detail page is visible and browser history is updated
+  try {
+    const communityPageEl = document.querySelector(".community-detail-page");
+    const isVisible = communityPageEl?.classList.contains("page-active");
+    if (!isVisible) {
+      switchPage("community-detail", { path: `/communities/${communityId}` });
+    }
+  } catch (_) {}
+
   const data = await api(`/communities/${communityId}`);
 
   if (data.error) {
@@ -221,8 +240,9 @@ export async function loadCommunityDetail(communityId) {
     banner.style.backgroundImage = `url('/public/shared/assets/uploads/${currentCommunity.banner}')`;
     banner.style.height = "200px";
   } else {
-    banner.style.background =
-      "linear-gradient(135deg, var(--primary), #6366f1)";
+    // Use a neutral solid background instead of an inline gradient
+    banner.style.backgroundImage = "none";
+    banner.style.backgroundColor = "var(--bg-secondary)";
     banner.style.height = "200px";
   }
 
@@ -319,8 +339,42 @@ export async function loadCommunityDetail(communityId) {
       if (tab === "members") showMembersTab();
       if (tab === "requests") showRequestsTab();
       if (tab === "settings") showSettingsTab();
+
+      if (tab === "tweets") showTweetsTab();
+
+      // Mirror the active tab state on the container so styles can be scoped
+      // specifically when the Tweets tab is active.
+      const container = document.querySelector(".community-detail-content");
+      if (container) {
+        container.classList.toggle("tab-tweets-active", tab === "tweets");
+      }
     });
   });
+
+  // Ensure tabs and panes are reset to a clean default (About) when
+  // loading a community so switching between communities doesn't leave
+  // the previous tab/content visible.
+  const tabButtons = document.querySelectorAll(".community-detail-tab");
+  tabButtons.forEach((b) => b.classList.remove("active"));
+  const aboutBtn = document.querySelector(
+    '.community-detail-tab[data-tab="about"]'
+  );
+  if (aboutBtn) aboutBtn.classList.add("active");
+
+  const aboutContentEl = document.getElementById("aboutContent");
+  const tweetsContentEl = document.getElementById("tweetsContent");
+  const membersContentEl = document.getElementById("membersContent");
+  const requestsContentEl = document.getElementById("requestsContent");
+  const settingsContentEl = document.getElementById("settingsContent");
+
+  if (aboutContentEl) aboutContentEl.classList.remove("hidden");
+  if (tweetsContentEl) {
+    tweetsContentEl.classList.add("hidden");
+    tweetsContentEl.innerHTML = "";
+  }
+  if (membersContentEl) membersContentEl.classList.add("hidden");
+  if (requestsContentEl) requestsContentEl.classList.add("hidden");
+  if (settingsContentEl) settingsContentEl.classList.add("hidden");
 
   showAboutTab();
 }
@@ -363,6 +417,79 @@ function showAboutTab() {
   content.appendChild(descSection);
   content.appendChild(rulesSection);
   content.appendChild(accessSection);
+}
+
+async function showTweetsTab() {
+  const content = document.getElementById("tweetsContent");
+  if (!content) return;
+
+  // Mark container when there is no composer so CSS can add extra spacing
+  const container = document.querySelector(".community-detail-content");
+  if (container)
+    container.classList.toggle("tweets-no-composer", !currentMember);
+
+  content.innerHTML = "";
+
+  const tweetsWrapper = document.createElement("div");
+  tweetsWrapper.style.cssText =
+    "display: flex; flex-direction: column; gap: 16px;";
+
+  if (currentMember) {
+    const { createComposer } = await import("./composer.js");
+
+    const composer = await createComposer({
+      placeholder: `Share something with ${currentCommunity.name}...`,
+      callback: async (_newTweet) => {
+        showToast("Tweet posted to community!", "success");
+        showTweetsTab();
+      },
+      communityId: currentCommunity.id,
+    });
+
+    composer.classList.remove();
+    composer.classList.add("compose-tweet");
+    tweetsWrapper.appendChild(composer);
+  }
+
+  const loadingDiv = document.createElement("div");
+  loadingDiv.className = "loading";
+  loadingDiv.textContent = "Loading tweets...";
+  tweetsWrapper.appendChild(loadingDiv);
+
+  content.appendChild(tweetsWrapper);
+
+  const { tweets } = await api(
+    `/communities/${currentCommunity.id}/tweets?limit=50`
+  );
+
+  tweetsWrapper.removeChild(loadingDiv);
+
+  if (!tweets || tweets.length === 0) {
+    const emptyMsg = document.createElement("p");
+    emptyMsg.className = "empty-state";
+    emptyMsg.textContent = "No tweets in this community yet.";
+    tweetsWrapper.appendChild(emptyMsg);
+    return;
+  }
+
+  const tweetsContainer = document.createElement("div");
+  tweetsContainer.className = "community-tweets";
+  tweetsContainer.style.cssText =
+    "display: flex; flex-direction: column; gap: 16px;";
+
+  const { createTweetElement } = await import("./tweets.js");
+
+  for (const tweet of tweets) {
+    const tweetEl = createTweetElement(tweet, {
+      clickToOpen: true,
+      showTopReply: false,
+      isTopReply: false,
+      size: "normal",
+    });
+    tweetsContainer.appendChild(tweetEl);
+  }
+
+  tweetsWrapper.appendChild(tweetsContainer);
 }
 
 async function showMembersTab() {
