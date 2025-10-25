@@ -161,7 +161,10 @@ export default new Elysia({ prefix: "/search" })
 
     if (!q || q.trim().length === 0) return { users: [] };
 
-    const searchTerm = `%${q.trim()}%`;
+    // For very short queries, prefer prefix matching to improve accuracy
+    // (e.g. typing "al" should prioritize usernames starting with "al")
+    const raw = q.trim();
+    const searchTerm = raw.length < 3 ? `${raw}%` : `%${raw}%`;
     const users = searchUsersQuery.all(searchTerm, searchTerm);
 
     return { users };
@@ -186,7 +189,10 @@ export default new Elysia({ prefix: "/search" })
 
     if (!q || q.trim().length === 0) return { posts: [] };
 
-    const searchTerm = `%${q.trim()}%`;
+    const raw = q.trim();
+    // Use prefix match for short queries to reduce noisy results, full
+    // contains match for longer queries.
+    const searchTerm = raw.length < 3 ? `${raw}%` : `%${raw}%`;
     const posts = searchPostsQuery.all(searchTerm);
 
     if (posts.length === 0) return { posts: [] };

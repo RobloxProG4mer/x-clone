@@ -4,6 +4,8 @@ import { createTweetElement } from "./tweets.js";
 let currentFilter = "all";
 let searchTimeout;
 let isInitialized = false;
+let lastSearchId = 0;
+let currentAbortController = null;
 
 export const initializeSearchPage = () => {
   if (isInitialized) return;
@@ -38,39 +40,71 @@ export const initializeSearchPage = () => {
     clearTimeout(searchTimeout);
     searchTimeout = setTimeout(() => {
       const query = searchPageInput.value.trim();
-      if (!query) {
+      // If the query is empty or too short, show the empty state and
+      // cancel any in-flight search requests to avoid stale results.
+      if (!query || query.length < 3) {
+        // Cancel any inflight request
+        if (currentAbortController) {
+          try {
+            currentAbortController.abort();
+          } catch {}
+          currentAbortController = null;
+        }
         showEmptyState();
         return;
       }
+
       performSearch(query);
     }, 300);
   });
 
   const performSearch = async (q) => {
+    // Use a search id + AbortController to prevent out-of-order or
+    // stale responses from overwriting newer results.
+    const searchId = ++lastSearchId;
+
+    // Cancel previous request if any
+    if (currentAbortController) {
+      try {
+        currentAbortController.abort();
+      } catch {}
+    }
+
+    const controller = new AbortController();
+    currentAbortController = controller;
+
     try {
       const promises = [];
 
       if (currentFilter === "all" || currentFilter === "users") {
-        promises.push(query(`/search/users?q=${encodeURIComponent(q)}`));
+        promises.push(
+          query(`/search/users?q=${encodeURIComponent(q)}`, {
+            signal: controller.signal,
+          })
+        );
       }
 
       if (currentFilter === "all" || currentFilter === "tweets") {
-        promises.push(query(`/search/posts?q=${encodeURIComponent(q)}`));
+        promises.push(
+          query(`/search/posts?q=${encodeURIComponent(q)}`, {
+            signal: controller.signal,
+          })
+        );
       }
 
       const results = await Promise.all(promises);
+
+      // If this search was aborted or a newer search has started, ignore results
+      if (controller.signal.aborted || searchId !== lastSearchId) return;
+
       let users = [];
       let posts = [];
 
-      // Defensive handling: the API wrapper can return an { error } object
-      // when auth or network issues occur. Check for that before using
-      // .users/.posts to avoid runtime errors that make the search silently fail.
       if (results.some((r) => r?.error)) {
         console.error(
           "Search API error:",
           results.map((r) => r?.error || null)
         );
-        // Show no results (preserve existing UX) or show empty state.
         showNoResultsState();
         return;
       }
@@ -85,9 +119,20 @@ export const initializeSearchPage = () => {
         posts = results[0]?.posts || [];
       }
 
+      // Double-check the input hasn't changed since the request started.
+      const liveQuery = searchPageInput.value.trim();
+      if (liveQuery !== q) {
+        // A newer query exists; ignore this result.
+        return;
+      }
+
       displayResults(users, posts);
     } catch (error) {
+      // The API wrapper normalizes errors, but guard anyway.
+      if (controller.signal.aborted) return;
       console.error("Search error:", error);
+    } finally {
+      if (currentAbortController === controller) currentAbortController = null;
     }
   };
 
