@@ -779,11 +779,18 @@ export default new Elysia({ prefix: "/tweets" })
       if (existing) {
         removeReaction.run(user.id, tweetId, emoji);
         const total = countReactionsForPost.get(tweetId)?.total || 0;
-        return { success: true, reacted: false, total_reactions: total };
+        const topReactions = getTopReactionsForPost.all(tweetId);
+        return {
+          success: true,
+          reacted: false,
+          total_reactions: total,
+          top_reactions: topReactions,
+        };
       } else {
         const reactionId = Bun.randomUUIDv7();
         addReaction.run(reactionId, tweetId, user.id, emoji);
         const total = countReactionsForPost.get(tweetId)?.total || 0;
+        const topReactions = getTopReactionsForPost.all(tweetId);
 
         if (tweet.user_id !== user.id) {
           addNotification(
@@ -797,7 +804,12 @@ export default new Elysia({ prefix: "/tweets" })
           );
         }
 
-        return { success: true, reacted: true, total_reactions: total };
+        return {
+          success: true,
+          reacted: true,
+          total_reactions: total,
+          top_reactions: topReactions,
+        };
       }
     } catch (err) {
       console.error("Reaction toggle error:", err);

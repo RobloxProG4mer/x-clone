@@ -432,7 +432,7 @@ const createPollElement = (poll, tweet) => {
       avatarEl.title = voter.name || voter.username;
       const voterRadius =
         voter.avatar_radius !== null && voter.avatar_radius !== undefined
-          ? `${voter.avatar_radius}px`
+          ? avatarPxToPercent(voter.avatar_radius)
           : voter.gold
           ? "4px"
           : "50px";
@@ -529,7 +529,7 @@ const updatePollDisplay = (pollElement, poll) => {
       avatarEl.title = voter.name || voter.username;
       const voterRadius2 =
         voter.avatar_radius !== null && voter.avatar_radius !== undefined
-          ? `${voter.avatar_radius}px`
+          ? avatarPxToPercent(voter.avatar_radius)
           : voter.gold
           ? "4px"
           : "50px";
@@ -738,11 +738,10 @@ export const createTweetElement = (tweet, config = {}) => {
     tweet.author.avatar_radius !== null &&
     tweet.author.avatar_radius !== undefined
   ) {
-    tweetHeaderAvatarEl.style.setProperty(
-      "border-radius",
-      `${tweet.author.avatar_radius}px`,
-      "important"
-    );
+    // Convert user-configured pixel radius (profile reference) into a
+    // percentage so it scales visually on smaller avatars.
+    const rr = avatarPxToPercent(tweet.author.avatar_radius);
+    tweetHeaderAvatarEl.style.setProperty("border-radius", rr, "important");
   } else if (tweet.author.gold) {
     tweetHeaderAvatarEl.style.setProperty("border-radius", "4px", "important");
   } else {
@@ -2115,35 +2114,23 @@ export const createTweetElement = (tweet, config = {}) => {
   tweetInteractionsReactionEl.innerHTML = `
     <svg xmlns="http://www.w3.org/2000/svg" width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-smile-plus-icon lucide-smile-plus"><path d="M22 11v1a10 10 0 1 1-9-10"/><path d="M8 14s1.5 2 4 2 4-2 4-2"/><line x1="9" x2="9.01" y1="9" y2="9"/><line x1="15" x2="15.01" y1="9" y2="9"/><path d="M16 5h6"/><path d="M19 2v6"/></svg>`;
 
-  const updateReactionDisplay = async () => {
-    try {
-      const reactionsData = await query(
-        `/tweets/${tweet.id}/reactions?limit=50`
-      );
-      if (reactionsData?.success) {
-        tweet.reaction_count = reactionsData.total_reactions || 0;
-        const topReactions = reactionsData.top_reactions || [];
+  const updateReactionDisplay = () => {
+    const topReactions = tweet.top_reactions || [];
 
-        if (topReactions.length > 0) {
-          topReactionsSpan.innerHTML = topReactions
-            .map((r) => r.emoji)
-            .join("");
-          topReactionsSpan.style.display = "inline";
-        } else {
-          topReactionsSpan.innerHTML = "";
-          topReactionsSpan.style.display = "none";
-        }
+    if (topReactions.length > 0) {
+      topReactionsSpan.innerHTML = topReactions.map((r) => r.emoji).join("");
+      topReactionsSpan.style.display = "inline";
+    } else {
+      topReactionsSpan.innerHTML = "";
+      topReactionsSpan.style.display = "none";
+    }
 
-        if (tweet.reaction_count > 0) {
-          reactionCountSpan.textContent = String(tweet.reaction_count);
-          reactionCountSpan.style.display = "inline";
-        } else {
-          reactionCountSpan.textContent = "";
-          reactionCountSpan.style.display = "none";
-        }
-      }
-    } catch (err) {
-      console.error("Failed to fetch reactions:", err);
+    if (tweet.reaction_count > 0) {
+      reactionCountSpan.textContent = String(tweet.reaction_count);
+      reactionCountSpan.style.display = "inline";
+    } else {
+      reactionCountSpan.textContent = "";
+      reactionCountSpan.style.display = "none";
     }
   };
 
@@ -2174,7 +2161,9 @@ export const createTweetElement = (tweet, config = {}) => {
             });
 
             if (result?.success) {
-              await updateReactionDisplay();
+              tweet.reaction_count = result.total_reactions || 0;
+              tweet.top_reactions = result.top_reactions || [];
+              updateReactionDisplay();
             } else {
               toastQueue.add(`<h1>${result?.error || "Failed to react"}</h1>`);
             }
