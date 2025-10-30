@@ -825,7 +825,12 @@ export default new Elysia({ prefix: "/tweets" })
       const total = countReactionsForPost.get(id)?.total || 0;
       const topReactions = getTopReactionsForPost.all(id);
 
-      return { success: true, reactions, total_reactions: total, top_reactions: topReactions };
+      return {
+        success: true,
+        reactions,
+        total_reactions: total,
+        top_reactions: topReactions,
+      };
     } catch (err) {
       console.error("Get reactions error:", err);
       return { error: "Failed to get reactions" };

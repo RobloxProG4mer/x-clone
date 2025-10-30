@@ -2088,7 +2088,7 @@ export const createTweetElement = (tweet, config = {}) => {
 
   const reactionCountSpan = document.createElement("span");
   reactionCountSpan.className = "reaction-count";
-  
+
   const topReactionsSpan = document.createElement("span");
   topReactionsSpan.className = "top-reactions";
 
@@ -2102,29 +2102,33 @@ export const createTweetElement = (tweet, config = {}) => {
 
   const updateReactionDisplay = async () => {
     try {
-      const reactionsData = await query(`/tweets/${tweet.id}/reactions?limit=50`);
+      const reactionsData = await query(
+        `/tweets/${tweet.id}/reactions?limit=50`
+      );
       if (reactionsData?.success) {
         tweet.reaction_count = reactionsData.total_reactions || 0;
         const topReactions = reactionsData.top_reactions || [];
-        
+
         if (topReactions.length > 0) {
-          topReactionsSpan.innerHTML = topReactions.map(r => r.emoji).join('');
-          topReactionsSpan.style.display = 'inline';
+          topReactionsSpan.innerHTML = topReactions
+            .map((r) => r.emoji)
+            .join("");
+          topReactionsSpan.style.display = "inline";
         } else {
-          topReactionsSpan.innerHTML = '';
-          topReactionsSpan.style.display = 'none';
+          topReactionsSpan.innerHTML = "";
+          topReactionsSpan.style.display = "none";
         }
-        
+
         if (tweet.reaction_count > 0) {
           reactionCountSpan.textContent = String(tweet.reaction_count);
-          reactionCountSpan.style.display = 'inline';
+          reactionCountSpan.style.display = "inline";
         } else {
-          reactionCountSpan.textContent = '';
-          reactionCountSpan.style.display = 'none';
+          reactionCountSpan.textContent = "";
+          reactionCountSpan.style.display = "none";
         }
       }
     } catch (err) {
-      console.error('Failed to fetch reactions:', err);
+      console.error("Failed to fetch reactions:", err);
     }
   };
 
@@ -2185,7 +2189,11 @@ export const createTweetElement = (tweet, config = {}) => {
     const container = document.createElement("div");
     container.className = "reactions-list";
 
-    if (!reactionsData || !reactionsData.reactions || reactionsData.reactions.length === 0) {
+    if (
+      !reactionsData ||
+      !reactionsData.reactions ||
+      reactionsData.reactions.length === 0
+    ) {
       container.innerHTML = `<p>No reactions yet.</p>`;
     } else {
       reactionsData.reactions.forEach((r) => {
@@ -2196,12 +2204,22 @@ export const createTweetElement = (tweet, config = {}) => {
         const usernameText = r.username || "";
 
         item.innerHTML = `
-          <div class="reaction-user-avatar"><img src="${avatarSrc}" alt="${displayName.replaceAll("<", "&lt;").replaceAll(">", "&gt;")}" loading="lazy"/></div>
+          <div class="reaction-user-avatar"><img src="${avatarSrc}" alt="${displayName
+          .replaceAll("<", "&lt;")
+          .replaceAll(">", "&gt;")}" loading="lazy"/></div>
           <div class="reaction-content">
             <div class="reaction-emoji">${r.emoji}</div>
             <div class="reaction-user-info">
-              <div class="reaction-user-name">${displayName.replaceAll("<", "&lt;").replaceAll(">", "&gt;")}</div>
-              <div class="reaction-user-username">${usernameText ? `@${usernameText.replaceAll("<", "&lt;").replaceAll(">", "&gt;")}` : ""}</div>
+              <div class="reaction-user-name">${displayName
+                .replaceAll("<", "&lt;")
+                .replaceAll(">", "&gt;")}</div>
+              <div class="reaction-user-username">${
+                usernameText
+                  ? `@${usernameText
+                      .replaceAll("<", "&lt;")
+                      .replaceAll(">", "&gt;")}`
+                  : ""
+              }</div>
             </div>
           </div>
         `;
@@ -2216,13 +2234,13 @@ export const createTweetElement = (tweet, config = {}) => {
     });
   };
 
-  topReactionsSpan.addEventListener('click', (e) => {
+  topReactionsSpan.addEventListener("click", (e) => {
     e.preventDefault();
     e.stopPropagation();
     showReactionsModal();
   });
 
-  reactionCountSpan.addEventListener('click', (e) => {
+  reactionCountSpan.addEventListener("click", (e) => {
     e.preventDefault();
     e.stopPropagation();
     showReactionsModal();

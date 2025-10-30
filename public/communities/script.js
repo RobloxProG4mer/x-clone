@@ -1,5 +1,6 @@
 import { convertImageToWebP } from "../shared/image-utils.js";
 import toastQueue from "../shared/toasts.js";
+import api from "../timeline/js/api.js";
 
 const showToast = (message, type = "info") => {
   const typeMap = {
@@ -21,8 +22,6 @@ function formatRoleLabel(role) {
   }
   return trimmed.charAt(0).toUpperCase() + trimmed.slice(1);
 }
-
-import api from "../timeline/js/api.js";
 
 let currentCommunity = null;
 let currentMember = null;
@@ -203,6 +202,8 @@ async function openCommunityModal(communityId) {
 
 function showAboutTab() {
   const content = document.getElementById("aboutContent");
+  if (!content) return;
+
   content.innerHTML = `
     <div class="about-section">
       <h3>Description</h3>
@@ -214,58 +215,62 @@ function showAboutTab() {
     </div>
     <div class="about-section">
       <h3>Access Mode</h3>
-      <p>${
-        currentCommunity.access_mode === "locked"
-          ? "🔒 Locked - Requires approval to join"
-          : "🔓 Open - Anyone can join"
-      }</p>
+      <p>$
+        ${
+          currentCommunity.access_mode === "locked"
+            ? "🔒 Locked - Requires approval to join"
+            : "🔓 Open - Anyone can join"
+        }
+      </p>
     </div>
   `;
 }
 
 async function showTweetsTab() {
   const content = document.getElementById("tweetsContent");
-  content.innerHTML = '<div class="loading">Loading tweets...</div>';
+  if (!content) return;
+
+  content.innerHTML = "";
+
+  const tweetsWrapper = document.createElement("div");
+  tweetsWrapper.style.cssText =
+    "display: flex; flex-direction: column; gap: 16px;";
 
   if (currentMember) {
-    const composeBtn = document.createElement("button");
-    composeBtn.className = "btn primary";
-    composeBtn.textContent = "Tweet in this community";
-    composeBtn.style.marginBottom = "16px";
-    composeBtn.addEventListener("click", async () => {
-      const { createModal } = await import("/public/shared/ui-utils.js");
-      const { createComposer } = await import(
-        "/public/timeline/js/composer.js"
-      );
+    const { createComposer } = await import("/public/timeline/js/composer.js");
 
-      const composer = await createComposer({
-        placeholder: `Share something with ${currentCommunity.name}...`,
-        callback: async (newTweet) => {
-          showToast("Tweet posted to community!", "success");
-          modal.close();
-          showTweetsTab();
-        },
-        communityId: currentCommunity.id,
-      });
-
-      const modal = createModal({
-        title: `Post to ${currentCommunity.name}`,
-        content: composer,
-      });
+    const composer = await createComposer({
+      placeholder: `Share something with ${currentCommunity.name}...`,
+      callback: async (_newTweet) => {
+        showToast("Tweet posted to community!", "success");
+        showTweetsTab();
+      },
+      communityId: currentCommunity.id,
     });
-    content.innerHTML = "";
-    content.appendChild(composeBtn);
+
+    composer.classList.remove();
+    composer.classList.add("compose-tweet");
+    tweetsWrapper.appendChild(composer);
   }
+
+  const loadingDiv = document.createElement("div");
+  loadingDiv.className = "loading";
+  loadingDiv.textContent = "Loading tweets...";
+  tweetsWrapper.appendChild(loadingDiv);
+
+  content.appendChild(tweetsWrapper);
 
   const { tweets } = await api(
     `/communities/${currentCommunity.id}/tweets?limit=50`
   );
 
+  tweetsWrapper.removeChild(loadingDiv);
+
   if (!tweets || tweets.length === 0) {
     const emptyMsg = document.createElement("p");
     emptyMsg.className = "empty-state";
     emptyMsg.textContent = "No tweets in this community yet.";
-    content.appendChild(emptyMsg);
+    tweetsWrapper.appendChild(emptyMsg);
     return;
   }
 
@@ -284,52 +289,61 @@ async function showTweetsTab() {
     tweetsContainer.appendChild(tweetEl);
   }
 
-  content.appendChild(tweetsContainer);
+  tweetsWrapper.appendChild(tweetsContainer);
 }
 
 async function showMembersTab() {
   const content = document.getElementById("membersContent");
+  if (!content) return;
   content.innerHTML = '<div class="loading">Loading members...</div>';
 
   const { members } = await api(
     `/communities/${currentCommunity.id}/members?limit=100`
   );
 
+  content.innerHTML = "";
+
   if (!members || members.length === 0) {
     content.innerHTML = '<p class="empty-state">No members yet.</p>';
     return;
   }
 
-  // Hide suspended accounts from the members list. Backends may flag suspended
-  // users in different fields; check common ones and filter them out. Also
-  // check nested `user` object when the API returns member.user instead of
-  // putting flags on the member record itself.
-  const visibleMembers = members.filter((m) => {
+  const visibleMembers = (members || []).filter((m) => {
+    if (!m) return false;
     const suspendedFlags = [
       m.suspended,
+      m.is_suspended,
       m.suspended_at,
       m.suspended_by,
-      m.is_suspended,
+      m.status,
     ];
 
-    // Check nested user object if present
     if (m.user) {
       suspendedFlags.push(
         m.user.suspended,
         m.user.is_suspended,
-        m.user.suspended_at
+        m.user.suspended_at,
+        m.user.status
+      );
+      if (m.user.profile) {
+        suspendedFlags.push(
+          m.user.profile.suspended,
+          m.user.profile.is_suspended,
+          m.user.profile.status
+        );
+      }
+    }
+
+    if (m.profile) {
+      suspendedFlags.push(
+        m.profile.suspended,
+        m.profile.is_suspended,
+        m.profile.suspended_at,
+        m.profile.status
       );
     }
 
-      return !suspendedFlags.some((v) => Boolean(v)) && !m.status;
-    });
-  
-      if (m.profile) {
-        suspendedFlags.push(m.profile.suspended, m.profile.is_suspended, m.profile.status);
-      }
-    
-      return !suspendedFlags.some((v) => Boolean(v));
-    });
+    return !suspendedFlags.some((v) => Boolean(v));
   });
 
   if (visibleMembers.length === 0) {
@@ -337,7 +351,6 @@ async function showMembersTab() {
     return;
   }
 
-  content.innerHTML = "";
   for (const member of visibleMembers) {
     const memberEl = createMemberElement(member);
     content.appendChild(memberEl);
@@ -614,53 +627,10 @@ async function unbanUser(userId) {
   if (result.error) {
     showToast(result.error, "error");
     return;
-    // Hide suspended accounts from the members list. Different APIs may mark
-    // suspension using different fields (suspended, is_suspended, suspended_at,
-    // status, or nested under `user` / `profile`). Collect common flags and
-    // exclude any member with truthy suspension indicators.
-    const visibleMembers = members.filter((m) => {
-      const suspendedFlags = [];
-
-      // top-level member flags
-      suspendedFlags.push(
-        m.suspended,
-        m.is_suspended,
-        m.suspended_at,
-        m.suspended_by,
-        m.status
-      );
-
-      // nested user object (some endpoints return member.user)
-      if (m.user) {
-        suspendedFlags.push(
-          m.user.suspended,
-          m.user.is_suspended,
-          m.user.suspended_at,
-          m.user.status,
-          m.user.profile?.suspended,
-          m.user.profile?.is_suspended,
-          m.user.profile?.status
-        );
-      }
-
-      // nested profile object on the member record
-      if (m.profile) {
-        suspendedFlags.push(
-          m.profile.suspended,
-          m.profile.is_suspended,
-          m.profile.suspended_at,
-          m.profile.status
-        );
-      }
-
-      // If any of the flags are truthy, consider the member suspended/hidden.
-      return !suspendedFlags.some((v) => Boolean(v));
-    });
-    return;
   }
 
-  showToast("Request approved", "success");
-  showRequestsTab();
+  showToast("User unbanned", "success");
+  showMembersTab();
 }
 
 async function rejectRequest(requestId) {

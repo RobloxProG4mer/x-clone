@@ -81,7 +81,7 @@ const getCommunityMembers = db.prepare(`
   SELECT cm.*, u.username, u.name, u.avatar, u.verified, u.gold, u.avatar_radius
   FROM community_members cm
   JOIN users u ON cm.user_id = u.id
-  WHERE cm.community_id = ? AND cm.banned = FALSE
+  WHERE cm.community_id = ? AND cm.banned = FALSE AND u.suspended = FALSE
   ORDER BY 
     CASE cm.role
       WHEN 'owner' THEN 1
@@ -96,7 +96,7 @@ const getPendingJoinRequests = db.prepare(`
   SELECT jr.*, u.username, u.name, u.avatar, u.verified, u.gold, u.avatar_radius
   FROM community_join_requests jr
   JOIN users u ON jr.user_id = u.id
-  WHERE jr.community_id = ? AND jr.status = 'pending'
+  WHERE jr.community_id = ? AND jr.status = 'pending' AND u.suspended = FALSE
   ORDER BY jr.created_at ASC
   LIMIT ? OFFSET ?
 `);
@@ -104,7 +104,8 @@ const getUserCommunities = db.prepare(`
   SELECT c.*, cm.role
   FROM communities c
   JOIN community_members cm ON c.id = cm.community_id
-  WHERE cm.user_id = ? AND cm.banned = FALSE
+  JOIN users u ON cm.user_id = u.id
+  WHERE cm.user_id = ? AND cm.banned = FALSE AND u.suspended = FALSE
   ORDER BY cm.joined_at DESC
   LIMIT ? OFFSET ?
 `);
