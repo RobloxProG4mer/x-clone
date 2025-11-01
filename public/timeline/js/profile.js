@@ -397,7 +397,7 @@ const renderProfile = (data) => {
       el.className = "follows-me-badge";
       el.textContent = "Follows you";
       el.style.cssText =
-        "margin-left: 8px; padding: 2px 8px; background: rgba(var(--primary-rgb), 0.1); color: rgb(var(--primary-rgb)); border-radius: 4px; font-size: 12px; font-weight: 500;";
+        "margin: -5px 0 4px 0; padding: 4px 10px; background: rgba(var(--primary-rgb), 0.1); color: rgb(var(--primary-rgb)); border-radius: 6px; font-size: 12px; font-weight: 500; white-space: nowrap; flex-shrink: 0;";
       return el;
     };
 

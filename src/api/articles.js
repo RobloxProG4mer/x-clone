@@ -10,15 +10,19 @@ const JWT_SECRET = process.env.JWT_SECRET;
 const getUserByUsername = db.query("SELECT * FROM users WHERE username = ?");
 const getUserById = db.query("SELECT * FROM users WHERE id = ?");
 const listArticles = db.query(`
-  SELECT * FROM posts
-  WHERE is_article = TRUE AND reply_to IS NULL
-  ORDER BY created_at DESC
+  SELECT p.* FROM posts p
+  JOIN users u ON p.user_id = u.id
+  LEFT JOIN suspensions s ON u.id = s.user_id AND s.status = 'active' AND (s.expires_at IS NULL OR s.expires_at > datetime('now'))
+  WHERE p.is_article = TRUE AND p.reply_to IS NULL AND u.suspended = 0 AND s.user_id IS NULL
+  ORDER BY p.created_at DESC
   LIMIT 10
 `);
 const listArticlesBefore = db.query(`
-  SELECT * FROM posts
-  WHERE is_article = TRUE AND reply_to IS NULL AND created_at < ?
-  ORDER BY created_at DESC
+  SELECT p.* FROM posts p
+  JOIN users u ON p.user_id = u.id
+  LEFT JOIN suspensions s ON u.id = s.user_id AND s.status = 'active' AND (s.expires_at IS NULL OR s.expires_at > datetime('now'))
+  WHERE p.is_article = TRUE AND p.reply_to IS NULL AND p.created_at < ? AND u.suspended = 0 AND s.user_id IS NULL
+  ORDER BY p.created_at DESC
   LIMIT 10
 `);
 const getArticleById = db.query(

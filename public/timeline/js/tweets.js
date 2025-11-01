@@ -860,7 +860,7 @@ export const createTweetElement = (tweet, config = {}) => {
   const source_icons = {
     desktop_web: `<svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="tweet-source-icon lucide lucide-monitor-icon lucide-monitor"><rect width="20" height="14" x="2" y="3" rx="2"/><line x1="8" x2="16" y1="21" y2="21"/><line x1="12" x2="12" y1="17" y2="21"/></svg>`,
     mobile_web: `<svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="tweet-source-icon lucide lucide-smartphone-icon lucide-smartphone"><rect width="14" height="20" x="5" y="2" rx="2" ry="2"/><path d="M12 18h.01"/></svg>`,
-    scheduled: `<svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-clock-icon lucide-clock"><path d="M12 6v6l4 2"/><circle cx="12" cy="12" r="10"/></svg>`
+    scheduled: `<svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-clock-icon lucide-clock"><path d="M12 6v6l4 2"/><circle cx="12" cy="12" r="10"/></svg>`,
   };
 
   const tweetHeaderUsernameEl = document.createElement("p");
@@ -2240,7 +2240,71 @@ export const createTweetElement = (tweet, config = {}) => {
   if (size !== "preview") {
     tweetEl.appendChild(tweetInteractionsEl);
     createRestrictionElement();
+
+    if (clickToOpen === false && tweet.reaction_count > 0) {
+      const expandedStatsEl = document.createElement("div");
+      expandedStatsEl.className = "expanded-tweet-stats";
+
+      const reactionsStatEl = document.createElement("div");
+      reactionsStatEl.className = "tweet-stat-item";
+      reactionsStatEl.innerHTML = `
+        <span class="stat-text clickable-count">${
+          tweet.reaction_count
+        } reaction${tweet.reaction_count !== 1 ? "s" : ""}</span>
+      `;
+      reactionsStatEl.addEventListener("click", async (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        const reactionsData = await query(`/tweets/${tweet.id}/reactions`);
+        const container = document.createElement("div");
+        container.className = "reactions-list";
+        if (
+          !reactionsData ||
+          !reactionsData.reactions ||
+          reactionsData.reactions.length === 0
+        ) {
+          container.innerHTML = `<p>No reactions yet.</p>`;
+        } else {
+          reactionsData.reactions.forEach((r) => {
+            const item = document.createElement("div");
+            item.className = "reaction-item";
+            const avatarSrc = r.avatar || "/public/shared/default-avatar.png";
+            const displayName = r.name || r.username || "Unknown";
+            const usernameText = r.username || "";
+            item.innerHTML = `
+              <div class="reaction-user-avatar"><img src="${avatarSrc}" alt="${displayName
+              .replaceAll("<", "&lt;")
+              .replaceAll(">", "&gt;")}" loading="lazy"/></div>
+              <div class="reaction-content">
+                <div class="reaction-emoji">${r.emoji}</div>
+                <div class="reaction-user-info">
+                  <div class="reaction-user-name">${displayName
+                    .replaceAll("<", "&lt;")
+                    .replaceAll(">", "&gt;")}</div>
+                  <div class="reaction-user-username">${
+                    usernameText
+                      ? `@${usernameText
+                          .replaceAll("<", "&lt;")
+                          .replaceAll(">", "&gt;")}`
+                      : ""
+                  }</div>
+                </div>
+              </div>
+            `;
+            container.appendChild(item);
+          });
+        }
+        createModal({
+          title: "Reactions",
+          content: container,
+          className: "reactions-modal",
+        });
+      });
+      expandedStatsEl.appendChild(reactionsStatEl);
+      tweetEl.appendChild(expandedStatsEl);
+    }
   }
+
   if (tweet.top_reply && showTopReply) {
     const topReplyEl = createTweetElement(tweet.top_reply, {
       clickToOpen: true,

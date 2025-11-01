@@ -8,6 +8,11 @@ body {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   scrollbar-gutter: stable;
+  box-sizing: border-box;
+}
+
+* {
+  box-sizing: border-box;
 }
 
 #profileContainer.suspended .profile-banner {
@@ -98,8 +103,10 @@ body {
   flex: 1;
   min-width: 0;
   max-width: 600px;
+  width: 100%;
   margin: 0px;
   padding: 12px;
+  overflow-x: hidden;
 }
 
 .page-active {
@@ -1069,6 +1076,8 @@ nav {
   height: auto;
   position: relative;
   transition: none;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
 
   &.clickable {
     cursor: pointer;
@@ -1137,6 +1146,8 @@ nav {
     line-height: 1.4;
     color: var(--text-primary);
     overflow: hidden;
+    max-width: 100%;
+    overflow-wrap: break-word;
 
     p {
       margin: 0;
@@ -1914,6 +1925,7 @@ nav {
         display: flex;
         align-items: center;
         gap: 8px;
+        flex-wrap: wrap;
       }
 
       .verification-badge {
@@ -2801,6 +2813,14 @@ nav {
       & {
         transform: scale(0.95);
       }
+    }
+
+    &.settings-modal {
+      max-width: 1400px;
+      width: min(1400px, calc(100vw - 32px));
+      height: min(90vh, 900px);
+      max-height: 90vh;
+      overflow: hidden;
     }
 
     .compose-tweet {
@@ -5446,24 +5466,24 @@ nav {
 }
 
 .expanded-tweet-stats {
-  padding: 4px 0 0;
+  padding: 12px 0 8px;
   display: flex;
   flex-direction: column;
+  border-top: 1px solid var(--border-primary);
+  margin-top: 8px;
 }
 
 .tweet-stat-item {
   display: flex;
   align-items: center;
-  gap: 6px;
-  padding: 8px 12px;
-  padding-bottom: 0px;
-  border-radius: 8px;
+  gap: 8px;
+  padding: 10px 0;
   cursor: pointer;
   transition: opacity 0.2s ease;
 }
 
 .tweet-stat-item:hover {
-  opacity: 0.8;
+  opacity: 0.75;
 }
 
 .stat-avatars {
@@ -5713,7 +5733,7 @@ nav {
 
 .communities-list {
   display: grid;
-  gap: 16px;
+  gap: 12px;
 
   &.hidden {
     display: none;
@@ -5723,17 +5743,14 @@ nav {
 .community-card {
   background: var(--bg-primary);
   border: 1px solid var(--border-primary);
-  border-radius: 12px;
+  border-radius: 16px;
   overflow: hidden;
   cursor: pointer;
-  /* only transition border-color to keep visual affordance; remove transform/box-shadow motion */
-  transition: border-color 0.15s ease;
+  transition: border-color 0.15s ease, background-color 0.15s ease;
 
   &:hover {
     border-color: var(--primary);
-    /* explicitly prevent movement and shadow */
-    transform: none !important;
-    box-shadow: none !important;
+    background-color: var(--bg-secondary);
   }
 }
 
@@ -5747,7 +5764,7 @@ nav {
 }
 
 .community-card-content {
-  padding: 12px;
+  padding: 16px;
 }
 
 .community-icon {
@@ -5774,10 +5791,11 @@ nav {
   h3 {
     font-size: 16px;
     font-weight: 700;
-    margin-bottom: 6px;
+    margin: 0 0 8px 0;
     display: flex;
     align-items: center;
     gap: 6px;
+    color: var(--text-primary);
   }
 }
 
@@ -6858,7 +6876,7 @@ emoji-picker.emoji-picker-popup {
 .settings-content {
   background-color: var(--bg-secondary);
   border-radius: 8px;
-  padding: 32px;
+  padding: 24px;
   flex: 1;
   min-width: 0;
   max-width: 900px;
@@ -7023,14 +7041,12 @@ emoji-picker.emoji-picker-popup {
 }
 
 .color-presets {
-  display: grid;
-  /* make the grid fill the available width so items distribute evenly */
+  display: flex;
+  flex-wrap: wrap;
   width: 100%;
-  grid-template-columns: repeat(auto-fit, minmax(56px, 1fr));
   gap: 14px;
   padding: 8px 12px;
   align-items: center;
-  justify-items: center;
 }
 
 .color-option {
@@ -7328,32 +7344,45 @@ emoji-picker.emoji-picker-popup {
 
 @media (max-width: 768px) {
   .settings {
-    padding: 0 10px;
+    padding: 0 8px;
+  }
+
+  .settings-header {
+    padding: 12px 0;
+  }
+
+  .settings-header-info h1 {
+    font-size: 20px;
   }
 
   .settings-body {
     flex-direction: column;
+    gap: 12px;
   }
 
   .settings-sidebar {
     width: 100%;
     display: flex;
     overflow-x: auto;
-    gap: 8px;
+    gap: 4px;
+    padding: 6px;
   }
 
   .settings-tab-btn {
     white-space: nowrap;
     margin-bottom: 0;
+    padding: 10px 14px;
+    font-size: 14px;
   }
 
   .setting-item {
     flex-direction: column;
-    gap: 16px;
+    gap: 12px;
   }
 
   .settings-content {
     max-width: 100%;
+    padding: 16px 12px;
   }
 
   .color-presets {
@@ -7415,4 +7444,170 @@ emoji-picker.emoji-picker-popup {
 
 .toggle-switch input:checked + .toggle-slider:before {
   transform: translateX(26px);
+}
+
+.modal.settings-modal {
+  box-sizing: border-box;
+  /* wider on large screens; keep small viewport margins */
+  width: min(1400px, calc(100vw - 32px));
+  /* stable height: use the current maximum (90vh) but cap to 900px */
+  height: min(90vh, 900px);
+  padding: 0;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.modal.settings-modal .modal-header {
+  padding: 20px 24px;
+  border-bottom: 1px solid var(--border-primary);
+}
+
+.modal.settings-modal .modal-close {
+  top: 20px;
+  right: 20px;
+}
+
+.settings-modal-wrapper {
+  display: flex;
+  flex-direction: row;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+  width: 100%;
+  height: 100%;
+}
+
+.settings-modal-sidebar {
+  width: 220px;
+  background: var(--bg-primary);
+  border-right: 1px solid var(--border-primary);
+  overflow-y: auto;
+  overflow-x: hidden;
+  flex-shrink: 0;
+  padding: 8px;
+}
+
+.settings-modal-tab {
+  width: 100%;
+  padding: 12px 16px;
+  text-align: left;
+  background: none;
+  border: none;
+  color: var(--text-primary);
+  cursor: pointer;
+  font-size: 15px;
+  font-weight: 400;
+  transition: all 0.2s;
+  border-radius: 8px;
+  margin-bottom: 4px;
+  font-family: inherit;
+}
+
+.settings-modal-tab:hover {
+  background: var(--bg-overlay-light);
+}
+
+.settings-modal-tab.active {
+  background: var(--primary);
+  color: #fff;
+  font-weight: 500;
+}
+
+.settings-modal-content-wrapper {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 32px;
+  min-width: 0;
+  max-width: 100%;
+  background: var(--bg-secondary);
+}
+
+.modal.settings-modal .settings-section {
+  padding: 0;
+  border-bottom: none;
+}
+
+.modal.settings-modal .settings-section h1 {
+  margin: 0 0 24px 0;
+  font-size: 28px;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.modal.settings-modal .setting-group {
+  margin-bottom: 32px;
+}
+
+.modal.settings-modal .setting-item {
+  display: flex;
+  flex-direction: row;
+  gap: 16px;
+  align-items: center;
+  padding: 16px 0;
+  border-bottom: 1px solid var(--border-primary);
+}
+
+.modal.settings-modal .setting-item:last-child {
+  border-bottom: none;
+}
+
+.modal.settings-modal .setting-label {
+  flex: 1;
+  min-width: 0;
+}
+
+.modal.settings-modal .setting-control {
+  flex-shrink: 0;
+}
+
+.modal.settings-modal .accent-color-section {
+  max-width: 100%;
+}
+
+.modal.settings-modal .color-presets {
+  width: 100%;
+  max-width: 100%;
+}
+
+@media (max-width: 768px) {
+  .modal.settings-modal {
+    width: 100vw;
+    height: 100vh;
+    max-height: 100vh;
+    border-radius: 0;
+  }
+
+  .settings-modal-wrapper {
+    flex-direction: column;
+  }
+
+  .settings-modal-sidebar {
+    width: 100%;
+    border-right: none;
+    border-bottom: 1px solid var(--border-primary);
+    display: flex;
+    overflow-x: auto;
+    overflow-y: hidden;
+    flex-shrink: 0;
+    padding: 6px;
+  }
+
+  .settings-modal-tab {
+    white-space: nowrap;
+    padding: 10px 14px;
+    font-size: 14px;
+    border-radius: 6px;
+  }
+
+  .settings-modal-content-wrapper {
+    padding: 20px;
+  }
+
+  .settings-modal .setting-item {
+    flex-direction: column;
+    gap: 12px;
+    align-items: stretch;
+  }
 }

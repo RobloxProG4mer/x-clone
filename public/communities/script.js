@@ -37,10 +37,12 @@ async function loadCommunities() {
     return;
   }
 
+  const fragment = document.createDocumentFragment();
   for (const community of communities) {
     const card = createCommunityCard(community);
-    list.appendChild(card);
+    fragment.appendChild(card);
   }
+  list.appendChild(fragment);
 }
 
 async function loadMyCommunities() {
@@ -57,10 +59,12 @@ async function loadMyCommunities() {
     return;
   }
 
+  const fragment = document.createDocumentFragment();
   for (const community of communities) {
     const card = createCommunityCard(community, true);
-    list.appendChild(card);
+    fragment.appendChild(card);
   }
+  list.appendChild(fragment);
 }
 
 function createCommunityCard(community, showRole = false) {
@@ -351,10 +355,12 @@ async function showMembersTab() {
     return;
   }
 
+  const fragment = document.createDocumentFragment();
   for (const member of visibleMembers) {
     const memberEl = createMemberElement(member);
-    content.appendChild(memberEl);
+    fragment.appendChild(memberEl);
   }
+  content.appendChild(fragment);
 }
 
 function createMemberElement(member) {

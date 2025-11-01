@@ -45,14 +45,6 @@ window.onunhandledrejection = (event) => {
 
   let currentTimeline = "home";
 
-  if (
-    window.location.pathname === "/settings" ||
-    window.location.pathname === "/settings/"
-  ) {
-    window.location.replace("/settings/account");
-    return;
-  }
-
   let isLoading = false;
   let hasMoreTweets = true;
   let oldestTweetId = null;
@@ -245,24 +237,6 @@ addRoute(
     import("./communities.js").then(({ loadCommunityDetail }) => {
       loadCommunityDetail(communityId);
     });
-  }
-);
-
-addRoute(
-  (pathname) => pathname.startsWith("/settings"),
-  (pathname) => {
-    if (pathname === "/settings" || pathname === "/settings/") {
-      window.location.replace("/settings/account");
-      return;
-    }
-
-    (async () => {
-      const pathParts = pathname.split("/");
-      const section = pathParts[2] || "account";
-
-      const { openSettings } = await import("./settings.js");
-      openSettings(section);
-    })();
   }
 );
 

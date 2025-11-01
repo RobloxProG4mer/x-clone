@@ -528,6 +528,24 @@ export function createModal(options) {
   overlay.appendChild(modal);
   document.body.appendChild(overlay);
 
+  // If this modal is the settings modal, enforce a stable wide size inline
+  // so it can't be constrained by other generic modal rules elsewhere.
+  if (className?.includes("settings-modal")) {
+    try {
+      modal.style.boxSizing = "border-box";
+      // Use !important via setProperty to override ALL other CSS rules
+      modal.style.setProperty(
+        "width",
+        "min(1400px, calc(100vw - 32px))",
+        "important"
+      );
+      modal.style.setProperty("max-width", "1400px", "important");
+      modal.style.setProperty("height", "min(90vh, 900px)", "important");
+      modal.style.setProperty("max-height", "90vh", "important");
+      modal.style.setProperty("overflow", "hidden", "important");
+    } catch (_) {}
+  }
+
   if (closeOnOverlayClick) {
     overlay.addEventListener("click", (e) => {
       if (e.target === overlay) {
@@ -535,6 +553,11 @@ export function createModal(options) {
       }
     });
   }
+
+  // Prevent clicks inside modal from closing it
+  modal.addEventListener("click", (e) => {
+    e.stopPropagation();
+  });
 
   return {
     close: closeModal,

@@ -240,6 +240,8 @@ function createNotificationElement(notification) {
   notificationEl.dataset.id = notification.id;
   notificationEl.dataset.type = notification.type;
   notificationEl.dataset.relatedId = notification.related_id || "";
+  // expose a direct URL (if present) for click handling/navigation
+  notificationEl.dataset.relatedUrl = notification.url || "";
 
   const iconEl = document.createElement("div");
   iconEl.className = `notification-icon ${
@@ -264,16 +266,44 @@ function createNotificationElement(notification) {
     return string.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
   }
 
-  // Prepare the remaining text by removing any @username occurrences so we don't duplicate.
+  // Prepare the remaining text by normalizing whitespace and removing any
+  // @username or display name occurrences so we don't duplicate the actor.
   let remainingText = notification.content || "";
-  if (actorUsername) {
+
+  // Normalize non-breaking spaces and collapse runs of whitespace so
+  // matching multi-word display names is more robust (fixes two-word names).
+  try {
+    remainingText = remainingText
+      .replace(/\u00A0/g, " ")
+      .replace(/\s+/g, " ")
+      .trim();
+  } catch {
+    // noop: keep the current remainingText if normalization fails
+  }
+
+  if (actorName && remainingText) {
     try {
-      const re = new RegExp(`@?${escapeRegExp(actorUsername)}`, "gi");
-      remainingText = remainingText.replace(re, "").trim();
-    } catch {
-      // fall back to original content on any error
-      remainingText = notification.content || "";
-    }
+      const normActorName = actorName
+        .replace(/\u00A0/g, " ")
+        .replace(/\s+/g, " ")
+        .trim();
+
+      const displayNameRe = new RegExp(escapeRegExp(normActorName), "gi");
+      remainingText = remainingText.replace(displayNameRe, "");
+
+      if (actorUsername) {
+        const usernameRe = new RegExp(`@?${escapeRegExp(actorUsername)}`, "gi");
+        remainingText = remainingText.replace(usernameRe, "");
+        const parenRe = new RegExp(
+          `\\(\s*@?${escapeRegExp(actorUsername)}\s*\\)`,
+          "gi"
+        );
+        remainingText = remainingText.replace(parenRe, "");
+      }
+
+      remainingText = remainingText.replace(/\s+/g, " ").trim();
+      remainingText = remainingText.replace(/^[:;\-\s()]+/, "").trim();
+    } catch {}
   }
 
   // Build DOM. If we have an actor name, show it as a link and avoid inserting
@@ -338,6 +368,19 @@ function createNotificationElement(notification) {
       tweetSubtitleEl.className = "notification-tweet-subtitle";
       tweetSubtitleEl.textContent = tweetContent;
       contentEl.appendChild(tweetSubtitleEl);
+    } else if (notification.tweet.content) {
+      // Generic subtitle fallback: render tweet.content as a subtitle even
+      // if the notification type doesn't match the typical tweet-related
+      // types. This supports admin fake notifications which encode a
+      // subtitle into related_id.
+      const tweetContent =
+        notification.tweet.content.length > 100
+          ? `${notification.tweet.content.substring(0, 100)}...`
+          : notification.tweet.content;
+      const tweetSubtitleEl = document.createElement("div");
+      tweetSubtitleEl.className = "notification-tweet-subtitle";
+      tweetSubtitleEl.textContent = tweetContent;
+      contentEl.appendChild(tweetSubtitleEl);
     }
   }
 
@@ -345,6 +388,7 @@ function createNotificationElement(notification) {
     const notificationId = e.currentTarget.dataset.id;
     const notificationType = e.currentTarget.dataset.type;
     const relatedId = e.currentTarget.dataset.relatedId;
+    const relatedUrl = e.currentTarget.dataset.relatedUrl;
 
     if (authToken && isUnread) {
       try {
@@ -364,6 +408,23 @@ function createNotificationElement(notification) {
       }
     }
 
+    // If a direct URL is provided, open it instead of attempting to load a tweet
+    if (relatedUrl) {
+      try {
+        // preserve default behavior for links
+        window.location.href = relatedUrl;
+        return;
+      } catch (err) {
+        console.error("Failed to open notification URL:", err);
+      }
+    }
+    // If relatedId is present but encodes meta/subtitle only (no actionable id), do nothing
+    if (
+      relatedId &&
+      (relatedId.startsWith("meta:") || relatedId.startsWith("subtitle:"))
+    )
+      return;
+
     if (!relatedId) return;
 
     if (
@@ -371,6 +432,9 @@ function createNotificationElement(notification) {
         notificationType
       )
     ) {
+      // If relatedId encodes meta/subtitle (not a real tweet id), don't try to fetch a tweet
+      if (relatedId.startsWith("meta:") || relatedId.startsWith("subtitle:"))
+        return;
       try {
         const response = await query(`/tweets/${relatedId}`);
         if (response.tweet) {

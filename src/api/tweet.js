@@ -60,7 +60,7 @@ const getUserSuspendedFlag = db.query(`
 const isUserSuspendedById = (userId) => {
   const suspensionRow = isSuspendedQuery.get(userId);
   const userSuspFlag = getUserSuspendedFlag.get(userId);
-  return !!suspensionRow || !!(userSuspFlag?.suspended);
+  return !!suspensionRow || !!userSuspFlag?.suspended;
 };
 
 const getArticlePreviewById = db.query(`
@@ -796,10 +796,10 @@ export default new Elysia({ prefix: "/tweets" })
 
       const tweet = getTweetById.get(tweetId);
       if (!tweet) return { error: "Tweet not found" };
-        // Block interactions on tweets whose author is suspended.
-        if (isUserSuspendedById(tweet.user_id)) {
-          return { error: "Tweet not found" };
-        }
+      // Block interactions on tweets whose author is suspended.
+      if (isUserSuspendedById(tweet.user_id)) {
+        return { error: "Tweet not found" };
+      }
 
       const blockCheck = db
         .query(
@@ -1043,6 +1043,8 @@ export default new Elysia({ prefix: "/tweets" })
       article_preview: post.article_id
         ? articleMap.get(post.article_id) || null
         : null,
+      reaction_count: countReactionsForPost.get(post.id)?.total || 0,
+      top_reactions: getTopReactionsForPost.all(post.id),
     }));
 
     const processedReplies = replies.map((reply) => ({
@@ -1066,6 +1068,9 @@ export default new Elysia({ prefix: "/tweets" })
 
     const hasMoreReplies = replies.length === parseInt(limit);
 
+    const tweetReactionCount = countReactionsForPost.get(tweet.id)?.total || 0;
+    const tweetTopReactions = getTopReactionsForPost.all(tweet.id);
+
     return {
       tweet: {
         ...tweet,
@@ -1076,6 +1081,8 @@ export default new Elysia({ prefix: "/tweets" })
         article_preview: tweet.article_id
           ? articleMap.get(tweet.article_id) || null
           : null,
+        reaction_count: tweetReactionCount,
+        top_reactions: tweetTopReactions,
       },
       threadPosts: processedThreadPosts,
       replies: processedReplies,
@@ -1158,10 +1165,10 @@ export default new Elysia({ prefix: "/tweets" })
       const { id } = params;
       const tweet = getTweetById.get(id);
       if (!tweet) return { error: "Tweet not found" };
-        // Block interactions on tweets whose author is suspended.
-        if (isUserSuspendedById(tweet.user_id)) {
-          return { error: "Tweet not found" };
-        }
+      // Block interactions on tweets whose author is suspended.
+      if (isUserSuspendedById(tweet.user_id)) {
+        return { error: "Tweet not found" };
+      }
 
       const blockCheck = db
         .query(
@@ -1227,16 +1234,16 @@ export default new Elysia({ prefix: "/tweets" })
 
       // Prevent voting if blocked by the tweet author or vice versa
       const tweet = getTweetById.get(tweetId);
-        if (!tweet) return { error: "Tweet not found" };
-        // Block interactions on tweets whose author is suspended.
-        if (isUserSuspendedById(tweet.user_id)) {
-          return { error: "Tweet not found" };
-        }
-        const blockCheck = db
-          .query(
-            "SELECT 1 FROM blocks WHERE (blocker_id = ? AND blocked_id = ?) OR (blocker_id = ? AND blocked_id = ?) "
-          )
-          .get(user.id, tweet.user_id, tweet.user_id, user.id);
+      if (!tweet) return { error: "Tweet not found" };
+      // Block interactions on tweets whose author is suspended.
+      if (isUserSuspendedById(tweet.user_id)) {
+        return { error: "Tweet not found" };
+      }
+      const blockCheck = db
+        .query(
+          "SELECT 1 FROM blocks WHERE (blocker_id = ? AND blocked_id = ?) OR (blocker_id = ? AND blocked_id = ?) "
+        )
+        .get(user.id, tweet.user_id, tweet.user_id, user.id);
       if (blockCheck) {
         return { error: "You cannot interact with this user" };
       }
@@ -1296,10 +1303,10 @@ export default new Elysia({ prefix: "/tweets" })
 
       const tweet = getTweetById.get(id);
       if (!tweet) return { error: "Tweet not found" };
-        // If the tweet's author is suspended, hide replies/can-reply info.
-        if (isUserSuspendedById(tweet.user_id)) {
-          return { canReply: false, error: "Tweet not found" };
-        }
+      // If the tweet's author is suspended, hide replies/can-reply info.
+      if (isUserSuspendedById(tweet.user_id)) {
+        return { canReply: false, error: "Tweet not found" };
+      }
 
       const likers = getTweetLikers.all(id, parseInt(limit));
 

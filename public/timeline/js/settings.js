@@ -1,4 +1,5 @@
 import toastQueue from "../../shared/toasts.js";
+import { createModal } from "../../shared/ui-utils.js";
 import query from "./api.js";
 import { authToken } from "./auth.js";
 
@@ -1703,4 +1704,82 @@ export const openSettings = (section = "account") => {
   }
 
   return settingsPage;
+};
+
+export const openSettingsModal = (section = "account") => {
+  const modalContent = document.createElement("div");
+  modalContent.className = "settings-modal-wrapper";
+
+  const sidebar = document.createElement("div");
+  sidebar.className = "settings-modal-sidebar";
+
+  settingsPages.forEach((page) => {
+    const btn = document.createElement("button");
+    btn.className = `settings-modal-tab${
+      page.key === section ? " active" : ""
+    }`;
+    btn.dataset.tab = page.key;
+    btn.textContent = page.title;
+    sidebar.appendChild(btn);
+  });
+
+  const contentWrapper = document.createElement("div");
+  contentWrapper.className = "settings-modal-content-wrapper";
+
+  const contentArea = document.createElement("div");
+  contentArea.id = "settings-modal-content";
+  contentWrapper.appendChild(contentArea);
+
+  modalContent.appendChild(sidebar);
+  modalContent.appendChild(contentWrapper);
+
+  const modal = createModal({
+    title: "Settings",
+    content: modalContent,
+    className: "settings-modal",
+    onClose: () => {},
+  });
+
+  if (!eventHandlersSetup) {
+    eventHandlersSetup = true;
+    setupSettingsEventHandlers();
+  }
+
+  const switchTab = (tabKey) => {
+    const page = settingsPages.find((p) => p.key === tabKey);
+    if (!page) return;
+
+    sidebar.querySelectorAll(".settings-modal-tab").forEach((btn) => {
+      if (btn.dataset.tab === tabKey) {
+        btn.classList.add("active");
+      } else {
+        btn.classList.remove("active");
+      }
+    });
+
+    contentArea.textContent = "";
+    const node = page.content();
+    contentArea.appendChild(node);
+
+    if (tabKey === "themes") {
+      setTimeout(() => {
+        isRestoringState = true;
+        loadCurrentAccentColor();
+        loadCurrentThemeMode();
+        setTimeout(() => {
+          isRestoringState = false;
+        }, 200);
+      }, 50);
+    }
+  };
+
+  sidebar.querySelectorAll(".settings-modal-tab").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      switchTab(btn.dataset.tab);
+    });
+  });
+
+  switchTab(section);
+
+  return modal;
 };

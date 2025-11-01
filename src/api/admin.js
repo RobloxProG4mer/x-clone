@@ -1,6 +1,7 @@
 import { jwt } from "@elysiajs/jwt";
 import { Elysia, t } from "elysia";
 import db from "../db.js";
+import { addNotification } from "./notifications.js";
 
 const logModerationAction = (
   moderatorId,
@@ -1538,6 +1539,114 @@ export default new Elysia({ prefix: "/admin" })
     logModerationAction(user.id, "delete_message", "message", params.id, {});
     return { success: true };
   })
+
+  .post(
+    "/fake-notification",
+    async ({ body, user }) => {
+      // body: { target: 'all' | ['username1','username2'] | 'username', type, title, message, url }
+      const {
+        target,
+        type = "default",
+        title = null,
+        message,
+        subtitle = null,
+        url,
+      } = body || {};
+
+      if (!target) return { error: "target is required" };
+      // Require at least one of title, subtitle or message to avoid empty notifications
+      if (!title && !subtitle && !message)
+        return {
+          error: "At least one of title, subtitle, or message is required",
+        };
+
+      let targetIds = [];
+
+      if (target === "all") {
+        const rows = db.query("SELECT id FROM users").all();
+        targetIds = rows.map((r) => r.id);
+      } else if (Array.isArray(target)) {
+        for (const username of target) {
+          const u = adminQueries.findUserByUsername.get(username);
+          if (u) targetIds.push(u.id);
+        }
+      } else if (typeof target === "string") {
+        const u = adminQueries.findUserByUsername.get(target);
+        if (u) targetIds.push(u.id);
+      }
+
+      if (targetIds.length === 0) return { error: "No target users found" };
+
+      // Construct the visible content. Use title if present (as the main line),
+      // and fall back to message. Subtitle will be encoded into related_id so
+      // the notifications enhancer can expose it as the notification preview.
+      // Prefer title as the main line; use subtitle as the primary body
+      // (replaces the old message textarea), falling back to message.
+      const content = title || subtitle || message || "";
+      // Do NOT append the URL to the content — URL should not appear in
+      // the title or subtitle. We'll store it in related_id (meta) so the
+      // client can redirect when the notification is clicked.
+
+      const created = [];
+      for (const userId of targetIds) {
+        try {
+          // For fake notifications we intentionally omit actor metadata so
+          // they don't show a forced admin username.
+          let relatedId = null;
+          if (subtitle?.trim() || url?.trim()) {
+            const meta = {};
+            if (subtitle?.trim()) meta.subtitle = subtitle.trim();
+            if (url?.trim()) meta.url = url.trim();
+            const encoded = Buffer.from(JSON.stringify(meta), "utf8").toString(
+              "base64"
+            );
+            relatedId = `meta:${encoded}`;
+          }
+
+          const nid = addNotification(
+            userId,
+            type,
+            content,
+            relatedId,
+            null,
+            null,
+            null
+          );
+          created.push(nid);
+        } catch (e) {
+          // continue on errors for individual users
+          console.error("Failed to create notification for", userId, e);
+        }
+      }
+
+      // Log this admin action for auditing
+      try {
+        logModerationAction(
+          user.id,
+          "fake_notification",
+          "notifications",
+          null,
+          {
+            targets: targetIds.length,
+            type,
+            created: created.length,
+          }
+        );
+      } catch {}
+
+      return { success: true, created: created.length };
+    },
+    {
+      body: t.Object({
+        target: t.Union([t.String(), t.Array(t.String())]),
+        type: t.Optional(t.String()),
+        title: t.Optional(t.String()),
+        message: t.Optional(t.String()),
+        subtitle: t.Optional(t.String()),
+        url: t.Optional(t.String()),
+      }),
+    }
+  )
 
   .get("/moderation-logs", async ({ query }) => {
     const page = parseInt(query.page) || 1;

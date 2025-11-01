@@ -124,8 +124,51 @@ export default new Elysia({ prefix: "/notifications" })
       const enhancedNotifications = notifications.map((notification) => {
         const enhanced = { ...notification };
 
+        // Support encoded related_id metadata for admin fake notifications.
+        // We support two formats for backwards-compatibility:
+        // - `subtitle:<BASE64>` (legacy)
+        // - `meta:<BASE64>` where the JSON can contain `{ subtitle, url }`
+        try {
+          if (
+            notification.related_id &&
+            typeof notification.related_id === "string"
+          ) {
+            if (notification.related_id.startsWith("subtitle:")) {
+              const encoded = notification.related_id.substring(
+                "subtitle:".length
+              );
+              const decoded = Buffer.from(encoded, "base64").toString("utf8");
+              if (enhanced.content !== decoded)
+                enhanced.tweet = { content: decoded };
+            } else if (notification.related_id.startsWith("meta:")) {
+              const encoded = notification.related_id.substring("meta:".length);
+              const json = Buffer.from(encoded, "base64").toString("utf8");
+              try {
+                const meta = JSON.parse(json);
+                if (meta.subtitle) {
+                  // Avoid duplicating the subtitle: if the DB content already
+                  // contains the same subtitle (we used subtitle as content),
+                  // don't also expose it as `tweet` preview to prevent double
+                  // rendering on the client.
+                  if (enhanced.content !== meta.subtitle) {
+                    enhanced.tweet = { content: meta.subtitle };
+                  }
+                }
+                if (meta.url) enhanced.url = meta.url;
+              } catch (e) {
+                console.error("Failed to parse meta related_id:", e);
+              }
+            }
+          }
+        } catch (err) {
+          console.error("Failed to decode related_id metadata:", err);
+        }
+
         if (
           notification.related_id &&
+          typeof notification.related_id === "string" &&
+          !notification.related_id.startsWith("meta:") &&
+          !notification.related_id.startsWith("subtitle:") &&
           ["like", "retweet", "reply", "quote", "mention"].includes(
             notification.type
           )

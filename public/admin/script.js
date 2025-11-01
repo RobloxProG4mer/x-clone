@@ -51,6 +51,12 @@ class AdminPanel {
       } catch (_e) {
         // noop
       }
+      // Setup fake notification form if present
+      try {
+        this.setupFakeNotificationForm();
+      } catch (_e) {
+        // noop
+      }
     } catch {
       location.href = "/";
     }
@@ -1488,6 +1494,95 @@ class AdminPanel {
     toast.addEventListener("hidden.bs.toast", () => {
       toast.remove();
     });
+  }
+
+  // Setup the fake notification form behavior
+  setupFakeNotificationForm() {
+    const form = document.getElementById("fakeNotificationForm");
+    if (!form) return;
+
+    // Attach a submit-like handler to the send button (we use explicit click handler in HTML)
+    // But also prevent Enter from submitting the page accidentally
+    form.addEventListener("submit", (e) => {
+      e.preventDefault();
+      this.sendFakeNotification();
+    });
+  }
+
+  // Send a fake notification via the admin API endpoint
+  async sendFakeNotification() {
+    const targetRaw = document.getElementById("notifTarget")?.value?.trim();
+    const title = document.getElementById("notifTitle")?.value?.trim();
+    const type = document.getElementById("notifType")?.value || "default";
+    // Subtitle replaces the old message body textarea and is the preferred
+    // notification preview/body. Message remains optional as a fallback.
+    const subtitle = document.getElementById("notifSubtitle")?.value?.trim();
+    const message = document.getElementById("notifMessage")?.value?.trim();
+    const url = document.getElementById("notifUrl")?.value?.trim();
+    const resultEl = document.getElementById("fakeNotifResult");
+
+    if (!targetRaw) {
+      if (resultEl)
+        resultEl.innerHTML =
+          '<div class="alert alert-warning">Please specify a target (username(s) or "all").</div>';
+      return;
+    }
+
+    // Allow subtitle OR message (or title) — require at least one body/title present
+    if (!title && !subtitle && !message) {
+      if (resultEl)
+        resultEl.innerHTML =
+          '<div class="alert alert-warning">Please provide a title, subtitle, or message for the notification.</div>';
+      return;
+    }
+
+    let target;
+    if (targetRaw.toLowerCase() === "all") {
+      target = "all";
+    } else {
+      target = targetRaw
+        .split(",")
+        .map((s) => s.trim())
+        .filter(Boolean);
+    }
+
+    const payload = {
+      target,
+      type: type || "default",
+      title: title || null,
+    };
+    if (message) payload.message = message;
+    if (subtitle) payload.subtitle = subtitle;
+    if (url) payload.url = url;
+
+    try {
+      const sendBtn = document.querySelector(
+        "#fakeNotificationForm button.btn-primary"
+      );
+      if (sendBtn) sendBtn.disabled = true;
+
+      await this.apiCall("/api/admin/fake-notification", {
+        method: "POST",
+        body: JSON.stringify(payload),
+      });
+
+      if (resultEl)
+        resultEl.innerHTML =
+          '<div class="alert alert-success">Notification sent (or queued) successfully.</div>';
+      document.getElementById("notifTitle").value = "";
+      document.getElementById("notifSubtitle").value = "";
+      const msgEl = document.getElementById("notifMessage");
+      if (msgEl) msgEl.value = "";
+      document.getElementById("notifUrl").value = "";
+      if (sendBtn) sendBtn.disabled = false;
+    } catch (err) {
+      const msg = err?.message || "Failed to send notification";
+      if (resultEl)
+        resultEl.innerHTML = `<div class="alert alert-danger">${this.escapeHtml(
+          msg
+        )}</div>`;
+      else this.showError(msg);
+    }
   }
 
   // DM Management Methods
