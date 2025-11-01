@@ -190,10 +190,17 @@ new Elysia()
       : redirect("/account");
   })
   .use(api)
-  .listen({ port: 3000, idleTimeout: 255 }, () => {
-    console.log(
-      "Happies tweetapus app is running on http://localhost:3000 ✅✅✅✅✅✅✅✅✅"
-    );
+  .listen({ port: process.env.PORT || 3000, idleTimeout: 255 }, () => {console.log(
+  `\x1b[38;2;29;161;242m __    _                     _
+ \\ \\  | |___      _____  ___| |_ __ _ _ __  _   _ ___
+  \\ \\ | __\\ \\ /\\ / / _ \\/ _ \\ __/ _\` | '_ \\| | | / __|
+  / / | |_ \\ V  V /  __/  __/ || (_| | |_) | |_| \\__ \\
+ /_/   \\__| \\_/\\_/ \\___|\\___|\\__\\__,_| .__/ \\__,_|___/
+                                     |_|\x1b[0m
+
+Happies tweetapus app is running on \x1b[38;2;29;161;242m\x1b[1m\x1b[4mhttp://localhost:${process.env.PORT || 3000}\x1b[0m`
+);
+
 
     setInterval(() => {
       processScheduledPosts().catch((error) => {
