@@ -251,6 +251,14 @@ const adminQueries = {
     ORDER BY ml.created_at DESC
     LIMIT ? OFFSET ?
   `),
+  // Emoji management
+  createEmoji: db.query(
+    "INSERT INTO emojis (id, name, file_hash, file_url, created_by) VALUES (?, ?, ?, ?, ?)"
+  ),
+  getAllEmojis: db.query("SELECT * FROM emojis ORDER BY created_at DESC"),
+  getEmojiById: db.query("SELECT * FROM emojis WHERE id = ?"),
+  getEmojiByName: db.query("SELECT * FROM emojis WHERE name = ?"),
+  deleteEmoji: db.query("DELETE FROM emojis WHERE id = ?"),
 };
 
 const requireAdmin = async ({ headers, jwt, set }) => {
@@ -1696,4 +1704,58 @@ export default new Elysia({ prefix: "/admin" })
       details: log.details ? JSON.parse(log.details) : null,
     }));
     return { logs: logsWithDetails };
+  })
+
+  // Emoji management endpoints (admin)
+  .get("/emojis", async () => {
+    const emojis = adminQueries.getAllEmojis.all();
+    return { emojis };
+  })
+
+  .post(
+    "/emojis",
+    async ({ body, user }) => {
+      const { name, file_hash, file_url } = body || {};
+      if (!name || !name.trim()) return { error: "Emoji name is required" };
+
+      const sanitized = name.trim();
+      const existing = adminQueries.getEmojiByName.get(sanitized);
+      if (existing) return { error: "Emoji with that name already exists" };
+
+      const id = Bun.randomUUIDv7();
+
+      try {
+        adminQueries.createEmoji.run(
+          id,
+          sanitized,
+          file_hash || null,
+          file_url || null,
+          user.id || null
+        );
+        logModerationAction(user.id, "create_emoji", "emoji", id, {
+          name: sanitized,
+        });
+        return { success: true, id };
+      } catch (e) {
+        console.error("Failed to create emoji", e);
+        return { error: "Failed to create emoji" };
+      }
+    },
+    {
+      body: t.Object({
+        name: t.String(),
+        file_hash: t.Optional(t.String()),
+        file_url: t.Optional(t.String()),
+      }),
+    }
+  )
+
+  .delete("/emojis/:id", async ({ params, user }) => {
+    const e = adminQueries.getEmojiById.get(params.id);
+    if (!e) return { error: "Emoji not found" };
+    adminQueries.deleteEmoji.run(params.id);
+    logModerationAction(user.id, "delete_emoji", "emoji", params.id, {
+      name: e.name,
+    });
+    return { success: true };
   });

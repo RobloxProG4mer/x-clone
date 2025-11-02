@@ -132,6 +132,158 @@ class AdminPanel {
       case "moderation-logs":
         this.loadModerationLogs();
         break;
+      case "emojis":
+        this.loadEmojis();
+        break;
+    }
+  }
+
+  /* Emoji management (admin) */
+  async loadEmojis() {
+    try {
+      const data = await this.apiCall("/api/admin/emojis");
+      const emojis = data.emojis || [];
+      this.renderEmojisList(emojis);
+      // Setup form handlers lazily
+      this.setupEmojiForm();
+    } catch (_err) {
+      this.showError("Failed to load emojis");
+    }
+  }
+
+  renderEmojisList(emojis) {
+    const container = document.getElementById("emojisList");
+    if (!container) return;
+    if (!emojis || emojis.length === 0) {
+      container.innerHTML =
+        '<p class="text-muted">No custom emojis uploaded yet.</p>';
+      return;
+    }
+
+    container.innerHTML = `
+      <div class="row row-cols-1 row-cols-sm-2 row-cols-md-3 g-3">
+        ${emojis
+          .map(
+            (e) => `
+          <div class="col">
+            <div class="card p-2">
+              <div class="d-flex align-items-center gap-3">
+                <img src="${this.escapeHtml(
+                  e.file_url
+                )}" alt="${this.escapeHtml(
+              e.name
+            )}" style="width:48px;height:48px;object-fit:contain" />
+                <div>
+                  <strong>${this.escapeHtml(e.name)}</strong>
+                  <div class="text-muted" style="font-size:12px">Uploaded: ${this.formatDate(
+                    e.created_at
+                  )}</div>
+                </div>
+                <div class="ms-auto">
+                  <button class="btn btn-sm btn-outline-danger" onclick="adminPanel.deleteEmoji('${
+                    e.id
+                  }')">Delete</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        `
+          )
+          .join("")}
+      </div>
+    `;
+  }
+
+  setupEmojiForm() {
+    const form = document.getElementById("emojiUploadForm");
+    if (!form || form._emojiSetup) return;
+    form._emojiSetup = true;
+
+    const fileInput = document.getElementById("emojiFileInput");
+    const preview = document.getElementById("emojiPreview");
+
+    if (fileInput) {
+      fileInput.addEventListener("change", (e) => {
+        const f = e.target?.files?.[0];
+        if (f) {
+          const url = URL.createObjectURL(f);
+          preview.src = url;
+          preview.style.display = "";
+        } else {
+          preview.src = "";
+          preview.style.display = "none";
+        }
+      });
+    }
+
+    form.addEventListener("submit", async (ev) => {
+      ev.preventDefault();
+      const name = document.getElementById("emojiName")?.value?.trim();
+      const file = document.getElementById("emojiFileInput")?.files?.[0];
+      if (!name) {
+        this.showError("Emoji name is required");
+        return;
+      }
+      if (!file) {
+        this.showError("Please choose a WebP image file");
+        return;
+      }
+      if (file.type !== "image/webp") {
+        this.showError("Only WebP images are accepted");
+        return;
+      }
+
+      try {
+        // Upload file via upload endpoint
+        const fd = new FormData();
+        fd.append("file", file, file.name);
+
+        const uploadRespRaw = await fetch("/api/upload", {
+          method: "POST",
+          headers: { Authorization: `Bearer ${this.token}` },
+          body: fd,
+        });
+        const uploadResp = await uploadRespRaw.json();
+        if (!uploadRespRaw.ok || uploadResp?.error) {
+          this.showError(uploadResp?.error || "Failed to upload image");
+          return;
+        }
+
+        // Create emoji record via admin API
+        const createResp = await this.apiCall("/api/admin/emojis", {
+          method: "POST",
+          body: JSON.stringify({
+            name,
+            file_hash: uploadResp.file.hash,
+            file_url: uploadResp.file.url,
+          }),
+        });
+
+        if (createResp.error) {
+          this.showError(createResp.error);
+          return;
+        }
+
+        this.showSuccess("Emoji uploaded");
+        form.reset();
+        preview.src = "";
+        preview.style.display = "none";
+        await this.loadEmojis();
+      } catch (_err) {
+        console.error(_err);
+        this.showError("Failed to upload emoji");
+      }
+    });
+  }
+
+  async deleteEmoji(id) {
+    if (!confirm("Delete this emoji?")) return;
+    try {
+      await this.apiCall(`/api/admin/emojis/${id}`, { method: "DELETE" });
+      this.showSuccess("Emoji deleted");
+      this.loadEmojis();
+    } catch (_err) {
+      this.showError("Failed to delete emoji");
     }
   }
 

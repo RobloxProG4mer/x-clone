@@ -468,4 +468,18 @@ CREATE INDEX IF NOT EXISTS idx_post_reactions_post_id ON post_reactions(post_id)
 CREATE INDEX IF NOT EXISTS idx_post_reactions_user_id ON post_reactions(user_id);
 `);
 
+// Emojis table for custom uploaded emojis (added by admin)
+db.exec(`
+CREATE TABLE IF NOT EXISTS emojis (
+  id TEXT PRIMARY KEY,
+  name TEXT UNIQUE NOT NULL,
+  file_hash TEXT NOT NULL,
+  file_url TEXT NOT NULL,
+  created_by TEXT DEFAULT NULL,
+  created_at TIMESTAMP DEFAULT (datetime('now','utc'))
+);
+
+CREATE INDEX IF NOT EXISTS idx_emojis_name ON emojis(name);
+`);
+
 export default db;

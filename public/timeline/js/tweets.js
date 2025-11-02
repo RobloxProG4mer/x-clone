@@ -7,6 +7,91 @@ import getUser from "./auth.js";
 import switchPage from "./pages.js";
 import openTweet from "./tweet.js";
 
+// Fetch emoji list once and cache it; used to replace :shortcodes: with images.
+const emojiMapPromise = (async () => {
+  try {
+    const resp = await fetch("/api/emojis");
+    if (!resp.ok) return {};
+    const data = await resp.json();
+    const map = {};
+    for (const e of data.emojis || []) map[e.name] = e.file_url;
+    return map;
+  } catch (_err) {
+    return {};
+  }
+})();
+
+async function replaceEmojiShortcodesInElement(container) {
+  try {
+    const map = await emojiMapPromise;
+    if (!map || Object.keys(map).length === 0) return;
+
+    const regex = /:([a-zA-Z0-9_+\-]+):/g;
+
+    const walker = document.createTreeWalker(
+      container,
+      NodeFilter.SHOW_TEXT,
+      {
+        acceptNode(node) {
+          if (!node.nodeValue || !node.nodeValue.includes(":"))
+            return NodeFilter.FILTER_REJECT;
+          const parentTag = node.parentNode?.nodeName?.toLowerCase();
+          if (["code", "pre", "a", "textarea", "script", "style"].includes(parentTag))
+            return NodeFilter.FILTER_REJECT;
+          return NodeFilter.FILTER_ACCEPT;
+        },
+      },
+      false
+    );
+
+    const nodes = [];
+    while (walker.nextNode()) nodes.push(walker.currentNode);
+
+    for (const textNode of nodes) {
+      const text = textNode.nodeValue;
+      regex.lastIndex = 0;
+      if (!regex.test(text)) continue;
+
+      // Build replacement pieces
+      regex.lastIndex = 0;
+      const frag = document.createDocumentFragment();
+      let lastIndex = 0;
+      for (;;) {
+        const m = regex.exec(text);
+        if (!m) break;
+        const [full, name] = m;
+        const idx = m.index;
+        if (idx > lastIndex) {
+          frag.appendChild(document.createTextNode(text.slice(lastIndex, idx)));
+        }
+        const url = map[name];
+        if (url) {
+          const img = document.createElement("img");
+          img.src = url;
+          img.alt = `:${name}:`;
+          img.className = "inline-emoji";
+          img.width = 20;
+          img.height = 20;
+          img.loading = "lazy";
+          img.style.verticalAlign = "middle";
+          img.style.margin = "0 2px";
+          frag.appendChild(img);
+        } else {
+          frag.appendChild(document.createTextNode(full));
+        }
+        lastIndex = idx + full.length;
+      }
+      if (lastIndex < text.length) {
+        frag.appendChild(document.createTextNode(text.slice(lastIndex)));
+      }
+
+      textNode.parentNode.replaceChild(frag, textNode);
+    }
+  } catch (_err) {
+    // ignore replace errors
+  }
+}
+
 // Avatar radius handling:
 // Users configure avatar_radius as pixels for their profile avatar (profile
 // avatar size is 100px). To keep that visual curvature consistent across
@@ -431,6 +516,7 @@ const createPollElement = (poll, tweet) => {
       avatarEl.src = voter.avatar || `/public/shared/default-avatar.png`;
       avatarEl.alt = voter.name || voter.username;
       avatarEl.title = voter.name || voter.username;
+      avatarEl.loading = "lazy";
       const voterRadius =
         voter.avatar_radius !== null && voter.avatar_radius !== undefined
           ? avatarPxToPercent(voter.avatar_radius)
@@ -528,6 +614,7 @@ const updatePollDisplay = (pollElement, poll) => {
       avatarEl.src = voter.avatar || `/public/shared/default-avatar.png`;
       avatarEl.alt = voter.name || voter.username;
       avatarEl.title = voter.name || voter.username;
+      avatarEl.loading = "lazy";
       const voterRadius2 =
         voter.avatar_radius !== null && voter.avatar_radius !== undefined
           ? avatarPxToPercent(voter.avatar_radius)
@@ -734,6 +821,7 @@ export const createTweetElement = (tweet, config = {}) => {
     tweet.author.avatar || `/public/shared/default-avatar.png`;
   tweetHeaderAvatarEl.alt = tweet.author.name || tweet.author.username;
   tweetHeaderAvatarEl.classList.add("tweet-header-avatar");
+  tweetHeaderAvatarEl.loading = "lazy";
 
   if (
     tweet.author.avatar_radius !== null &&
@@ -968,6 +1056,7 @@ export const createTweetElement = (tweet, config = {}) => {
         previewText = `${previewText.slice(0, 257)}…`;
       }
       previewBody.innerHTML = linkifyText(previewText);
+      replaceEmojiShortcodesInElement(previewBody);
       articleContainer.appendChild(previewBody);
 
       const readMoreButton = document.createElement("button");
@@ -1010,6 +1099,7 @@ export const createTweetElement = (tweet, config = {}) => {
 
     const applyLinkified = (text) => {
       tweetContentEl.innerHTML = linkifyText(text);
+      replaceEmojiShortcodesInElement(tweetContentEl);
     };
 
     if (shouldTrim) {
@@ -1584,9 +1674,6 @@ export const createTweetElement = (tweet, config = {}) => {
 
           const tweetContainer = document.createElement("div");
           tweetContainer.className = "tweet-share-container";
-
-          const stats = tweetElClone.querySelector(".expanded-tweet-stats");
-          if (stats) stats.remove();
 
           tweetContainer.appendChild(tweetElClone);
           wrapper.appendChild(tweetContainer);
@@ -2171,69 +2258,6 @@ export const createTweetElement = (tweet, config = {}) => {
   if (size !== "preview") {
     tweetEl.appendChild(tweetInteractionsEl);
     createRestrictionElement();
-
-    if (clickToOpen === false && tweet.reaction_count > 0) {
-      const expandedStatsEl = document.createElement("div");
-      expandedStatsEl.className = "expanded-tweet-stats";
-
-      const reactionsStatEl = document.createElement("div");
-      reactionsStatEl.className = "tweet-stat-item";
-      reactionsStatEl.innerHTML = `
-        <span class="stat-text clickable-count">${
-          tweet.reaction_count
-        } reaction${tweet.reaction_count !== 1 ? "s" : ""}</span>
-      `;
-      reactionsStatEl.addEventListener("click", async (e) => {
-        e.preventDefault();
-        e.stopPropagation();
-        const reactionsData = await query(`/tweets/${tweet.id}/reactions`);
-        const container = document.createElement("div");
-        container.className = "reactions-list";
-        if (
-          !reactionsData ||
-          !reactionsData.reactions ||
-          reactionsData.reactions.length === 0
-        ) {
-          container.innerHTML = `<p>No reactions yet.</p>`;
-        } else {
-          reactionsData.reactions.forEach((r) => {
-            const item = document.createElement("div");
-            item.className = "reaction-item";
-            const avatarSrc = r.avatar || "/public/shared/default-avatar.png";
-            const displayName = r.name || r.username || "Unknown";
-            const usernameText = r.username || "";
-            item.innerHTML = `
-              <div class="reaction-user-avatar"><img src="${avatarSrc}" alt="${displayName
-              .replaceAll("<", "&lt;")
-              .replaceAll(">", "&gt;")}" loading="lazy"/></div>
-              <div class="reaction-content">
-                <div class="reaction-emoji">${r.emoji}</div>
-                <div class="reaction-user-info">
-                  <div class="reaction-user-name">${displayName
-                    .replaceAll("<", "&lt;")
-                    .replaceAll(">", "&gt;")}</div>
-                  <div class="reaction-user-username">${
-                    usernameText
-                      ? `@${usernameText
-                          .replaceAll("<", "&lt;")
-                          .replaceAll(">", "&gt;")}`
-                      : ""
-                  }</div>
-                </div>
-              </div>
-            `;
-            container.appendChild(item);
-          });
-        }
-        createModal({
-          title: "Reactions",
-          content: container,
-          className: "reactions-modal",
-        });
-      });
-      expandedStatsEl.appendChild(reactionsStatEl);
-      tweetEl.appendChild(expandedStatsEl);
-    }
   }
 
   if (tweet.top_reply && showTopReply) {

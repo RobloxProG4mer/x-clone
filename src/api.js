@@ -79,6 +79,18 @@ export default new Elysia({
   })
   .use(auth)
   .use(admin)
+  .get("/emojis", async () => {
+    try {
+      const rows = db
+        .query(
+          "SELECT id, name, file_hash, file_url, created_by, created_at FROM emojis ORDER BY created_at DESC"
+        )
+        .all();
+      return { emojis: rows };
+    } catch (_err) {
+      return { emojis: [] };
+    }
+  })
   .use(blocking)
   .use(bookmarks)
   .use(communities)
