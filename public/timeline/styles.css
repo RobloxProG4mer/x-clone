@@ -561,7 +561,8 @@ nav {
           font-size: 15px;
           font-weight: 600;
           cursor: pointer;
-          transition: background-color 0.15s ease, opacity 0.15s ease, transform 0.15s ease;
+          transition: background-color 0.15s ease, opacity 0.15s ease,
+            transform 0.15s ease;
 
           &:hover:not(:disabled) {
             background-color: var(--primary-hover);
@@ -573,7 +574,7 @@ nav {
           }
 
           &:active:not(:disabled) {
-            transform: scale(.98)
+            transform: scale(0.98);
           }
         }
       }
@@ -1884,9 +1885,14 @@ nav {
           width: 36px;
           height: 36px;
           padding: 0;
-
+          transition: transform 0.2s, opacity 0.2s;
+          /* Tr Happies don't let the cursor be stuck it unfortunately will be stuck soon NOOOOOOOOOOOOOOOOOOOO*/
           &:hover {
-            background-color: var(--bg-secondary);
+            opacity: 0.7;
+          }
+
+          &:active {
+            transform: scale(0.95);
           }
         }
       }
@@ -2299,20 +2305,19 @@ nav {
     font-weight: 600;
     cursor: pointer;
     font-family: inherit;
-    transition: all 0.2s ease;
-
+    transition: transform 0.2s, opacity 0.2s;
     &:hover {
-      background-color: var(--bg-secondary);
+      opacity: 0.7;
+    }
+
+    &:active {
+      transform: scale(0.95);
     }
 
     &.profile-btn-primary {
       background-color: var(--primary);
       color: var(--primary-fg);
       border-color: var(--primary);
-
-      &:hover {
-        background-color: var(--primary-hover);
-      }
     }
   }
 }
@@ -6244,7 +6249,6 @@ nav {
   }
 
   .modal-header {
-
     h2 {
       margin: 0;
       font-size: 20px;

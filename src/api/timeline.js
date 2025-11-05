@@ -448,7 +448,7 @@ export default new Elysia({ prefix: "/timeline" })
       userBookmarks.map((bookmark) => bookmark.post_id)
     );
 
-    let timeline = posts
+    const timeline = posts
       .map((post) => {
         const topReply = getTopReplyData(post.id, user.id);
         const shouldShowTopReply =
@@ -732,7 +732,7 @@ export default new Elysia({ prefix: "/timeline" })
       userBookmarks.map((bookmark) => bookmark.post_id)
     );
 
-    let timeline = posts
+    const timeline = posts
       .map((post) => {
         const topReply = getTopReplyData(post.id, user.id);
         const shouldShowTopReply =
