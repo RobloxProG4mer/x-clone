@@ -497,7 +497,7 @@ async function markAllAsRead() {
   currentNotifications.forEach((notification) => {
     notification.read = true;
   });
-  renderNotifications();
+  // renderNotifications();
 }
 
 document
