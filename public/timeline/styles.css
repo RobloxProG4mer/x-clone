@@ -1560,7 +1560,7 @@ nav {
       border: 1px solid var(--primary);
       margin-bottom: 5px;
       border-radius: 100px;
-      transition: background-color 0.15s ease, opacity 0.15s ease;
+      transition: background-color 0.15s ease, opacity 0.15s ease, transform .2s;
 
       &.poll-option-clickable {
         cursor: pointer;

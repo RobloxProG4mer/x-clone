@@ -63,6 +63,23 @@ export default async function openProfile(username) {
 
       currentProfile = data;
       renderProfile(data);
+      
+      const affiliatesData = await query(`/profile/${username}/affiliates`);
+      if (!affiliatesData.error && affiliatesData.affiliates) {
+        currentAffiliates = affiliatesData.affiliates;
+      } else {
+        currentAffiliates = [];
+      }
+      
+      const affiliatesTabBtn = document.querySelector('.profile-tab-btn[data-tab="affiliates"]');
+      if (affiliatesTabBtn) {
+        if (currentAffiliates.length > 0) {
+          affiliatesTabBtn.style.display = "flex";
+          affiliatesTabBtn.textContent = `Affiliates (${currentAffiliates.length})`;
+        } else {
+          affiliatesTabBtn.style.display = "none";
+        }
+      }
     },
   });
 }
