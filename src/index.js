@@ -181,7 +181,3 @@ Happies tweetapus app is running on \x1b[38;2;29;161;242m\x1b[1m\x1b[4mhttp://lo
       });
     }, 60000);
   });
-
-  setInterval(() => {
-    console.log("ping", Bun.randomUUIDv7())
-  }, 1000);

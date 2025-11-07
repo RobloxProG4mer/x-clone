@@ -39,6 +39,43 @@ const DOMPURIFY_CONFIG = {
   ALLOWED_ATTR: ["href", "target", "rel", "class"],
 };
 
+const createFactCheck = (fact_check) => {
+  const factCheckEl = document.createElement("div");
+  factCheckEl.className = "fact-check-banner";
+  factCheckEl.dataset.severity = fact_check.severity || "warning";
+
+  const icon = document.createElement("span");
+  icon.className = "fact-check-icon";
+  icon.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg>`;
+
+  const content = document.createElement("div");
+  content.className = "fact-check-content";
+
+  const title = document.createElement("strong");
+  title.textContent =
+    fact_check.severity === "danger"
+      ? "Misleading or misinformation"
+      : fact_check.severity === "warning"
+      ? "Potentially misleading post"
+      : "Additional context";
+
+  const note = document.createElement("p");
+  note.textContent = fact_check.note;
+
+  const footer = document.createElement("p");
+  footer.className = "fact-check-footer";
+  footer.innerHTML = `This note has been added by a trusted Tweetapus admin`;
+
+  content.appendChild(title);
+  content.appendChild(note);
+  content.appendChild(footer);
+
+  factCheckEl.appendChild(icon);
+  factCheckEl.appendChild(content);
+
+  return factCheckEl;
+};
+
 const emojiMapPromise = (async () => {
   try {
     const resp = await fetch("/api/emojis");
@@ -1112,37 +1149,7 @@ export const createTweetElement = (tweet, config = {}) => {
     tweetEl.appendChild(articleContainer);
 
     if (tweet.fact_check) {
-      const factCheckEl = document.createElement("div");
-      factCheckEl.className = "fact-check-banner";
-      factCheckEl.dataset.severity = tweet.fact_check.severity || "warning";
-
-      const icon = document.createElement("span");
-      icon.className = "fact-check-icon";
-      icon.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg>`;
-
-      const content = document.createElement("div");
-      content.className = "fact-check-content";
-
-      console.log("severity", tweet.fact_check.severity);
-
-      const title = document.createElement("strong");
-      title.textContent =
-        tweet.fact_check.severity === "danger"
-          ? "Misleading tweet"
-          : tweet.fact_check.severity === "warning"
-          ? "Potentially misleading tweet"
-          : "Important additional context";
-
-      const note = document.createElement("p");
-      note.textContent = tweet.fact_check.note;
-
-      content.appendChild(title);
-      content.appendChild(note);
-
-      factCheckEl.appendChild(icon);
-      factCheckEl.appendChild(content);
-
-      tweetEl.appendChild(factCheckEl);
+      tweetEl.appendChild(createFactCheck(tweet.fact_check));
     }
   } else {
     const tweetContentEl = document.createElement("div");
@@ -1241,35 +1248,7 @@ export const createTweetElement = (tweet, config = {}) => {
     tweetEl.appendChild(tweetContentEl);
 
     if (tweet.fact_check) {
-      const factCheckEl = document.createElement("div");
-      factCheckEl.className = "fact-check-banner";
-      factCheckEl.dataset.severity = tweet.fact_check.severity || "warning";
-
-      const icon = document.createElement("span");
-      icon.className = "fact-check-icon";
-      icon.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg>`;
-
-      const content = document.createElement("div");
-      content.className = "fact-check-content";
-
-      const title = document.createElement("strong");
-      title.textContent =
-        tweet.fact_check.severity === "danger"
-          ? "Misleading or misinformation"
-          : tweet.fact_check.severity === "warning"
-          ? "Potentially misleading post"
-          : "Additional context";
-
-      const note = document.createElement("p");
-      note.textContent = tweet.fact_check.note;
-
-      content.appendChild(title);
-      content.appendChild(note);
-
-      factCheckEl.appendChild(icon);
-      factCheckEl.appendChild(content);
-
-      tweetEl.appendChild(factCheckEl);
+      tweetEl.appendChild(createFactCheck(tweet.fact_check));
     }
 
     if (extractedTweetIds.length > 0 && !tweet.quoted_tweet) {

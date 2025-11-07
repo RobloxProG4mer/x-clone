@@ -608,27 +608,6 @@
                       <label class="form-label">Type / Icon</label>
                       <select id="notifType" class="form-select">
                         <option value="default">default</option>
-                        <option value="reaction">reaction</option>
-                        <option value="like">like</option>
-                        <option value="retweet">retweet</option>
-                        <option value="reply">reply</option>
-                        <option value="follow">follow</option>
-                        <option value="quote">quote</option>
-                        <option value="mention">mention</option>
-                        <option value="community_join_request">
-                          community_join_request
-                        </option>
-                        <option value="community_join_approved">
-                          community_join_approved
-                        </option>
-                        <option value="community_join_rejected">
-                          community_join_rejected
-                        </option>
-                        <option value="community_role_change">
-                          community_role_change
-                        </option>
-                        <option value="community_ban">community_ban</option>
-                        <option value="community_unban">community_unban</option>
                       </select>
                     </div>
 
@@ -1350,11 +1329,12 @@
       </div>
     </div>
 
+    <script type="module" src="/public/shared/notification-icons.js"></script>
     <script
       src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js"
       integrity="sha384-FKyoEForCGlyvwx9Hj09JcYn3nv7wiPVlz7YYwJrWVcXK/BmnVDxM+D2scQbITxI"
       crossorigin="anonymous"
     ></script>
-    <script src="/public/admin/script.js"></script>
+    <script src="/public/admin/script.js" defer></script>
   </body>
 </html>

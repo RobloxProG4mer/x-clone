@@ -107,24 +107,45 @@ const adminQueries = {
   `),
 
   getUserWithDetails: db.query(`
-    SELECT u.*, 
-           (SELECT COUNT(*) FROM posts WHERE user_id = u.id) as actual_post_count,
-           (SELECT COUNT(*) FROM follows WHERE following_id = u.id) as actual_follower_count,
-           (SELECT COUNT(*) FROM follows WHERE follower_id = u.id) as actual_following_count,
-           (SELECT COUNT(*) FROM ghost_follows WHERE target_id = u.id AND follower_type = 'follower') as ghost_follower_count,
-           (SELECT COUNT(*) FROM ghost_follows WHERE target_id = u.id AND follower_type = 'following') as ghost_following_count,
-           (SELECT COUNT(DISTINCT l.id) FROM likes l WHERE u.id = l.user_id) as likes_given,
-           (SELECT COUNT(DISTINCT r.id) FROM retweets r WHERE u.id = r.user_id) as retweets_given,
-           (SELECT COUNT(DISTINCT pk.cred_id) FROM passkeys pk WHERE u.id = pk.internal_user_id) as passkey_count
-    FROM users u
-    LEFT JOIN posts p ON u.id = p.user_id
-    LEFT JOIN follows f1 ON u.id = f1.following_id
-    LEFT JOIN follows f2 ON u.id = f2.follower_id
-    LEFT JOIN likes l ON u.id = l.user_id
-    LEFT JOIN retweets r ON u.id = r.user_id
-    LEFT JOIN passkeys pk ON u.id = pk.internal_user_id
-    WHERE u.id = ?
-    GROUP BY u.id
+SELECT u.*, 
+       (SELECT COUNT(*) FROM posts WHERE user_id = u.id) as actual_post_count,
+       (SELECT COUNT(*) FROM follows WHERE following_id = u.id) as actual_follower_count,
+       (SELECT COUNT(*) FROM follows WHERE follower_id = u.id) as actual_following_count,
+       (SELECT COUNT(*) FROM ghost_follows WHERE target_id = u.id AND follower_type = 'follower') as ghost_follower_count,
+       (SELECT COUNT(*) FROM ghost_follows WHERE target_id = u.id AND follower_type = 'following') as ghost_following_count,
+       (SELECT COUNT(*) FROM likes WHERE user_id = u.id) as likes_given,
+       (SELECT COUNT(*) FROM retweets WHERE user_id = u.id) as retweets_given,
+       (SELECT COUNT(*) FROM passkeys WHERE internal_user_id = u.id) as passkey_count,
+       (SELECT JSON_GROUP_ARRAY(JSON_OBJECT(
+           'id', p.id,
+           'content', p.content,
+           'created_at', p.created_at
+       ))
+        FROM (SELECT * FROM posts WHERE user_id = u.id ORDER BY created_at DESC LIMIT 30) p
+       ) as recent_posts,
+       (SELECT JSON_GROUP_ARRAY(JSON_OBJECT(
+           'id', fu.id,
+           'username', fu.username
+       ))
+        FROM (SELECT u2.* FROM users u2
+              INNER JOIN follows f ON u2.id = f.follower_id
+              WHERE f.following_id = u.id
+              ORDER BY f.created_at DESC LIMIT 20) fu
+       ) as recent_followers,
+       (SELECT JSON_GROUP_ARRAY(JSON_OBJECT(
+           'id', lp.id,
+           'content', lp.content,
+           'username', lp.username
+       ))
+        FROM (SELECT p.id, p.content, u3.username
+              FROM posts p
+              INNER JOIN likes l ON p.id = l.post_id
+              INNER JOIN users u3 ON p.user_id = u3.id
+              WHERE l.user_id = u.id
+              ORDER BY l.created_at DESC LIMIT 10) lp
+       ) as recent_likes
+FROM users u
+WHERE u.id = ?
   `),
   getUserRecentPosts: db.query(`
     SELECT * FROM posts 
@@ -1432,7 +1453,6 @@ export default new Elysia({ prefix: "/admin" })
     }
   )
 
-  // User profile management
   .patch(
     "/users/:id",
     async ({ params, body, user: moderator }) => {

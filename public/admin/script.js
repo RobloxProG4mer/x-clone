@@ -677,15 +677,16 @@ class AdminPanel {
   }
 
   async apiCall(endpoint, options = {}) {
-    const defaultOptions = {
-      headers: {
-        Authorization: `Bearer ${this.token}`,
-        "Content-Type": options?.body ? "application/json" : undefined,
-        ...options.headers,
-      },
+    const headers = {
+      Authorization: `Bearer ${this.token}`,
+      ...options.headers,
     };
 
-    const response = await fetch(endpoint, { ...defaultOptions, ...options });
+    if (options.body && !headers["Content-Type"]) {
+      headers["Content-Type"] = "application/json";
+    }
+
+    const response = await fetch(endpoint, { ...options, headers });
     const data = await response.json();
 
     if (!response.ok) {
@@ -1717,21 +1718,50 @@ class AdminPanel {
   }
 
   async saveProfile(userId) {
+    const usernameInput = document.getElementById("editProfileUsername");
+    const nameInput = document.getElementById("editProfileName");
+    const bioInput = document.getElementById("editProfileBio");
+    const verifiedInput = document.getElementById("editProfileVerified");
+    const goldInput = document.getElementById("editProfileGold");
+    const adminInput = document.getElementById("editProfileAdmin");
+    const affiliateInput = document.getElementById("editProfileAffiliate");
+
+    const username = usernameInput?.value?.trim() || "";
+    if (!username) {
+      this.showError("Username cannot be empty");
+      return;
+    }
+    if (/\s/.test(username)) {
+      this.showError("Username cannot contain spaces");
+      return;
+    }
+    if (usernameInput) usernameInput.value = username;
+
+    const nameValue = nameInput?.value?.trim() || "";
+    if (nameInput) nameInput.value = nameValue;
+
+    const bioValue = bioInput?.value?.trim() || "";
+    if (bioInput) bioInput.value = bioValue;
+
     const payload = {
-      username: document.getElementById("editProfileUsername").value,
-      name: document.getElementById("editProfileName").value,
-      bio: document.getElementById("editProfileBio").value,
-      verified: document.getElementById("editProfileVerified").checked,
-      gold: document.getElementById("editProfileGold").checked,
-      admin: document.getElementById("editProfileAdmin").checked,
-      affiliate: document.getElementById("editProfileAffiliate").checked,
+      username,
+      name: nameValue.length ? nameValue : null,
+      bio: bioValue.length ? bioValue : null,
+      verified: !!verifiedInput?.checked,
+      gold: !!goldInput?.checked,
+      admin: !!adminInput?.checked,
+      affiliate: !!affiliateInput?.checked,
     };
 
     const affiliateWithInput = document.getElementById(
       "editProfileAffiliateWith"
     );
-    if (payload.affiliate && affiliateWithInput?.value?.trim()) {
-      payload.affiliate_with_username = affiliateWithInput.value.trim();
+    if (payload.affiliate && affiliateWithInput?.value) {
+      const affiliateUsername = affiliateWithInput.value.trim();
+      if (affiliateUsername) {
+        payload.affiliate_with_username = affiliateUsername;
+        affiliateWithInput.value = affiliateUsername;
+      }
     }
 
     const ghostFollowersInput = document.getElementById(
@@ -1785,10 +1815,31 @@ class AdminPanel {
         payload.created_at = local.toISOString();
       }
 
-      await this.apiCall(`/api/admin/users/${userId}`, {
+      const result = await this.apiCall(`/api/admin/users/${userId}`, {
         method: "PATCH",
         body: JSON.stringify(payload),
       });
+
+      if (result?.token) {
+        localStorage.setItem("authToken", result.token);
+        this.token = result.token;
+      }
+
+      if (result?.updatedUser) {
+        this.currentUser = {
+          ...(this.currentUser || {}),
+          ...result.updatedUser,
+        };
+        if (result.updatedUser.username && usernameInput) {
+          usernameInput.value = result.updatedUser.username;
+        }
+        if (result.updatedUser.name !== undefined && nameInput) {
+          nameInput.value = result.updatedUser.name || "";
+        }
+        if (result.updatedUser.bio !== undefined && bioInput) {
+          bioInput.value = result.updatedUser.bio || "";
+        }
+      }
 
       try {
         this.userCache.delete(userId);
@@ -2798,12 +2849,71 @@ class AdminPanel {
     const form = document.getElementById("fakeNotificationForm");
     if (!form) return;
 
+    this.bindNotificationTypeOptions();
+
     // Attach a submit-like handler to the send button (we use explicit click handler in HTML)
     // But also prevent Enter from submitting the page accidentally
     form.addEventListener("submit", (e) => {
       e.preventDefault();
       this.sendFakeNotification();
     });
+  }
+
+  bindNotificationTypeOptions() {
+    const select = document.getElementById("notifType");
+    if (!select) return;
+
+    const fallbackTypes = [
+      "default",
+      "reaction",
+      "like",
+      "retweet",
+      "reply",
+      "follow",
+      "quote",
+      "mention",
+      "community_join_request",
+      "affiliate_request",
+      "community_join_approved",
+      "community_join_rejected",
+      "community_role_change",
+      "community_ban",
+      "community_unban",
+    ];
+
+    const applyOptions = (types) => {
+      const previousValue = select.value;
+      while (select.firstChild) select.removeChild(select.firstChild);
+      const uniqueTypes = Array.from(new Set(types));
+      uniqueTypes.forEach((type) => {
+        const option = document.createElement("option");
+        option.value = type;
+        option.textContent = type;
+        select.appendChild(option);
+      });
+      if (uniqueTypes.includes(previousValue)) {
+        select.value = previousValue;
+      }
+    };
+
+    const hasWindowTypes = () =>
+      Array.isArray(window.NOTIFICATION_ICON_TYPES) &&
+      window.NOTIFICATION_ICON_TYPES.length > 0;
+
+    if (hasWindowTypes()) {
+      applyOptions(window.NOTIFICATION_ICON_TYPES);
+    } else {
+      applyOptions(fallbackTypes);
+      window.addEventListener(
+        "notification-icons-ready",
+        () => {
+          if (hasWindowTypes()) {
+            applyOptions(window.NOTIFICATION_ICON_TYPES);
+          }
+        },
+        { once: true }
+      );
+    }
   }
 
   // Send a fake notification via the admin API endpoint
