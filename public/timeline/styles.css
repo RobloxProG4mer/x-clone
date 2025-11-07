@@ -7445,6 +7445,14 @@ emoji-picker.emoji-picker-popup {
   max-width: 100%;
 }
 
+.role-badge.affiliate-with {
+  img {
+    width: 25px;
+    height: 25px;
+    border-radius: 2px;
+  }
+}
+
 @media (max-width: 768px) {
   .modal.settings-modal {
     width: 100vw;

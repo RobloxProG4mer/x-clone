@@ -218,10 +218,6 @@ const renderProfile = (data) => {
   if (profileNameEl) {
     profileNameEl.textContent = profile.name || profile.username;
     const existingBadge = profileNameEl.querySelector(".verification-badge");
-    const existingAdminBadge = profileNameEl.querySelector(".role-badge.admin");
-    const existingAffiliateBadge = profileNameEl.querySelector(
-      ".role-badge.affiliate"
-    );
 
     if (!suspended && (profile.verified || profile.gold)) {
       const badgeColor = profile.gold ? "#D4AF37" : "var(--primary)";
@@ -243,23 +239,42 @@ const renderProfile = (data) => {
       existingBadge.remove();
     }
 
-    // Admin badge handling
-    if (!suspended && profile.admin && !existingAdminBadge) {
-      const adminBadge = document.createElement("span");
-      adminBadge.className = "role-badge admin";
-      adminBadge.textContent = "Admin";
-      profileNameEl.appendChild(adminBadge);
-    } else if ((!profile.admin || suspended) && existingAdminBadge) {
-      existingAdminBadge.remove();
-    }
-    // Affiliate badge handling
-    if (!suspended && profile.affiliate && !existingAffiliateBadge) {
-      const affBadge = document.createElement("span");
-      affBadge.className = "role-badge affiliate";
-      affBadge.textContent = "Affiliate";
-      profileNameEl.appendChild(affBadge);
-    } else if ((!profile.affiliate || suspended) && existingAffiliateBadge) {
-      existingAffiliateBadge.remove();
+    // Affiliator avatar in header (shows small avatar after verification badge)
+    const existingHeaderAffWith = profileNameEl.querySelector(
+      ".role-badge.affiliate-with"
+    );
+    if (!suspended && profile.affiliate && profile.affiliate_with_profile) {
+      if (!existingHeaderAffWith) {
+        const aff = profile.affiliate_with_profile;
+        const affElHead = document.createElement("span");
+        affElHead.className = "role-badge affiliate-with";
+        affElHead.title = `Affiliated with @${aff.username}`;
+        affElHead.innerHTML = `
+          <a href="/@${aff.username}" class="affiliate-with-link">
+            <img src="${aff.avatar || "/public/shared/assets/default-avatar.png"}" alt="${aff.name || aff.username}" class="affiliate-with-avatar" />
+          </a>
+        `;
+        // Insert after verification badge when present
+        if (existingBadge) profileNameEl.insertBefore(affElHead, existingBadge.nextSibling);
+        else profileNameEl.appendChild(affElHead);
+
+        // style the image: fixed size + apply affiliator avatar_radius
+        const img = affElHead.querySelector("img");
+        if (img) {
+          img.style.width = "20px";
+          img.style.height = "20px";
+          img.style.objectFit = "cover";
+          if (aff.avatar_radius !== null && aff.avatar_radius !== undefined) {
+            img.style.borderRadius = `${aff.avatar_radius}px`;
+          } else if (aff.gold) {
+            img.style.borderRadius = `4px`;
+          } else {
+            img.style.borderRadius = `50%`;
+          }
+        }
+      }
+    } else if ((!profile.affiliate || suspended) && existingHeaderAffWith) {
+      existingHeaderAffWith.remove();
     }
   }
 
@@ -304,6 +319,43 @@ const renderProfile = (data) => {
       existingMainBadge.remove();
     }
 
+    const existingMainAffWith = mainDisplayNameEl.querySelector(
+      ".role-badge.affiliate-with"
+    );
+    if (!suspended && profile.affiliate && profile.affiliate_with_profile) {
+      if (!existingMainAffWith) {
+        const aff = profile.affiliate_with_profile;
+        const affElMain = document.createElement("span");
+        affElMain.className = "role-badge affiliate-with";
+        affElMain.title = `Affiliated with @${aff.username}`;
+        affElMain.innerHTML = `
+          <a href="/@${aff.username}" class="affiliate-with-link">
+            <img src="${aff.avatar || "/public/shared/assets/default-avatar.png"}" alt="${aff.name || aff.username}" class="affiliate-with-avatar" />
+          </a>
+        `;
+        const followsBadge = mainDisplayNameEl.querySelector(".follows-me-badge");
+        if (followsBadge) mainDisplayNameEl.insertBefore(affElMain, followsBadge);
+        else mainDisplayNameEl.appendChild(affElMain);
+
+        // style the image (20x20) and apply affiliator avatar_radius if present
+        const imgMain = affElMain.querySelector("img");
+        if (imgMain) {
+          imgMain.style.width = "20px";
+          imgMain.style.height = "20px";
+          imgMain.style.objectFit = "cover";
+          if (aff.avatar_radius !== null && aff.avatar_radius !== undefined) {
+            imgMain.style.borderRadius = `${aff.avatar_radius}px`;
+          } else if (aff.gold) {
+            imgMain.style.borderRadius = `4px`;
+          } else {
+            imgMain.style.borderRadius = `50%`;
+          }
+        }
+      }
+    } else if ((!profile.affiliate || suspended) && existingMainAffWith) {
+      existingMainAffWith.remove();
+    }
+
     if (!suspended && profile.admin && !existingMainAdmin) {
       const adminBadgeMain = document.createElement("span");
       adminBadgeMain.className = "role-badge admin";
@@ -317,21 +369,6 @@ const renderProfile = (data) => {
       }
     } else if ((!profile.admin || suspended) && existingMainAdmin) {
       existingMainAdmin.remove();
-    }
-    // Affiliate badge (main)
-    if (!suspended && profile.affiliate && !existingMainAffiliate) {
-      const affBadgeMain = document.createElement("span");
-      affBadgeMain.className = "role-badge affiliate";
-      affBadgeMain.textContent = "Affiliate";
-      const followsBadge3 =
-        mainDisplayNameEl.querySelector(".follows-me-badge");
-      if (followsBadge3) {
-        mainDisplayNameEl.insertBefore(affBadgeMain, followsBadge3);
-      } else {
-        mainDisplayNameEl.appendChild(affBadgeMain);
-      }
-    } else if ((!profile.affiliate || suspended) && existingMainAffiliate) {
-      existingMainAffiliate.remove();
     }
   }
 
@@ -1371,7 +1408,6 @@ document
               },
             };
 
-            // Offer affiliate request if viewer is not the profile owner
             if (!currentProfile.profile.affiliate) {
               const affiliateItem = {
                 id: "request-affiliate",
@@ -1413,15 +1449,12 @@ document
             triggerElement: triggerEl,
             items,
           });
-          // If the current user is the profile owner, allow them to manage affiliate requests
           if (
             currentUser &&
             currentProfile &&
             currentProfile.profile &&
             currentUser.id === currentProfile.profile.id
           ) {
-            const manageAffiliates = document.createElement("div");
-            // Add a minimal trigger in the popup area by opening a modal directly
             const openAffModal = async () => {
               try {
                 const res = await query(`/profile/affiliate-requests`, {
@@ -1484,9 +1517,17 @@ document
                         }
                       );
                       if (result?.success) {
-                        // mark profile as affiliate and rerender
                         if (currentProfile && currentProfile.profile) {
                           currentProfile.profile.affiliate = true;
+                          currentProfile.profile.affiliate_with_profile = {
+                            id: r.requester_id || r.id,
+                            username: r.username,
+                            name: r.name,
+                            avatar: r.avatar,
+                            verified: r.verified,
+                            gold: r.gold,
+                            avatar_radius: r.avatar_radius,
+                          };
                           renderProfile(currentProfile);
                         }
                         item.remove();
@@ -1554,7 +1595,6 @@ document
               }
             };
 
-            // add a simple manage item to popup that opens the modal
             items.push({
               id: "manage-affiliates",
               icon: `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v6"></path><path d="M12 22v-6"></path><path d="M4 12h16"></path></svg>`,

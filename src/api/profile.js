@@ -148,8 +148,14 @@ const createAffiliateRequest = db.query(
   `INSERT INTO affiliate_requests (id, requester_id, target_id) VALUES (?, ?, ?)`
 );
 
-const updateUserAffiliate = db.query(
-  `UPDATE users SET affiliate = ? WHERE id = ?`
+// (replaced by updateUserAffiliateWith below)
+
+const updateUserAffiliateWith = db.query(
+  `UPDATE users SET affiliate = ?, affiliate_with = ? WHERE id = ?`
+);
+
+const getUserById = db.query(
+  `SELECT id, username, name, avatar, verified, gold, avatar_radius FROM users WHERE id = ?`
 );
 
 const getPendingAffiliateRequests = db.query(`
@@ -355,6 +361,18 @@ export default new Elysia({ prefix: "/profile" })
         follower_count: counts.follower_count,
         post_count: counts.post_count,
       };
+
+      // If this user is affiliated with another user, include a small
+      // profile blob for the affiliating user so the client can render
+      // "Affiliated with @userA" UI without an extra request.
+      if (profile.affiliate_with) {
+        try {
+          const aff = getUserById.get(profile.affiliate_with);
+          if (aff) {
+            profile.affiliate_with_profile = aff;
+          }
+        } catch (_) {}
+      }
 
       let isFollowing = false;
       let followsMe = false;
@@ -1365,7 +1383,8 @@ export default new Elysia({ prefix: "/profile" })
           return { error: "Request already processed" };
 
         approveAffiliateRequest.run(requestId);
-        updateUserAffiliate.run(1, currentUser.id);
+        // Set affiliate flag and record who they are affiliated with
+        updateUserAffiliateWith.run(1, request.requester_id, currentUser.id);
 
         const requester = db
           .query("SELECT * FROM users WHERE id = ?")

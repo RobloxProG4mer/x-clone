@@ -51,7 +51,7 @@ img {
 
   &.primary {
     background: var(--primary);
-    color: white;
+    color: var(--primary-fg);
 
     &:hover:not(:disabled) {
       background: var(--primary-hover);

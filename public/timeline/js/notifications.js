@@ -184,7 +184,6 @@ function createNotificationElement(notification) {
 
   const icons = {
     default: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 22c1.1046 0 2-.8954 2-2h-4c0 1.1046.8954 2 2 2z"/><path d="M18.364 16.364A9 9 0 1 0 5.636 16.364L6 15.999V11a6 6 0 1 1 12 0v4.999l.364.365z"/></svg>`,
-    // simple single-color reaction icon (uses currentColor so it's one color)
     reaction: `<svg width="16" height="16" viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false">
       <circle cx="32" cy="32" r="28" fill="none" stroke="currentColor" stroke-width="3" />
       <circle cx="22" cy="26" r="2" fill="currentColor" />
@@ -210,7 +209,6 @@ function createNotificationElement(notification) {
     mention: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
 			<path d="M18.6471 15.3333V18.6667M18.6471 18.6667L18.6471 22M18.6471 18.6667H22M18.6471 18.6667H15.2941M3 22C3 17.7044 6.69722 14.2222 11.258 14.2222C12.0859 14.2222 12.8854 14.3369 13.6394 14.5505M16.4118 6.44444C16.4118 8.89904 14.4102 10.8889 11.9412 10.8889C9.47214 10.8889 7.47059 8.89904 7.47059 6.44444C7.47059 3.98985 9.47214 2 11.9412 2C14.4102 2 16.4118 3.98985 16.4118 6.44444Z"/>
 		</svg>`,
-    // community related icons
     community_join_request: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 2l3 6 6 .5-4.5 3 1.5 6L12 14l-6 4 1.5-6L3 8.5 9 8 12 2z"/></svg>`,
     affiliate_request: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 2l3 6 6 .5-4.5 3 1.5 6L12 14 6 18l1.5-6L3 8.5 9 8 12 2z"/></svg>`,
     community_join_approved: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M20 6L9 17l-5-5"/></svg>`,
@@ -243,7 +241,6 @@ function createNotificationElement(notification) {
   notificationEl.dataset.id = notification.id;
   notificationEl.dataset.type = notification.type;
   notificationEl.dataset.relatedId = notification.related_id || "";
-  // expose a direct URL (if present) for click handling/navigation
   notificationEl.dataset.relatedUrl = notification.url || "";
 
   const iconEl = document.createElement("div");
@@ -257,32 +254,22 @@ function createNotificationElement(notification) {
 
   const contentP = document.createElement("p");
 
-  // Use actor display name (if available) and make it a clickable link to the profile.
-  // Do NOT insert a generic "Someone" placeholder — if actor metadata is missing,
-  // we'll fall back to rendering the server-provided content as-is.
   const actorName =
     notification.actor_name || notification.actor_username || null;
   const actorUsername = notification.actor_username || "";
 
-  // Helper to safely escape regex special chars when removing username from content text
   function escapeRegExp(string) {
     return string.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
   }
 
-  // Prepare the remaining text by normalizing whitespace and removing any
-  // @username or display name occurrences so we don't duplicate the actor.
   let remainingText = notification.content || "";
 
-  // Normalize non-breaking spaces and collapse runs of whitespace so
-  // matching multi-word display names is more robust (fixes two-word names).
   try {
     remainingText = remainingText
       .replace(/\u00A0/g, " ")
       .replace(/\s+/g, " ")
       .trim();
-  } catch {
-    // noop: keep the current remainingText if normalization fails
-  }
+  } catch {}
 
   if (actorName && remainingText) {
     try {
@@ -309,16 +296,12 @@ function createNotificationElement(notification) {
     } catch {}
   }
 
-  // Build DOM. If we have an actor name, show it as a link and avoid inserting
-  // any generic placeholder. If actor metadata is missing, render the server-provided
-  // notification content directly.
   if (actorName) {
     const actorLink = document.createElement("a");
     actorLink.className = "notification-actor-link";
     actorLink.href = actorUsername ? `/@${actorUsername}` : "#";
     actorLink.textContent = actorName;
     actorLink.addEventListener("click", (ev) => {
-      // stop outer click handler and navigate to profile
       ev.stopPropagation();
       ev.preventDefault();
       if (actorUsername) {
@@ -339,7 +322,6 @@ function createNotificationElement(notification) {
     contentP.appendChild(timeSpan);
     contentEl.appendChild(contentP);
   } else {
-    // No actor metadata: show server-provided content directly (no 'Someone').
     contentP.textContent = (notification.content || "").trim() + " ";
     const timeSpan = document.createElement("span");
     timeSpan.className = "notification-time";
@@ -372,10 +354,6 @@ function createNotificationElement(notification) {
       tweetSubtitleEl.textContent = tweetContent;
       contentEl.appendChild(tweetSubtitleEl);
     } else if (notification.tweet.content) {
-      // Generic subtitle fallback: render tweet.content as a subtitle even
-      // if the notification type doesn't match the typical tweet-related
-      // types. This supports admin fake notifications which encode a
-      // subtitle into related_id.
       const tweetContent =
         notification.tweet.content.length > 100
           ? `${notification.tweet.content.substring(0, 100)}...`
@@ -411,17 +389,14 @@ function createNotificationElement(notification) {
       }
     }
 
-    // If a direct URL is provided, open it instead of attempting to load a tweet
     if (relatedUrl) {
       try {
-        // preserve default behavior for links
         window.location.href = relatedUrl;
         return;
       } catch (err) {
         console.error("Failed to open notification URL:", err);
       }
     }
-    // If relatedId is present but encodes meta/subtitle only (no actionable id), do nothing
     if (
       relatedId &&
       (relatedId.startsWith("meta:") || relatedId.startsWith("subtitle:"))
@@ -435,7 +410,6 @@ function createNotificationElement(notification) {
         notificationType
       )
     ) {
-      // If relatedId encodes meta/subtitle (not a real tweet id), don't try to fetch a tweet
       if (relatedId.startsWith("meta:") || relatedId.startsWith("subtitle:"))
         return;
       try {
@@ -467,7 +441,6 @@ function createNotificationElement(notification) {
         else window.location.href = `/communities/${relatedId}`;
       } catch (error) {
         console.error("Failed to open community:", error);
-        // Fallback to direct navigation
         window.location.href = `/communities/${relatedId}`;
       }
     } else if (
@@ -483,17 +456,19 @@ function createNotificationElement(notification) {
       }
     } else if (
       notificationType === "affiliate_request" ||
-      (relatedId && relatedId.startsWith("affiliate_request:"))
+      relatedId?.startsWith("affiliate_request:")
     ) {
-      const requestId =
-        relatedId && relatedId.startsWith("affiliate_request:")
-          ? relatedId.split(":")[1]
-          : null;
+      const requestId = relatedId?.startsWith("affiliate_request:")
+        ? relatedId.split(":")[1]
+        : null;
       const notif =
         currentNotifications.find((n) => n.id === notificationId) || {};
       const actorName = notif.actor_username || notif.actor_name || "this user";
 
       const content = document.createElement("div");
+      content.style.margin = "16px 18px";
+      content.style.textAlign = "center";
+
       const text = document.createElement("p");
       text.textContent = `Do you want to be affiliated with ${
         actorName.startsWith("@") ? actorName : `@${actorName}`
@@ -526,9 +501,6 @@ function createNotificationElement(notification) {
       yesBtn.addEventListener("click", async () => {
         yesBtn.disabled = true;
         try {
-          // If relatedId didn't include the request id, try to resolve it by
-          // fetching pending affiliate requests for the current user and
-          // matching the requester by username/name.
           let resolvedId = requestId;
           if (!resolvedId) {
             try {
@@ -643,7 +615,6 @@ async function markAllAsRead() {
     .forEach((el) => {
       el.classList.remove("unread");
     });
-  // renderNotifications();
 }
 
 document
