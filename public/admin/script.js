@@ -34,6 +34,7 @@ class AdminPanel {
     ]);
     this.selectedUsers = new Set();
     this.bulkModal = null;
+    this.bulkEditOrder = [];
 
     this.init();
   }
@@ -940,6 +941,39 @@ class AdminPanel {
     this.updateBulkEditControls();
   }
 
+  toggleUserSelection(userId, checked) {
+    if (!userId) return;
+    if (checked) {
+      this.selectedUsers.add(userId);
+    } else {
+      this.selectedUsers.delete(userId);
+    }
+    document.querySelectorAll(".bulk-user-checkbox").forEach((checkbox) => {
+      if (checkbox.value === userId) {
+        checkbox.checked = this.selectedUsers.has(userId);
+      }
+    });
+    this.updateBulkEditControls();
+  }
+
+  syncSelectedUserCheckboxes() {
+    document.querySelectorAll(".bulk-user-checkbox").forEach((checkbox) => {
+      checkbox.checked = this.selectedUsers.has(checkbox.value);
+    });
+  }
+
+  updateBulkEditControls() {
+    const btn = document.getElementById("bulkEditBtn");
+    const countBadge = document.getElementById("bulkEditCount");
+    const count = this.selectedUsers.size;
+    if (btn) {
+      btn.disabled = count === 0;
+    }
+    if (countBadge) {
+      countBadge.textContent = String(count);
+    }
+  }
+
   async searchUsers() {
     const search = document.getElementById("userSearch").value;
     this.loadUsers(1, search);
@@ -1248,7 +1282,7 @@ class AdminPanel {
         userData = await this.apiCall(`/api/admin/users/${userId}`);
       }
 
-      const { user, suspensions, recentPosts } = userData;
+      const { user, suspensions, recentPosts, affiliate } = userData;
 
       document.getElementById("userModalBody").innerHTML = `
         <div class="row">
@@ -1406,6 +1440,23 @@ class AdminPanel {
                 <small style="color: var(--text-secondary);">Tier defaults: 400 (Standard) | 5,500 (Verified) | 16,500 (Gold)</small>
               </div>
             </form>
+
+            <div class="mt-4">
+              <h5>Affiliate Management</h5>
+              <div class="mb-3">
+                <label class="form-label">Send Affiliate Request</label>
+                <div class="input-group">
+                  <span class="input-group-text">@</span>
+                  <input type="text" class="form-control" id="affiliateRequestTarget" placeholder="target username">
+                  <button class="btn btn-outline-primary" type="button" onclick="adminPanel.sendAffiliateRequest('${
+                    user.id
+                  }')">Send</button>
+                </div>
+              </div>
+              <div id="affiliateRequestsList">
+                ${this.buildAffiliateRequestHtml(affiliate, user.id)}
+              </div>
+            </div>
             
             <h5>Recent Posts</h5>
             <div class="mb-3" style="max-height: 200px; overflow-y: auto;">
@@ -1845,10 +1896,531 @@ class AdminPanel {
       });
 
       this.showSuccess("User deleted successfully");
+      if (this.selectedUsers.has(userId)) {
+        this.selectedUsers.delete(userId);
+        this.updateBulkEditControls();
+      }
       this.loadUsers(this.currentPage.users);
     } catch (error) {
       this.showError(error.message);
     }
+  }
+
+  async showBulkEditModal() {
+    if (!this.selectedUsers.size) {
+      this.showError("Select at least one user to bulk edit");
+      return;
+    }
+
+    const modalElement = document.getElementById("bulkUserModal");
+    const bodyElement = document.getElementById("bulkUserModalBody");
+    const saveButton = document.getElementById("bulkUserSaveBtn");
+    if (!modalElement || !bodyElement || !saveButton) return;
+
+    bodyElement.innerHTML = `
+      <div class="text-center py-5">
+        <div class="spinner-border text-primary" role="status"></div>
+        <div class="mt-2 text-muted">Loading selection...</div>
+      </div>
+    `;
+    saveButton.disabled = true;
+
+    if (!this.bulkModal) {
+      this.bulkModal = new bootstrap.Modal(modalElement, {
+        backdrop: "static",
+      });
+    }
+    this.bulkModal.show();
+
+    const loadedUsers = [];
+    for (const userId of this.selectedUsers) {
+      try {
+        const data = await this.apiCall(`/api/admin/users/${userId}`);
+        if (data?.user) {
+          loadedUsers.push(data.user);
+        }
+      } catch (error) {
+        console.error("Failed to load user for bulk edit", userId, error);
+      }
+    }
+
+    if (!loadedUsers.length) {
+      bodyElement.innerHTML =
+        '<div class="alert alert-danger mb-0">Failed to load selected users.</div>';
+      return;
+    }
+
+    this.bulkEditOrder = loadedUsers.map((user) => user.id);
+    bodyElement.innerHTML = loadedUsers
+      .map((user) => this.renderBulkUserCard(user))
+      .join("");
+    loadedUsers.forEach((user) => this.setupBulkFormInteractions(user));
+    saveButton.disabled = false;
+  }
+
+  renderBulkUserCard(user) {
+    const prefix = `bulk-${user.id}`;
+    const safeUsername = this.escapeHtml(user.username);
+    const safeName = user.name ? this.escapeHtml(user.name) : "";
+    const safeBio = user.bio ? this.escapeHtml(user.bio) : "";
+    const verifiedChecked = this.isFlagSet(user.verified) ? "checked" : "";
+    const goldChecked = this.isFlagSet(user.gold) ? "checked" : "";
+    const adminChecked = user.admin ? "checked" : "";
+    const affiliateChecked = this.isFlagSet(user.affiliate) ? "checked" : "";
+    const ghostFollowers = user.ghost_follower_count || 0;
+    const ghostFollowing = user.ghost_following_count || 0;
+    const characterLimitValue =
+      user.character_limit !== null && user.character_limit !== undefined
+        ? user.character_limit
+        : "";
+    let createdAtValue = "";
+    if (user.created_at) {
+      try {
+        const parsed = new Date(user.created_at);
+        if (!Number.isNaN(parsed.getTime())) {
+          createdAtValue = new Date(
+            parsed.getTime() - parsed.getTimezoneOffset() * 60000
+          )
+            .toISOString()
+            .slice(0, 16);
+        }
+      } catch (_) {}
+    }
+    const affiliateWithValue = user.affiliate_with_username
+      ? this.escapeHtml(user.affiliate_with_username)
+      : "";
+    const affiliateSectionStyle = this.isFlagSet(user.affiliate)
+      ? ""
+      : "display: none;";
+    const idPreview = this.escapeHtml(user.id.slice(0, 8));
+    const currentLimitLabel = user.character_limit
+      ? user.character_limit
+      : this.isFlagSet(user.gold)
+      ? "16,500 (Gold Default)"
+      : this.isFlagSet(user.verified)
+      ? "5,500 (Verified Default)"
+      : "400 (Standard Default)";
+
+    return `
+      <div class="card mb-3">
+        <div class="card-header d-flex justify-content-between align-items-center">
+          <div>
+            <strong>@${safeUsername}</strong>
+            ${
+              safeName ? `<span class="text-muted ms-2">${safeName}</span>` : ""
+            }
+          </div>
+          <span class="badge bg-secondary">ID ${idPreview}...</span>
+        </div>
+        <div class="card-body">
+          <div class="row">
+            <div class="col-md-6 mb-3">
+              <label class="form-label">Username</label>
+              <input type="text" class="form-control" id="${prefix}-username" value="${safeUsername}">
+            </div>
+            <div class="col-md-6 mb-3">
+              <label class="form-label">Display Name</label>
+              <input type="text" class="form-control" id="${prefix}-name" value="${safeName}">
+            </div>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Bio</label>
+            <textarea class="form-control" id="${prefix}-bio" rows="3">${safeBio}</textarea>
+          </div>
+          <div class="row">
+            <div class="col-md-3 mb-3">
+              <div class="form-check form-switch">
+                <input class="form-check-input" type="checkbox" id="${prefix}-verified" ${verifiedChecked}>
+                <label class="form-check-label">Verified</label>
+              </div>
+            </div>
+            <div class="col-md-3 mb-3">
+              <div class="form-check form-switch">
+                <input class="form-check-input" type="checkbox" id="${prefix}-gold" ${goldChecked}>
+                <label class="form-check-label">Gold</label>
+              </div>
+            </div>
+            <div class="col-md-3 mb-3">
+              <div class="form-check form-switch">
+                <input class="form-check-input" type="checkbox" id="${prefix}-admin" ${adminChecked}>
+                <label class="form-check-label">Admin</label>
+              </div>
+            </div>
+            <div class="col-md-3 mb-3">
+              <div class="form-check form-switch">
+                <input class="form-check-input" type="checkbox" id="${prefix}-affiliate" ${affiliateChecked}>
+                <label class="form-check-label">Affiliate Badge</label>
+              </div>
+            </div>
+          </div>
+          <div class="mb-3" id="${prefix}-affiliate-with-section" style="${affiliateSectionStyle}">
+            <label class="form-label">Affiliated With Username</label>
+            <input type="text" class="form-control" id="${prefix}-affiliate-with" value="${affiliateWithValue}">
+            <small class="text-muted">User this account is affiliated with</small>
+          </div>
+          <div class="row">
+            <div class="col-md-6 mb-3">
+              <label class="form-label">Ghost Followers</label>
+              <input type="number" class="form-control" id="${prefix}-ghost-followers" min="0" value="${ghostFollowers}">
+              <small class="text-muted">Current invisible followers</small>
+            </div>
+            <div class="col-md-6 mb-3">
+              <label class="form-label">Ghost Following</label>
+              <input type="number" class="form-control" id="${prefix}-ghost-following" min="0" value="${ghostFollowing}">
+              <small class="text-muted">Current invisible following</small>
+            </div>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Character Limit Override</label>
+            <input type="number" class="form-control" id="${prefix}-character-limit" min="1" value="${characterLimitValue}">
+            <small class="text-muted">Current: ${currentLimitLabel}. Tier defaults: 400 (Standard) | 5,500 (Verified) | 16,500 (Gold)</small>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Users to Follow This User (comma-separated usernames)</label>
+            <input type="text" class="form-control" id="${prefix}-force-follow" placeholder="user1,user2">
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Account Created</label>
+            <input type="datetime-local" class="form-control" id="${prefix}-created-at" value="${createdAtValue}">
+            <small class="text-muted">Edit account creation date and time</small>
+          </div>
+        </div>
+      </div>
+    `;
+  }
+
+  setupBulkFormInteractions(user) {
+    const prefix = `bulk-${user.id}`;
+    const verified = document.getElementById(`${prefix}-verified`);
+    const gold = document.getElementById(`${prefix}-gold`);
+    if (verified && gold) {
+      verified.addEventListener("change", () => {
+        if (verified.checked) gold.checked = false;
+      });
+      gold.addEventListener("change", () => {
+        if (gold.checked) verified.checked = false;
+      });
+    }
+
+    const affiliateCheckbox = document.getElementById(`${prefix}-affiliate`);
+    const affiliateSection = document.getElementById(
+      `${prefix}-affiliate-with-section`
+    );
+    if (affiliateCheckbox && affiliateSection) {
+      affiliateCheckbox.addEventListener("change", () => {
+        if (affiliateCheckbox.checked) {
+          affiliateSection.style.display = "block";
+        } else {
+          affiliateSection.style.display = "none";
+          const affiliateInput = document.getElementById(
+            `${prefix}-affiliate-with`
+          );
+          if (affiliateInput) affiliateInput.value = "";
+        }
+      });
+    }
+  }
+
+  buildAffiliateRequestHtml(affiliateData, userId) {
+    if (!affiliateData) {
+      return '<p class="text-muted mb-0">No affiliate activity.</p>';
+    }
+
+    const safeUserId = this.escapeHtml(userId);
+    const statusBadge = (status) => {
+      const normalized = (status || "").toLowerCase();
+      const classes =
+        normalized === "pending"
+          ? "bg-warning text-dark"
+          : normalized === "approved"
+          ? "bg-success"
+          : "bg-secondary";
+      return `<span class="badge ${classes}">${this.escapeHtml(
+        normalized.toUpperCase()
+      )}</span>`;
+    };
+
+    const incoming = Array.isArray(affiliateData.incoming)
+      ? affiliateData.incoming
+      : [];
+    const outgoing = Array.isArray(affiliateData.outgoing)
+      ? affiliateData.outgoing
+      : [];
+    const managed = Array.isArray(affiliateData.managed)
+      ? affiliateData.managed
+      : [];
+
+    const incomingBlock = incoming.length
+      ? `
+        <div class="mb-3">
+          <h6 class="text-uppercase text-muted">Incoming Requests</h6>
+          ${incoming
+            .map((request) => {
+              const username = request.requester_username
+                ? this.escapeHtml(request.requester_username)
+                : "unknown";
+              const name = request.requester_name
+                ? this.escapeHtml(request.requester_name)
+                : "";
+              const timestamp = this.formatDate(request.created_at);
+              const pending = request.status === "pending";
+              const actions = pending
+                ? `
+                    <button class="btn btn-sm btn-success" onclick="adminPanel.forceAcceptAffiliateRequest('${request.id}', '${safeUserId}')">Force Accept</button>
+                    <button class="btn btn-sm btn-outline-danger" onclick="adminPanel.forceRejectAffiliateRequest('${request.id}', '${safeUserId}')">Force Reject</button>
+                  `
+                : statusBadge(request.status);
+              return `
+                <div class="border rounded p-2 mb-2 d-flex justify-content-between align-items-center">
+                  <div>
+                    <strong>@${username}</strong>
+                    ${name ? `<div class="text-muted small">${name}</div>` : ""}
+                    <div class="text-muted small">${timestamp}</div>
+                  </div>
+                  <div class="d-flex gap-2">${actions}</div>
+                </div>
+              `;
+            })
+            .join("")}
+        </div>
+      `
+      : "";
+
+    const outgoingBlock = outgoing.length
+      ? `
+        <div class="mb-3">
+          <h6 class="text-uppercase text-muted">Outgoing Requests</h6>
+          ${outgoing
+            .map((request) => {
+              const username = request.target_username
+                ? this.escapeHtml(request.target_username)
+                : "unknown";
+              const name = request.target_name
+                ? this.escapeHtml(request.target_name)
+                : "";
+              const timestamp = this.formatDate(request.created_at);
+              const pending = request.status === "pending";
+              const actions = pending
+                ? `
+                    <button class="btn btn-sm btn-success" onclick="adminPanel.forceAcceptAffiliateRequest('${request.id}', '${safeUserId}')">Force Accept</button>
+                    <button class="btn btn-sm btn-outline-danger" onclick="adminPanel.forceRejectAffiliateRequest('${request.id}', '${safeUserId}')">Force Reject</button>
+                  `
+                : statusBadge(request.status);
+              return `
+                <div class="border rounded p-2 mb-2 d-flex justify-content-between align-items-center">
+                  <div>
+                    <strong>@${username}</strong>
+                    ${name ? `<div class="text-muted small">${name}</div>` : ""}
+                    <div class="text-muted small">${timestamp}</div>
+                  </div>
+                  <div class="d-flex gap-2">${actions}</div>
+                </div>
+              `;
+            })
+            .join("")}
+        </div>
+      `
+      : "";
+
+    const managedBlock = managed.length
+      ? `
+        <div class="mb-3">
+          <h6 class="text-uppercase text-muted">Active Affiliates</h6>
+          <div class="d-flex flex-wrap gap-2">
+            ${managed
+              .map((item) => {
+                const username = this.escapeHtml(item.username);
+                const name = item.name ? this.escapeHtml(item.name) : "";
+                return `
+                  <a class="btn btn-sm btn-outline-light" href="/@${username}" target="_blank" rel="noopener noreferrer">
+                    @${username}${name ? ` • ${name}` : ""}
+                  </a>
+                `;
+              })
+              .join("")}
+          </div>
+        </div>
+      `
+      : "";
+
+    const combined = `${incomingBlock}${outgoingBlock}${managedBlock}`.trim();
+    if (!combined) {
+      return '<p class="text-muted mb-0">No affiliate requests or affiliates.</p>';
+    }
+    return combined;
+  }
+
+  async sendAffiliateRequest(userId) {
+    const input = document.getElementById("affiliateRequestTarget");
+    const target = input?.value?.trim();
+    if (!target) {
+      this.showError("Target username is required");
+      return;
+    }
+
+    try {
+      await this.apiCall(`/api/admin/users/${userId}/affiliate-requests`, {
+        method: "POST",
+        body: JSON.stringify({ target_username: target }),
+      });
+      if (input) input.value = "";
+      this.showSuccess("Affiliate request sent");
+      this.userCache.delete(userId);
+      await this.showUserModal(userId);
+    } catch (error) {
+      this.showError(error.message);
+    }
+  }
+
+  async forceAcceptAffiliateRequest(requestId, userId) {
+    try {
+      await this.apiCall(`/api/admin/affiliate-requests/${requestId}/approve`, {
+        method: "POST",
+      });
+      this.showSuccess("Affiliate request approved");
+      this.userCache.delete(userId);
+      await this.showUserModal(userId);
+    } catch (error) {
+      this.showError(error.message);
+    }
+  }
+
+  async forceRejectAffiliateRequest(requestId, userId) {
+    try {
+      await this.apiCall(`/api/admin/affiliate-requests/${requestId}/deny`, {
+        method: "POST",
+      });
+      this.showSuccess("Affiliate request rejected");
+      this.userCache.delete(userId);
+      await this.showUserModal(userId);
+    } catch (error) {
+      this.showError(error.message);
+    }
+  }
+
+  async saveBulkProfiles() {
+    if (!this.selectedUsers.size) {
+      this.showError("No users selected");
+      return;
+    }
+
+    const saveButton = document.getElementById("bulkUserSaveBtn");
+    if (saveButton) saveButton.disabled = true;
+
+    const order = this.bulkEditOrder.length
+      ? [...this.bulkEditOrder]
+      : Array.from(this.selectedUsers);
+
+    for (const userId of order) {
+      const prefix = `bulk-${userId}`;
+      const usernameInput = document.getElementById(`${prefix}-username`);
+      if (!usernameInput) continue;
+      const username = usernameInput.value.trim();
+      if (!username) {
+        this.showError("Username is required");
+        if (saveButton) saveButton.disabled = false;
+        return;
+      }
+
+      const payload = {
+        username,
+        name: document.getElementById(`${prefix}-name`)?.value || "",
+        bio: document.getElementById(`${prefix}-bio`)?.value || "",
+        verified:
+          document.getElementById(`${prefix}-verified`)?.checked || false,
+        gold: document.getElementById(`${prefix}-gold`)?.checked || false,
+        admin: document.getElementById(`${prefix}-admin`)?.checked || false,
+        affiliate:
+          document.getElementById(`${prefix}-affiliate`)?.checked || false,
+      };
+
+      const affiliateWithInput = document.getElementById(
+        `${prefix}-affiliate-with`
+      );
+      if (payload.affiliate && affiliateWithInput?.value?.trim()) {
+        payload.affiliate_with_username = affiliateWithInput.value.trim();
+      }
+
+      const ghostFollowersInput = document.getElementById(
+        `${prefix}-ghost-followers`
+      );
+      if (ghostFollowersInput?.value) {
+        const count = parseInt(ghostFollowersInput.value, 10) || 0;
+        if (count > 0) {
+          payload.ghost_followers = count;
+        }
+      }
+
+      const ghostFollowingInput = document.getElementById(
+        `${prefix}-ghost-following`
+      );
+      if (ghostFollowingInput?.value) {
+        const count = parseInt(ghostFollowingInput.value, 10) || 0;
+        if (count > 0) {
+          payload.ghost_following = count;
+        }
+      }
+
+      const characterLimitInput = document.getElementById(
+        `${prefix}-character-limit`
+      );
+      if (characterLimitInput?.value?.trim()) {
+        const charLimit = parseInt(characterLimitInput.value, 10);
+        if (!Number.isNaN(charLimit) && charLimit > 0) {
+          payload.character_limit = charLimit;
+        }
+      } else {
+        payload.character_limit = null;
+      }
+
+      const createdInput = document.getElementById(`${prefix}-created-at`);
+      if (createdInput?.value) {
+        const local = new Date(createdInput.value);
+        if (Number.isNaN(local.getTime())) {
+          this.showError("Invalid created_at value provided");
+          if (saveButton) saveButton.disabled = false;
+          return;
+        }
+        payload.created_at = local.toISOString();
+      }
+
+      const forceFollowInput = document.getElementById(
+        `${prefix}-force-follow`
+      );
+      if (forceFollowInput?.value?.trim()) {
+        const usernames = forceFollowInput.value
+          .split(",")
+          .map((value) => value.trim())
+          .filter((value) => value.length > 0);
+        if (usernames.length) {
+          payload.force_follow_usernames = usernames;
+        }
+      }
+
+      try {
+        await this.apiCall(`/api/admin/users/${userId}`, {
+          method: "PATCH",
+          body: JSON.stringify(payload),
+        });
+        this.userCache.delete(userId);
+      } catch (error) {
+        this.showError(error.message || "Failed to save bulk changes");
+        if (saveButton) saveButton.disabled = false;
+        return;
+      }
+    }
+
+    if (saveButton) saveButton.disabled = false;
+    if (this.bulkModal) this.bulkModal.hide();
+
+    this.showSuccess(
+      `Updated ${order.length} user${order.length === 1 ? "" : "s"}`
+    );
+    this.selectedUsers.clear();
+    this.bulkEditOrder = [];
+    this.updateBulkEditControls();
+    this.syncSelectedUserCheckboxes();
+    this.loadUsers(this.currentPage.users || 1);
   }
   async deletePost(postId) {
     if (!confirm("Are you sure you want to delete this post?")) return;
@@ -1866,26 +2438,117 @@ class AdminPanel {
   }
 
   async addFactCheck(postId) {
-    const note = prompt("Enter the fact-check note:");
-    if (!note || !note.trim()) return;
-
-    const severity = prompt("Enter severity (warning/danger/info):", "warning");
-    const validSeverities = ["warning", "danger", "info"];
-    const finalSeverity = validSeverities.includes(severity)
-      ? severity
-      : "warning";
+    this.currentFactCheckPostId = postId;
 
     try {
-      const response = await this.apiCall(`/api/admin/fact-check/${postId}`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ note: note.trim(), severity: finalSeverity }),
-      });
+      const response = await this.apiCall(`/api/admin/fact-check/${postId}`);
+
+      const existingDiv = document.getElementById("factCheckExisting");
+      const noteTextarea = document.getElementById("factCheckNote");
+      const severitySelect = document.getElementById("factCheckSeverity");
+
+      if (response.factCheck) {
+        this.currentFactCheckId = response.factCheck.id;
+        document.getElementById("factCheckExistingNote").textContent =
+          response.factCheck.note;
+        document.getElementById("factCheckExistingSeverity").textContent =
+          response.factCheck.severity;
+        existingDiv.style.display = "block";
+        noteTextarea.value = "";
+        severitySelect.value = "warning";
+        noteTextarea.disabled = true;
+        severitySelect.disabled = true;
+      } else {
+        this.currentFactCheckId = null;
+        existingDiv.style.display = "none";
+        noteTextarea.value = "";
+        severitySelect.value = "warning";
+        noteTextarea.disabled = false;
+        severitySelect.disabled = false;
+      }
+
+      const modal = new bootstrap.Modal(
+        document.getElementById("factCheckModal")
+      );
+      modal.show();
+    } catch (error) {
+      this.showError("Failed to load fact-check data: " + error.message);
+    }
+  }
+
+  editExistingFactCheck() {
+    document.getElementById("factCheckNote").disabled = false;
+    document.getElementById("factCheckSeverity").disabled = false;
+    document.getElementById("factCheckExisting").style.display = "none";
+  }
+
+  async removeExistingFactCheck() {
+    if (!confirm("Are you sure you want to remove this fact-check?")) return;
+
+    try {
+      const response = await this.apiCall(
+        `/api/admin/fact-check/${this.currentFactCheckId}`,
+        {
+          method: "DELETE",
+        }
+      );
+
+      if (response.success) {
+        this.showSuccess("Fact-check removed successfully");
+        bootstrap.Modal.getInstance(
+          document.getElementById("factCheckModal")
+        ).hide();
+        this.loadPosts(this.currentPage.posts);
+      } else {
+        this.showError(response.error || "Failed to remove fact-check");
+      }
+    } catch (error) {
+      this.showError(error.message);
+    }
+  }
+
+  async submitFactCheck() {
+    const note = document.getElementById("factCheckNote").value.trim();
+    const severity = document.getElementById("factCheckSeverity").value;
+
+    if (!note) {
+      this.showError("Please enter a fact-check note");
+      return;
+    }
+
+    try {
+      let response;
+
+      if (this.currentFactCheckId) {
+        response = await this.apiCall(
+          `/api/admin/fact-check/${this.currentFactCheckId}`,
+          {
+            method: "DELETE",
+          }
+        );
+
+        if (!response.success) {
+          this.showError("Failed to update fact-check");
+          return;
+        }
+      }
+
+      response = await this.apiCall(
+        `/api/admin/fact-check/${this.currentFactCheckPostId}`,
+        {
+          method: "POST",
+          body: JSON.stringify({ note, severity }),
+        }
+      );
 
       if (response.success) {
         this.showSuccess(
           "Fact-check added successfully. Notifications sent to all users who interacted with this post."
         );
+        bootstrap.Modal.getInstance(
+          document.getElementById("factCheckModal")
+        ).hide();
+        this.loadPosts(this.currentPage.posts);
       } else {
         this.showError(response.error || "Failed to add fact-check");
       }
@@ -2636,6 +3299,8 @@ class AdminPanel {
       const cloneCommunities =
         !!document.getElementById("cloneCommunities")?.checked;
       const cloneMedia = !!document.getElementById("cloneMedia")?.checked;
+      const cloneAffiliate =
+        !!document.getElementById("cloneAffiliate")?.checked;
       const resultEl = document.getElementById("result");
 
       if (!sourceId) {
@@ -2659,6 +3324,7 @@ class AdminPanel {
         payload.cloneReactions = cloneReactions;
         payload.cloneCommunities = cloneCommunities;
         payload.cloneMedia = cloneMedia;
+        payload.cloneAffiliate = cloneAffiliate;
 
         const data = await this.apiCall(
           `/api/admin/users/${encodeURIComponent(sourceId)}/clone`,
@@ -2723,6 +3389,9 @@ class AdminPanel {
       edit_user_profile: "✏️",
       delete_conversation: "🗑️",
       delete_message: "🗑️",
+      send_affiliate_request: "🤝",
+      force_accept_affiliate: "✅",
+      force_reject_affiliate: "⛔",
     };
 
     const actionColors = {
@@ -2737,6 +3406,9 @@ class AdminPanel {
       edit_user_profile: "info",
       delete_conversation: "danger",
       delete_message: "warning",
+      send_affiliate_request: "primary",
+      force_accept_affiliate: "success",
+      force_reject_affiliate: "danger",
     };
 
     const actionLabels = {
@@ -2751,6 +3423,9 @@ class AdminPanel {
       edit_user_profile: "Edited User Profile",
       delete_conversation: "Deleted Conversation",
       delete_message: "Deleted Message",
+      send_affiliate_request: "Sent Affiliate Request",
+      force_accept_affiliate: "Force Accepted Affiliate",
+      force_reject_affiliate: "Force Rejected Affiliate",
     };
 
     container.innerHTML = `
