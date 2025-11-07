@@ -21,9 +21,7 @@ let _user;
 
   if (!authToken && !impersonateToken) {
     cookieStore.delete("agree");
-    // If we're already on the landing page ("/"), don't force a reload
-    // which can cause an infinite reload loop. Only navigate if we're on
-    // a different path.
+    
     if (window.location.pathname !== "/") {
       window.location.href = "/";
     }
@@ -43,8 +41,8 @@ let _user;
 
     document.body.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-monitor-x-icon lucide-monitor-x"><path d="m14.5 12.5-5-5"/><path d="m9.5 12.5 5-5"/><rect width="20" height="14" x="2" y="3" rx="2"/><path d="M12 17v4"/><path d="M8 21h8"/></svg>
 		
-		<h1 style="font-weight: 500;">Your account has been suspended</h1>
-		<p>Your account has been ${
+		<h1 style="font-weight: 500;">you have been banned</h1>
+		<p>your account has been ${
       suspension.expires_at ? "temporarily" : `permanently`
     } suspended by a moderator due to a violation of our policies.</p>
 
@@ -52,17 +50,15 @@ let _user;
 
 		${
       suspension.expires_at
-        ? `<p>This suspension will expire on ${new Date(
+        ? `<p>this suspension will expire on ${new Date(
             suspension.expires_at
           ).toLocaleString()}</p>`
         : ""
     }
 
-		<p>Note that if you attempt to evade a suspension by creating new accounts, we will suspend your new accounts. If you wish to appeal this suspension, please contact our support team.</p>
-		
-		<p>You may also pursue alternative forms of redress, including out-of-court dispute settlement or judicial redress.</p>
-		
-		<p><a href="javascript:" onclick="localStorage.removeItem("authToken");window.location.href = "/";">Log out</a></p>`;
+		<p>if you attempt to evade a suspension by creating new accounts, we will suspend or permanently delete your new accounts. you may not appeal this suspension.</p>
+				
+		<p><a href="javascript:" onclick="localStorage.removeItem("authToken");window.location.href = "/";">log out</a></p>`;
     document.body.querySelectorAll("p").forEach((p) => {
       p.style.marginBottom = "0px";
     });

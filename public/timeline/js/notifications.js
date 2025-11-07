@@ -523,15 +523,42 @@ function createNotificationElement(notification) {
         closeOnOverlayClick: true,
       });
 
-      yesBtn.addEventListener("click", async (e) => {
+      yesBtn.addEventListener("click", async () => {
         yesBtn.disabled = true;
         try {
-          if (!requestId) {
+          // If relatedId didn't include the request id, try to resolve it by
+          // fetching pending affiliate requests for the current user and
+          // matching the requester by username/name.
+          let resolvedId = requestId;
+          if (!resolvedId) {
+            try {
+              const data = await query(`/profile/affiliate-requests`);
+              const list = data.requests || data || [];
+              const found = list.find((r) => {
+                if (!r) return false;
+                const uname =
+                  r.username || r.requester_username || r.actor_username;
+                const name = r.name || r.requester_name || r.actor_name;
+                return (
+                  (notif.actor_username && uname === notif.actor_username) ||
+                  (notif.actor_name && uname === notif.actor_name) ||
+                  (notif.actor_username && name === notif.actor_username) ||
+                  (notif.actor_name && name === notif.actor_name)
+                );
+              });
+              if (found && found.id) resolvedId = found.id;
+            } catch (err) {
+              console.error("Failed to resolve affiliate request id:", err);
+            }
+          }
+
+          if (!resolvedId) {
             toastQueue.add("<h1>Invalid request</h1>");
             modal.close();
             return;
           }
-          await query(`/profile/affiliate-requests/${requestId}/approve`, {
+
+          await query(`/profile/affiliate-requests/${resolvedId}/approve`, {
             method: "POST",
           });
           toastQueue.add("<h1>Affiliation approved</h1>");
@@ -546,14 +573,38 @@ function createNotificationElement(notification) {
         }
       });
 
-      noBtn.addEventListener("click", async (e) => {
+      noBtn.addEventListener("click", async () => {
         noBtn.disabled = true;
         try {
-          if (!requestId) {
+          let resolvedId = requestId;
+          if (!resolvedId) {
+            try {
+              const data = await query(`/profile/affiliate-requests`);
+              const list = data.requests || data || [];
+              const found = list.find((r) => {
+                if (!r) return false;
+                const uname =
+                  r.username || r.requester_username || r.actor_username;
+                const name = r.name || r.requester_name || r.actor_name;
+                return (
+                  (notif.actor_username && uname === notif.actor_username) ||
+                  (notif.actor_name && uname === notif.actor_name) ||
+                  (notif.actor_username && name === notif.actor_username) ||
+                  (notif.actor_name && name === notif.actor_name)
+                );
+              });
+              if (found && found.id) resolvedId = found.id;
+            } catch (err) {
+              console.error("Failed to resolve affiliate request id:", err);
+            }
+          }
+
+          if (!resolvedId) {
             modal.close();
             return;
           }
-          await query(`/profile/affiliate-requests/${requestId}/deny`, {
+
+          await query(`/profile/affiliate-requests/${resolvedId}/deny`, {
             method: "POST",
           });
           toastQueue.add("<h1>Affiliation denied</h1>");
