@@ -1,7 +1,6 @@
 
 - affiliates tab on profiles with affiliates
 - ability to remove an affiliate badge from my profile
-- clicking an affiliate badge should use inapp navigation
 - affiliate badges on tweets
 
 - private accounts

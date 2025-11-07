@@ -4,6 +4,7 @@ import query from "./api.js";
 import { authToken } from "./auth.js";
 import switchPage, { addRoute } from "./pages.js";
 import { createTweetElement } from "./tweets.js";
+import { openProfile } from "./profile.js";
 
 let currentNotifications = [];
 let isLoadingMoreNotifications = false;
@@ -305,7 +306,7 @@ function createNotificationElement(notification) {
       ev.stopPropagation();
       ev.preventDefault();
       if (actorUsername) {
-        window.location.href = `/@${actorUsername}`;
+        openProfile(actorUsername);
       }
     });
 
@@ -322,7 +323,7 @@ function createNotificationElement(notification) {
     contentP.appendChild(timeSpan);
     contentEl.appendChild(contentP);
   } else {
-    contentP.textContent = (notification.content || "").trim() + " ";
+    contentP.textContent = `${notification.content?.trim() || ""}  `;
     const timeSpan = document.createElement("span");
     timeSpan.className = "notification-time";
     timeSpan.textContent = `· ${timeAgo}`;

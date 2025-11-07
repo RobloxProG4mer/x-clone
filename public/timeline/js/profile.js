@@ -238,44 +238,6 @@ const renderProfile = (data) => {
     } else if (existingBadge) {
       existingBadge.remove();
     }
-
-    // Affiliator avatar in header (shows small avatar after verification badge)
-    const existingHeaderAffWith = profileNameEl.querySelector(
-      ".role-badge.affiliate-with"
-    );
-    if (!suspended && profile.affiliate && profile.affiliate_with_profile) {
-      if (!existingHeaderAffWith) {
-        const aff = profile.affiliate_with_profile;
-        const affElHead = document.createElement("span");
-        affElHead.className = "role-badge affiliate-with";
-        affElHead.title = `Affiliated with @${aff.username}`;
-        affElHead.innerHTML = `
-          <a href="/@${aff.username}" class="affiliate-with-link">
-            <img src="${aff.avatar || "/public/shared/assets/default-avatar.png"}" alt="${aff.name || aff.username}" class="affiliate-with-avatar" />
-          </a>
-        `;
-        // Insert after verification badge when present
-        if (existingBadge) profileNameEl.insertBefore(affElHead, existingBadge.nextSibling);
-        else profileNameEl.appendChild(affElHead);
-
-        // style the image: fixed size + apply affiliator avatar_radius
-        const img = affElHead.querySelector("img");
-        if (img) {
-          img.style.width = "20px";
-          img.style.height = "20px";
-          img.style.objectFit = "cover";
-          if (aff.avatar_radius !== null && aff.avatar_radius !== undefined) {
-            img.style.borderRadius = `${aff.avatar_radius}px`;
-          } else if (aff.gold) {
-            img.style.borderRadius = `4px`;
-          } else {
-            img.style.borderRadius = `50%`;
-          }
-        }
-      }
-    } else if ((!profile.affiliate || suspended) && existingHeaderAffWith) {
-      existingHeaderAffWith.remove();
-    }
   }
 
   const mainDisplayNameEl = document.getElementById("profileDisplayName");
@@ -283,10 +245,8 @@ const renderProfile = (data) => {
     const existingMainBadge = mainDisplayNameEl.querySelector(
       ".verification-badge"
     );
-    const existingMainAdmin =
-      mainDisplayNameEl.querySelector(".role-badge.admin");
-    const existingMainAffiliate = mainDisplayNameEl.querySelector(
-      ".role-badge.affiliate"
+    const existingMainAdmin = mainDisplayNameEl.querySelector(
+      ".role-badge.admin"
     );
 
     if (!suspended && (profile.verified || profile.gold)) {
@@ -325,19 +285,27 @@ const renderProfile = (data) => {
     if (!suspended && profile.affiliate && profile.affiliate_with_profile) {
       if (!existingMainAffWith) {
         const aff = profile.affiliate_with_profile;
-        const affElMain = document.createElement("span");
+        const affElMain = document.createElement("a");
+        affElMain.href = `/@${aff.username}`;
         affElMain.className = "role-badge affiliate-with";
         affElMain.title = `Affiliated with @${aff.username}`;
-        affElMain.innerHTML = `
-          <a href="/@${aff.username}" class="affiliate-with-link">
-            <img src="${aff.avatar || "/public/shared/assets/default-avatar.png"}" alt="${aff.name || aff.username}" class="affiliate-with-avatar" />
-          </a>
-        `;
+
+        affElMain.addEventListener("click", (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          openProfile(aff.username);
+        });
+
+        const affElImage = document.createElement("img");
+        affElImage.src = aff.avatar || "/public/shared/assets/default-avatar.png";
+        affElImage.alt = aff.name || aff.username;
+        affElImage.className = "affiliate-with-avatar";
+        affElMain.appendChild(affElImage);
+
         const followsBadge = mainDisplayNameEl.querySelector(".follows-me-badge");
         if (followsBadge) mainDisplayNameEl.insertBefore(affElMain, followsBadge);
         else mainDisplayNameEl.appendChild(affElMain);
 
-        // style the image (20x20) and apply affiliator avatar_radius if present
         const imgMain = affElMain.querySelector("img");
         if (imgMain) {
           imgMain.style.width = "20px";
