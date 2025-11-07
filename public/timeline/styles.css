@@ -7393,6 +7393,8 @@ emoji-picker.emoji-picker-popup {
 }
 
 .role-badge.affiliate-with {
+  padding: 0px;
+  
   img {
     width: 20px;
     height: 20px;

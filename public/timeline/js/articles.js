@@ -82,7 +82,38 @@ const sanitizeMarkdown = (markdown) =>
       gfm: true,
       headerIds: false,
       mangle: false,
-    })
+    }),
+    {
+      ALLOWED_TAGS: [
+        "b",
+        "i",
+        "u",
+        "s",
+        "a",
+        "p",
+        "br",
+        "marquee",
+        "strong",
+        "em",
+        "code",
+        "pre",
+        "blockquote",
+        "h1",
+        "h2",
+        "h3",
+        "h4",
+        "h5",
+        "h6",
+        "ul",
+        "ol",
+        "li",
+        "span",
+        "big",
+        "sub",
+        "sup",
+      ],
+      ALLOWED_ATTR: ["href", "target", "rel", "class"],
+    }
   );
 
 const updatePreview = () => {
