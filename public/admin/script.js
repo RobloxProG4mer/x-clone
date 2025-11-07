@@ -2282,7 +2282,6 @@ class AdminPanel {
 
     document.getElementById("dmConversationInfo").innerHTML = infoHtml;
 
-    // Render messages
     const messagesHtml = messages.length
       ? messages
           .map(

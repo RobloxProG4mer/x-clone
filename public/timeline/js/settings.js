@@ -4,29 +4,6 @@ import query from "./api.js";
 import { authToken } from "./auth.js";
 
 let currentUser = null;
-let isRestoringState = false;
-
-const hexToRgb = (hex) => {
-  if (!hex) return null;
-  const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
-  return result
-    ? {
-        r: parseInt(result[1], 16),
-        g: parseInt(result[2], 16),
-        b: parseInt(result[3], 16),
-      }
-    : null;
-};
-
-const adjustBrightness = (hex, percent) => {
-  const rgb = hexToRgb(hex);
-  if (!rgb) return hex;
-  const adjust = (color) =>
-    Math.max(0, Math.min(255, Math.round(color + (color * percent) / 100)));
-  return `#${adjust(rgb.r).toString(16).padStart(2, "0")}${adjust(rgb.g)
-    .toString(16)
-    .padStart(2, "0")}${adjust(rgb.b).toString(16).padStart(2, "0")}`;
-};
 
 const settingsPages = [
   { key: "account", title: "Account", content: () => createAccountContent() },
@@ -915,11 +892,7 @@ const initializeSettings = () => {
 
     if (tabKey === "themes") {
       setTimeout(() => {
-        isRestoringState = true;
         loadCurrentThemeMode();
-        setTimeout(() => {
-          isRestoringState = false;
-        }, 200);
       }, 50);
     }
   };
@@ -1453,11 +1426,7 @@ export const openSettings = (section = "account") => {
 
     if (section === "themes") {
       setTimeout(() => {
-        isRestoringState = true;
         loadCurrentThemeMode();
-        setTimeout(() => {
-          isRestoringState = false;
-        }, 200);
       }, 50);
     }
   }
@@ -1522,11 +1491,7 @@ export const openSettingsModal = (section = "account") => {
 
     if (tabKey === "themes") {
       setTimeout(() => {
-        isRestoringState = true;
         loadCurrentThemeMode();
-        setTimeout(() => {
-          isRestoringState = false;
-        }, 200);
       }, 50);
     }
   };

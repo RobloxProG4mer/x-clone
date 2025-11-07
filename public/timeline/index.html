@@ -98,7 +98,25 @@
         <span class="nav-label">Notifications</span>
       </button>
       <button class="dm-btn" id="dmBtn">
-        <svg xmlns="http://www.w3.org/2000/svg" width="25" height="25" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-message-circle-more-icon lucide-message-circle-more"><path d="M2.992 16.342a2 2 0 0 1 .094 1.167l-1.065 3.29a1 1 0 0 0 1.236 1.168l3.413-.998a2 2 0 0 1 1.099.092 10 10 0 1 0-4.777-4.719"/><path d="M8 12h.01"/><path d="M12 12h.01"/><path d="M16 12h.01"/></svg>
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          width="25"
+          height="25"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          class="lucide lucide-message-circle-more-icon lucide-message-circle-more"
+        >
+          <path
+            d="M2.992 16.342a2 2 0 0 1 .094 1.167l-1.065 3.29a1 1 0 0 0 1.236 1.168l3.413-.998a2 2 0 0 1 1.099.092 10 10 0 1 0-4.777-4.719"
+          />
+          <path d="M8 12h.01" />
+          <path d="M12 12h.01" />
+          <path d="M16 12h.01" />
+        </svg>
         <span class="dm-count" id="dmCount" style="display: none">0</span>
         <span class="nav-label">DMs</span>
       </button>
@@ -318,10 +336,10 @@
         </div>
 
         <div class="communities-tabs">
-          <button class="communities-tab active" data-tab="all">
-            Explore
+          <button class="communities-tab active" data-tab="all">Explore</button>
+          <button class="communities-tab" data-tab="my">
+            Your communities
           </button>
-          <button class="communities-tab" data-tab="my">Your communities</button>
         </div>
 
         <div class="communities-content">
@@ -478,7 +496,21 @@
               rows="1"
             ></textarea>
             <button class="dm-send-btn" id="dmSendBtn" disabled>
-              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-arrow-up-icon lucide-arrow-up"><path d="m5 12 7-7 7 7"/><path d="M12 19V5"/></svg>
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="20"
+                height="20"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                class="lucide lucide-arrow-up-icon lucide-arrow-up"
+              >
+                <path d="m5 12 7-7 7 7" />
+                <path d="M12 19V5" />
+              </svg>
             </button>
           </div>
         </div>
@@ -824,10 +856,18 @@
               <button class="profile-tab-btn" data-tab="replies">
                 Replies
               </button>
+              <button
+                class="profile-tab-btn"
+                data-tab="affiliates"
+                style="display: none"
+              >
+                Affiliates
+              </button>
             </div>
 
             <div class="profile-tab-content">
               <div id="profilePostsContainer"></div>
+              <div id="profileAffiliatesContainer" class="hidden"></div>
             </div>
           </div>
         </div>
