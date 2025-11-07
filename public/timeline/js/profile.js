@@ -697,10 +697,8 @@ const renderProfile = (data) => {
   );
   if (affiliatesTabBtn) {
     if (!suspended && currentAffiliates.length > 0) {
-      affiliatesTabBtn.style.display = "flex";
       affiliatesTabBtn.textContent = `Affiliates (${currentAffiliates.length})`;
     } else {
-      affiliatesTabBtn.style.display = "none";
       affiliatesTabBtn.classList.remove("active");
     }
   }
