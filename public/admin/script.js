@@ -837,7 +837,7 @@ class AdminPanel {
                       <strong>@${user.username}</strong>
                       ${
                         user.name
-                          ? `<br><small class="text-muted">${user.name}</small>`
+                          ? `<br><small class="text-muted">${user.name.replaceAll("<", "&lt;").replaceAll(">", "&gt;")}</small>`
                           : ""
                       }
                     </div>
@@ -1106,7 +1106,7 @@ class AdminPanel {
                       <strong>@${suspension.username}</strong>
                       ${
                         suspension.name
-                          ? `<br><small class="text-muted">${suspension.name}</small>`
+                          ? `<br><small class="text-muted">${suspension.name.replaceAll("<", "&lt;").replaceAll(">", "&gt;")}</small>`
                           : ""
                       }
                     </div>
