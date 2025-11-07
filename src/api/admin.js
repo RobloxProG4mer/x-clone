@@ -533,7 +533,7 @@ export default new Elysia({ prefix: "/admin" })
       addNotification(
         targetUser.id,
         "affiliate_request",
-        `@${requester.username} requested you to become an affiliate`,
+        `${requester.username} requested you to become an affiliate`,
         `affiliate_request:${requestId}`,
         requester.id,
         requester.username,
@@ -1455,45 +1455,111 @@ export default new Elysia({ prefix: "/admin" })
 
   .patch(
     "/users/:id",
-    async ({ params, body, user: moderator }) => {
+    async ({ params, body, user: moderator, jwt }) => {
       const user = adminQueries.findUserById.get(params.id);
       if (!user) {
         return { error: "User not found" };
       }
 
-      if (body.username && body.username !== user.username) {
-        const existingUser = adminQueries.findUserByUsername.get(body.username);
-        if (existingUser && existingUser.id !== params.id) {
-          return { error: "Username already taken" };
+      const trimmedUsername =
+        body.username !== undefined ? body.username.trim() : undefined;
+
+      if (trimmedUsername !== undefined) {
+        if (!trimmedUsername.length) {
+          return { error: "Username cannot be empty" };
+        }
+        if (/\s/.test(trimmedUsername)) {
+          return { error: "Username cannot contain spaces" };
+        }
+        if (trimmedUsername !== user.username) {
+          const existingUser =
+            adminQueries.findUserByUsername.get(trimmedUsername);
+          if (existingUser && existingUser.id !== params.id) {
+            return { error: "Username already taken" };
+          }
         }
       }
 
+      const trimmedName =
+        body.name !== undefined ? body.name.trim() : undefined;
+      const nameToPersist =
+        trimmedName !== undefined
+          ? trimmedName.length
+            ? trimmedName
+            : null
+          : user.name;
+
+      const trimmedBio = body.bio !== undefined ? body.bio.trim() : undefined;
+      const bioToPersist =
+        trimmedBio !== undefined
+          ? trimmedBio.length
+            ? trimmedBio
+            : null
+          : user.bio;
+
       const changes = {};
-      if (body.username && body.username !== user.username)
-        changes.username = { old: user.username, new: body.username };
-      if (body.name !== undefined && body.name !== user.name)
-        changes.name = { old: user.name, new: body.name };
-      if (body.bio !== undefined && body.bio !== user.bio)
+      const newUsername =
+        trimmedUsername !== undefined ? trimmedUsername : user.username;
+      if (newUsername !== user.username) {
+        changes.username = { old: user.username, new: newUsername };
+      }
+      if (trimmedName !== undefined && nameToPersist !== user.name) {
+        changes.name = { old: user.name, new: nameToPersist };
+      }
+      if (trimmedBio !== undefined && bioToPersist !== user.bio) {
         changes.bio = {
           old: user.bio?.substring(0, 50),
-          new: body.bio?.substring(0, 50),
+          new: bioToPersist?.substring(0, 50),
         };
-      if (body.verified !== undefined && body.verified !== user.verified)
+      }
+
+      let newVerified =
+        body.verified !== undefined
+          ? body.verified
+            ? 1
+            : 0
+          : user.verified
+          ? 1
+          : 0;
+      let newGold =
+        body.gold !== undefined ? (body.gold ? 1 : 0) : user.gold ? 1 : 0;
+      if (newGold) newVerified = 0;
+      if (newVerified) newGold = 0;
+      if (body.verified !== undefined && body.verified !== user.verified) {
         changes.verified = { old: user.verified, new: body.verified };
-      if (body.gold !== undefined && body.gold !== user.gold)
+      }
+      if (body.gold !== undefined && body.gold !== user.gold) {
         changes.gold = { old: user.gold, new: body.gold };
-      if (body.admin !== undefined && body.admin !== user.admin)
+      }
+
+      const newAdminFlag =
+        body.admin !== undefined ? (body.admin ? 1 : 0) : user.admin ? 1 : 0;
+      if (body.admin !== undefined && body.admin !== user.admin) {
         changes.admin = { old: user.admin, new: body.admin };
+      }
 
       let affiliateWith = user.affiliate_with;
+      const newAffiliateFlag =
+        body.affiliate !== undefined
+          ? body.affiliate
+            ? 1
+            : 0
+          : user.affiliate
+          ? 1
+          : 0;
       if (body.affiliate !== undefined && body.affiliate !== user.affiliate) {
         changes.affiliate = { old: user.affiliate, new: body.affiliate };
       }
 
-      if (body.affiliate && body.affiliate_with_username) {
+      const affiliateUsername =
+        body.affiliate_with_username !== undefined
+          ? body.affiliate_with_username.trim()
+          : undefined;
+
+      if (newAffiliateFlag && affiliateUsername) {
         const affiliateUser = db
           .query("SELECT id FROM users WHERE username = ?")
-          .get(body.affiliate_with_username);
+          .get(affiliateUsername);
         if (affiliateUser) {
           affiliateWith = affiliateUser.id;
           if (affiliateWith !== user.affiliate_with) {
@@ -1503,11 +1569,11 @@ export default new Elysia({ prefix: "/admin" })
             };
           }
         }
-      } else if (!body.affiliate) {
-        affiliateWith = null;
+      } else if (!newAffiliateFlag) {
         if (user.affiliate_with !== null) {
           changes.affiliate_with = { old: user.affiliate_with, new: null };
         }
+        affiliateWith = null;
       }
 
       if (body.ghost_followers !== undefined) {
@@ -1586,14 +1652,18 @@ export default new Elysia({ prefix: "/admin" })
         }
       }
 
-      if (
-        body.character_limit !== undefined &&
-        body.character_limit !== user.character_limit
-      )
-        changes.character_limit = {
-          old: user.character_limit,
-          new: body.character_limit,
-        };
+      const newCharacterLimit =
+        body.character_limit !== undefined
+          ? body.character_limit
+          : user.character_limit;
+      if (body.character_limit !== undefined) {
+        if (newCharacterLimit !== user.character_limit) {
+          changes.character_limit = {
+            old: user.character_limit,
+            new: newCharacterLimit,
+          };
+        }
+      }
 
       if (
         body.force_follow_usernames &&
@@ -1603,7 +1673,11 @@ export default new Elysia({ prefix: "/admin" })
         const pendingUsers = [];
         const failedUsers = [];
 
-        for (const username of body.force_follow_usernames) {
+        for (const usernameRaw of body.force_follow_usernames) {
+          const username =
+            typeof usernameRaw === "string" ? usernameRaw.trim() : "";
+          if (!username) continue;
+
           const targetUser = db
             .query("SELECT id FROM users WHERE username = ?")
             .get(username);
@@ -1657,19 +1731,6 @@ export default new Elysia({ prefix: "/admin" })
         }
       }
 
-      let newVerified =
-        body.verified !== undefined
-          ? body.verified
-            ? 1
-            : 0
-          : user.verified
-          ? 1
-          : 0;
-      let newGold =
-        body.gold !== undefined ? (body.gold ? 1 : 0) : user.gold ? 1 : 0;
-      if (newGold) newVerified = 0;
-      if (newVerified) newGold = 0;
-
       let newUserCreatedAt = user.created_at;
       if (body.created_at !== undefined) {
         try {
@@ -1688,34 +1749,22 @@ export default new Elysia({ prefix: "/admin" })
       }
 
       adminQueries.updateUser.run(
-        body.username || user.username,
-        body.name !== undefined ? body.name : user.name,
-        body.bio !== undefined ? body.bio : user.bio,
+        newUsername,
+        nameToPersist,
+        bioToPersist,
         newVerified,
-        body.admin !== undefined ? body.admin : user.admin,
+        newAdminFlag,
         newGold,
         user.follower_count || 0,
         user.following_count || 0,
-        body.character_limit !== undefined
-          ? body.character_limit
-          : user.character_limit,
+        newCharacterLimit,
         newUserCreatedAt,
         params.id
       );
 
       db.query(
         "UPDATE users SET affiliate = ?, affiliate_with = ? WHERE id = ?"
-      ).run(
-        body.affiliate !== undefined
-          ? body.affiliate
-            ? 1
-            : 0
-          : user.affiliate
-          ? 1
-          : 0,
-        affiliateWith,
-        params.id
-      );
+      ).run(newAffiliateFlag, affiliateWith, params.id);
 
       logModerationAction(
         moderator.id,
@@ -1725,7 +1774,33 @@ export default new Elysia({ prefix: "/admin" })
         { username: user.username, changes }
       );
 
-      return { success: true };
+      const response = { success: true };
+
+      if (moderator.id === params.id) {
+        response.updatedUser = {
+          username: newUsername,
+          name: nameToPersist,
+          bio: bioToPersist,
+          verified: !!newVerified,
+          gold: !!newGold,
+          admin: !!newAdminFlag,
+          affiliate: !!newAffiliateFlag,
+          affiliate_with: affiliateWith,
+          character_limit: newCharacterLimit,
+        };
+
+        if (newUsername !== user.username) {
+          const issuedAt = Math.floor(Date.now() / 1000);
+          response.token = await jwt.sign({
+            userId: params.id,
+            username: newUsername,
+            iat: issuedAt,
+            exp: issuedAt + 7 * 24 * 60 * 60,
+          });
+        }
+      }
+
+      return response;
     },
     {
       body: t.Object({
