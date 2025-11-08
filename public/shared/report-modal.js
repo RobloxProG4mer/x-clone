@@ -165,7 +165,9 @@ export function showReportModal({ type, id, username, content }) {
   modalContent.appendChild(form);
 
   const { close } = createModal({
-    title: `Report ${type === "post" ? "Tweet" : "User"}${username ? ` @${username}` : ""}`,
+    title: `Report ${type === "post" ? "Tweet" : "User"}${
+      username ? ` @${username}` : ""
+    }`,
     content: modalContent,
     className: "report-modal",
   });
@@ -211,9 +213,7 @@ export function showReportModal({ type, id, username, content }) {
         );
         close();
       } else {
-        toastQueue.add(
-          `<h1>${data.error || "Failed to submit report"}</h1>`
-        );
+        toastQueue.add(`<h1>${data.error || "Failed to submit report"}</h1>`);
         submitButton.disabled = false;
         submitButton.textContent = "Submit Report";
       }

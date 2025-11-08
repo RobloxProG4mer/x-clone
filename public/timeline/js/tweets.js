@@ -67,9 +67,16 @@ const createFactCheck = (fact_check) => {
     .replaceAll("<", "&lt;")
     .replaceAll(">", "&gt;")
     .replaceAll("\n", "<br>")
-    .replace(linkRegex, (url) => `<a href="${url.startsWith("http") ? url : `https://${url}`}" target="_blank" rel="noopener noreferrer">${ url.length > 60 ? `${url.slice(0, 50)}…` : url}</a>`);
+    .replace(
+      linkRegex,
+      (url) =>
+        `<a href="${
+          url.startsWith("http") ? url : `https://${url}`
+        }" target="_blank" rel="noopener noreferrer">${
+          url.length > 60 ? `${url.slice(0, 50)}…` : url
+        }</a>`
+    );
   note.innerHTML = DOMPurify.sanitize(htmlString, DOMPURIFY_CONFIG);
-
 
   const footer = document.createElement("p");
   footer.className = "fact-check-footer";

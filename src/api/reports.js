@@ -236,7 +236,9 @@ export default new Elysia({ prefix: "/api/reports" })
             report.reported_id,
             "suspension",
             expiresAt
-              ? `Your account has been suspended until ${new Date(expiresAt).toLocaleString()}`
+              ? `Your account has been suspended until ${new Date(
+                  expiresAt
+                ).toLocaleString()}`
               : "Your account has been permanently suspended",
             suspensionId,
             user.userId
@@ -248,11 +250,16 @@ export default new Elysia({ prefix: "/api/reports" })
               id: notifId,
               type: "suspension",
               content: expiresAt
-                ? `Your account has been suspended until ${new Date(expiresAt).toLocaleString()}`
+                ? `Your account has been suspended until ${new Date(
+                    expiresAt
+                  ).toLocaleString()}`
                 : "Your account has been permanently suspended",
             },
           });
-        } else if (action === "delete_post" && report.reported_type === "post") {
+        } else if (
+          action === "delete_post" &&
+          report.reported_type === "post"
+        ) {
           deletePost.run(report.reported_id);
 
           createModerationLog.run(
