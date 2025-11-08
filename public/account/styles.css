@@ -596,6 +596,18 @@ input#username::placeholder {
   color: var(--text-primary);
 }
 
+/* Ensure the modal close button is pinned to the top-right corner */
+.modal-header {
+  position: relative;
+}
+
+.modal-header .close-btn {
+  position: absolute;
+  right: 12px;
+  top: 12px;
+  transform: none;
+}
+
 .modal-body {
   padding: 20px 24px 24px 24px;
 }

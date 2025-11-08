@@ -6888,6 +6888,9 @@ emoji-picker.emoji-picker-popup {
       padding: 16px 20px;
       border-bottom: 1px solid var(--border-primary);
 
+      /* allow positioning the close button absolutely to the top-right */
+      position: relative;
+
       h2 {
         margin: 0;
         font-size: 20px;
@@ -6914,6 +6917,14 @@ emoji-picker.emoji-picker-popup {
           background-color: var(--bg-secondary);
           color: var(--text-primary);
         }
+      }
+
+      /* Force the close button to the top-right corner of the modal */
+      .close-btn {
+        position: absolute;
+        right: 12px;
+        top: 12px;
+        transform: none;
       }
     }
 
@@ -6965,6 +6976,25 @@ emoji-picker.emoji-picker-popup {
       margin-top: 12px;
     }
   }
+}
+
+.settings-modal-overlay {
+  /* make sure overlay covers viewport */
+  position: fixed;
+  inset: 0;
+  display: none;
+  z-index: 1200;
+}
+
+.settings-modal-overlay .settings-form-modal {
+  /* center the modal box precisely in the viewport */
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  margin: 0; /* override any auto margins */
+  max-height: 85vh;
+  box-sizing: border-box;
 }
 
 .settings-section h1 {

@@ -791,7 +791,6 @@ export const useComposer = (
       followers: "Your followers can reply",
       verified: "Verified accounts can reply",
     };
-    replyRestrictionBtn.title = restrictionTexts[replyRestriction];
   });
 
   let communityOnly = false;

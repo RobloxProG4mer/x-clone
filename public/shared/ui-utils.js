@@ -451,7 +451,9 @@ export function createModal(options) {
     const h2 = document.createElement("h2");
     h2.textContent = title;
     modalHeader.appendChild(h2);
-    modal.appendChild(closeButton);
+    // place the close button inside the header so header's layout (flex
+    // with space-between) controls its alignment to the right
+    modalHeader.appendChild(closeButton);
     modal.appendChild(modalHeader);
   } else {
     modal.appendChild(closeButton);
