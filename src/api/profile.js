@@ -1565,18 +1565,17 @@ export default new Elysia({ prefix: "/profile" })
     if (existing) {
       if (existing.status === "pending")
         return { error: "Affiliate request already sent" };
-      if (existing.status === "denied") {
-        db.query(
-          "DELETE FROM affiliate_requests WHERE requester_id = ? AND target_id = ?"
-        ).run(currentUser.id, targetUser.id);
-      }
     }
+
+    // Always delete any existing requests to avoid UNIQUE constraint errors
+    db.query(
+      "DELETE FROM affiliate_requests WHERE requester_id = ? AND target_id = ?"
+    ).run(currentUser.id, targetUser.id);
 
     const id = Bun.randomUUIDv7();
     try {
       createAffiliateRequest.run(id, currentUser.id, targetUser.id);
 
-      // Include the affiliate request id in related_id so the client can approve/deny directly
       addNotification(
         targetUser.id,
         "affiliate_request",

@@ -21,6 +21,9 @@ if (!existsSync(uploadsDir)) {
 
 const ALLOWED_TYPES = {
   "image/webp": ".webp",
+  "image/png": ".webp",
+  "image/jpeg": ".webp",
+  "image/jpg": ".webp",
   "image/gif": ".gif",
   "video/mp4": ".mp4",
 };
@@ -60,7 +63,7 @@ export default new Elysia({ prefix: "/upload" })
       if (!ALLOWED_TYPES[file.type]) {
         return {
           error:
-            "Unsupported file type. Only WebP images and MP4 videos are allowed",
+            "Unsupported file type. Only images (PNG, JPG, WebP) and MP4 videos are allowed",
         };
       }
 

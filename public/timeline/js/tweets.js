@@ -1296,7 +1296,7 @@ export const createTweetElement = (tweet, config = {}) => {
     }
   }
 
-  if (tweet.interactive_card && tweet.interactive_card.options) {
+  if (tweet.interactive_card?.options) {
     const cardEl = document.createElement("div");
     cardEl.className = "interactive-card";
 
@@ -1339,7 +1339,8 @@ export const createTweetElement = (tweet, config = {}) => {
         const composer = await createComposer({
           placeholder: "Confirm your tweet...",
           autofocus: true,
-          callback: async (newTweet) => {
+          interactiveCard: tweet.interactive_card,
+          callback: async () => {
             modal.close();
             toastQueue.add(`<h1>Tweet posted!</h1>`);
           },

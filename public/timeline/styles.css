@@ -7763,19 +7763,19 @@ emoji-picker.emoji-picker-popup {
   font-size: 15px;
   font-weight: 600;
   cursor: pointer;
-  transition: background-color 0.2s ease;
+  transition: background-color 0.2s, opacity .2s;
   border-bottom: 1px solid var(--border-primary);
   text-align: center;
-}
 
-.interactive-card .card-option-button:last-child {
+  &:last-child {
   border-bottom: none;
 }
 
-.interactive-card .card-option-button:hover {
-  background: var(--bg-secondary);
+&:hover {
+  background-color: rgba(var(--primary-rgb), 0.1);
 }
 
-.interactive-card .card-option-button:active {
-  transform: scale(0.98);
+&:active {
+  opacity: .5;
+}
 }

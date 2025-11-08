@@ -21,7 +21,7 @@ async function createEmojiPicker() {
   } catch (_err) {
     custom = [];
   }
-  // Tr Cursor
+
   if (mod?.Picker) {
     try {
       const picker = new mod.Picker({ customEmoji: custom });

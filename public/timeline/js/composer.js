@@ -14,6 +14,7 @@ export const useComposer = (
     maxChars = 400,
     communityId = null,
     communitySelector = null,
+    interactiveCard = null,
   } = {}
 ) => {
   const textarea = element.querySelector("#tweet-textarea");
@@ -57,7 +58,7 @@ export const useComposer = (
   let replyRestriction = "everyone";
   let selectedGif = null;
   let scheduledFor = null;
-  let interactiveCard = null;
+  const currentInteractiveCard = interactiveCard;
 
   const updateCharacterCount = () => {
     const length = textarea.value.length;
@@ -1340,6 +1341,7 @@ export const createComposer = async ({
   quoteTweet = null,
   communityId = null,
   autofocus = false,
+  interactiveCard = null,
 }) => {
   const el = document.createElement("div");
   el.classList.add("compose-tweet");
@@ -1536,6 +1538,7 @@ export const createComposer = async ({
       maxChars,
       communityId,
       communitySelector,
+      interactiveCard,
     });
   } catch {
     const communitySelector = communityId
@@ -1546,6 +1549,7 @@ export const createComposer = async ({
       quoteTweet,
       communityId,
       communitySelector,
+      interactiveCard,
     });
   }
 
