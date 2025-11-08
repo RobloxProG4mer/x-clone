@@ -9,6 +9,7 @@
   - fact check the reported tweet
 
 - proper rate-limiting & captchas
+- i cant close the edit community modal
 
 "somrthing" 💔 W Tr. ❤️‍🩹
 

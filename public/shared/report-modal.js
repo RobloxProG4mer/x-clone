@@ -1,7 +1,7 @@
 import toastQueue from "./toasts.js";
 import { createModal } from "./ui-utils.js";
 
-export function showReportModal({ type, id, username, content }) {
+export function showReportModal({ type, id, username }) {
   const modalContent = document.createElement("div");
   modalContent.className = "report-modal-content";
   modalContent.style.cssText = `

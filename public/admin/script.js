@@ -149,6 +149,9 @@ class AdminPanel {
       case "suspensions":
         this.loadSuspensions();
         break;
+      case "reports":
+        this.loadReports();
+        break;
       case "dms":
         this.loadDMs();
         break;
@@ -3660,6 +3663,352 @@ class AdminPanel {
     this.renderPagination("moderationLogsPagination", pagination, (page) =>
       this.loadModerationLogs(page)
     );
+  }
+
+  async loadReports(page = 1) {
+    const limit = 50;
+    const offset = (page - 1) * limit;
+
+    try {
+      const response = await fetch(
+        `/api/reports/list?limit=${limit}&offset=${offset}`,
+        {
+          headers: {
+            Authorization: `Bearer ${this.token}`,
+          },
+        }
+      );
+
+      if (!response.ok) throw new Error("Failed to load reports");
+
+      const data = await response.json();
+      this.displayReports(data.reports || [], {
+        currentPage: page,
+        totalPages: Math.ceil((data.reports?.length || 0) / limit),
+        totalItems: data.reports?.length || 0,
+      });
+    } catch (error) {
+      console.error("Error loading reports:", error);
+      document.getElementById("reportsTable").innerHTML = `
+        <div class="alert alert-danger">Failed to load reports: ${error.message}</div>
+      `;
+    }
+  }
+
+  displayReports(reports, pagination) {
+    const tableContainer = document.getElementById("reportsTable");
+
+    if (!reports || reports.length === 0) {
+      tableContainer.innerHTML = `
+        <div class="alert alert-info">No reports found</div>
+      `;
+      return;
+    }
+
+    const pendingReports = reports.filter((r) => r.status === "pending");
+    const resolvedReports = reports.filter((r) => r.status === "resolved");
+
+    let html = `<div class="table-responsive">`;
+
+    if (pendingReports.length > 0) {
+      html += `
+        <h5 class="mt-3 mb-3">Pending Reports (${pendingReports.length})</h5>
+        <table class="table table-dark table-striped">
+          <thead>
+            <tr>
+              <th>Reporter</th>
+              <th>Type</th>
+              <th>Reported</th>
+              <th>Reason</th>
+              <th>Details</th>
+              <th>Created</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${pendingReports.map((report) => this.renderReportRow(report)).join("")}
+          </tbody>
+        </table>
+      `;
+    }
+
+    if (resolvedReports.length > 0) {
+      html += `
+        <h5 class="mt-4 mb-3">Resolved Reports (${resolvedReports.length})</h5>
+        <table class="table table-dark table-striped">
+          <thead>
+            <tr>
+              <th>Reporter</th>
+              <th>Type</th>
+              <th>Reported</th>
+              <th>Reason</th>
+              <th>Resolution</th>
+              <th>Resolved By</th>
+              <th>Date</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${resolvedReports.map((report) => this.renderReportRow(report, true)).join("")}
+          </tbody>
+        </table>
+      `;
+    }
+
+    html += `</div>`;
+    tableContainer.innerHTML = html;
+
+    this.renderPagination("reportsPagination", pagination, (page) =>
+      this.loadReports(page)
+    );
+  }
+
+  renderReportRow(report, isResolved = false) {
+    const reporterLink = report.reporter
+      ? `<a href="/@${report.reporter.username}" target="_blank">@${this.escapeHtml(report.reporter.username)}</a>`
+      : "Unknown";
+
+    let reportedContent = "";
+    if (report.reported_type === "user" && report.reported) {
+      reportedContent = `<a href="/@${report.reported.username}" target="_blank">@${this.escapeHtml(report.reported.username)}</a>`;
+    } else if (report.reported_type === "post" && report.reported) {
+      reportedContent = `<a href="/tweet/${report.reported.id}" target="_blank">Tweet</a><br><small class="text-muted">${this.escapeHtml(report.reported.content?.substring(0, 50) || "")}...</small>`;
+    } else {
+      reportedContent = "Deleted";
+    }
+
+    const reasonLabels = {
+      spam: "Spam",
+      harassment: "Harassment",
+      hate_speech: "Hate Speech",
+      violence: "Violence",
+      nsfw: "NSFW",
+      impersonation: "Impersonation",
+      misinformation: "Misinformation",
+      illegal: "Illegal",
+      other: "Other",
+    };
+
+    if (isResolved) {
+      const resolutionLabels = {
+        ignored: "Ignored",
+        banned_reporter: "Reporter Banned",
+        ban_user: "User Banned",
+        delete_post: "Post Deleted",
+        fact_check: "Fact-Checked",
+      };
+
+      return `
+        <tr>
+          <td>${reporterLink}</td>
+          <td><span class="badge bg-secondary">${report.reported_type}</span></td>
+          <td>${reportedContent}</td>
+          <td><span class="badge bg-warning">${reasonLabels[report.reason] || report.reason}</span></td>
+          <td><span class="badge bg-success">${resolutionLabels[report.resolution_action] || report.resolution_action}</span></td>
+          <td>${report.resolved_by || "N/A"}</td>
+          <td><small>${new Date(report.resolved_at).toLocaleString()}</small></td>
+        </tr>
+      `;
+    }
+
+    return `
+      <tr>
+        <td>${reporterLink}</td>
+        <td><span class="badge bg-secondary">${report.reported_type}</span></td>
+        <td>${reportedContent}</td>
+        <td><span class="badge bg-warning">${reasonLabels[report.reason] || report.reason}</span></td>
+        <td>
+          <button class="btn btn-sm btn-info" onclick="adminPanel.showReportDetails('${report.id}')">
+            <i class="bi bi-info-circle"></i>
+          </button>
+        </td>
+        <td><small>${new Date(report.created_at).toLocaleString()}</small></td>
+        <td>
+          <button class="btn btn-sm btn-primary" onclick="adminPanel.showReportActionModal('${report.id}')">
+            <i class="bi bi-gavel"></i> Resolve
+          </button>
+        </td>
+      </tr>
+    `;
+  }
+
+  showReportDetails(reportId) {
+    const report = this.findReportById(reportId);
+    if (!report) return;
+
+    const details = `
+      <strong>Reason:</strong> ${report.reason}<br>
+      <strong>Additional Info:</strong> ${this.escapeHtml(report.additional_info || "None")}
+    `;
+
+    alert(details);
+  }
+
+  findReportById(reportId) {
+    const tables = document.querySelectorAll("#reportsTable table");
+    for (const table of tables) {
+      const rows = table.querySelectorAll("tbody tr");
+      for (const row of rows) {
+        const btn = row.querySelector(`[onclick*="${reportId}"]`);
+        if (btn) {
+          return { id: reportId };
+        }
+      }
+    }
+    return null;
+  }
+
+  async showReportActionModal(reportId) {
+    try {
+      const response = await fetch(`/api/reports/list?limit=200`, {
+        headers: {
+          Authorization: `Bearer ${this.token}`,
+        },
+      });
+
+      if (!response.ok) throw new Error("Failed to load report");
+
+      const data = await response.json();
+      const report = data.reports.find((r) => r.id === reportId);
+
+      if (!report) {
+        alert("Report not found");
+        return;
+      }
+
+      document.getElementById("reportActionId").value = reportId;
+
+      const reasonLabels = {
+        spam: "Spam",
+        harassment: "Harassment",
+        hate_speech: "Hate Speech",
+        violence: "Violence",
+        nsfw: "NSFW",
+        impersonation: "Impersonation",
+        misinformation: "Misinformation",
+        illegal: "Illegal",
+        other: "Other",
+      };
+
+      let reportedInfo = "";
+      if (report.reported_type === "user" && report.reported) {
+        reportedInfo = `User: @${this.escapeHtml(report.reported.username)}`;
+      } else if (report.reported_type === "post" && report.reported) {
+        reportedInfo = `Tweet: ${this.escapeHtml(report.reported.content?.substring(0, 100) || "")}...`;
+      }
+
+      document.getElementById("reportActionDetails").innerHTML = `
+        <div class="alert alert-secondary">
+          <strong>Report Type:</strong> ${report.reported_type}<br>
+          <strong>Reported:</strong> ${reportedInfo}<br>
+          <strong>Reason:</strong> ${reasonLabels[report.reason] || report.reason}<br>
+          <strong>Additional Info:</strong> ${this.escapeHtml(report.additional_info || "None")}<br>
+          <strong>Reporter:</strong> @${this.escapeHtml(report.reporter?.username || "Unknown")}
+        </div>
+      `;
+
+      const actionSelect = document.getElementById("reportAction");
+      actionSelect.value = "";
+      document.getElementById("reportActionFields").innerHTML = "";
+
+      actionSelect.onchange = () => {
+        const action = actionSelect.value;
+        const fieldsContainer = document.getElementById("reportActionFields");
+
+        if (action === "ban_user") {
+          fieldsContainer.innerHTML = `
+            <div class="mb-3">
+              <label class="form-label">Duration (hours, leave empty for permanent)</label>
+              <input type="number" id="banDuration" class="form-control" min="1" placeholder="e.g., 24">
+            </div>
+            <div class="mb-3">
+              <label class="form-label">Severity</label>
+              <select id="banSeverity" class="form-select">
+                <option value="1">1 - Minor</option>
+                <option value="2">2 - Low</option>
+                <option value="3" selected>3 - Medium</option>
+                <option value="4">4 - High</option>
+                <option value="5">5 - Critical</option>
+              </select>
+            </div>
+          `;
+        } else if (action === "fact_check") {
+          fieldsContainer.innerHTML = `
+            <div class="mb-3">
+              <label class="form-label">Fact-Check Note *</label>
+              <textarea id="factCheckNoteReport" class="form-control" rows="3" required></textarea>
+            </div>
+            <div class="mb-3">
+              <label class="form-label">Severity</label>
+              <select id="factCheckSeverityReport" class="form-select">
+                <option value="info">Info</option>
+                <option value="warning" selected>Warning</option>
+                <option value="danger">Danger</option>
+              </select>
+            </div>
+          `;
+        } else {
+          fieldsContainer.innerHTML = "";
+        }
+      };
+
+      const modal = new bootstrap.Modal(document.getElementById("reportActionModal"));
+      modal.show();
+    } catch (error) {
+      console.error("Error loading report:", error);
+      alert("Failed to load report details");
+    }
+  }
+
+  async submitReportAction() {
+    const reportId = document.getElementById("reportActionId").value;
+    const action = document.getElementById("reportAction").value;
+
+    if (!action) {
+      alert("Please select an action");
+      return;
+    }
+
+    const body = { action };
+
+    if (action === "ban_user") {
+      const duration = document.getElementById("banDuration")?.value;
+      const severity = document.getElementById("banSeverity")?.value;
+      if (duration) body.duration = Number.parseInt(duration);
+      if (severity) body.severity = Number.parseInt(severity);
+    } else if (action === "fact_check") {
+      const note = document.getElementById("factCheckNoteReport")?.value;
+      const severity = document.getElementById("factCheckSeverityReport")?.value;
+      if (!note) {
+        alert("Please provide a fact-check note");
+        return;
+      }
+      body.note = note;
+      body.severity = severity;
+    }
+
+    try {
+      const response = await fetch(`/api/reports/resolve/${reportId}`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${this.token}`,
+        },
+        body: JSON.stringify(body),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok || !data.success) {
+        throw new Error(data.error || "Failed to resolve report");
+      }
+
+      alert("Report resolved successfully");
+      bootstrap.Modal.getInstance(document.getElementById("reportActionModal")).hide();
+      this.loadReports();
+    } catch (error) {
+      console.error("Error resolving report:", error);
+      alert(`Failed to resolve report: ${error.message}`);
+    }
   }
 
   async loadCommunities(page = 1) {

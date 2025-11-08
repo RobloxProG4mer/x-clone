@@ -329,6 +329,33 @@
               </div>
             </div>
 
+            <!-- Reports Section -->
+            <div id="reports-section" class="section d-none">
+              <div
+                class="d-flex justify-content-between align-items-center mb-3"
+              >
+                <h4>
+                  <i class="bi bi-flag"></i>
+                  User Reports
+                </h4>
+                <button class="btn btn-secondary" onclick="adminPanel.loadReports()">
+                  <i class="bi bi-arrow-clockwise"></i>
+                  Refresh
+                </button>
+              </div>
+
+              <div class="card">
+                <div class="card-body">
+                  <div id="reportsTable">
+                    <!-- Reports table will be populated here -->
+                  </div>
+                  <nav id="reportsPagination" class="mt-3">
+                    <!-- Pagination will be populated here -->
+                  </nav>
+                </div>
+              </div>
+            </div>
+
             <div id="dms-section" class="section d-none">
               <div
                 class="d-flex justify-content-between align-items-center mb-3"
@@ -1332,6 +1359,58 @@
             >
               <i class="bi bi-check-circle"></i>
               Add Fact-Check
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Report Action Modal -->
+    <div class="modal fade" id="reportActionModal" tabindex="-1">
+      <div class="modal-dialog">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title">Resolve Report</h5>
+            <button
+              type="button"
+              class="btn-close"
+              data-bs-dismiss="modal"
+            ></button>
+          </div>
+          <div class="modal-body">
+            <input type="hidden" id="reportActionId" />
+            <div id="reportActionDetails" class="mb-3">
+              <!-- Report details will be populated here -->
+            </div>
+            <div class="mb-3">
+              <label for="reportAction" class="form-label">Action *</label>
+              <select id="reportAction" class="form-select" required>
+                <option value="">Select an action...</option>
+                <option value="ignore">Ignore & Delete Report</option>
+                <option value="ban_reporter">Ban Reporter from Making Reports</option>
+                <option value="ban_user">Ban Reported User</option>
+                <option value="delete_post">Delete Reported Tweet</option>
+                <option value="fact_check">Add Fact-Check to Tweet</option>
+              </select>
+            </div>
+            <div id="reportActionFields">
+              <!-- Dynamic fields based on action -->
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button
+              type="button"
+              class="btn btn-secondary"
+              data-bs-dismiss="modal"
+            >
+              Cancel
+            </button>
+            <button
+              type="button"
+              class="btn btn-primary"
+              onclick="adminPanel.submitReportAction()"
+            >
+              Submit Action
             </button>
           </div>
         </div>
