@@ -33,7 +33,6 @@ export const useComposer = (
   const gifResults = element.querySelector("#gif-results");
   const gifPickerClose = element.querySelector("#gif-picker-close");
   const emojiBtn = element.querySelector("#emoji-btn");
-  const replyRestrictionBtn = element.querySelector("#reply-restriction-btn");
   const replyRestrictionSelect = element.querySelector(
     "#reply-restriction-select"
   );
@@ -736,42 +735,24 @@ export const useComposer = (
     });
   }
 
-  if (addPollOptionBtn) {
-    addPollOptionBtn.addEventListener("click", () => addPollOption());
+  addPollOptionBtn.addEventListener("click", () => addPollOption());
+
+  if (replyTo) {
+    replyRestrictionSelect.style.display = "none";
   }
 
-  if (replyRestrictionBtn && replyRestrictionSelect) {
-    if (replyTo) {
-      replyRestrictionBtn.style.display = "none";
-    } else {
-      replyRestrictionBtn.addEventListener("click", () => {
-        const isVisible = replyRestrictionSelect.style.display !== "none";
-        replyRestrictionSelect.style.display = isVisible ? "none" : "block";
-      });
+  replyRestrictionSelect.addEventListener("change", () => {
+    replyRestriction = replyRestrictionSelect.value;
+    replyRestrictionSelect.style.display = "none";
 
-      replyRestrictionSelect.addEventListener("change", () => {
-        replyRestriction = replyRestrictionSelect.value;
-        replyRestrictionSelect.style.display = "none";
-
-        const restrictionTexts = {
-          everyone: "Everyone can reply",
-          following: "People you follow can reply",
-          followers: "Your followers can reply",
-          verified: "Verified accounts can reply",
-        };
-        replyRestrictionBtn.title = restrictionTexts[replyRestriction];
-      });
-
-      document.addEventListener("click", (e) => {
-        if (
-          !replyRestrictionBtn.contains(e.target) &&
-          !replyRestrictionSelect.contains(e.target)
-        ) {
-          replyRestrictionSelect.style.display = "none";
-        }
-      });
-    }
-  }
+    const restrictionTexts = {
+      everyone: "Everyone can reply",
+      following: "People you follow can reply",
+      followers: "Your followers can reply",
+      verified: "Verified accounts can reply",
+    };
+    replyRestrictionBtn.title = restrictionTexts[replyRestriction];
+  });
 
   let communityOnly = false;
 
@@ -1354,6 +1335,12 @@ export const createComposer = async ({
                 </select>
               </div>
             </div>
+                  <select id="reply-restriction-select">
+                    <option value="everyone">Everyone can reply</option>
+                    <option value="following">People you follow</option>
+                    <option value="followers">Your followers</option>
+                    <option value="verified">Verified accounts</option>
+                  </select>
             <div class="compose-footer">
               <div class="compose-actions">
                 <button type="button" id="file-upload-btn">
@@ -1381,22 +1368,6 @@ export const createComposer = async ({
                     <polyline points="12 6 12 12 16 14"/>
                   </svg>
                 </button>
-                <div class="reply-restriction-container">
-                  <button type="button" id="reply-restriction-btn" title="Who can reply">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                      <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
-                      <circle cx="9" cy="7" r="4"/>
-                      <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
-                      <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
-                    </svg>
-                  </button>
-                  <select id="reply-restriction-select" style="display: none;">
-                    <option value="everyone">Everyone can reply</option>
-                    <option value="following">People you follow</option>
-                    <option value="followers">Your followers</option>
-                    <option value="verified">Verified accounts</option>
-                  </select>
-                </div>
               </div>
               <div class="compose-submit">
                 <div class="character-counter">
