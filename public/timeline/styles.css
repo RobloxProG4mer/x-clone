@@ -1214,7 +1214,7 @@ nav {
     padding: 12px 16px;
     margin: 12px 0;
     border-radius: 8px;
-    border: 2px solid;
+    border: 1px solid;
     background: var(--bg-secondary);
 
     &[data-severity="warning"] {

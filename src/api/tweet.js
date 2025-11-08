@@ -979,6 +979,15 @@ export default new Elysia({ prefix: "/tweets" })
     );
     const users = getUsersQuery.all(...allUserIds);
 
+    users.forEach((user) => {
+      if (user.affiliate && user.affiliate_with) {
+        const affiliateProfile = getUserById.get(user.affiliate_with);
+        if (affiliateProfile) {
+          user.affiliate_with_profile = affiliateProfile;
+        }
+      }
+    });
+
     const userMap = new Map(users.map((user) => [user.id, user]));
 
     const articleIds = new Set();
