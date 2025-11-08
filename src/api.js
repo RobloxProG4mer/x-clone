@@ -121,7 +121,6 @@ export default new Elysia({
         }`
       );
 
-      console.log("suspended", cached.suspension);
       return {
         error: "You are suspended",
         suspension: suspensionHtml,
