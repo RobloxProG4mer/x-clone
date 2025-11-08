@@ -1302,8 +1302,11 @@ export const createTweetElement = (tweet, config = {}) => {
 
     const mediaEl = document.createElement("div");
     mediaEl.className = "card-media";
-    
-    if (tweet.interactive_card.media_type === "image" || tweet.interactive_card.media_type === "gif") {
+
+    if (
+      tweet.interactive_card.media_type === "image" ||
+      tweet.interactive_card.media_type === "gif"
+    ) {
       const img = document.createElement("img");
       img.src = tweet.interactive_card.media_url;
       img.alt = "Card media";
@@ -1327,7 +1330,7 @@ export const createTweetElement = (tweet, config = {}) => {
       optionBtn.type = "button";
       optionBtn.className = "card-option-button";
       optionBtn.textContent = `Tweet ${option.description}`;
-      
+
       optionBtn.addEventListener("click", async (e) => {
         e.preventDefault();
         e.stopPropagation();
