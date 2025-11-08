@@ -811,7 +811,7 @@ export default new Elysia()
     const tweets = db
       .query(
         `
-      SELECT posts.*, users.username, users.name, users.avatar, users.verified, users.gold, users.avatar_radius
+      SELECT posts.*, users.username, users.name, users.avatar, users.verified, users.gold, users.avatar_radius, users.affiliate, users.affiliate_with
       FROM posts
       JOIN users ON posts.user_id = users.id
       WHERE posts.community_id = ? AND posts.reply_to IS NULL
@@ -826,16 +826,31 @@ export default new Elysia()
         .query("SELECT * FROM attachments WHERE post_id = ?")
         .all(tweet.id);
 
+      const author = {
+        username: tweet.username,
+        name: tweet.name,
+        avatar: tweet.avatar,
+        verified: tweet.verified || false,
+        gold: tweet.gold || false,
+        avatar_radius: tweet.avatar_radius || null,
+        affiliate: tweet.affiliate || false,
+        affiliate_with: tweet.affiliate_with || null,
+      };
+
+      if (author.affiliate && author.affiliate_with) {
+        const affiliateProfile = db
+          .query(
+            "SELECT id, username, name, avatar, verified, gold, avatar_radius FROM users WHERE id = ?"
+          )
+          .get(author.affiliate_with);
+        if (affiliateProfile) {
+          author.affiliate_with_profile = affiliateProfile;
+        }
+      }
+
       return {
         ...tweet,
-        author: {
-          username: tweet.username,
-          name: tweet.name,
-          avatar: tweet.avatar,
-          verified: tweet.verified || false,
-          gold: tweet.gold || false,
-          avatar_radius: tweet.avatar_radius || null,
-        },
+        author,
         attachments: attachments || [],
         liked_by_user: user
           ? !!db

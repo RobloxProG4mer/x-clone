@@ -2172,7 +2172,7 @@ nav {
   #profileAffiliatesContainer {
     display: flex;
     flex-direction: column;
-    gap: 18px;
+    gap: 10px;
     padding: 24px 0 0 0;
   }
 
@@ -2188,8 +2188,9 @@ nav {
     display: flex;
     align-items: center;
     gap: 14px;
-    padding: 12px 0;
+    padding-bottom: 10px;
     border-bottom: 1px solid var(--border-primary);
+    cursor: pointer;
 
     &:last-of-type {
       border-bottom: none;
@@ -2206,7 +2207,7 @@ nav {
     .affiliate-info {
       display: flex;
       flex-direction: column;
-      gap: 4px;
+      gap: 2px;
       min-width: 0;
 
       .affiliate-name-row {
@@ -2220,28 +2221,6 @@ nav {
       .affiliate-username {
         font-size: 14px;
         color: var(--text-secondary);
-      }
-
-      .affiliate-bio {
-        font-size: 14px;
-        color: var(--text-secondary);
-        line-height: 1.4;
-        max-width: 420px;
-      }
-    }
-
-    .affiliate-open-btn {
-      margin-left: auto;
-      background: transparent;
-      border: 1px solid var(--border-primary);
-      color: var(--text-primary);
-      padding: 6px 12px;
-      border-radius: 20px;
-      font-size: 14px;
-      cursor: pointer;
-
-      &:hover {
-        border-color: var(--text-primary);
       }
     }
   }

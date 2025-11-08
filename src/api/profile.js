@@ -586,7 +586,10 @@ export default new Elysia({ prefix: "/profile" })
             ...reply,
             author,
             poll: getPollDataForPost(reply.id, currentUserId),
-            quoted_tweet: getQuotedPostData(reply.quote_tweet_id, currentUserId),
+            quoted_tweet: getQuotedPostData(
+              reply.quote_tweet_id,
+              currentUserId
+            ),
             attachments: getPostAttachments(reply.id),
             liked_by_user: false,
             retweeted_by_user: false,
@@ -718,7 +721,10 @@ export default new Elysia({ prefix: "/profile" })
             ...reply,
             author,
             poll: getPollDataForPost(reply.id, currentUserId),
-            quoted_tweet: getQuotedPostData(reply.quote_tweet_id, currentUserId),
+            quoted_tweet: getQuotedPostData(
+              reply.quote_tweet_id,
+              currentUserId
+            ),
             attachments: getPostAttachments(reply.id),
             liked_by_user: false,
             retweeted_by_user: false,

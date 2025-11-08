@@ -162,29 +162,11 @@ const renderAffiliates = () => {
     usernameEl.textContent = `@${aff.username}`;
     info.appendChild(usernameEl);
 
-    if (aff.bio) {
-      const bioEl = document.createElement("p");
-      bioEl.className = "affiliate-bio";
-      bioEl.textContent = aff.bio;
-      info.appendChild(bioEl);
-    }
-
     card.appendChild(info);
-
-    const openBtn = document.createElement("button");
-    openBtn.type = "button";
-    openBtn.className = "affiliate-open-btn";
-    openBtn.textContent = "View";
-    openBtn.addEventListener("click", async (event) => {
-      event.stopPropagation();
-      const { default: openProfile } = await import("./profile.js");
-      openProfile(aff.username);
-    });
     card.addEventListener("click", async () => {
       const { default: openProfile } = await import("./profile.js");
       openProfile(aff.username);
     });
-    card.appendChild(openBtn);
 
     container.appendChild(card);
   });

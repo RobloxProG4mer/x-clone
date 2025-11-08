@@ -22,7 +22,7 @@ const removeBookmark = db.query(`
 `);
 
 const getBookmarkedTweets = db.query(`
-  SELECT posts.*, users.username, users.name, users.avatar, users.verified, b.created_at as bookmarked_at
+  SELECT posts.*, users.username, users.name, users.avatar, users.verified, users.gold, users.avatar_radius, users.affiliate, users.affiliate_with, b.created_at as bookmarked_at
   FROM bookmarks b
   JOIN posts ON b.post_id = posts.id
   JOIN users ON posts.user_id = users.id
@@ -61,7 +61,7 @@ const getAttachmentsByPostId = db.query(`
 `);
 
 const getQuotedTweet = db.query(`
-  SELECT posts.*, users.username, users.name, users.avatar, users.verified
+  SELECT posts.*, users.username, users.name, users.avatar, users.verified, users.gold, users.avatar_radius, users.affiliate, users.affiliate_with
   FROM posts
   JOIN users ON posts.user_id = users.id
   WHERE posts.id = ?
@@ -114,14 +114,40 @@ const getQuotedTweetData = (quoteTweetId, userId) => {
   const quotedTweet = getQuotedTweet.get(quoteTweetId);
   if (!quotedTweet) return null;
 
+  const author = {
+    username: quotedTweet.username,
+    name: quotedTweet.name,
+    avatar: quotedTweet.avatar,
+    verified: quotedTweet.verified || false,
+    gold: quotedTweet.gold || false,
+    avatar_radius: quotedTweet.avatar_radius || null,
+    affiliate: quotedTweet.affiliate || false,
+    affiliate_with: quotedTweet.affiliate_with || null,
+  };
+
+  if (author.affiliate && author.affiliate_with) {
+    const affiliateProfile = db
+      .query(
+        "SELECT id, username, name, avatar, verified, gold, avatar_radius FROM users WHERE id = ?"
+      )
+      .get(author.affiliate_with);
+    if (affiliateProfile) {
+      author.affiliate_with_profile = affiliateProfile;
+    }
+  }
+
+  const isSuspended = isUserSuspendedById(quotedTweet.user_id);
+  if (isSuspended) {
+    return {
+      id: quotedTweet.id,
+      unavailable_reason: "suspended",
+      created_at: quotedTweet.created_at,
+    };
+  }
+
   return {
     ...quotedTweet,
-    author: {
-      username: quotedTweet.username,
-      name: quotedTweet.name,
-      avatar: quotedTweet.avatar,
-      verified: quotedTweet.verified || false,
-    },
+    author,
     poll: getPollDataForTweet(quotedTweet.id, userId),
     attachments: getTweetAttachments(quotedTweet.id),
   };
@@ -245,21 +271,40 @@ export default new Elysia({ prefix: "/bookmarks" })
         userBookmarks.map((bookmark) => bookmark.post_id)
       );
 
-      const processedBookmarks = bookmarkedTweets.map((tweet) => ({
-        ...tweet,
-        author: {
+      const processedBookmarks = bookmarkedTweets.map((tweet) => {
+        const author = {
           username: tweet.username,
           name: tweet.name,
           avatar: tweet.avatar,
           verified: tweet.verified || false,
-        },
-        liked_by_user: likedPosts.has(tweet.id),
-        retweeted_by_user: retweetedPosts.has(tweet.id),
-        bookmarked_by_user: bookmarkedPosts.has(tweet.id),
-        poll: getPollDataForTweet(tweet.id, user.id),
-        quoted_tweet: getQuotedTweetData(tweet.quote_tweet_id, user.id),
-        attachments: getTweetAttachments(tweet.id),
-      }));
+          gold: tweet.gold || false,
+          avatar_radius: tweet.avatar_radius || null,
+          affiliate: tweet.affiliate || false,
+          affiliate_with: tweet.affiliate_with || null,
+        };
+
+        if (author.affiliate && author.affiliate_with) {
+          const affiliateProfile = db
+            .query(
+              "SELECT id, username, name, avatar, verified, gold, avatar_radius FROM users WHERE id = ?"
+            )
+            .get(author.affiliate_with);
+          if (affiliateProfile) {
+            author.affiliate_with_profile = affiliateProfile;
+          }
+        }
+
+        return {
+          ...tweet,
+          author,
+          liked_by_user: likedPosts.has(tweet.id),
+          retweeted_by_user: retweetedPosts.has(tweet.id),
+          bookmarked_by_user: bookmarkedPosts.has(tweet.id),
+          poll: getPollDataForTweet(tweet.id, user.id),
+          quoted_tweet: getQuotedTweetData(tweet.quote_tweet_id, user.id),
+          attachments: getTweetAttachments(tweet.id),
+        };
+      });
 
       return {
         success: true,
