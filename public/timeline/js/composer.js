@@ -783,14 +783,6 @@ export const useComposer = (
 
   replyRestrictionSelect.addEventListener("change", () => {
     replyRestriction = replyRestrictionSelect.value;
-    replyRestrictionSelect.style.display = "none";
-
-    const restrictionTexts = {
-      everyone: "Everyone can reply",
-      following: "People you follow can reply",
-      followers: "Your followers can reply",
-      verified: "Verified accounts can reply",
-    };
   });
 
   let communityOnly = false;
