@@ -126,7 +126,7 @@ const updateQuoteCount = db.query(`
 `);
 
 const getQuotedTweet = db.query(`
-  SELECT posts.*, users.username, users.name, users.avatar, users.verified, users.gold, users.avatar_radius
+  SELECT posts.*, users.username, users.name, users.avatar, users.verified, users.gold, users.avatar_radius, users.affiliate, users.affiliate_with
   FROM posts
   JOIN users ON posts.user_id = users.id
   WHERE posts.id = ?
@@ -282,16 +282,27 @@ const getQuotedTweetData = (quoteTweetId, userId) => {
     };
   }
 
+  const author = {
+    username: quotedTweet.username,
+    name: quotedTweet.name,
+    avatar: quotedTweet.avatar,
+    verified: quotedTweet.verified || false,
+    gold: quotedTweet.gold || false,
+    avatar_radius: quotedTweet.avatar_radius || null,
+    affiliate: quotedTweet.affiliate || false,
+    affiliate_with: quotedTweet.affiliate_with || null,
+  };
+
+  if (author.affiliate && author.affiliate_with) {
+    const affiliateProfile = getUserById.get(author.affiliate_with);
+    if (affiliateProfile) {
+      author.affiliate_with_profile = affiliateProfile;
+    }
+  }
+
   return {
     ...quotedTweet,
-    author: {
-      username: quotedTweet.username,
-      name: quotedTweet.name,
-      avatar: quotedTweet.avatar,
-      verified: quotedTweet.verified || false,
-      gold: quotedTweet.gold || false,
-      avatar_radius: quotedTweet.avatar_radius || null,
-    },
+    author,
     poll: getPollDataForTweet(quotedTweet.id, userId),
     attachments: getTweetAttachments(quotedTweet.id),
   };

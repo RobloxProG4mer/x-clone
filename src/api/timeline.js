@@ -139,14 +139,14 @@ const getAttachmentsByPostId = db.query(`
 `);
 
 const getQuotedTweet = db.query(`
-  SELECT posts.*, users.username, users.name, users.avatar, users.verified, users.gold, users.avatar_radius
+  SELECT posts.*, users.username, users.name, users.avatar, users.verified, users.gold, users.avatar_radius, users.affiliate, users.affiliate_with
   FROM posts
   JOIN users ON posts.user_id = users.id
   WHERE posts.id = ?
 `);
 
 const getTopReply = db.query(`
-  SELECT posts.*, users.username, users.name, users.avatar, users.verified, users.gold, users.avatar_radius
+  SELECT posts.*, users.username, users.name, users.avatar, users.verified, users.gold, users.avatar_radius, users.affiliate, users.affiliate_with
   FROM posts
   JOIN users ON posts.user_id = users.id
   WHERE posts.reply_to = ?
@@ -188,16 +188,31 @@ const getQuotedTweetData = (quoteTweetId, userId) => {
   const quotedTweet = getQuotedTweet.get(quoteTweetId);
   if (!quotedTweet) return null;
 
+  const author = {
+    username: quotedTweet.username,
+    name: quotedTweet.name,
+    avatar: quotedTweet.avatar,
+    verified: quotedTweet.verified || false,
+    gold: quotedTweet.gold || false,
+    avatar_radius: quotedTweet.avatar_radius || null,
+    affiliate: quotedTweet.affiliate || false,
+    affiliate_with: quotedTweet.affiliate_with || null,
+  };
+
+  if (author.affiliate && author.affiliate_with) {
+    const affiliateProfile = db
+      .query(
+        "SELECT id, username, name, avatar, verified, gold, avatar_radius FROM users WHERE id = ?"
+      )
+      .get(author.affiliate_with);
+    if (affiliateProfile) {
+      author.affiliate_with_profile = affiliateProfile;
+    }
+  }
+
   return {
     ...quotedTweet,
-    author: {
-      username: quotedTweet.username,
-      name: quotedTweet.name,
-      avatar: quotedTweet.avatar,
-      verified: quotedTweet.verified || false,
-      gold: quotedTweet.gold || false,
-      avatar_radius: quotedTweet.avatar_radius || null,
-    },
+    author,
     poll: getPollDataForTweet(quotedTweet.id, userId),
     attachments: getTweetAttachments(quotedTweet.id),
   };
@@ -207,16 +222,31 @@ const getTopReplyData = (tweetId, userId) => {
   const topReply = getTopReply.get(tweetId);
   if (!topReply) return null;
 
+  const author = {
+    username: topReply.username,
+    name: topReply.name,
+    avatar: topReply.avatar,
+    verified: topReply.verified || false,
+    gold: topReply.gold || false,
+    avatar_radius: topReply.avatar_radius || null,
+    affiliate: topReply.affiliate || false,
+    affiliate_with: topReply.affiliate_with || null,
+  };
+
+  if (author.affiliate && author.affiliate_with) {
+    const affiliateProfile = db
+      .query(
+        "SELECT id, username, name, avatar, verified, gold, avatar_radius FROM users WHERE id = ?"
+      )
+      .get(author.affiliate_with);
+    if (affiliateProfile) {
+      author.affiliate_with_profile = affiliateProfile;
+    }
+  }
+
   return {
     ...topReply,
-    author: {
-      username: topReply.username,
-      name: topReply.name,
-      avatar: topReply.avatar,
-      verified: topReply.verified || false,
-      gold: topReply.gold || false,
-      avatar_radius: topReply.avatar_radius || null,
-    },
+    author,
     poll: getPollDataForTweet(topReply.id, userId),
     quoted_tweet: getQuotedTweetData(topReply.quote_tweet_id, userId),
     attachments: getTweetAttachments(topReply.id),

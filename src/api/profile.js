@@ -74,7 +74,7 @@ const updatePassword = db.query(`
 `);
 
 const getUserReplies = db.query(`
-  SELECT posts.*, users.username, users.name, users.avatar, users.verified, users.gold, users.avatar_radius
+  SELECT posts.*, users.username, users.name, users.avatar, users.verified, users.gold, users.avatar_radius, users.affiliate, users.affiliate_with
   FROM posts 
   JOIN users ON posts.user_id = users.id 
   WHERE posts.user_id = ? AND posts.reply_to IS NOT NULL
@@ -83,7 +83,7 @@ const getUserReplies = db.query(`
 `);
 
 const getUserRepliesPaginated = db.query(`
-  SELECT posts.*, users.username, users.name, users.avatar, users.verified, users.gold, users.avatar_radius
+  SELECT posts.*, users.username, users.name, users.avatar, users.verified, users.gold, users.avatar_radius, users.affiliate, users.affiliate_with
   FROM posts 
   JOIN users ON posts.user_id = users.id 
   WHERE posts.user_id = ? AND posts.reply_to IS NOT NULL AND posts.id < ?
@@ -92,7 +92,7 @@ const getUserRepliesPaginated = db.query(`
 `);
 
 const getUserMedia = db.query(`
-  SELECT DISTINCT posts.*, users.username, users.name, users.avatar, users.verified, users.gold, users.avatar_radius
+  SELECT DISTINCT posts.*, users.username, users.name, users.avatar, users.verified, users.gold, users.avatar_radius, users.affiliate, users.affiliate_with
   FROM posts 
   JOIN users ON posts.user_id = users.id 
   JOIN attachments ON posts.id = attachments.post_id
@@ -102,7 +102,7 @@ const getUserMedia = db.query(`
 `);
 
 const getUserMediaPaginated = db.query(`
-  SELECT DISTINCT posts.*, users.username, users.name, users.avatar, users.verified, users.gold, users.avatar_radius
+  SELECT DISTINCT posts.*, users.username, users.name, users.avatar, users.verified, users.gold, users.avatar_radius, users.affiliate, users.affiliate_with
   FROM posts 
   JOIN users ON posts.user_id = users.id 
   JOIN attachments ON posts.id = attachments.post_id
@@ -112,7 +112,7 @@ const getUserMediaPaginated = db.query(`
 `);
 
 const getUserPosts = db.query(`
-  SELECT posts.*, users.username, users.name, users.avatar, users.verified, users.gold, users.avatar_radius
+  SELECT posts.*, users.username, users.name, users.avatar, users.verified, users.gold, users.avatar_radius, users.affiliate, users.affiliate_with
   FROM posts 
   JOIN users ON posts.user_id = users.id 
   WHERE posts.user_id = ? AND posts.reply_to IS NULL AND users.suspended = 0
@@ -122,7 +122,7 @@ const getUserPosts = db.query(`
 const getUserRetweets = db.query(`
   SELECT 
     original_posts.*,
-    original_users.username, original_users.name, original_users.avatar, original_users.verified, original_users.gold, original_users.avatar_radius,
+    original_users.username, original_users.name, original_users.avatar, original_users.verified, original_users.gold, original_users.avatar_radius, original_users.affiliate, original_users.affiliate_with,
     retweets.created_at as retweet_created_at,
     retweets.post_id as original_post_id
   FROM retweets
@@ -257,7 +257,7 @@ const getPollVoters = db.query(`
 `);
 
 const getQuotedTweet = db.query(`
-  SELECT posts.*, users.username, users.name, users.avatar, users.verified, users.gold, users.avatar_radius
+  SELECT posts.*, users.username, users.name, users.avatar, users.verified, users.gold, users.avatar_radius, users.affiliate, users.affiliate_with
   FROM posts
   JOIN users ON posts.user_id = users.id
   WHERE posts.id = ?
@@ -299,16 +299,27 @@ const getQuotedTweetData = (quoteTweetId, userId) => {
     };
   }
 
+  const author = {
+    username: quotedTweet.username,
+    name: quotedTweet.name,
+    avatar: quotedTweet.avatar,
+    verified: quotedTweet.verified || false,
+    gold: quotedTweet.gold || false,
+    avatar_radius: quotedTweet.avatar_radius || null,
+    affiliate: quotedTweet.affiliate || false,
+    affiliate_with: quotedTweet.affiliate_with || null,
+  };
+
+  if (author.affiliate && author.affiliate_with) {
+    const affiliateProfile = getUserById.get(author.affiliate_with);
+    if (affiliateProfile) {
+      author.affiliate_with_profile = affiliateProfile;
+    }
+  }
+
   return {
     ...quotedTweet,
-    author: {
-      username: quotedTweet.username,
-      name: quotedTweet.name,
-      avatar: quotedTweet.avatar,
-      verified: quotedTweet.verified || false,
-      gold: quotedTweet.gold || false,
-      avatar_radius: quotedTweet.avatar_radius || null,
-    },
+    author,
     poll: getPollDataForTweet(quotedTweet.id, userId),
     attachments: getTweetAttachments(quotedTweet.id),
   };
@@ -477,33 +488,59 @@ export default new Elysia({ prefix: "/profile" })
 
       // Combine and sort by creation time
       const allContent = [
-        ...userPosts.map((post) => ({
-          ...post,
-          content_type: "post",
-          sort_date: new Date(post.created_at),
-          author: {
+        ...userPosts.map((post) => {
+          const author = {
             username: post.username,
             name: post.name,
             avatar: post.avatar,
             verified: post.verified || false,
             gold: post.gold || false,
             avatar_radius: post.avatar_radius || null,
-          },
-        })),
-        ...userRetweets.map((retweet) => ({
-          ...retweet,
-          content_type: "retweet",
-          sort_date: new Date(retweet.retweet_created_at),
-          retweet_created_at: retweet.retweet_created_at,
-          author: {
+            affiliate: post.affiliate || false,
+            affiliate_with: post.affiliate_with || null,
+          };
+
+          if (author.affiliate && author.affiliate_with) {
+            const affiliateProfile = getUserById.get(author.affiliate_with);
+            if (affiliateProfile) {
+              author.affiliate_with_profile = affiliateProfile;
+            }
+          }
+
+          return {
+            ...post,
+            content_type: "post",
+            sort_date: new Date(post.created_at),
+            author,
+          };
+        }),
+        ...userRetweets.map((retweet) => {
+          const author = {
             username: retweet.username,
             name: retweet.name,
             avatar: retweet.avatar,
             verified: retweet.verified || false,
             gold: retweet.gold || false,
             avatar_radius: retweet.avatar_radius || null,
-          },
-        })),
+            affiliate: retweet.affiliate || false,
+            affiliate_with: retweet.affiliate_with || null,
+          };
+
+          if (author.affiliate && author.affiliate_with) {
+            const affiliateProfile = getUserById.get(author.affiliate_with);
+            if (affiliateProfile) {
+              author.affiliate_with_profile = affiliateProfile;
+            }
+          }
+
+          return {
+            ...retweet,
+            content_type: "retweet",
+            sort_date: new Date(retweet.retweet_created_at),
+            retweet_created_at: retweet.retweet_created_at,
+            author,
+          };
+        }),
       ]
         .sort((a, b) => b.sort_date - a.sort_date)
         .slice(0, 20);
@@ -526,23 +563,36 @@ export default new Elysia({ prefix: "/profile" })
           fact_check: getFactCheckForPost.get(post.id) || null,
         }));
 
-        processedReplies = replies.map((reply) => ({
-          ...reply,
-          author: {
+        processedReplies = replies.map((reply) => {
+          const author = {
             username: reply.username,
             name: reply.name,
             avatar: reply.avatar || null,
             verified: reply.verified || false,
             gold: reply.gold || false,
             avatar_radius: reply.avatar_radius || null,
-          },
-          poll: getPollDataForPost(reply.id, currentUserId),
-          quoted_tweet: getQuotedPostData(reply.quote_tweet_id, currentUserId),
-          attachments: getPostAttachments(reply.id),
-          liked_by_user: false,
-          retweeted_by_user: false,
-          fact_check: getFactCheckForPost.get(reply.id) || null,
-        }));
+            affiliate: reply.affiliate || false,
+            affiliate_with: reply.affiliate_with || null,
+          };
+
+          if (author.affiliate && author.affiliate_with) {
+            const affiliateProfile = getUserById.get(author.affiliate_with);
+            if (affiliateProfile) {
+              author.affiliate_with_profile = affiliateProfile;
+            }
+          }
+
+          return {
+            ...reply,
+            author,
+            poll: getPollDataForPost(reply.id, currentUserId),
+            quoted_tweet: getQuotedPostData(reply.quote_tweet_id, currentUserId),
+            attachments: getPostAttachments(reply.id),
+            liked_by_user: false,
+            retweeted_by_user: false,
+            fact_check: getFactCheckForPost.get(reply.id) || null,
+          };
+        });
       }
 
       // Get likes and retweets for current user
@@ -618,7 +668,7 @@ export default new Elysia({ prefix: "/profile" })
           replies = db
             .query(
               `
-          SELECT posts.*, users.username, users.name, users.avatar, users.verified, users.gold, users.avatar_radius
+          SELECT posts.*, users.username, users.name, users.avatar, users.verified, users.gold, users.avatar_radius, users.affiliate, users.affiliate_with
           FROM posts 
           JOIN users ON posts.user_id = users.id 
           WHERE posts.user_id = ? AND posts.reply_to IS NOT NULL
@@ -645,23 +695,36 @@ export default new Elysia({ prefix: "/profile" })
           } catch {}
         }
 
-        const processedReplies = replies.map((reply) => ({
-          ...reply,
-          author: {
+        const processedReplies = replies.map((reply) => {
+          const author = {
             username: reply.username,
             name: reply.name,
             avatar: reply.avatar || null,
             verified: reply.verified || false,
             gold: reply.gold || false,
             avatar_radius: reply.avatar_radius || null,
-          },
-          poll: getPollDataForPost(reply.id, currentUserId),
-          quoted_tweet: getQuotedPostData(reply.quote_tweet_id, currentUserId),
-          attachments: getPostAttachments(reply.id),
-          liked_by_user: false,
-          retweeted_by_user: false,
-          fact_check: getFactCheckForPost.get(reply.id) || null,
-        }));
+            affiliate: reply.affiliate || false,
+            affiliate_with: reply.affiliate_with || null,
+          };
+
+          if (author.affiliate && author.affiliate_with) {
+            const affiliateProfile = getUserById.get(author.affiliate_with);
+            if (affiliateProfile) {
+              author.affiliate_with_profile = affiliateProfile;
+            }
+          }
+
+          return {
+            ...reply,
+            author,
+            poll: getPollDataForPost(reply.id, currentUserId),
+            quoted_tweet: getQuotedPostData(reply.quote_tweet_id, currentUserId),
+            attachments: getPostAttachments(reply.id),
+            liked_by_user: false,
+            retweeted_by_user: false,
+            fact_check: getFactCheckForPost.get(reply.id) || null,
+          };
+        });
 
         if (currentUserId && replies.length > 0) {
           try {
@@ -727,19 +790,32 @@ export default new Elysia({ prefix: "/profile" })
         media = getUserMedia.all(user.id, limit);
       }
 
-      const processedMedia = media.map((post) => ({
-        ...post,
-        author: {
+      const processedMedia = media.map((post) => {
+        const author = {
           username: post.username,
           name: post.name,
           avatar: post.avatar || null,
           verified: post.verified || false,
           gold: post.gold || false,
           avatar_radius: post.avatar_radius || null,
-        },
-        attachments: getPostAttachments(post.id),
-        fact_check: getFactCheckForPost.get(post.id) || null,
-      }));
+          affiliate: post.affiliate || false,
+          affiliate_with: post.affiliate_with || null,
+        };
+
+        if (author.affiliate && author.affiliate_with) {
+          const affiliateProfile = getUserById.get(author.affiliate_with);
+          if (affiliateProfile) {
+            author.affiliate_with_profile = affiliateProfile;
+          }
+        }
+
+        return {
+          ...post,
+          author,
+          attachments: getPostAttachments(post.id),
+          fact_check: getFactCheckForPost.get(post.id) || null,
+        };
+      });
 
       return {
         media: processedMedia,
