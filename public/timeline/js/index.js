@@ -162,7 +162,7 @@ window.onunhandledrejection = (event) => {
     const scrollPosition = window.innerHeight + window.scrollY;
     const threshold = document.documentElement.scrollHeight - 500;
 
-    if (scrollPosition >= threshold && (!location.href || location.href === "/")) {
+    if (scrollPosition >= threshold && (!location.pathname || location.pathname === "/")) {
       await loadTimeline(currentTimeline, true);
     }
   });
