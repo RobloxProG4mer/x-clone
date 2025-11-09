@@ -68,3 +68,10 @@ document.getElementById("username").addEventListener("keydown", (e) => {
     document.getElementById("createAccount").click();
   }
 });
+
+document.querySelector(".log-in").addEventListener("click", (e) => {
+  e.preventDefault();
+  e.stopPropagation();
+
+  location.href = "/__old__account__";
+});

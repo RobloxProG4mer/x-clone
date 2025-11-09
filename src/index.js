@@ -147,12 +147,7 @@ new Elysia()
     });
   })
   .get("/admin", () => file("./public/admin/index.html"))
-  .get("/communities", () => file("./public/timeline/index.html"))
-  .get("/communities/:id", () => file("./public/timeline/index.html"))
-  .get("/profile/:username", () => file("./public/timeline/index.html"))
-  .get("/tweet/:id", () => file("./public/timeline/index.html"))
   .get("/settings", ({ redirect }) => redirect("/settings/account"))
-  .get("/settings/:page", () => file("./public/timeline/index.html"))
   .get("/legal", () => file("./public/legal.html"))
   .get("/__old__account__", () => file("./public/account/index.html"))
   .get("*", ({ cookie }) => {
