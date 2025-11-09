@@ -1165,6 +1165,20 @@ nav {
     .tweet-ellipsis {
       color: var(--primary);
       text-underline-offset: 3px;
+      text-decoration: underline;
+      cursor: pointer;
+
+      &.tweet-ellipsis {
+        text-decoration: none;
+      }
+
+      &:hover {
+      text-decoration: none;
+
+        &.tweet-ellipsis {
+          text-decoration: underline;
+        }
+      }
     }
 
     code {

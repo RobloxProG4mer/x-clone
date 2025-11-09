@@ -6,6 +6,7 @@ import { createModal, createPopup } from "../../shared/ui-utils.js";
 import query from "./api.js";
 import getUser from "./auth.js";
 import switchPage from "./pages.js";
+import { searchQuery } from "./search.js";
 import openTweet from "./tweet.js";
 
 const DOMPURIFY_CONFIG = {
@@ -174,22 +175,14 @@ async function replaceEmojiShortcodesInElement(container) {
 
       textNode.parentNode.replaceChild(frag, textNode);
     }
-  } catch (_err) {
-    // ignore replace errors
-  }
+  } catch {}
 }
 
-// Avatar radius handling:
-// Users configure avatar_radius as pixels for their profile avatar (profile
-// avatar size is 100px). To keep that visual curvature consistent across
-// different avatar sizes (timeline, previews, lists), convert configured
-// pixel radii into percentages relative to the profile avatar size when
-// rendering smaller avatars. Do not change the profile page rendering itself.
 const PROFILE_AVATAR_PX = 100;
 function avatarPxToPercent(px) {
   const n = Number(px) || 0;
   const pct = (n / PROFILE_AVATAR_PX) * 100;
-  // clamp to sensible range 0-100
+
   const clamped = Math.max(0, Math.min(100, pct));
   return `${clamped}%`;
 }
@@ -415,6 +408,14 @@ const linkifyText = (text) => {
     a.setAttribute("rel", "noopener noreferrer");
     if (a.innerText.length > 60) {
       a.innerText = `${a.innerText.slice(0, 60)}…`;
+    }
+    if (a.href.startsWith("javascript:") || a.href.startsWith("data:")) {
+      a.removeAttribute("href");
+    }
+    if (a.href.startsWith("http://") || a.href.startsWith("https://")) {
+      a.innerText = a.href.startsWith("http://")
+        ? a.innerText.replace("http://", "")
+        : a.innerText.replace("https://", "");
     }
   });
 
@@ -1140,6 +1141,22 @@ export const createTweetElement = (tweet, config = {}) => {
       }
       previewBody.innerHTML = linkifyText(previewText);
       replaceEmojiShortcodesInElement(previewBody);
+
+
+      previewBody
+        .querySelectorAll("a.tweet-hashtag")
+        .forEach((tag) => {
+          const hashtag = tag.getAttribute("data-hashtag");
+
+          tag.addEventListener("click", (e) => {
+            console.log("tag click")
+            e.preventDefault();
+            e.stopPropagation();
+
+            searchQuery(`#${hashtag}`);
+          });
+        });
+
       articleContainer.appendChild(previewBody);
 
       const readMoreButton = document.createElement("button");
@@ -1188,6 +1205,19 @@ export const createTweetElement = (tweet, config = {}) => {
     const applyLinkified = (text) => {
       tweetContentEl.innerHTML = linkifyText(text);
       replaceEmojiShortcodesInElement(tweetContentEl);
+
+      tweetContentEl
+        .querySelectorAll("a.tweet-hashtag")
+        .forEach((tag) => {
+          const hashtag = tag.getAttribute("data-hashtag");
+
+          tag.addEventListener("click", (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+
+            searchQuery(`#${hashtag}`);
+          });
+        });
     };
 
     if (shouldTrim) {
