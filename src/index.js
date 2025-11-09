@@ -146,7 +146,6 @@ new Elysia()
       headers: set.headers,
     });
   })
-  .get("/account", () => file("./public/account/index.html"))
   .get("/admin", () => file("./public/admin/index.html"))
   .get("/communities", () => file("./public/timeline/index.html"))
   .get("/communities/:id", () => file("./public/timeline/index.html"))
@@ -155,10 +154,10 @@ new Elysia()
   .get("/settings", ({ redirect }) => redirect("/settings/account"))
   .get("/settings/:page", () => file("./public/timeline/index.html"))
   .get("/legal", () => file("./public/legal.html"))
-  .get("*", ({ cookie, redirect }) => {
+  .get("*", ({ cookie }) => {
     return cookie.agree?.value === "yes"
       ? file("./public/timeline/index.html")
-      : redirect("/account");
+      : file("./public/account/index.html");
   })
   .use(api)
   .listen({ port: process.env.PORT || 3000, idleTimeout: 255 }, () => {

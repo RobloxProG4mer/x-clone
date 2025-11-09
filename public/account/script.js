@@ -7,15 +7,13 @@ const elements = {
   username: document.getElementById("username"),
   register: document.getElementById("register"),
   login: document.getElementById("login"),
-  logout: document.getElementById("logout"),
   loginForm: document.getElementById("login-form"),
-  userInfo: document.getElementById("user-info"),
   status: document.getElementById("status"),
   basicLoginModal: document.getElementById("basicLoginModal"),
 };
 
 let authToken = null;
-let currentUser = null;
+const currentUser = null;
 
 const query = fetch;
 
@@ -76,54 +74,19 @@ function checkExistingSession() {
     return;
   }
 
-  const finish = () => {
-    document.querySelector(".loader").style.opacity = "0";
-    setTimeout(() => {
-      document.querySelector(".loader").style.display = "none";
-    }, 150);
-  };
-
   const token = localStorage.getItem("authToken");
   if (!token) {
     document.querySelector(".loader").style.display = "none";
     return;
   }
 
-  document.querySelector(".loader").style.opacity = "0";
-  document.querySelector(".loader").style.display = "flex";
-  setTimeout(() => {
-    document.querySelector(".loader").style.opacity = "1";
-  }, 1);
-
-  fetch("/api/auth/me?requestPreload=1", {
-    headers: { Authorization: `Bearer ${token}` },
-  })
-    .then((response) => response.json())
-    .then((data) => {
-      if (!data.user) return localStorage.removeItem("authToken");
-
-      authToken = token;
-      showUserInfo(data);
-      finish();
-    })
-    .catch(() => {
-      localStorage.removeItem("authToken");
-      finish();
-    });
-}
-
-function showUserInfo(user) {
-  currentUser = user.user;
-  elements.title.textContent = `@${user.user.username}`;
-  elements.loginForm.style.display = "none";
-  elements.userInfo.style.display = "block";
+  location.href = "/";
 }
 
 function showLoginForm() {
   authToken = null;
   localStorage.removeItem("authToken");
   elements.loginForm.style.display = "block";
-  elements.userInfo.style.display = "none";
   elements.username.value = "";
   elements.title.textContent = "Welcome to Tweetapus";
 }
@@ -343,10 +306,6 @@ elements.login.addEventListener("click", handleAuthentication);
 elements.username.addEventListener("input", (e) => {
   e.target.value = e.target.value.toLowerCase().replace(/[^a-z0-9_]/g, "");
 });
-elements.logout.addEventListener("click", () => {
-  showLoginForm();
-  clearAgreeCookie();
-});
 
 elements.username.addEventListener("keypress", (e) => {
   if (e.key === "Enter") handleRegistration();
@@ -429,12 +388,11 @@ document
       if (data.token) {
         authToken = data.token;
         localStorage.setItem("authToken", data.token);
-        showUserInfo(data);
         hideModal(elements.basicLoginModal);
 
         await persistAgreeCookie();
 
-        toastQueue.add(`<h1>Welcome back!</h1><p>Signed in successfully</p>`);
+        location.href = "/";
       }
     } catch {
       toastQueue.add(`<h1>Login Failed</h1><p>Unable to connect to server</p>`);
@@ -443,7 +401,6 @@ document
 
 checkExistingSession();
 
-// Handle profile link click
 document.getElementById("profile-link")?.addEventListener("click", (e) => {
   e.preventDefault();
   if (currentUser?.username) {

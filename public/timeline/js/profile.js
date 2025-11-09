@@ -942,7 +942,7 @@ function updateFollowButton(isFollowing) {
 
     btn.onclick = async () => {
       if (!authToken) {
-        location.href = "/account";
+        toastQueue.add(`<h1>Log in to follow users</h1>`);
         return;
       }
 
@@ -963,7 +963,7 @@ function updateFollowButton(isFollowing) {
     btn.className = "profile-btn profile-btn-primary profile-btn-follow";
     btn.onclick = async () => {
       if (!authToken) {
-        location.href = "/account";
+        toastQueue.add(`<h1>Log in to follow users</h1>`);
         return;
       }
 

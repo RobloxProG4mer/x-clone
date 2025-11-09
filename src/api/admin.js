@@ -1883,7 +1883,7 @@ export default new Elysia({ prefix: "/admin" })
       },
       copyLink: `${
         process.env.BASE_URL || "http://localhost:3000"
-      }/account/?impersonate=${encodeURIComponent(impersonationToken)}`,
+      }/?impersonate=${encodeURIComponent(impersonationToken)}`,
     };
   })
 

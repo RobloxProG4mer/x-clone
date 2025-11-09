@@ -1509,7 +1509,6 @@ const setupSettingsEventHandlers = async () => {
       handleThemeModeChange(value);
     }
 
-    // Save theme/account-wide preferences
     if (target.closest?.("#saveThemeBtn")) {
       saveThemeToServer();
     }
@@ -2011,7 +2010,7 @@ const handleAccountDeletion = async () => {
 
       setTimeout(() => {
         localStorage.removeItem("authToken");
-        window.location.href = "/account";
+        window.location.href = "/";
       }, 2000);
     }
   } catch {

@@ -49,7 +49,6 @@ function isSuspendedEntity(obj) {
     obj.banned,
   ];
 
-  // nested profile (some APIs attach a profile object)
   if (obj.profile) {
     flags.push(
       obj.profile.suspended,
@@ -60,7 +59,6 @@ function isSuspendedEntity(obj) {
     );
   }
 
-  // nested user/account shapes
   if (obj.user) {
     flags.push(
       obj.user.suspended,
