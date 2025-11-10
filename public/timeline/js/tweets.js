@@ -989,10 +989,7 @@ export const createTweetElement = (tweet, config = {}) => {
       tweet.author.affiliate_with_profile.avatar_radius !== null &&
       tweet.author.affiliate_with_profile.avatar_radius !== undefined
     ) {
-      const radiusValue = avatarPxToPercent(
-        tweet.author.affiliate_with_profile.avatar_radius
-      );
-      affiliateImg.style.setProperty("border-radius", radiusValue, "important");
+      affiliateImg.style.setProperty("border-radius", `${tweet.author.affiliate_with_profile.avatar_radius}px`, "important");
     } else if (tweet.author.affiliate_with_profile.gold) {
       affiliateImg.style.setProperty("border-radius", "4px", "important");
     } else {
