@@ -6,22 +6,22 @@ import ratelimit from "../helpers/ratelimit.js";
 
 const JWT_SECRET = process.env.JWT_SECRET;
 
-const getUserByUsername = db.query("SELECT * FROM users WHERE username = ?");
-const getUserById = db.query("SELECT * FROM users WHERE id = ?");
+const getUserByUsername = db.prepare("SELECT * FROM users WHERE username = ?");
+const getUserById = db.prepare("SELECT * FROM users WHERE id = ?");
 
-const checkBlockExists = db.query(`
+const checkBlockExists = db.prepare(`
   SELECT id FROM blocks WHERE blocker_id = ? AND blocked_id = ?
 `);
 
-const addBlock = db.query(`
+const addBlock = db.prepare(`
   INSERT INTO blocks (id, blocker_id, blocked_id) VALUES (?, ?, ?)
 `);
 
-const removeBlock = db.query(`
+const removeBlock = db.prepare(`
   DELETE FROM blocks WHERE blocker_id = ? AND blocked_id = ?
 `);
 
-const getBlockedUsers = db.query(`
+const getBlockedUsers = db.prepare(`
   SELECT u.id, u.username, u.name, u.avatar, u.verified, b.created_at as blocked_at
   FROM blocks b
   JOIN users u ON b.blocked_id = u.id
@@ -30,7 +30,7 @@ const getBlockedUsers = db.query(`
   LIMIT ?
 `);
 
-const isUserBlocked = db.query(`
+const isUserBlocked = db.prepare(`
   SELECT id FROM blocks WHERE blocker_id = ? AND blocked_id = ?
 `);
 

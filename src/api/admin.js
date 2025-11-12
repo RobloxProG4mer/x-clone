@@ -27,10 +27,9 @@ const logModerationAction = (
 };
 
 const adminQueries = {
-  // User queries
-  findUserById: db.query("SELECT * FROM users WHERE id = ?"),
-  findUserByUsername: db.query("SELECT * FROM users WHERE username = ?"),
-  getUsersWithCounts: db.query(`
+  findUserById: db.prepare("SELECT * FROM users WHERE id = ?"),
+  findUserByUsername: db.prepare("SELECT * FROM users WHERE username = ?"),
+  getUsersWithCounts: db.prepare(`
     SELECT u.*, 
            (SELECT COUNT(*) FROM posts WHERE user_id = u.id) as actual_post_count,
            (SELECT COUNT(*) FROM follows WHERE following_id = u.id) as actual_follower_count,
@@ -40,11 +39,11 @@ const adminQueries = {
     ORDER BY u.created_at DESC
     LIMIT ? OFFSET ?
   `),
-  getUsersCount: db.query(
+  getUsersCount: db.prepare(
     "SELECT COUNT(*) as count FROM users WHERE username LIKE ? OR name LIKE ?"
   ),
 
-  getPostsWithUsers: db.query(`
+  getPostsWithUsers: db.prepare(`
     SELECT p.*, u.username, u.name, u.avatar, u.verified, u.gold, u.avatar_radius
     FROM posts p
     JOIN users u ON p.user_id = u.id
@@ -52,11 +51,11 @@ const adminQueries = {
     ORDER BY p.created_at DESC
     LIMIT ? OFFSET ?
   `),
-  getPostsCount: db.query(
+  getPostsCount: db.prepare(
     "SELECT COUNT(*) as count FROM posts WHERE (content LIKE ? OR article_title LIKE ? OR article_body_markdown LIKE ?)"
   ),
 
-  getUserStats: db.query(`
+  getUserStats: db.prepare(`
     SELECT 
       COUNT(*) as total,
       SUM(CASE WHEN suspended = 1 THEN 1 ELSE 0 END) as suspended,
@@ -64,22 +63,22 @@ const adminQueries = {
       SUM(CASE WHEN gold = 1 THEN 1 ELSE 0 END) as gold
     FROM users
   `),
-  getPostStats: db.query("SELECT COUNT(*) as total FROM posts"),
-  getSuspensionStats: db.query(`
+  getPostStats: db.prepare("SELECT COUNT(*) as total FROM posts"),
+  getSuspensionStats: db.prepare(`
     SELECT 
       COUNT(*) as active
     FROM suspensions s
     WHERE s.status = 'active'
   `),
 
-  createFactCheck: db.query(
+  createFactCheck: db.prepare(
     `INSERT INTO fact_checks (id, post_id, created_by, note, severity) VALUES (?, ?, ?, ?, ?)`
   ),
-  getFactCheck: db.query(
+  getFactCheck: db.prepare(
     `SELECT fc.*, u.username as admin_username FROM fact_checks fc JOIN users u ON fc.created_by = u.id WHERE fc.post_id = ?`
   ),
-  deleteFactCheck: db.query(`DELETE FROM fact_checks WHERE id = ?`),
-  getPostInteractions: db.query(`
+  deleteFactCheck: db.prepare(`DELETE FROM fact_checks WHERE id = ?`),
+  getPostInteractions: db.prepare(`
     SELECT DISTINCT user_id FROM (
       SELECT user_id FROM likes WHERE post_id = ?
       UNION
@@ -93,11 +92,10 @@ const adminQueries = {
     )
   `),
 
-  // Recent activity
-  getRecentUsers: db.query(
+  getRecentUsers: db.prepare(
     "SELECT username, created_at FROM users ORDER BY created_at DESC LIMIT 15"
   ),
-  getRecentSuspensions: db.query(`
+  getRecentSuspensions: db.prepare(`
     SELECT u.username, s.created_at
     FROM suspensions s
     JOIN users u ON s.user_id = u.id
@@ -106,7 +104,7 @@ const adminQueries = {
     LIMIT 15
   `),
 
-  getUserWithDetails: db.query(`
+  getUserWithDetails: db.prepare(`
 SELECT u.*, 
        (SELECT COUNT(*) FROM posts WHERE user_id = u.id) as actual_post_count,
        (SELECT COUNT(*) FROM follows WHERE following_id = u.id) as actual_follower_count,
@@ -147,13 +145,13 @@ SELECT u.*,
 FROM users u
 WHERE u.id = ?
   `),
-  getUserRecentPosts: db.query(`
+  getUserRecentPosts: db.prepare(`
     SELECT * FROM posts 
     WHERE user_id = ? 
     ORDER BY created_at DESC 
     LIMIT 10
   `),
-  getUserSuspensions: db.query(`
+  getUserSuspensions: db.prepare(`
     SELECT s.*, u.username as suspended_by_username
     FROM suspensions s
     JOIN users u ON s.suspended_by = u.id
@@ -161,22 +159,23 @@ WHERE u.id = ?
     ORDER BY s.created_at DESC
   `),
 
-  // Suspension operations
-  createSuspension: db.query(`
+  createSuspension: db.prepare(`
     INSERT INTO suspensions (id, user_id, suspended_by, reason, severity, expires_at, notes)
     VALUES (?, ?, ?, ?, ?, ?, ?)
   `),
-  updateUserSuspended: db.query("UPDATE users SET suspended = ? WHERE id = ?"),
-  updateSuspensionStatus: db.query(
+  updateUserSuspended: db.prepare(
+    "UPDATE users SET suspended = ? WHERE id = ?"
+  ),
+  updateSuspensionStatus: db.prepare(
     "UPDATE suspensions SET status = ? WHERE user_id = ? AND status = 'active'"
   ),
 
-  updateUserVerified: db.query("UPDATE users SET verified = ? WHERE id = ?"),
-  updateUserGold: db.query("UPDATE users SET gold = ? WHERE id = ?"),
-  deleteUser: db.query("DELETE FROM users WHERE id = ?"),
-  deletePost: db.query("DELETE FROM posts WHERE id = ?"),
+  updateUserVerified: db.prepare("UPDATE users SET verified = ? WHERE id = ?"),
+  updateUserGold: db.prepare("UPDATE users SET gold = ? WHERE id = ?"),
+  deleteUser: db.prepare("DELETE FROM users WHERE id = ?"),
+  deletePost: db.prepare("DELETE FROM posts WHERE id = ?"),
 
-  getSuspensionsWithUsers: db.query(`
+  getSuspensionsWithUsers: db.prepare(`
     SELECT s.*, u.username, u.name, u.avatar,
            suspended_by_user.username as suspended_by_username
     FROM suspensions s
@@ -186,25 +185,22 @@ WHERE u.id = ?
     ORDER BY s.created_at DESC
     LIMIT ? OFFSET ?
   `),
-  getSuspensionsCount: db.query(
+  getSuspensionsCount: db.prepare(
     "SELECT COUNT(*) as count FROM suspensions WHERE status = 'active' AND (expires_at IS NULL OR expires_at > datetime('now'))"
   ),
 
-  // New queries for editing functionality
-  getPostById: db.query("SELECT * FROM posts WHERE id = ?"),
-  updatePost: db.query(
+  getPostById: db.prepare("SELECT * FROM posts WHERE id = ?"),
+  updatePost: db.prepare(
     "UPDATE posts SET content = ?, like_count = ?, retweet_count = ?, reply_count = ?, view_count = ?, created_at = ? WHERE id = ?"
   ),
-  // now supports optional reply_to so admin can create replies on behalf of users
-  createPostAsUser: db.query(
+  createPostAsUser: db.prepare(
     "INSERT INTO posts (id, user_id, content, reply_to, created_at) VALUES (?, ?, ?, ?, ?)"
   ),
-  updateUser: db.query(
+  updateUser: db.prepare(
     "UPDATE users SET username = ?, name = ?, bio = ?, verified = ?, admin = ?, gold = ?, follower_count = ?, following_count = ?, character_limit = ?, created_at = ? WHERE id = ?"
   ),
 
-  // DM Management queries
-  getAllConversations: db.query(`
+  getAllConversations: db.prepare(`
 		SELECT c.id, c.created_at,
 			   COUNT(DISTINCT cp.user_id) as participant_count,
 			   COUNT(DISTINCT dm.id) as message_count,
@@ -216,11 +212,11 @@ WHERE u.id = ?
 		ORDER BY last_message_at DESC NULLS LAST
 		LIMIT ? OFFSET ?
 	`),
-  getConversationsCount: db.query(
+  getConversationsCount: db.prepare(
     "SELECT COUNT(*) as count FROM conversations"
   ),
 
-  getConversationDetails: db.query(`
+  getConversationDetails: db.prepare(`
 		SELECT c.id, c.created_at,
 			   GROUP_CONCAT(u.username, ', ') as participants,
 			   GROUP_CONCAT(u.name, ', ') as participant_names
@@ -231,7 +227,7 @@ WHERE u.id = ?
 		GROUP BY c.id
 	`),
 
-  getConversationMessages: db.query(`
+  getConversationMessages: db.prepare(`
 		SELECT dm.id, dm.content, dm.created_at, u.username, u.name, u.avatar
 		FROM dm_messages dm
 		JOIN users u ON dm.sender_id = u.id
@@ -240,15 +236,15 @@ WHERE u.id = ?
 		LIMIT ? OFFSET ?
 	`),
 
-  getConversationMessagesCount: db.query(`
+  getConversationMessagesCount: db.prepare(`
 		SELECT COUNT(*) as count FROM dm_messages WHERE conversation_id = ?
 	`),
 
-  getMessageAttachments: db.query(`
+  getMessageAttachments: db.prepare(`
 		SELECT file_name as filename, file_hash FROM dm_attachments WHERE message_id = ?
 	`),
 
-  searchConversationsByUser: db.query(`
+  searchConversationsByUser: db.prepare(`
 		SELECT c.id, c.created_at,
 			   COUNT(DISTINCT cp.user_id) as participant_count,
 			   COUNT(DISTINCT dm.id) as message_count,
@@ -264,20 +260,20 @@ WHERE u.id = ?
 		LIMIT ? OFFSET ?
 	`),
 
-  deleteConversation: db.query("DELETE FROM conversations WHERE id = ?"),
-  deleteMessage: db.query("DELETE FROM dm_messages WHERE id = ?"),
+  deleteConversation: db.prepare("DELETE FROM conversations WHERE id = ?"),
+  deleteMessage: db.prepare("DELETE FROM dm_messages WHERE id = ?"),
 
-  getModerationLogs: db.query(`
+  getModerationLogs: db.prepare(`
     SELECT ml.*, u.username as moderator_username, u.name as moderator_name
     FROM moderation_logs ml
     JOIN users u ON ml.moderator_id = u.id
     ORDER BY ml.created_at DESC
     LIMIT ? OFFSET ?
   `),
-  getModerationLogsCount: db.query(
+  getModerationLogsCount: db.prepare(
     "SELECT COUNT(*) as count FROM moderation_logs"
   ),
-  getModerationLogsByTarget: db.query(`
+  getModerationLogsByTarget: db.prepare(`
     SELECT ml.*, u.username as moderator_username, u.name as moderator_name
     FROM moderation_logs ml
     JOIN users u ON ml.moderator_id = u.id
@@ -285,7 +281,7 @@ WHERE u.id = ?
     ORDER BY ml.created_at DESC
     LIMIT 50
   `),
-  getModerationLogsByModerator: db.query(`
+  getModerationLogsByModerator: db.prepare(`
     SELECT ml.*, u.username as moderator_username, u.name as moderator_name
     FROM moderation_logs ml
     JOIN users u ON ml.moderator_id = u.id
@@ -293,49 +289,48 @@ WHERE u.id = ?
     ORDER BY ml.created_at DESC
     LIMIT ? OFFSET ?
   `),
-  getAffiliateRequestsForTarget: db.query(`
+  getAffiliateRequestsForTarget: db.prepare(`
     SELECT ar.*, req.username as requester_username, req.name as requester_name, req.avatar as requester_avatar, req.verified as requester_verified, req.gold as requester_gold
     FROM affiliate_requests ar
     JOIN users req ON req.id = ar.requester_id
     WHERE ar.target_id = ?
     ORDER BY ar.created_at DESC
   `),
-  getAffiliateRequestsForRequester: db.query(`
+  getAffiliateRequestsForRequester: db.prepare(`
     SELECT ar.*, target.username as target_username, target.name as target_name, target.avatar as target_avatar, target.verified as target_verified, target.gold as target_gold
     FROM affiliate_requests ar
     JOIN users target ON target.id = ar.target_id
     WHERE ar.requester_id = ?
     ORDER BY ar.created_at DESC
   `),
-  getAffiliatesForUser: db.query(`
+  getAffiliatesForUser: db.prepare(`
     SELECT u.id, u.username, u.name, u.avatar, u.verified, u.gold, u.avatar_radius
     FROM users u
     WHERE u.affiliate = 1 AND u.affiliate_with = ?
     ORDER BY u.created_at DESC
   `),
-  getAffiliateRequestById: db.query(
+  getAffiliateRequestById: db.prepare(
     "SELECT * FROM affiliate_requests WHERE id = ?"
   ),
-  deleteAffiliateRequest: db.query(
+  deleteAffiliateRequest: db.prepare(
     "DELETE FROM affiliate_requests WHERE requester_id = ? AND target_id = ?"
   ),
-  insertAffiliateRequest: db.query(
+  insertAffiliateRequest: db.prepare(
     "INSERT INTO affiliate_requests (id, requester_id, target_id) VALUES (?, ?, ?)"
   ),
-  updateAffiliateRequestStatus: db.query(
+  updateAffiliateRequestStatus: db.prepare(
     "UPDATE affiliate_requests SET status = ?, responded_at = datetime('now', 'utc') WHERE id = ?"
   ),
-  setUserAffiliate: db.query(
+  setUserAffiliate: db.prepare(
     "UPDATE users SET affiliate = ?, affiliate_with = ? WHERE id = ?"
   ),
-  // Emoji management
-  createEmoji: db.query(
+  createEmoji: db.prepare(
     "INSERT INTO emojis (id, name, file_hash, file_url, created_by) VALUES (?, ?, ?, ?, ?)"
   ),
-  getAllEmojis: db.query("SELECT * FROM emojis ORDER BY created_at DESC"),
-  getEmojiById: db.query("SELECT * FROM emojis WHERE id = ?"),
-  getEmojiByName: db.query("SELECT * FROM emojis WHERE name = ?"),
-  deleteEmoji: db.query("DELETE FROM emojis WHERE id = ?"),
+  getAllEmojis: db.prepare("SELECT * FROM emojis ORDER BY created_at DESC"),
+  getEmojiById: db.prepare("SELECT * FROM emojis WHERE id = ?"),
+  getEmojiByName: db.prepare("SELECT * FROM emojis WHERE name = ?"),
+  deleteEmoji: db.prepare("DELETE FROM emojis WHERE id = ?"),
 };
 
 const sanitizeSvgMarkup = (svgText) => {
@@ -433,7 +428,6 @@ export default new Elysia({ prefix: "/admin" })
     };
   })
 
-  // User management
   .get("/users", async ({ query }) => {
     const page = parseInt(query.page) || 1;
     const limit = parseInt(query.limit) || 20;
@@ -478,7 +472,6 @@ export default new Elysia({ prefix: "/admin" })
 
       const id = Bun.randomUUIDv7();
 
-      // Enforce exclusivity: gold cannot coexist with verified
       const finalVerified = gold ? 0 : verified ? 1 : 0;
       const finalGold = gold ? 1 : 0;
 
@@ -737,7 +730,6 @@ export default new Elysia({ prefix: "/admin" })
     async ({ params, body, user }) => {
       const { verified } = body;
       const targetUser = adminQueries.findUserById.get(params.id);
-      // If setting verified=true, unset gold
       if (verified) {
         adminQueries.updateUserGold.run(0, params.id);
       }
@@ -763,7 +755,6 @@ export default new Elysia({ prefix: "/admin" })
     async ({ params, body, user }) => {
       const { gold } = body;
       const targetUser = adminQueries.findUserById.get(params.id);
-      // If granting gold, remove verified
       if (gold) {
         adminQueries.updateUserVerified.run(0, params.id);
       }
@@ -846,14 +837,11 @@ export default new Elysia({ prefix: "/admin" })
     return { success: true };
   })
 
-  // Clone a user's profile (admin only)
   .post(
     "/users/:id/clone",
     async ({ params, body, user: moderator }) => {
-      // Accept either internal id or username in the URL segment.
       let sourceUser = adminQueries.findUserById.get(params.id);
       if (!sourceUser) {
-        // try username lookup when an id lookup fails
         sourceUser = adminQueries.findUserByUsername.get(params.id);
       }
 
@@ -889,7 +877,6 @@ export default new Elysia({ prefix: "/admin" })
 
       try {
         db.transaction(() => {
-          // Create the new user - copy public profile fields but do not grant admin rights
           db.query(
             `INSERT INTO users (id, username, name, bio, avatar, verified, admin, gold, character_limit, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
           ).run(
@@ -899,7 +886,7 @@ export default new Elysia({ prefix: "/admin" })
             sourceUser.bio || null,
             sourceUser.avatar || null,
             sourceUser.verified ? 1 : 0,
-            0, // admin = false for cloned accounts
+            0,
             sourceUser.gold ? 1 : 0,
             sourceUser.character_limit || null,
             new Date().toISOString()
@@ -913,7 +900,6 @@ export default new Elysia({ prefix: "/admin" })
             );
           }
 
-          // Clone real followers (people who follow the source) -> they should follow the new user
           if (cloneRelations) {
             const followers = db
               .query("SELECT follower_id FROM follows WHERE following_id = ?")
@@ -921,7 +907,6 @@ export default new Elysia({ prefix: "/admin" })
 
             for (const f of followers) {
               if (!f || !f.follower_id) continue;
-              // avoid self-follow and duplicates
               if (f.follower_id === newId) continue;
               const exists = db
                 .query(
@@ -935,7 +920,6 @@ export default new Elysia({ prefix: "/admin" })
               }
             }
 
-            // Clone followings (accounts the source follows) -> new user follows same accounts
             const following = db
               .query("SELECT following_id FROM follows WHERE follower_id = ?")
               .all(sourceUser.id);
@@ -956,7 +940,6 @@ export default new Elysia({ prefix: "/admin" })
             }
           }
 
-          // Clone ghost follows (both follower and following types)
           if (cloneGhosts) {
             const ghosts = db
               .query(
@@ -972,7 +955,6 @@ export default new Elysia({ prefix: "/admin" })
             }
           }
 
-          // Clone tweets (posts) - preserve replies/quotes mapping when requested
           if (cloneTweets) {
             const posts = db
               .query(
@@ -980,11 +962,9 @@ export default new Elysia({ prefix: "/admin" })
               )
               .all(sourceUser.id);
 
-            // map original post id -> new post id
             const postIdMap = new Map();
             const clonedPosts = [];
 
-            // First pass: create posts without reply_to/quote filled (we'll map them in second pass)
             for (const p of posts) {
               const newPostId = Bun.randomUUIDv7();
               const communityIdToUse = cloneCommunities ? p.community_id : null;
@@ -1014,12 +994,7 @@ export default new Elysia({ prefix: "/admin" })
               });
             }
 
-            // Second pass: update reply_to and quote_tweet_id on cloned posts and adjust counts
             for (const cp of clonedPosts) {
-              // Preserve replies on cloned posts. If the parent post was cloned,
-              // map to the new post id. If the parent was not cloned, keep the
-              // original `reply_to` id so the cloned post remains a reply
-              // (avoids converting replies into top-level tweets).
               let mappedReplyTo = null;
               if (cloneReplies && cp.reply_to) {
                 mappedReplyTo = postIdMap.has(cp.reply_to)
@@ -1038,14 +1013,12 @@ export default new Elysia({ prefix: "/admin" })
                 "UPDATE posts SET reply_to = ?, quote_tweet_id = ? WHERE id = ?"
               ).run(mappedReplyTo, mappedQuoteId, cp.newId);
 
-              // If we set a reply_to, increment the reply_count on the parent
               if (mappedReplyTo) {
                 db.query(
                   "UPDATE posts SET reply_count = COALESCE(reply_count,0) + 1 WHERE id = ?"
                 ).run(mappedReplyTo);
               }
 
-              // If we set a quote_tweet_id, increment quote_count on target
               if (mappedQuoteId) {
                 db.query(
                   "UPDATE posts SET quote_count = COALESCE(quote_count,0) + 1 WHERE id = ?"
@@ -1053,7 +1026,6 @@ export default new Elysia({ prefix: "/admin" })
               }
             }
 
-            // Clone attachments/media for each post when requested
             if (cloneMedia) {
               const getAttachments = db.query(
                 "SELECT id, file_hash, file_name, file_type, file_size, file_url, is_spoiler, created_at FROM attachments WHERE post_id = ?"
@@ -1079,7 +1051,6 @@ export default new Elysia({ prefix: "/admin" })
                     );
                   }
                 } catch (e) {
-                  // don't abort entire clone on attachment copy failure; just continue
                   console.error(
                     "Failed to clone attachments for post",
                     cp.origId,
@@ -1089,7 +1060,6 @@ export default new Elysia({ prefix: "/admin" })
               }
             }
 
-            // Clone retweets made by the source user (new user retweets same posts)
             if (cloneRetweets) {
               const sourceRetweets = db
                 .query(
@@ -1122,7 +1092,6 @@ export default new Elysia({ prefix: "/admin" })
               }
             }
 
-            // Clone likes/reactions performed by the source user
             if (cloneReactions) {
               const sourceLikes = db
                 .query(
@@ -1153,7 +1122,6 @@ export default new Elysia({ prefix: "/admin" })
                 }
               }
 
-              // post_reactions (emoji reactions)
               const sourceReacts = db
                 .query(
                   "SELECT post_id, emoji, created_at FROM post_reactions WHERE user_id = ?"
@@ -1182,7 +1150,6 @@ export default new Elysia({ prefix: "/admin" })
               }
             }
 
-            // Clone community memberships (if requested)
             if (cloneCommunities) {
               const memberships = db
                 .query(
@@ -1253,7 +1220,6 @@ export default new Elysia({ prefix: "/admin" })
     }
   )
 
-  // Post management
   .get("/posts", async ({ query }) => {
     const page = parseInt(query.page) || 1;
     const limit = parseInt(query.limit) || 20;
@@ -1362,7 +1328,6 @@ export default new Elysia({ prefix: "/admin" })
       if (body.views !== undefined && body.views !== post.view_count)
         changes.views = { old: post.view_count, new: body.views };
 
-      // support editing created_at
       let newCreatedAt = post.created_at;
       if (body.created_at !== undefined) {
         try {
@@ -1413,7 +1378,6 @@ export default new Elysia({ prefix: "/admin" })
       const targetUser = adminQueries.findUserById.get(body.userId);
       if (!targetUser) return { error: "User not found" };
 
-      // allow admins to bypass character limits with noCharLimit flag
       const noCharLimit = !!body.noCharLimit;
 
       const maxLength = targetUser.gold
@@ -1430,10 +1394,8 @@ export default new Elysia({ prefix: "/admin" })
         return { error: `Content must be ${maxLength} characters or less` };
       }
 
-      // support optional replyTo so admin can post replies as the user
       const replyTo = body.replyTo || null;
 
-      // support optional created_at when creating posts
       let createdAtForInsert = new Date().toISOString();
       if (body.created_at) {
         try {
@@ -1460,14 +1422,12 @@ export default new Elysia({ prefix: "/admin" })
         noCharLimit,
       });
 
-      // if it's a reply, increment reply count for the parent
       if (replyTo) {
         try {
           db.query(
             "UPDATE posts SET reply_count = reply_count + 1 WHERE id = ?"
           ).run(replyTo);
         } catch (e) {
-          // ignore failures silently but log
           console.error("Failed to update parent reply count:", e);
         }
       }
@@ -1485,18 +1445,18 @@ export default new Elysia({ prefix: "/admin" })
     }
   )
 
-  .patch(
-    "/users/:id",
-    async ({ params, body, user: moderator, jwt }) => {
-      try {
-        const user = adminQueries.findUserById.get(params.id);
-        if (!user) {
-          return { error: "User not found" };
-        }
+  .patch("/users/:id", async ({ params, body, user: moderator, jwt }) => {
+    try {
+      const user = adminQueries.findUserById.get(params.id);
+      if (!user) {
+        return { error: "User not found" };
+      }
 
       const trimmedUsername =
         body.username !== undefined
-          ? (body.username === null ? "" : String(body.username).trim())
+          ? body.username === null
+            ? ""
+            : String(body.username).trim()
           : undefined;
 
       if (trimmedUsername !== undefined) {
@@ -1847,12 +1807,11 @@ export default new Elysia({ prefix: "/admin" })
       }
 
       return response;
-      } catch (err) {
-        console.error("Error in PATCH /admin/users/:id:", err);
-        return { error: "Internal server error" };
-      }
-    },
-  )
+    } catch (err) {
+      console.error("Error in PATCH /admin/users/:id:", err);
+      return { error: "Internal server error" };
+    }
+  })
 
   .post("/impersonate/:id", async ({ params, jwt, user }) => {
     const targetUser = adminQueries.findUserById.get(params.id);
@@ -1871,7 +1830,7 @@ export default new Elysia({ prefix: "/admin" })
       userId: targetUser.id,
       username: targetUser.username,
       iat: Math.floor(Date.now() / 1000),
-      exp: Math.floor(Date.now() / 1000) + 24 * 60 * 60, // 24 hours
+      exp: Math.floor(Date.now() / 1000) + 24 * 60 * 60,
     });
 
     return {
@@ -1963,7 +1922,6 @@ export default new Elysia({ prefix: "/admin" })
       params.id
     ).count;
 
-    // Get attachments for each message
     for (const message of messages) {
       message.attachments = adminQueries.getMessageAttachments.all(message.id);
     }
@@ -2017,7 +1975,6 @@ export default new Elysia({ prefix: "/admin" })
       } = body || {};
 
       if (!target) return { error: "target is required" };
-      // Require at least one of title, subtitle or message to avoid empty notifications
       if (!title && !subtitle && !message)
         return {
           error: "At least one of title, subtitle, or message is required",
@@ -2077,15 +2034,7 @@ export default new Elysia({ prefix: "/admin" })
 
       if (targetIds.length === 0) return { error: "No target users found" };
 
-      // Construct the visible content. Use title if present (as the main line),
-      // and fall back to message. Subtitle will be encoded into related_id so
-      // the notifications enhancer can expose it as the notification preview.
-      // Prefer title as the main line; use subtitle as the primary body
-      // (replaces the old message textarea), falling back to message.
       const content = title || subtitleText || message || "";
-      // Do NOT append the URL to the content — URL should not appear in
-      // the title or subtitle. We'll store it in related_id (meta) so the
-      // client can redirect when the notification is clicked.
 
       let encodedMeta = null;
       const metaPayload = {};
@@ -2101,8 +2050,6 @@ export default new Elysia({ prefix: "/admin" })
       const created = [];
       for (const userId of targetIds) {
         try {
-          // For fake notifications we intentionally omit actor metadata so
-          // they don't show a forced admin username.
           const relatedId = encodedMeta ? `meta:${encodedMeta}` : null;
 
           const nid = addNotification(
@@ -2116,12 +2063,10 @@ export default new Elysia({ prefix: "/admin" })
           );
           created.push(nid);
         } catch (e) {
-          // continue on errors for individual users
           console.error("Failed to create notification for", userId, e);
         }
       }
 
-      // Log this admin action for auditing
       try {
         logModerationAction(
           user.id,
@@ -2209,7 +2154,6 @@ export default new Elysia({ prefix: "/admin" })
     return { logs: logsWithDetails };
   })
 
-  // Emoji management endpoints (admin)
   .get("/emojis", async () => {
     const emojis = adminQueries.getAllEmojis.all();
     return { emojis };

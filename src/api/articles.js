@@ -7,9 +7,9 @@ import { extractAndSaveHashtags } from "./hashtags.js";
 
 const JWT_SECRET = process.env.JWT_SECRET;
 
-const getUserByUsername = db.query("SELECT * FROM users WHERE username = ?");
-const getUserById = db.query("SELECT * FROM users WHERE id = ?");
-const listArticles = db.query(`
+const getUserByUsername = db.prepare("SELECT * FROM users WHERE username = ?");
+const getUserById = db.prepare("SELECT * FROM users WHERE id = ?");
+const listArticles = db.prepare(`
   SELECT p.* FROM posts p
   JOIN users u ON p.user_id = u.id
   LEFT JOIN suspensions s ON u.id = s.user_id AND s.status = 'active' AND (s.expires_at IS NULL OR s.expires_at > datetime('now'))
@@ -17,7 +17,7 @@ const listArticles = db.query(`
   ORDER BY p.created_at DESC
   LIMIT 10
 `);
-const listArticlesBefore = db.query(`
+const listArticlesBefore = db.prepare(`
   SELECT p.* FROM posts p
   JOIN users u ON p.user_id = u.id
   LEFT JOIN suspensions s ON u.id = s.user_id AND s.status = 'active' AND (s.expires_at IS NULL OR s.expires_at > datetime('now'))
@@ -25,7 +25,7 @@ const listArticlesBefore = db.query(`
   ORDER BY p.created_at DESC
   LIMIT 10
 `);
-const getArticleById = db.query(
+const getArticleById = db.prepare(
   "SELECT * FROM posts WHERE id = ? AND is_article = TRUE"
 );
 const getAttachmentsForPostIds = (ids) => {
@@ -37,7 +37,7 @@ const getAttachmentsForPostIds = (ids) => {
     .query(`SELECT * FROM attachments WHERE post_id IN (${placeholders})`)
     .all(...ids);
 };
-const insertArticle = db.query(`
+const insertArticle = db.prepare(`
   INSERT INTO posts (
     id,
     user_id,
@@ -56,7 +56,7 @@ const insertArticle = db.query(`
   VALUES (?, ?, ?, NULL, ?, NULL, NULL, 'everyone', NULL, NULL, TRUE, ?, ?)
   RETURNING *
 `);
-const saveAttachment = db.query(`
+const saveAttachment = db.prepare(`
   INSERT INTO attachments (
     id,
     post_id,

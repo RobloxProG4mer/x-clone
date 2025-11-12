@@ -7,7 +7,7 @@ import { addNotification } from "./notifications.js";
 
 const JWT_SECRET = process.env.JWT_SECRET;
 
-const getFollowers = db.query(`
+const getFollowers = db.prepare(`
   SELECT users.id, users.username, users.name, users.avatar, users.verified, users.gold, users.avatar_radius, users.bio
   FROM follows
   JOIN users ON follows.follower_id = users.id
@@ -16,7 +16,7 @@ const getFollowers = db.query(`
   LIMIT 50
 `);
 
-const getFollowing = db.query(`
+const getFollowing = db.prepare(`
   SELECT users.id, users.username, users.name, users.avatar, users.verified, users.gold, users.avatar_radius, users.bio
   FROM follows
   JOIN users ON follows.following_id = users.id
@@ -25,61 +25,61 @@ const getFollowing = db.query(`
   LIMIT 50
 `);
 
-const getUserByUsername = db.query("SELECT * FROM users WHERE username = ?");
+const getUserByUsername = db.prepare("SELECT * FROM users WHERE username = ?");
 
-const updateProfile = db.query(`
+const updateProfile = db.prepare(`
   UPDATE users
   SET name = ?, bio = ?, location = ?, website = ?, pronouns = ?, avatar_radius = ?
   WHERE id = ?
 `);
 
-const updateThemeAccent = db.query(`
+const updateThemeAccent = db.prepare(`
 	UPDATE users
 	SET theme = ?, accent_color = ?
 	WHERE id = ?
 `);
 
-const updateLabels = db.query(`
+const updateLabels = db.prepare(`
   UPDATE users
   SET label_type = ?, label_automated = ?
   WHERE id = ?
 `);
 
-const updatePrivacy = db.query(`
+const updatePrivacy = db.prepare(`
   UPDATE users
   SET private = ?
   WHERE id = ?
 `);
 
-const updateBanner = db.query(`
+const updateBanner = db.prepare(`
   UPDATE users
   SET banner = ?
   WHERE id = ?
 `);
 
-const updateAvatar = db.query(`
+const updateAvatar = db.prepare(`
   UPDATE users
   SET avatar = ?
   WHERE id = ?
 `);
 
-const updateUsername = db.query(`
+const updateUsername = db.prepare(`
   UPDATE users
   SET username = ?
   WHERE id = ?
 `);
 
-const deleteUser = db.query(`
+const deleteUser = db.prepare(`
   DELETE FROM users WHERE id = ?
 `);
 
-const updatePassword = db.query(`
+const updatePassword = db.prepare(`
   UPDATE users
   SET password_hash = ?
   WHERE id = ?
 `);
 
-const getUserReplies = db.query(`
+const getUserReplies = db.prepare(`
   SELECT posts.*, users.username, users.name, users.avatar, users.verified, users.gold, users.avatar_radius, users.affiliate, users.affiliate_with
   FROM posts 
   JOIN users ON posts.user_id = users.id 
@@ -88,7 +88,7 @@ const getUserReplies = db.query(`
   LIMIT 20
 `);
 
-const getUserRepliesPaginated = db.query(`
+const getUserRepliesPaginated = db.prepare(`
   SELECT posts.*, users.username, users.name, users.avatar, users.verified, users.gold, users.avatar_radius, users.affiliate, users.affiliate_with
   FROM posts 
   JOIN users ON posts.user_id = users.id 
@@ -97,7 +97,7 @@ const getUserRepliesPaginated = db.query(`
   LIMIT ?
 `);
 
-const getUserMedia = db.query(`
+const getUserMedia = db.prepare(`
   SELECT DISTINCT posts.*, users.username, users.name, users.avatar, users.verified, users.gold, users.avatar_radius, users.affiliate, users.affiliate_with
   FROM posts 
   JOIN users ON posts.user_id = users.id 
@@ -107,7 +107,7 @@ const getUserMedia = db.query(`
   LIMIT ?
 `);
 
-const getUserMediaPaginated = db.query(`
+const getUserMediaPaginated = db.prepare(`
   SELECT DISTINCT posts.*, users.username, users.name, users.avatar, users.verified, users.gold, users.avatar_radius, users.affiliate, users.affiliate_with
   FROM posts 
   JOIN users ON posts.user_id = users.id 
@@ -117,7 +117,7 @@ const getUserMediaPaginated = db.query(`
   LIMIT ?
 `);
 
-const getUserPosts = db.query(`
+const getUserPosts = db.prepare(`
   SELECT posts.*, users.username, users.name, users.avatar, users.verified, users.gold, users.avatar_radius, users.affiliate, users.affiliate_with
   FROM posts 
   JOIN users ON posts.user_id = users.id 
@@ -125,7 +125,7 @@ const getUserPosts = db.query(`
   ORDER BY posts.pinned DESC, posts.created_at DESC
 `);
 
-const getUserRetweets = db.query(`
+const getUserRetweets = db.prepare(`
   SELECT 
     original_posts.*,
     original_users.username, original_users.name, original_users.avatar, original_users.verified, original_users.gold, original_users.avatar_radius, original_users.affiliate, original_users.affiliate_with,
@@ -138,60 +138,60 @@ const getUserRetweets = db.query(`
   ORDER BY retweets.created_at DESC
 `);
 
-const getFollowStatus = db.query(`
+const getFollowStatus = db.prepare(`
   SELECT id FROM follows WHERE follower_id = ? AND following_id = ?
 `);
 
-const addFollow = db.query(`
+const addFollow = db.prepare(`
   INSERT INTO follows (id, follower_id, following_id) VALUES (?, ?, ?)
 `);
 
-const removeFollow = db.query(`
+const removeFollow = db.prepare(`
 	DELETE FROM follows WHERE follower_id = ? AND following_id = ?
 `);
 
-const getFollowRequest = db.query(`
+const getFollowRequest = db.prepare(`
   SELECT * FROM follow_requests WHERE requester_id = ? AND target_id = ?
 `);
 
-const createFollowRequest = db.query(`
+const createFollowRequest = db.prepare(`
   INSERT INTO follow_requests (id, requester_id, target_id) VALUES (?, ?, ?)
 `);
 
-const approveFollowRequest = db.query(`
+const approveFollowRequest = db.prepare(`
   UPDATE follow_requests 
   SET status = 'approved', responded_at = datetime('now', 'utc')
   WHERE id = ?
 `);
 
-const denyFollowRequest = db.query(`
+const denyFollowRequest = db.prepare(`
   UPDATE follow_requests 
   SET status = 'denied', responded_at = datetime('now', 'utc')
   WHERE id = ?
 `);
 
-const deleteFollowRequest = db.query(`
+const deleteFollowRequest = db.prepare(`
   DELETE FROM follow_requests WHERE requester_id = ? AND target_id = ?
 `);
 
 // Affiliate request queries
-const getAffiliateRequest = db.query(
+const getAffiliateRequest = db.prepare(
   `SELECT * FROM affiliate_requests WHERE requester_id = ? AND target_id = ?`
 );
 
-const createAffiliateRequest = db.query(
+const createAffiliateRequest = db.prepare(
   `INSERT INTO affiliate_requests (id, requester_id, target_id) VALUES (?, ?, ?)`
 );
 
-const updateUserAffiliateWith = db.query(
+const updateUserAffiliateWith = db.prepare(
   `UPDATE users SET affiliate = ?, affiliate_with = ? WHERE id = ?`
 );
 
-const getUserById = db.query(
+const getUserById = db.prepare(
   `SELECT id, username, name, avatar, verified, gold, avatar_radius FROM users WHERE id = ?`
 );
 
-const getFactCheckForPost = db.query(`
+const getFactCheckForPost = db.prepare(`
   SELECT fc.*, u.username as admin_username, u.name as admin_name
   FROM fact_checks fc
   JOIN users u ON fc.created_by = u.id
@@ -199,7 +199,7 @@ const getFactCheckForPost = db.query(`
   LIMIT 1
 `);
 
-const getPendingAffiliateRequests = db.query(`
+const getPendingAffiliateRequests = db.prepare(`
   SELECT ar.*, u.username, u.name, u.avatar, u.verified, u.gold, u.avatar_radius, u.bio
   FROM affiliate_requests ar
   JOIN users u ON ar.requester_id = u.id
@@ -207,22 +207,22 @@ const getPendingAffiliateRequests = db.query(`
   ORDER BY ar.created_at DESC
 `);
 
-const approveAffiliateRequest = db.query(
+const approveAffiliateRequest = db.prepare(
   `UPDATE affiliate_requests SET status = 'approved', responded_at = datetime('now', 'utc') WHERE id = ?`
 );
 
-const denyAffiliateRequest = db.query(
+const denyAffiliateRequest = db.prepare(
   `UPDATE affiliate_requests SET status = 'denied', responded_at = datetime('now', 'utc') WHERE id = ?`
 );
 
-const getAffiliatesList = db.query(`
+const getAffiliatesList = db.prepare(`
   SELECT u.id, u.username, u.name, u.avatar, u.verified, u.gold, u.avatar_radius, u.bio
   FROM users u
   WHERE u.affiliate = 1 AND u.affiliate_with = ?
   ORDER BY u.created_at DESC
 `);
 
-const getPendingFollowRequests = db.query(`
+const getPendingFollowRequests = db.prepare(`
   SELECT fr.*, u.username, u.name, u.avatar, u.verified, u.gold, u.avatar_radius, u.bio
   FROM follow_requests fr
   JOIN users u ON fr.requester_id = u.id
@@ -230,30 +230,30 @@ const getPendingFollowRequests = db.query(`
   ORDER BY fr.created_at DESC
 `);
 
-const getFollowCounts = db.query(`
+const getFollowCounts = db.prepare(`
 	SELECT 
 		((SELECT COUNT(*) FROM follows WHERE follower_id = ?) + (SELECT COUNT(*) FROM ghost_follows WHERE follower_type = 'following' AND target_id = ?)) AS following_count,
 		((SELECT COUNT(*) FROM follows WHERE following_id = ?) + (SELECT COUNT(*) FROM ghost_follows WHERE follower_type = 'follower' AND target_id = ?)) AS follower_count,
 		(SELECT COUNT(*) FROM posts WHERE user_id = ? AND reply_to IS NULL) AS post_count
 `);
 
-const getPollByPostId = db.query(`
+const getPollByPostId = db.prepare(`
   SELECT * FROM polls WHERE post_id = ?
 `);
 
-const getPollOptions = db.query(`
+const getPollOptions = db.prepare(`
   SELECT * FROM poll_options WHERE poll_id = ? ORDER BY option_order ASC
 `);
 
-const getUserPollVote = db.query(`
+const getUserPollVote = db.prepare(`
   SELECT option_id FROM poll_votes WHERE user_id = ? AND poll_id = ?
 `);
 
-const getTotalPollVotes = db.query(`
+const getTotalPollVotes = db.prepare(`
   SELECT SUM(vote_count) as total FROM poll_options WHERE poll_id = ?
 `);
 
-const getPollVoters = db.query(`
+const getPollVoters = db.prepare(`
   SELECT DISTINCT users.username, users.name, users.avatar, users.verified, users.gold, users.avatar_radius
   FROM poll_votes 
   JOIN users ON poll_votes.user_id = users.id 
@@ -262,21 +262,21 @@ const getPollVoters = db.query(`
   LIMIT 10
 `);
 
-const getQuotedTweet = db.query(`
+const getQuotedTweet = db.prepare(`
   SELECT posts.*, users.username, users.name, users.avatar, users.verified, users.gold, users.avatar_radius, users.affiliate, users.affiliate_with
   FROM posts
   JOIN users ON posts.user_id = users.id
   WHERE posts.id = ?
 `);
 
-const getAttachmentsByPostId = db.query(`
+const getAttachmentsByPostId = db.prepare(`
   SELECT * FROM attachments WHERE post_id = ?
 `);
-const isSuspendedQuery = db.query(`
+const isSuspendedQuery = db.prepare(`
   SELECT * FROM suspensions WHERE user_id = ? AND status = 'active' AND (expires_at IS NULL OR expires_at > datetime('now'))
 `);
 // Helper to check the users.suspended flag (legacy or quick lookup)
-const getUserSuspendedFlag = db.query(`
+const getUserSuspendedFlag = db.prepare(`
   SELECT suspended FROM users WHERE id = ?
 `);
 
@@ -284,11 +284,11 @@ const getTweetAttachments = (tweetId) => {
   return getAttachmentsByPostId.all(tweetId);
 };
 
-const getCardByPostId = db.query(`
+const getCardByPostId = db.prepare(`
   SELECT * FROM interactive_cards WHERE post_id = ?
 `);
 
-const getCardOptions = db.query(`
+const getCardOptions = db.prepare(`
   SELECT * FROM interactive_card_options WHERE card_id = ? ORDER BY option_order ASC
 `);
 

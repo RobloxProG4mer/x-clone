@@ -2,7 +2,10 @@ import { Database } from "bun:sqlite";
 
 const db = new Database("./.data/db.sqlite");
 
-db.exec(`
+db.query(
+  `
+PRAGMA journal_mode = WAL;
+
 CREATE TABLE IF NOT EXISTS users (
   id TEXT PRIMARY KEY,
   username VARCHAR,
@@ -30,7 +33,8 @@ CREATE TABLE IF NOT EXISTS users (
   use_c_algorithm BOOLEAN DEFAULT FALSE,
   label_type TEXT DEFAULT NULL,
   label_automated BOOLEAN DEFAULT FALSE,
-  character_limit INTEGER DEFAULT NULL
+  character_limit INTEGER DEFAULT NULL,
+  affiliate_with TEXT DEFAULT NULL
 );
 
 CREATE INDEX IF NOT EXISTS idx_users_username ON users(username);
@@ -450,10 +454,8 @@ CREATE TABLE IF NOT EXISTS community_join_requests (
 
 CREATE INDEX IF NOT EXISTS idx_community_join_requests_community_id ON community_join_requests(community_id);
 CREATE INDEX IF NOT EXISTS idx_community_join_requests_user_id ON community_join_requests(user_id);
-CREATE INDEX IF NOT EXISTS idx_community_join_requests_status ON community_join_requests(status);`);
+CREATE INDEX IF NOT EXISTS idx_community_join_requests_status ON community_join_requests(status);
 
-// Affiliate requests table and index
-db.exec(`
 CREATE TABLE IF NOT EXISTS affiliate_requests (
   id TEXT PRIMARY KEY,
   requester_id TEXT NOT NULL,
@@ -468,17 +470,7 @@ CREATE TABLE IF NOT EXISTS affiliate_requests (
 
 CREATE INDEX IF NOT EXISTS idx_affiliate_requests_target_id ON affiliate_requests(target_id);
 CREATE INDEX IF NOT EXISTS idx_affiliate_requests_status ON affiliate_requests(status);
-`);
 
-// Ensure users table has affiliate_with column (add if missing)
-try {
-  db.exec(`ALTER TABLE users ADD COLUMN affiliate_with TEXT DEFAULT NULL`);
-} catch (_) {
-  // Ignore if column already exists or DB doesn't allow ALTER (safe no-op)
-}
-
-// Ensure post reactions table exists
-db.exec(`
 CREATE TABLE IF NOT EXISTS post_reactions (
   id TEXT PRIMARY KEY,
   post_id TEXT NOT NULL,
@@ -492,10 +484,7 @@ CREATE TABLE IF NOT EXISTS post_reactions (
 
 CREATE INDEX IF NOT EXISTS idx_post_reactions_post_id ON post_reactions(post_id);
 CREATE INDEX IF NOT EXISTS idx_post_reactions_user_id ON post_reactions(user_id);
-`);
 
-// Emojis table for custom uploaded emojis (added by admin)
-db.exec(`
 CREATE TABLE IF NOT EXISTS emojis (
   id TEXT PRIMARY KEY,
   name TEXT UNIQUE NOT NULL,
@@ -506,9 +495,7 @@ CREATE TABLE IF NOT EXISTS emojis (
 );
 
 CREATE INDEX IF NOT EXISTS idx_emojis_name ON emojis(name);
-`);
 
-db.exec(`
 CREATE TABLE IF NOT EXISTS fact_checks (
   id TEXT PRIMARY KEY,
   post_id TEXT NOT NULL,
@@ -522,9 +509,7 @@ CREATE TABLE IF NOT EXISTS fact_checks (
 
 CREATE INDEX IF NOT EXISTS idx_fact_checks_post_id ON fact_checks(post_id);
 CREATE INDEX IF NOT EXISTS idx_fact_checks_created_by ON fact_checks(created_by);
-`);
 
-db.exec(`
 CREATE TABLE IF NOT EXISTS reports (
   id TEXT PRIMARY KEY,
   reporter_id TEXT NOT NULL,
@@ -558,9 +543,7 @@ CREATE TABLE IF NOT EXISTS report_bans (
 );
 
 CREATE INDEX IF NOT EXISTS idx_report_bans_user_id ON report_bans(user_id);
-`);
 
-db.exec(`
 CREATE TABLE IF NOT EXISTS interactive_cards (
   id TEXT PRIMARY KEY,
   post_id TEXT NOT NULL,
@@ -583,6 +566,7 @@ CREATE TABLE IF NOT EXISTS interactive_card_options (
 );
 
 CREATE INDEX IF NOT EXISTS idx_interactive_card_options_card_id ON interactive_card_options(card_id);
-`);
+`
+).run();
 
 export default db;

@@ -58,15 +58,15 @@ function formatExpiry(expiryStr) {
   });
 }
 
-const isSuspendedQuery = db.query(`
+const isSuspendedQuery = db.prepare(`
   SELECT * FROM suspensions WHERE user_id = ? AND status = 'active' AND (expires_at IS NULL OR expires_at > datetime('now'))
 `);
 
-const liftSuspension = db.query(`
+const liftSuspension = db.prepare(`
   UPDATE suspensions SET status = 'lifted' WHERE id = ?
 `);
 
-const updateUserSuspended = db.query(
+const updateUserSuspended = db.prepare(
   "UPDATE users SET suspended = ? WHERE id = ?"
 );
 

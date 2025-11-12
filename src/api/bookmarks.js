@@ -6,22 +6,22 @@ import ratelimit from "../helpers/ratelimit.js";
 
 const JWT_SECRET = process.env.JWT_SECRET;
 
-const getUserByUsername = db.query("SELECT * FROM users WHERE username = ?");
-const getTweetById = db.query("SELECT * FROM posts WHERE id = ?");
+const getUserByUsername = db.prepare("SELECT * FROM users WHERE username = ?");
+const getTweetById = db.prepare("SELECT * FROM posts WHERE id = ?");
 
-const checkBookmarkExists = db.query(`
+const checkBookmarkExists = db.prepare(`
   SELECT id FROM bookmarks WHERE user_id = ? AND post_id = ?
 `);
 
-const addBookmark = db.query(`
+const addBookmark = db.prepare(`
   INSERT INTO bookmarks (id, user_id, post_id) VALUES (?, ?, ?)
 `);
 
-const removeBookmark = db.query(`
+const removeBookmark = db.prepare(`
   DELETE FROM bookmarks WHERE user_id = ? AND post_id = ?
 `);
 
-const getBookmarkedTweets = db.query(`
+const getBookmarkedTweets = db.prepare(`
   SELECT posts.*, users.username, users.name, users.avatar, users.verified, users.gold, users.avatar_radius, users.affiliate, users.affiliate_with, b.created_at as bookmarked_at
   FROM bookmarks b
   JOIN posts ON b.post_id = posts.id
@@ -31,23 +31,23 @@ const getBookmarkedTweets = db.query(`
   LIMIT ?
 `);
 
-const getPollByPostId = db.query(`
+const getPollByPostId = db.prepare(`
   SELECT * FROM polls WHERE post_id = ?
 `);
 
-const getPollOptions = db.query(`
+const getPollOptions = db.prepare(`
   SELECT * FROM poll_options WHERE poll_id = ? ORDER BY option_order ASC
 `);
 
-const getUserPollVote = db.query(`
+const getUserPollVote = db.prepare(`
   SELECT option_id FROM poll_votes WHERE user_id = ? AND poll_id = ?
 `);
 
-const getTotalPollVotes = db.query(`
+const getTotalPollVotes = db.prepare(`
   SELECT SUM(vote_count) as total FROM poll_options WHERE poll_id = ?
 `);
 
-const getPollVoters = db.query(`
+const getPollVoters = db.prepare(`
   SELECT DISTINCT users.username, users.name, users.avatar, users.verified
   FROM poll_votes 
   JOIN users ON poll_votes.user_id = users.id 
@@ -56,21 +56,21 @@ const getPollVoters = db.query(`
   LIMIT 10
 `);
 
-const getAttachmentsByPostId = db.query(`
+const getAttachmentsByPostId = db.prepare(`
   SELECT * FROM attachments WHERE post_id = ?
 `);
 
-const getQuotedTweet = db.query(`
+const getQuotedTweet = db.prepare(`
   SELECT posts.*, users.username, users.name, users.avatar, users.verified, users.gold, users.avatar_radius, users.affiliate, users.affiliate_with
   FROM posts
   JOIN users ON posts.user_id = users.id
   WHERE posts.id = ?
 `);
 
-const isSuspendedQuery = db.query(
+const isSuspendedQuery = db.prepare(
   "SELECT 1 FROM suspensions WHERE user_id = ? AND status = 'active' AND (expires_at IS NULL OR expires_at > datetime('now'))"
 );
-const getUserSuspendedFlag = db.query(
+const getUserSuspendedFlag = db.prepare(
   "SELECT suspended FROM users WHERE id = ?"
 );
 const isUserSuspendedById = (userId) => {
@@ -108,11 +108,11 @@ const getTweetAttachments = (tweetId) => {
   return getAttachmentsByPostId.all(tweetId);
 };
 
-const getCardByPostId = db.query(`
+const getCardByPostId = db.prepare(`
   SELECT * FROM interactive_cards WHERE post_id = ?
 `);
 
-const getCardOptions = db.query(`
+const getCardOptions = db.prepare(`
   SELECT * FROM interactive_card_options WHERE card_id = ? ORDER BY option_order ASC
 `);
 
