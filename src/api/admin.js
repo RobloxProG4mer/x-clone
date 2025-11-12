@@ -1488,13 +1488,16 @@ export default new Elysia({ prefix: "/admin" })
   .patch(
     "/users/:id",
     async ({ params, body, user: moderator, jwt }) => {
-      const user = adminQueries.findUserById.get(params.id);
-      if (!user) {
-        return { error: "User not found" };
-      }
+      try {
+        const user = adminQueries.findUserById.get(params.id);
+        if (!user) {
+          return { error: "User not found" };
+        }
 
       const trimmedUsername =
-        body.username !== undefined ? body.username.trim() : undefined;
+        body.username !== undefined
+          ? (body.username === null ? "" : String(body.username).trim())
+          : undefined;
 
       if (trimmedUsername !== undefined) {
         if (!trimmedUsername.length) {
@@ -1513,7 +1516,11 @@ export default new Elysia({ prefix: "/admin" })
       }
 
       const trimmedName =
-        body.name !== undefined ? body.name.trim() : undefined;
+        body.name !== undefined
+          ? body.name === null
+            ? ""
+            : String(body.name).trim()
+          : undefined;
       const nameToPersist =
         trimmedName !== undefined
           ? trimmedName.length
@@ -1521,7 +1528,12 @@ export default new Elysia({ prefix: "/admin" })
             : null
           : user.name;
 
-      const trimmedBio = body.bio !== undefined ? body.bio.trim() : undefined;
+      const trimmedBio =
+        body.bio !== undefined
+          ? body.bio === null
+            ? ""
+            : String(body.bio).trim()
+          : undefined;
       const bioToPersist =
         trimmedBio !== undefined
           ? trimmedBio.length
@@ -1585,7 +1597,9 @@ export default new Elysia({ prefix: "/admin" })
 
       const affiliateUsername =
         body.affiliate_with_username !== undefined
-          ? body.affiliate_with_username.trim()
+          ? body.affiliate_with_username === null
+            ? ""
+            : String(body.affiliate_with_username).trim()
           : undefined;
 
       if (newAffiliateFlag && affiliateUsername) {
@@ -1833,24 +1847,11 @@ export default new Elysia({ prefix: "/admin" })
       }
 
       return response;
+      } catch (err) {
+        console.error("Error in PATCH /admin/users/:id:", err);
+        return { error: "Internal server error" };
+      }
     },
-    {
-      body: t.Object({
-        username: t.Optional(t.String()),
-        name: t.Optional(t.String()),
-        bio: t.Optional(t.String()),
-        verified: t.Optional(t.Boolean()),
-        gold: t.Optional(t.Boolean()),
-        admin: t.Optional(t.Boolean()),
-        affiliate: t.Optional(t.Boolean()),
-        affiliate_with_username: t.Optional(t.String()),
-        ghost_followers: t.Optional(t.Number()),
-        ghost_following: t.Optional(t.Number()),
-        character_limit: t.Optional(t.Union([t.Number(), t.Null()])),
-        created_at: t.Optional(t.String()),
-        force_follow_usernames: t.Optional(t.Array(t.String())),
-      }),
-    }
   )
 
   .post("/impersonate/:id", async ({ params, jwt, user }) => {

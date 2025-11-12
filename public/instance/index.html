@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Instance — tweetapus</title>
+    <link href="/public/shared/base.css" rel="stylesheet" />
+    <style>
+      body { font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial; padding: 24px; background: #0f0f10; color: #e6eef8 }
+      .card { background: #1a1a1b; padding: 18px; border-radius: 8px; max-width: 820px; margin: 24px auto }
+      .kv { display:flex; gap:12px; align-items:flex-start }
+      .k { color:#9fb7d9; width:160px }
+      .v { color:#e6eef8 }
+      a { color:#7cc3ff }
+    </style>
+  </head>
+  <body>
+    <div class="card">
+      <h2 id="title">Instance details</h2>
+      <p class="muted">Non-sensitive information about this tweetapus instance.</p>
+      <div id="info">
+        <div class="kv"><div class="k">Instance</div><div class="v" id="instanceName">—</div></div>
+        <div class="kv"><div class="k">Version</div><div class="v" id="version">—</div></div>
+        <div class="kv"><div class="k">Environment</div><div class="v" id="env">—</div></div>
+        <div class="kv"><div class="k">Node / Platform</div><div class="v" id="node">—</div></div>
+        <div class="kv"><div class="k">Port</div><div class="v" id="port">—</div></div>
+      </div>
+      <hr />
+      <p style="font-size:90%">If you control this instance you can change the instance name using the root `setup.sh` (interactive) script.</p>
+    </div>
+
+    <script>
+      async function loadInstance() {
+        try {
+          const res = await fetch('/instance');
+          if (!res.ok) throw new Error('Failed');
+          const data = await res.json();
+          document.getElementById('instanceName').textContent = data.instance?.name || 'tweetapus';
+          document.getElementById('version').textContent = data.version || '-';
+          document.getElementById('env').textContent = data.env || '-';
+          document.getElementById('node').textContent = (data.node || '-') + ' / ' + (data.platform || '-');
+          document.getElementById('port').textContent = data.port || '-';
+        } catch (e) {
+          document.getElementById('title').textContent = 'Instance details (unavailable)';
+        }
+      }
+      loadInstance();
+    </script>
+  </body>
+</html>

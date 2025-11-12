@@ -195,6 +195,23 @@
                 <!-- Stats cards will be populated here -->
               </div>
 
+              <div class="row mb-4">
+                <div class="col-md-4">
+                  <div class="card p-3" id="instanceCard">
+                    <div class="d-flex align-items-center">
+                      <div>
+                        <strong id="instanceCardName">Instance</strong>
+                        <div class="text-muted small" id="instanceCardVersion">version —</div>
+                      </div>
+                      <div class="ms-auto text-end">
+                        <a href="/instance" class="btn btn-sm btn-outline-light">Open page</a>
+                      </div>
+                    </div>
+                    <div class="mt-2 text-muted small" id="instanceCardEnv">...</div>
+                  </div>
+                </div>
+              </div>
+
               <div class="row">
                 <div class="col-md-6">
                   <div class="card">
@@ -1512,6 +1529,21 @@
       </div>
     </div>
 
+    <script>
+      async function loadInstanceCard() {
+        try {
+          const res = await fetch('/instance');
+          if (!res.ok) return;
+          const data = await res.json();
+          document.getElementById('instanceCardName').textContent = data.instance?.name || 'tweetapus';
+          document.getElementById('instanceCardVersion').textContent = `version ${data.version || '-'} · ${data.node || '-'} `;
+          document.getElementById('instanceCardEnv').textContent = `${data.env || '-'} · ${data.platform || '-'} · port ${data.port || '-'} `;
+        } catch (e) {
+          // ignore
+        }
+      }
+      loadInstanceCard();
+    </script>
     <script type="module" src="/public/shared/notification-icons.js"></script>
     <script
       src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js"

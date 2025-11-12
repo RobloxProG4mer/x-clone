@@ -3,6 +3,17 @@ import { staticPlugin } from "@elysiajs/static";
 import { Elysia, file } from "elysia";
 import { processScheduledPosts } from "./api/scheduled.js";
 import api from "./api.js";
+import fs from "fs";
+
+export const VERSION = "0.1.0";
+
+let INSTANCE_CONFIG = { name: "tweetapus" };
+try {
+  const raw = fs.readFileSync(new URL("./instance.json", import.meta.url), "utf-8");
+  INSTANCE_CONFIG = JSON.parse(raw);
+} catch (e) {
+  // instance.json missing or unreadable — fall back to defaults
+}
 import { compression } from "./compress.js";
 import db from "./db.js";
 
@@ -145,6 +156,24 @@ new Elysia()
     return new Response(stream, {
       headers: set.headers,
     });
+  })
+  .get("/instance", () => {
+    let instance = INSTANCE_CONFIG;
+    try {
+      const raw = fs.readFileSync(new URL("./instance.json", import.meta.url), "utf-8");
+      instance = JSON.parse(raw);
+    } catch (e) {
+      // leave existing INSTANCE_CONFIG if file unreadable
+    }
+
+    return {
+      version: VERSION,
+      instance,
+      node: process.version,
+      env: process.env.NODE_ENV || "development",
+      platform: process.platform,
+      port: process.env.PORT || 3000,
+    };
   })
   .get("/admin", () => file("./public/admin/index.html"))
   .get("/settings", ({ redirect }) => redirect("/settings/account"))
