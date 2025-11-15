@@ -1,921 +1,672 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>admin — tweetapus</title>
-    <link
-      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css"
-      rel="stylesheet"
-      integrity="sha384-sRIl4kxILFvY47J16cr9ZwB07vP4J8+LH7qKQnuqkuIAvNWLzeN8tE5YBujZqJLB"
-      crossorigin="anonymous"
-    />
-    <link
-      rel="stylesheet"
-      href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css"
-    />
-    <link rel="stylesheet" href="/public/shared/image-cropper.css" />
-    <style>
-      * {
-        font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
-          Roboto, Oxygen, Ubuntu, Cantarell, "Open Sans", "Helvetica Neue",
-          sans-serif;
-        border-radius: 0px !important;
-        --bs-body-bg: #131314;
-      }
-      body {
-        background-color: #131314;
-      }
-      .sidebar {
-        min-height: 100vh;
-        background: #212529;
-      }
-      .sidebar .nav-link {
-        color: #adb5bd;
-      }
-      .sidebar .nav-link:hover,
-      .sidebar .nav-link.active {
-        color: #fff;
-        background: #495057;
-      }
-      .stat-card {
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        color: white;
-        border: none;
-      }
-      .stat-card.warning {
-        background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
-      }
-      .stat-card.success {
-        background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
-      }
-      .user-avatar {
-        width: 40px;
-        height: 40px;
-        object-fit: cover;
-        border-radius: 50%;
-      }
-      .modal-lg {
-        max-width: 800px;
-      }
-      .suspension-form {
-        background: #f8f9fa;
-        padding: 20px;
+
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>admin — tweetapus</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet"
+    integrity="sha384-sRIl4kxILFvY47J16cr9ZwB07vP4J8+LH7qKQnuqkuIAvNWLzeN8tE5YBujZqJLB" crossorigin="anonymous" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css" />
+  <link rel="stylesheet" href="/public/shared/image-cropper.css" />
+  <style>
+    * {
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
+        Roboto, Oxygen, Ubuntu, Cantarell, "Open Sans", "Helvetica Neue",
+        sans-serif;
+      border-radius: 0px !important;
+      --bs-body-bg: #131314;
+    }
+
+    body {
+      background-color: #131314;
+    }
+
+    .sidebar {
+      min-height: 100vh;
+      background: #212529;
+    }
+
+    .sidebar .nav-link {
+      color: #adb5bd;
+    }
+
+    .sidebar .nav-link:hover,
+    .sidebar .nav-link.active {
+      color: #fff;
+      background: #495057;
+    }
+
+    .stat-card {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      border: none;
+    }
+
+    .stat-card.warning {
+      background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+    }
+
+    .stat-card.success {
+      background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+    }
+
+    .user-avatar {
+      width: 40px;
+      height: 40px;
+      object-fit: cover;
+      border-radius: 50%;
+    }
+
+    .modal-lg {
+      max-width: 800px;
+    }
+
+    .suspension-form {
+      background: #f8f9fa;
+      padding: 20px;
+      border-radius: 8px;
+      margin-top: 15px;
+    }
+
+    .emoji-cropper {
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+      align-items: center;
+
+      & canvas {
+        width: 300px;
+        height: 300px;
         border-radius: 8px;
-        margin-top: 15px;
+        background-color: #1f1f1f;
+        cursor: grab;
       }
-      .emoji-cropper {
-        display: flex;
-        flex-direction: column;
-        gap: 1rem;
-        align-items: center;
-        & canvas {
-          width: 300px;
-          height: 300px;
-          border-radius: 8px;
-          background-color: #1f1f1f;
-          cursor: grab;
-        }
-        & canvas:active {
-          cursor: grabbing;
-        }
-        & .form-range {
-          width: 100%;
-        }
+
+      & canvas:active {
+        cursor: grabbing;
       }
-    </style>
-  </head>
-  <body data-bs-theme="dark">
-    <div class="container-fluid">
-      <div class="row">
-        <div class="col-lg-2 col-md-3 sidebar p-0">
-          <div class="p-3">
-            <svg
-              class="icon"
-              width="38"
-              height="38"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="white"
-              stroke-width="2"
-            >
-              <path
-                d="M22 4s-.7 2.1-2 3.4c1.6 10-9.4 17.3-18 11.6 2.2.1 4.4-.6 6-2C3 15.5.5 9.6 3 5c2.2 2.6 5.6 4.1 9 4-.9-4.2 4-6.6 7-3.8 1.1 0 3-1.2 3-1.2z"
-              ></path>
-            </svg>
-          </div>
-          <nav class="nav flex-column">
-            <a
-              class="nav-link active"
-              href="#"
-              data-section="dashboard"
-              id="dashboard-nav"
-            >
-              <i class="bi bi-speedometer2"></i>
-              Dashboard
-            </a>
-            <a class="nav-link" href="#" data-section="users" id="users-nav">
-              <i class="bi bi-people"></i>
-              Users
-            </a>
-            <a class="nav-link" href="#" data-section="posts" id="posts-nav">
-              <i class="bi bi-chat-left-text"></i>
-              Posts
-            </a>
-            <a class="nav-link" href="#" data-section="dms" id="dms-nav">
-              <i class="bi bi-chat-dots"></i>
-              Messages
-            </a>
-            <a
-              class="nav-link"
-              href="#"
-              data-section="communities"
-              id="communities-nav"
-            >
-              <i class="bi bi-people-fill"></i>
-              Communities
-            </a>
-            <a
-              class="nav-link"
-              href="#"
-              data-section="suspensions"
-              id="suspensions-nav"
-            >
-              <i class="bi bi-exclamation-triangle"></i>
-              Suspensions
-            </a>
-            <a
-              class="nav-link"
-              href="#"
-              data-section="reports"
-              id="reports-nav"
-            >
-              <i class="bi bi-flag"></i>
-              Reports
-            </a>
-            <a
-              class="nav-link"
-              href="#"
-              data-section="moderation-logs"
-              id="moderation-logs-nav"
-            >
-              <i class="bi bi-journal-text"></i>
-              Moderation Logs
-            </a>
-            <a
-              class="nav-link"
-              href="#"
-              data-section="clone-profile"
-              id="clone-profile-nav"
-            >
-              <i class="bi bi-files"></i>
-              Clone Profile
-            </a>
-            <a
-              class="nav-link"
-              href="#"
-              data-section="notifications"
-              id="notifications-nav"
-            >
-              <i class="bi bi-bell"></i>
-              Notifications
-            </a>
-            <a class="nav-link" href="#" data-section="emojis" id="emojis-nav">
-              <i class="bi bi-emoji-smile"></i>
-              Emojis
-            </a>
-            <a
-              class="nav-link"
-              href="#"
-              data-section="extensions"
-              id="extensions-nav"
-            >
-              <i class="bi bi-puzzle"></i>
-              Extensions
-            </a>
-          </nav>
+
+      & .form-range {
+        width: 100%;
+      }
+    }
+  </style>
+</head>
+
+<body data-bs-theme="dark">
+  <div class="container-fluid">
+    <div class="row">
+      <div class="col-lg-2 col-md-3 sidebar p-0">
+        <div class="p-3">
+          <svg class="icon" width="38" height="38" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2">
+            <path
+              d="M22 4s-.7 2.1-2 3.4c1.6 10-9.4 17.3-18 11.6 2.2.1 4.4-.6 6-2C3 15.5.5 9.6 3 5c2.2 2.6 5.6 4.1 9 4-.9-4.2 4-6.6 7-3.8 1.1 0 3-1.2 3-1.2z">
+            </path>
+          </svg>
         </div>
+        <nav class="nav flex-column">
+          <a class="nav-link active" href="#" data-section="dashboard" id="dashboard-nav">
+            <i class="bi bi-speedometer2"></i>
+            Dashboard
+          </a>
+          <a class="nav-link" href="#" data-section="users" id="users-nav">
+            <i class="bi bi-people"></i>
+            Users
+          </a>
+          <a class="nav-link" href="#" data-section="posts" id="posts-nav">
+            <i class="bi bi-chat-left-text"></i>
+            Posts
+          </a>
+          <a class="nav-link" href="#" data-section="dms" id="dms-nav">
+            <i class="bi bi-chat-dots"></i>
+            Messages
+          </a>
+          <a class="nav-link" href="#" data-section="communities" id="communities-nav">
+            <i class="bi bi-people-fill"></i>
+            Communities
+          </a>
+          <a class="nav-link" href="#" data-section="suspensions" id="suspensions-nav">
+            <i class="bi bi-exclamation-triangle"></i>
+            Suspensions
+          </a>
+          <a class="nav-link" href="#" data-section="reports" id="reports-nav">
+            <i class="bi bi-flag"></i>
+            Reports
+          </a>
+          <a class="nav-link" href="#" data-section="moderation-logs" id="moderation-logs-nav">
+            <i class="bi bi-journal-text"></i>
+            Moderation Logs
+          </a>
+          <a class="nav-link" href="#" data-section="clone-profile" id="clone-profile-nav">
+            <i class="bi bi-files"></i>
+            Clone Profile
+          </a>
+          <a class="nav-link" href="#" data-section="notifications" id="notifications-nav">
+            <i class="bi bi-bell"></i>
+            Notifications
+          </a>
+          <a class="nav-link" href="#" data-section="emojis" id="emojis-nav">
+            <i class="bi bi-emoji-smile"></i>
+            Emojis
+          </a>
+          <a class="nav-link" href="#" data-section="extensions" id="extensions-nav">
+            <i class="bi bi-puzzle"></i>
+            Extensions
+          </a>
+        </nav>
+      </div>
 
-        <div class="col-lg-10 col-md-9">
-          <div class="p-4">
-            <!-- Dashboard Section -->
-            <div id="dashboard-section" class="section">
-              <div class="row mb-4" id="statsCards">
-                <!-- Stats cards will be populated here -->
-              </div>
+      <div class="col-lg-10 col-md-9">
+        <div class="p-4">
+          <!-- Dashboard Section -->
+          <div id="dashboard-section" class="section">
+            <div class="row mb-4" id="statsCards">
+              <!-- Stats cards will be populated here -->
+            </div>
 
-              <div class="row">
-                <div class="col-md-6">
-                  <div class="card">
-                    <div class="card-header">
-                      <h5>
-                        <i class="bi bi-people-fill"></i>
-                        Recent Users
-                      </h5>
-                    </div>
-                    <div class="card-body" id="recentUsers">
-                      <!-- (removed stray notifSubtitle input — moved to Notifications form) -->
-                      <!-- Recent users will be populated here -->
-                    </div>
+            <div class="row">
+              <div class="col-md-6">
+                <div class="card">
+                  <div class="card-header">
+                    <h5>
+                      <i class="bi bi-people-fill"></i>
+                      Recent Users
+                    </h5>
+                  </div>
+                  <div class="card-body" id="recentUsers">
+                    <!-- (removed stray notifSubtitle input — moved to Notifications form) -->
+                    <!-- Recent users will be populated here -->
                   </div>
                 </div>
-                <div class="col-md-6">
-                  <div class="card">
-                    <div class="card-header">
-                      <h5>
-                        <i class="bi bi-exclamation-triangle-fill"></i>
-                        Recent Suspensions
-                      </h5>
-                    </div>
-                    <div class="card-body" id="recentSuspensions">
-                      <!-- Recent suspensions will be populated here -->
-                    </div>
+              </div>
+              <div class="col-md-6">
+                <div class="card">
+                  <div class="card-header">
+                    <h5>
+                      <i class="bi bi-exclamation-triangle-fill"></i>
+                      Recent Suspensions
+                    </h5>
+                  </div>
+                  <div class="card-body" id="recentSuspensions">
+                    <!-- Recent suspensions will be populated here -->
                   </div>
                 </div>
               </div>
             </div>
+          </div>
 
-            <!-- Users Section -->
-            <div id="users-section" class="section d-none">
-              <div
-                class="d-flex justify-content-between align-items-center mb-3"
-              >
-                <div class="d-flex gap-2">
-                  <input
-                    type="text"
-                    class="form-control"
-                    id="userSearch"
-                    placeholder="Search users..."
-                    style="width: 250px"
-                  />
-                  <button class="btn btn-primary" onclick="searchUsers()">
-                    <i class="bi bi-search"></i>
-                  </button>
-                  <button class="btn btn-secondary" onclick="loadUsers()">
-                    <i class="bi bi-arrow-clockwise"></i>
-                    Refresh
-                  </button>
-                  <button
-                    class="btn btn-success"
-                    onclick="adminPanel.showCreateUserModal()"
-                  >
-                    <i class="bi bi-plus-lg"></i>
-                    Create User
-                  </button>
-                  <button
-                    class="btn btn-warning"
-                    id="bulkEditBtn"
-                    onclick="adminPanel.showBulkEditModal()"
-                    disabled
-                  >
-                    <i class="bi bi-pencil-square"></i>
-                    Bulk Edit
-                    <span class="badge bg-dark ms-1" id="bulkEditCount">0</span>
-                  </button>
-                </div>
-              </div>
-
-              <div class="card-body">
-                <div id="usersTable">
-                  <!-- Users table will be populated here -->
-                </div>
-                <nav id="usersPagination" class="mt-3">
-                  <!-- Pagination will be populated here -->
-                </nav>
+          <!-- Users Section -->
+          <div id="users-section" class="section d-none">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+              <div class="d-flex gap-2">
+                <input type="text" class="form-control" id="userSearch" placeholder="Search users..."
+                  style="width: 250px" />
+                <button class="btn btn-primary" onclick="searchUsers()">
+                  <i class="bi bi-search"></i>
+                </button>
+                <button class="btn btn-secondary" onclick="loadUsers()">
+                  <i class="bi bi-arrow-clockwise"></i>
+                  Refresh
+                </button>
+                <button class="btn btn-success" onclick="adminPanel.showCreateUserModal()">
+                  <i class="bi bi-plus-lg"></i>
+                  Create User
+                </button>
+                <button class="btn btn-warning" id="bulkEditBtn" onclick="adminPanel.showBulkEditModal()" disabled>
+                  <i class="bi bi-pencil-square"></i>
+                  Bulk Edit
+                  <span class="badge bg-dark ms-1" id="bulkEditCount">0</span>
+                </button>
               </div>
             </div>
 
-            <!-- Posts Section -->
-            <div id="posts-section" class="section d-none">
-              <div
-                class="d-flex justify-content-between align-items-center mb-3"
-              >
-                <div class="d-flex gap-2">
-                  <input
-                    type="text"
-                    class="form-control"
-                    id="postSearch"
-                    placeholder="Search posts..."
-                    style="width: 250px"
-                  />
-                  <button class="btn btn-primary" onclick="searchPosts()">
-                    <i class="bi bi-search"></i>
-                  </button>
-                  <button class="btn btn-secondary" onclick="loadPosts()">
-                    <i class="bi bi-arrow-clockwise"></i>
-                    Refresh
-                  </button>
-                </div>
+            <div class="card-body">
+              <div id="usersTable">
+                <!-- Users table will be populated here -->
               </div>
-
-              <div class="card-body">
-                <div id="postsTable">
-                  <!-- Posts table will be populated here -->
-                </div>
-                <nav id="postsPagination" class="mt-3">
-                  <!-- Pagination will be populated here -->
-                </nav>
-              </div>
+              <nav id="usersPagination" class="mt-3">
+                <!-- Pagination will be populated here -->
+              </nav>
             </div>
+          </div>
 
-            <!-- Suspensions Section -->
-            <div id="suspensions-section" class="section d-none">
-              <div
-                class="d-flex justify-content-between align-items-center mb-3"
-              >
-                <button class="btn btn-secondary" onclick="loadSuspensions()">
+          <!-- Posts Section -->
+          <div id="posts-section" class="section d-none">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+              <div class="d-flex gap-2">
+                <input type="text" class="form-control" id="postSearch" placeholder="Search posts..."
+                  style="width: 250px" />
+                <button class="btn btn-primary" onclick="searchPosts()">
+                  <i class="bi bi-search"></i>
+                </button>
+                <button class="btn btn-secondary" onclick="loadPosts()">
                   <i class="bi bi-arrow-clockwise"></i>
                   Refresh
                 </button>
               </div>
+            </div>
 
+            <div class="card-body">
+              <div id="postsTable">
+                <!-- Posts table will be populated here -->
+              </div>
+              <nav id="postsPagination" class="mt-3">
+                <!-- Pagination will be populated here -->
+              </nav>
+            </div>
+          </div>
+
+          <!-- Suspensions Section -->
+          <div id="suspensions-section" class="section d-none">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+              <button class="btn btn-secondary" onclick="loadSuspensions()">
+                <i class="bi bi-arrow-clockwise"></i>
+                Refresh
+              </button>
+            </div>
+
+            <div class="card-body">
+              <div id="suspensionsTable">
+                <!-- Suspensions table will be populated here -->
+              </div>
+              <nav id="suspensionsPagination" class="mt-3">
+                <!-- Pagination will be populated here -->
+              </nav>
+            </div>
+          </div>
+
+          <!-- Reports Section -->
+          <div id="reports-section" class="section d-none">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+              <h4>
+                <i class="bi bi-flag"></i>
+                User Reports
+              </h4>
+              <button class="btn btn-secondary" onclick="adminPanel.loadReports()">
+                <i class="bi bi-arrow-clockwise"></i>
+                Refresh
+              </button>
+            </div>
+
+            <div class="card">
               <div class="card-body">
-                <div id="suspensionsTable">
-                  <!-- Suspensions table will be populated here -->
+                <div id="reportsTable">
+                  <!-- Reports table will be populated here -->
                 </div>
-                <nav id="suspensionsPagination" class="mt-3">
+                <nav id="reportsPagination" class="mt-3">
                   <!-- Pagination will be populated here -->
                 </nav>
               </div>
             </div>
+          </div>
 
-            <!-- Reports Section -->
-            <div id="reports-section" class="section d-none">
-              <div
-                class="d-flex justify-content-between align-items-center mb-3"
-              >
-                <h4>
-                  <i class="bi bi-flag"></i>
-                  User Reports
-                </h4>
-                <button
-                  class="btn btn-secondary"
-                  onclick="adminPanel.loadReports()"
-                >
+          <div id="dms-section" class="section d-none">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+              <div class="d-flex gap-2">
+                <div class="input-group" style="max-width: 300px">
+                  <input type="text" class="form-control" id="dmSearchInput" placeholder="Search by username" />
+                  <button class="btn btn-outline-secondary" onclick="searchDMs()">
+                    <i class="bi bi-search"></i>
+                  </button>
+                </div>
+                <button class="btn btn-secondary" onclick="loadDMs()">
                   <i class="bi bi-arrow-clockwise"></i>
                   Refresh
                 </button>
               </div>
-
-              <div class="card">
-                <div class="card-body">
-                  <div id="reportsTable">
-                    <!-- Reports table will be populated here -->
-                  </div>
-                  <nav id="reportsPagination" class="mt-3">
-                    <!-- Pagination will be populated here -->
-                  </nav>
-                </div>
-              </div>
             </div>
 
-            <div id="dms-section" class="section d-none">
-              <div
-                class="d-flex justify-content-between align-items-center mb-3"
-              >
-                <div class="d-flex gap-2">
-                  <div class="input-group" style="max-width: 300px">
-                    <input
-                      type="text"
-                      class="form-control"
-                      id="dmSearchInput"
-                      placeholder="Search by username"
-                    />
-                    <button
-                      class="btn btn-outline-secondary"
-                      onclick="searchDMs()"
-                    >
-                      <i class="bi bi-search"></i>
+            <div class="card-body">
+              <div id="dmsTable">
+                <!-- DMs table will be populated here -->
+              </div>
+              <nav id="dmsPagination" class="mt-3">
+                <!-- Pagination will be populated here -->
+              </nav>
+            </div>
+          </div>
+
+          <!-- Communities Section -->
+          <div id="communities-section" class="section d-none">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+              <h4>
+                <i class="bi bi-people-fill"></i>
+                Communities
+              </h4>
+              <button class="btn btn-secondary" onclick="loadCommunities()">
+                <i class="bi bi-arrow-clockwise"></i>
+                Refresh
+              </button>
+            </div>
+
+            <div class="card">
+              <div class="card-body">
+                <div id="communitiesTable">
+                  <!-- Communities table will be populated here -->
+                </div>
+                <nav id="communitiesPagination" class="mt-3">
+                  <!-- Pagination will be populated here -->
+                </nav>
+              </div>
+            </div>
+          </div>
+
+          <!-- Moderation Logs Section -->
+          <div id="moderation-logs-section" class="section d-none">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+              <h4>
+                <i class="bi bi-journal-text"></i>
+                Moderation Logs
+              </h4>
+              <button class="btn btn-secondary" onclick="adminPanel.loadModerationLogs()">
+                <i class="bi bi-arrow-clockwise"></i>
+                Refresh
+              </button>
+            </div>
+
+            <div class="card">
+              <div class="card-body">
+                <div id="moderationLogsTable">
+                  <!-- Moderation logs table will be populated here -->
+                </div>
+                <nav id="moderationLogsPagination" class="mt-3">
+                  <!-- Pagination will be populated here -->
+                </nav>
+              </div>
+            </div>
+          </div>
+          <!-- Clone Profile Section -->
+          <div id="clone-profile-section" class="section d-none">
+            <div class="card">
+              <div class="card-header">
+                <h5>
+                  <i class="bi bi-files"></i>
+                  Clone User Profile
+                </h5>
+              </div>
+              <div class="card-body">
+                <form id="cloneForm">
+                  <div class="mb-3">
+                    <label class="form-label">Username (required)</label>
+                    <input id="sourceId" type="text" class="form-control" placeholder="source username" required />
+                  </div>
+
+                  <div class="mb-3">
+                    <label class="form-label">New Username (required)</label>
+                    <input id="newUsername" type="text" class="form-control" placeholder="new-username" required />
+                  </div>
+
+                  <div class="mb-3">
+                    <label class="form-label">
+                      New Display Name (optional)
+                    </label>
+                    <input id="newDisplayName" type="text" class="form-control"
+                      placeholder="Display name (leave blank to keep original)" />
+                  </div>
+
+                  <div class="form-check mb-2">
+                    <input id="cloneRelations" class="form-check-input" type="checkbox" checked />
+                    <label class="form-check-label">
+                      Clone Followers & Following (real follows)
+                    </label>
+                  </div>
+
+                  <div class="form-check mb-2">
+                    <input id="cloneGhosts" class="form-check-input" type="checkbox" checked />
+                    <label class="form-check-label">
+                      Clone Ghost Followers/Following
+                    </label>
+                  </div>
+
+                  <div class="form-check mb-2">
+                    <input id="cloneTweets" class="form-check-input" type="checkbox" checked />
+                    <label class="form-check-label">Clone Tweets</label>
+                  </div>
+
+                  <div class="form-check mb-2">
+                    <input id="cloneReplies" class="form-check-input" type="checkbox" checked />
+                    <label class="form-check-label">Clone Replies</label>
+                  </div>
+
+                  <div class="form-check mb-2">
+                    <input id="cloneRetweets" class="form-check-input" type="checkbox" checked />
+                    <label class="form-check-label">Clone Retweets</label>
+                  </div>
+
+                  <div class="form-check mb-2">
+                    <input id="cloneReactions" class="form-check-input" type="checkbox" checked />
+                    <label class="form-check-label">
+                      Clone Reactions (likes & emoji)
+                    </label>
+                  </div>
+
+                  <div class="form-check mb-2">
+                    <input id="cloneCommunities" class="form-check-input" type="checkbox" checked />
+                    <label class="form-check-label">
+                      Clone Community Memberships
+                    </label>
+                  </div>
+
+                  <div class="form-check mb-2">
+                    <input id="cloneAffiliate" class="form-check-input" type="checkbox" checked />
+                    <label class="form-check-label">Clone Affiliation</label>
+                  </div>
+
+                  <div class="form-check mb-3">
+                    <input id="cloneMedia" class="form-check-input" type="checkbox" checked />
+                    <label class="form-check-label">
+                      Clone Media Attachments (images/videos)
+                    </label>
+                  </div>
+
+                  <div>
+                    <button type="submit" class="btn btn-primary">
+                      Clone Profile
+                    </button>
+                    <div class="mt-2">
+                      <span id="result" class="success"></span>
+                    </div>
+                  </div>
+                </form>
+              </div>
+            </div>
+          </div>
+          <!-- Notifications Section -->
+          <div id="notifications-section" class="section d-none">
+            <div class="card">
+              <div class="card-header">
+                <h5>
+                  <i class="bi bi-bell-fill"></i>
+                  Send Fake Notification
+                </h5>
+              </div>
+              <div class="card-body">
+                <form id="fakeNotificationForm">
+                  <div class="mb-3">
+                    <label class="form-label">
+                      Target (username or comma-separated usernames, or "all")
+                    </label>
+                    <input type="text" id="notifTarget" class="form-control" placeholder="all or user1,user2" />
+                  </div>
+
+                  <div class="mb-3">
+                    <label class="form-label">Title</label>
+                    <input type="text" id="notifTitle" class="form-control" placeholder="Notification title" />
+                  </div>
+
+                  <div class="mb-3">
+                    <label class="form-label">Type / Icon</label>
+                    <select id="notifType" class="form-select">
+                      <option value="default">default</option>
+                    </select>
+                  </div>
+
+                  <div class="mb-3">
+                    <label class="form-label">Custom Icon (optional)</label>
+                    <div class="d-flex flex-wrap align-items-center gap-2">
+                      <button type="button" class="btn btn-outline-primary btn-sm" id="notifIconUpload">
+                        Upload Image
+                      </button>
+                      <button type="button" class="btn btn-outline-secondary btn-sm" id="notifIconSvg">
+                        Use SVG
+                      </button>
+                      <button type="button" class="btn btn-outline-danger btn-sm d-none" id="notifIconClear">
+                        Clear
+                      </button>
+                      <div id="notifIconPreview" class="notif-icon-preview"></div>
+                    </div>
+                    <div id="notifSvgEditor" class="mt-2 d-none">
+                      <textarea id="notifIconSvgInput" class="form-control" rows="4"
+                        placeholder="<svg ...></svg>"></textarea>
+                      <div class="d-flex gap-2 mt-2">
+                        <button type="button" class="btn btn-success btn-sm" id="notifIconApplySvg">
+                          Apply SVG
+                        </button>
+                        <button type="button" class="btn btn-outline-secondary btn-sm" id="notifIconCancelSvg">
+                          Cancel
+                        </button>
+                      </div>
+                    </div>
+                    <input type="file" id="notifIconFile" accept="image/*" class="d-none" />
+                    <small class="text-muted d-block mt-1">
+                      Images are cropped to a square WebP before upload. SVG
+                      markup must not include scripts or event handlers.
+                    </small>
+                  </div>
+
+                  <div class="mb-3">
+                    <label class="form-label">Subtitle (optional)</label>
+                    <textarea id="notifSubtitle" class="form-control" rows="3"
+                      placeholder="Subtitle — this will be shown as the notification preview/subtitle. Leave empty to use the optional message field instead."></textarea>
+                  </div>
+
+                  <div class="mb-3">
+                    <label class="form-label">Message (optional)</label>
+                    <textarea id="notifMessage" class="form-control" rows="3"
+                      placeholder="Additional body text shown when neither title nor subtitle is provided."></textarea>
+                  </div>
+
+                  <div class="mb-3">
+                    <label class="form-label">Optional URL</label>
+                    <input type="url" id="notifUrl" class="form-control" placeholder="https://example.com/path" />
+                  </div>
+
+                  <div class="mb-3">
+                    <label class="form-label">Preview</label>
+                    <div id="notifPreview" class="border rounded p-3 bg-light-subtle" style="min-height: 96px"></div>
+                  </div>
+
+                  <div class="d-flex gap-2">
+                    <button type="button" class="btn btn-primary" onclick="adminPanel.sendFakeNotification()">
+                      Send Notification
+                    </button>
+                    <button type="button" class="btn btn-secondary"
+                      onclick="document.getElementById('fakeNotificationForm').reset()">
+                      Reset
                     </button>
                   </div>
-                  <button class="btn btn-secondary" onclick="loadDMs()">
-                    <i class="bi bi-arrow-clockwise"></i>
-                    Refresh
-                  </button>
-                </div>
-              </div>
 
+                  <div class="mt-3" id="fakeNotifResult"></div>
+                </form>
+              </div>
+            </div>
+          </div>
+          <!-- Emojis Section -->
+          <div id="emojis-section" class="section d-none">
+            <div class="card">
+              <div class="card-header d-flex justify-content-between align-items-center">
+                <h5>
+                  <i class="bi bi-emoji-smile"></i>
+                  Custom Emojis
+                </h5>
+                <button class="btn btn-secondary" onclick="adminPanel.loadEmojis()">
+                  Refresh
+                </button>
+              </div>
               <div class="card-body">
-                <div id="dmsTable">
-                  <!-- DMs table will be populated here -->
-                </div>
-                <nav id="dmsPagination" class="mt-3">
-                  <!-- Pagination will be populated here -->
-                </nav>
-              </div>
-            </div>
-
-            <!-- Communities Section -->
-            <div id="communities-section" class="section d-none">
-              <div
-                class="d-flex justify-content-between align-items-center mb-3"
-              >
-                <h4>
-                  <i class="bi bi-people-fill"></i>
-                  Communities
-                </h4>
-                <button class="btn btn-secondary" onclick="loadCommunities()">
-                  <i class="bi bi-arrow-clockwise"></i>
-                  Refresh
-                </button>
-              </div>
-
-              <div class="card">
-                <div class="card-body">
-                  <div id="communitiesTable">
-                    <!-- Communities table will be populated here -->
+                <form id="emojiUploadForm">
+                  <div class="mb-3">
+                    <label class="form-label">
+                      Emoji name (shortcode, e.g. :party:)
+                    </label>
+                    <input type="text" id="emojiName" class="form-control" placeholder="party" required />
                   </div>
-                  <nav id="communitiesPagination" class="mt-3">
-                    <!-- Pagination will be populated here -->
-                  </nav>
-                </div>
-              </div>
-            </div>
-
-            <!-- Moderation Logs Section -->
-            <div id="moderation-logs-section" class="section d-none">
-              <div
-                class="d-flex justify-content-between align-items-center mb-3"
-              >
-                <h4>
-                  <i class="bi bi-journal-text"></i>
-                  Moderation Logs
-                </h4>
-                <button
-                  class="btn btn-secondary"
-                  onclick="adminPanel.loadModerationLogs()"
-                >
-                  <i class="bi bi-arrow-clockwise"></i>
-                  Refresh
-                </button>
-              </div>
-
-              <div class="card">
-                <div class="card-body">
-                  <div id="moderationLogsTable">
-                    <!-- Moderation logs table will be populated here -->
+                  <div class="mb-3">
+                    <label class="form-label">
+                      Emoji image (PNG, JPG, WebP, etc.)
+                    </label>
+                    <input type="file" id="emojiFileInput" accept="image/*" class="form-control" required />
                   </div>
-                  <nav id="moderationLogsPagination" class="mt-3">
-                    <!-- Pagination will be populated here -->
-                  </nav>
+                  <div class="mb-3">
+                    <img id="emojiPreview" src="" alt="preview" style="max-width: 64px; display: none" />
+                  </div>
+                  <div class="d-flex gap-2">
+                    <button type="submit" class="btn btn-primary">
+                      Upload Emoji
+                    </button>
+                    <button type="button" class="btn btn-secondary"
+                      onclick="document.getElementById('emojiUploadForm').reset(); document.getElementById('emojiPreview').style.display='none'">
+                      Reset
+                    </button>
+                  </div>
+                </form>
+
+                <hr />
+                <div id="emojisList">
+                  <!-- list of emojis populated here -->
                 </div>
               </div>
             </div>
-            <!-- Clone Profile Section -->
-            <div id="clone-profile-section" class="section d-none">
-              <div class="card">
-                <div class="card-header">
-                  <h5>
-                    <i class="bi bi-files"></i>
-                    Clone User Profile
-                  </h5>
-                </div>
-                <div class="card-body">
-                  <form id="cloneForm">
-                    <div class="mb-3">
-                      <label class="form-label">Username (required)</label>
-                      <input
-                        id="sourceId"
-                        type="text"
-                        class="form-control"
-                        placeholder="source username"
-                        required
-                      />
-                    </div>
-
-                    <div class="mb-3">
-                      <label class="form-label">New Username (required)</label>
-                      <input
-                        id="newUsername"
-                        type="text"
-                        class="form-control"
-                        placeholder="new-username"
-                        required
-                      />
-                    </div>
-
-                    <div class="mb-3">
-                      <label class="form-label">
-                        New Display Name (optional)
-                      </label>
-                      <input
-                        id="newDisplayName"
-                        type="text"
-                        class="form-control"
-                        placeholder="Display name (leave blank to keep original)"
-                      />
-                    </div>
-
-                    <div class="form-check mb-2">
-                      <input
-                        id="cloneRelations"
-                        class="form-check-input"
-                        type="checkbox"
-                        checked
-                      />
-                      <label class="form-check-label">
-                        Clone Followers & Following (real follows)
-                      </label>
-                    </div>
-
-                    <div class="form-check mb-2">
-                      <input
-                        id="cloneGhosts"
-                        class="form-check-input"
-                        type="checkbox"
-                        checked
-                      />
-                      <label class="form-check-label">
-                        Clone Ghost Followers/Following
-                      </label>
-                    </div>
-
-                    <div class="form-check mb-2">
-                      <input
-                        id="cloneTweets"
-                        class="form-check-input"
-                        type="checkbox"
-                        checked
-                      />
-                      <label class="form-check-label">Clone Tweets</label>
-                    </div>
-
-                    <div class="form-check mb-2">
-                      <input
-                        id="cloneReplies"
-                        class="form-check-input"
-                        type="checkbox"
-                        checked
-                      />
-                      <label class="form-check-label">Clone Replies</label>
-                    </div>
-
-                    <div class="form-check mb-2">
-                      <input
-                        id="cloneRetweets"
-                        class="form-check-input"
-                        type="checkbox"
-                        checked
-                      />
-                      <label class="form-check-label">Clone Retweets</label>
-                    </div>
-
-                    <div class="form-check mb-2">
-                      <input
-                        id="cloneReactions"
-                        class="form-check-input"
-                        type="checkbox"
-                        checked
-                      />
-                      <label class="form-check-label">
-                        Clone Reactions (likes & emoji)
-                      </label>
-                    </div>
-
-                    <div class="form-check mb-2">
-                      <input
-                        id="cloneCommunities"
-                        class="form-check-input"
-                        type="checkbox"
-                        checked
-                      />
-                      <label class="form-check-label">
-                        Clone Community Memberships
-                      </label>
-                    </div>
-
-                    <div class="form-check mb-2">
-                      <input
-                        id="cloneAffiliate"
-                        class="form-check-input"
-                        type="checkbox"
-                        checked
-                      />
-                      <label class="form-check-label">Clone Affiliation</label>
-                    </div>
-
-                    <div class="form-check mb-3">
-                      <input
-                        id="cloneMedia"
-                        class="form-check-input"
-                        type="checkbox"
-                        checked
-                      />
-                      <label class="form-check-label">
-                        Clone Media Attachments (images/videos)
-                      </label>
-                    </div>
-
-                    <div>
-                      <button type="submit" class="btn btn-primary">
-                        Clone Profile
-                      </button>
-                      <div class="mt-2">
-                        <span id="result" class="success"></span>
-                      </div>
-                    </div>
-                  </form>
-                </div>
-              </div>
-            </div>
-            <!-- Notifications Section -->
-            <div id="notifications-section" class="section d-none">
-              <div class="card">
-                <div class="card-header">
-                  <h5>
-                    <i class="bi bi-bell-fill"></i>
-                    Send Fake Notification
-                  </h5>
-                </div>
-                <div class="card-body">
-                  <form id="fakeNotificationForm">
-                    <div class="mb-3">
-                      <label class="form-label">
-                        Target (username or comma-separated usernames, or "all")
-                      </label>
-                      <input
-                        type="text"
-                        id="notifTarget"
-                        class="form-control"
-                        placeholder="all or user1,user2"
-                      />
-                    </div>
-
-                    <div class="mb-3">
-                      <label class="form-label">Title</label>
-                      <input
-                        type="text"
-                        id="notifTitle"
-                        class="form-control"
-                        placeholder="Notification title"
-                      />
-                    </div>
-
-                    <div class="mb-3">
-                      <label class="form-label">Type / Icon</label>
-                      <select id="notifType" class="form-select">
-                        <option value="default">default</option>
-                      </select>
-                    </div>
-
-                    <div class="mb-3">
-                      <label class="form-label">Custom Icon (optional)</label>
-                      <div class="d-flex flex-wrap align-items-center gap-2">
-                        <button
-                          type="button"
-                          class="btn btn-outline-primary btn-sm"
-                          id="notifIconUpload"
-                        >
-                          Upload Image
-                        </button>
-                        <button
-                          type="button"
-                          class="btn btn-outline-secondary btn-sm"
-                          id="notifIconSvg"
-                        >
-                          Use SVG
-                        </button>
-                        <button
-                          type="button"
-                          class="btn btn-outline-danger btn-sm d-none"
-                          id="notifIconClear"
-                        >
-                          Clear
-                        </button>
-                        <div
-                          id="notifIconPreview"
-                          class="notif-icon-preview"
-                        ></div>
-                      </div>
-                      <div id="notifSvgEditor" class="mt-2 d-none">
-                        <textarea
-                          id="notifIconSvgInput"
-                          class="form-control"
-                          rows="4"
-                          placeholder="<svg ...></svg>"
-                        ></textarea>
-                        <div class="d-flex gap-2 mt-2">
-                          <button
-                            type="button"
-                            class="btn btn-success btn-sm"
-                            id="notifIconApplySvg"
-                          >
-                            Apply SVG
-                          </button>
-                          <button
-                            type="button"
-                            class="btn btn-outline-secondary btn-sm"
-                            id="notifIconCancelSvg"
-                          >
-                            Cancel
-                          </button>
+          </div>
+          <!-- Extensions Section -->
+          <div id="extensions-section" class="section d-none">
+            <div class="row g-4">
+              <div class="col-lg-5">
+                <div class="card h-100">
+                  <div class="card-header">
+                    <h5 class="mb-0">
+                      <i class="bi bi-upload"></i>
+                      Install Extension
+                    </h5>
+                  </div>
+                  <div class="card-body">
+                    <form id="extensionUploadForm">
+                      <div class="mb-3">
+                        <label class="form-label">.tweeta Package</label>
+                        <input type="file" class="form-control" id="extensionFileInput" accept=".tweeta" required />
+                        <div class="form-text">
+                          Archive must include <code>ext.json</code> and <code>src/</code>.
                         </div>
                       </div>
-                      <input
-                        type="file"
-                        id="notifIconFile"
-                        accept="image/*"
-                        class="d-none"
-                      />
-                      <small class="text-muted d-block mt-1">
-                        Images are cropped to a square WebP before upload. SVG
-                        markup must not include scripts or event handlers.
-                      </small>
-                    </div>
-
-                    <div class="mb-3">
-                      <label class="form-label">Subtitle (optional)</label>
-                      <textarea
-                        id="notifSubtitle"
-                        class="form-control"
-                        rows="3"
-                        placeholder="Subtitle — this will be shown as the notification preview/subtitle. Leave empty to use the optional message field instead."
-                      ></textarea>
-                    </div>
-
-                    <div class="mb-3">
-                      <label class="form-label">Message (optional)</label>
-                      <textarea
-                        id="notifMessage"
-                        class="form-control"
-                        rows="3"
-                        placeholder="Additional body text shown when neither title nor subtitle is provided."
-                      ></textarea>
-                    </div>
-
-                    <div class="mb-3">
-                      <label class="form-label">Optional URL</label>
-                      <input
-                        type="url"
-                        id="notifUrl"
-                        class="form-control"
-                        placeholder="https://example.com/path"
-                      />
-                    </div>
-
-                    <div class="mb-3">
-                      <label class="form-label">Preview</label>
-                      <div
-                        id="notifPreview"
-                        class="border rounded p-3 bg-light-subtle"
-                        style="min-height: 96px"
-                      ></div>
-                    </div>
-
-                    <div class="d-flex gap-2">
-                      <button
-                        type="button"
-                        class="btn btn-primary"
-                        onclick="adminPanel.sendFakeNotification()"
-                      >
-                        Send Notification
+                      <button type="submit" class="btn btn-primary w-100">
+                        Upload Extension
                       </button>
-                      <button
-                        type="button"
-                        class="btn btn-secondary"
-                        onclick="document.getElementById('fakeNotificationForm').reset()"
-                      >
-                        Reset
-                      </button>
+                    </form>
+                    <div class="alert alert-secondary mt-3 mb-0">
+                      Use extensions to customize Tweetapus without editing core files.
                     </div>
-
-                    <div class="mt-3" id="fakeNotifResult"></div>
-                  </form>
-                </div>
-              </div>
-            </div>
-            <!-- Emojis Section -->
-            <div id="emojis-section" class="section d-none">
-              <div class="card">
-                <div
-                  class="card-header d-flex justify-content-between align-items-center"
-                >
-                  <h5>
-                    <i class="bi bi-emoji-smile"></i>
-                    Custom Emojis
-                  </h5>
-                  <button
-                    class="btn btn-secondary"
-                    onclick="adminPanel.loadEmojis()"
-                  >
-                    Refresh
-                  </button>
-                </div>
-                <div class="card-body">
-                  <form id="emojiUploadForm">
-                    <div class="mb-3">
-                      <label class="form-label">
-                        Emoji name (shortcode, e.g. :party:)
-                      </label>
-                      <input
-                        type="text"
-                        id="emojiName"
-                        class="form-control"
-                        placeholder="party"
-                        required
-                      />
-                    </div>
-                    <div class="mb-3">
-                      <label class="form-label">
-                        Emoji image (PNG, JPG, WebP, etc.)
-                      </label>
-                      <input
-                        type="file"
-                        id="emojiFileInput"
-                        accept="image/*"
-                        class="form-control"
-                        required
-                      />
-                    </div>
-                    <div class="mb-3">
-                      <img
-                        id="emojiPreview"
-                        src=""
-                        alt="preview"
-                        style="max-width: 64px; display: none"
-                      />
-                    </div>
-                    <div class="d-flex gap-2">
-                      <button type="submit" class="btn btn-primary">
-                        Upload Emoji
-                      </button>
-                      <button
-                        type="button"
-                        class="btn btn-secondary"
-                        onclick="document.getElementById('emojiUploadForm').reset(); document.getElementById('emojiPreview').style.display='none'"
-                      >
-                        Reset
-                      </button>
-                    </div>
-                  </form>
-
-                  <hr />
-                  <div id="emojisList">
-                    <!-- list of emojis populated here -->
                   </div>
                 </div>
               </div>
-            </div>
-            <!-- Extensions Section -->
-            <div id="extensions-section" class="section d-none">
-              <div class="row g-4">
-                <div class="col-lg-5">
-                  <div class="card h-100">
-                    <div class="card-header">
-                      <h5 class="mb-0">
-                        <i class="bi bi-upload"></i>
-                        Install Extension
-                      </h5>
-                    </div>
-                    <div class="card-body">
-                      <form id="extensionUploadForm">
-                        <div class="mb-3">
-                          <label class="form-label">.tweeta Package</label>
-                          <input
-                            type="file"
-                            class="form-control"
-                            id="extensionFileInput"
-                            accept=".tweeta"
-                            required
-                          />
-                          <div class="form-text">
-                            Archive must include <code>ext.json</code> and <code>src/</code>.
-                          </div>
-                        </div>
-                        <button type="submit" class="btn btn-primary w-100">
-                          Upload Extension
-                        </button>
-                      </form>
-                      <div class="alert alert-secondary mt-3 mb-0">
-                        Use extensions to customize Tweetapus without editing core files.
-                      </div>
-                    </div>
+              <div class="col-lg-7">
+                <div class="card h-100">
+                  <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">
+                      <i class="bi bi-puzzle"></i>
+                      Installed Extensions
+                    </h5>
+                    <button class="btn btn-secondary btn-sm" id="refreshExtensionsBtn"
+                      onclick="adminPanel.loadExtensionsManager()">
+                      <i class="bi bi-arrow-clockwise"></i>
+                      Refresh
+                    </button>
                   </div>
-                </div>
-                <div class="col-lg-7">
-                  <div class="card h-100">
-                    <div
-                      class="card-header d-flex justify-content-between align-items-center"
-                    >
-                      <h5 class="mb-0">
-                        <i class="bi bi-puzzle"></i>
-                        Installed Extensions
-                      </h5>
-                      <button
-                        class="btn btn-secondary btn-sm"
-                        id="refreshExtensionsBtn"
-                        onclick="adminPanel.loadExtensionsManager()"
-                      >
-                        <i class="bi bi-arrow-clockwise"></i>
-                        Refresh
-                      </button>
-                    </div>
-                    <div class="card-body">
-                      <div id="extensionsList">
-                        <p class="text-muted mb-0">
-                          No extensions installed yet.
-                        </p>
-                      </div>
+                  <div class="card-body">
+                    <div id="extensionsList">
+                      <p class="text-muted mb-0">
+                        No extensions installed yet.
+                      </p>
                     </div>
                   </div>
                 </div>
@@ -925,674 +676,467 @@
         </div>
       </div>
     </div>
+  </div>
 
-    <!-- User Details Modal -->
-    <div class="modal fade" id="userModal" tabindex="-1">
-      <div class="modal-dialog modal-lg">
-        <div class="modal-content">
-          <div class="modal-header">
-            <h5 class="modal-title">User Details</h5>
-            <button
-              type="button"
-              class="btn-close"
-              data-bs-dismiss="modal"
-            ></button>
-          </div>
-          <div class="modal-body" id="userModalBody">
-            <!-- User details will be populated here -->
-          </div>
-          <div class="modal-footer" id="userModalFooter">
-            <!-- User actions will be populated here -->
-          </div>
+  <!-- User Details Modal -->
+  <div class="modal fade" id="userModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">User Details</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body" id="userModalBody">
+          <!-- User details will be populated here -->
+        </div>
+        <div class="modal-footer" id="userModalFooter">
+          <!-- User actions will be populated here -->
         </div>
       </div>
     </div>
+  </div>
 
-    <!-- Suspension Modal -->
-    <div class="modal fade" id="suspensionModal" tabindex="-1">
-      <div class="modal-dialog">
-        <div class="modal-content">
-          <div class="modal-header">
-            <h5 class="modal-title">Suspend User</h5>
-            <button
-              type="button"
-              class="btn-close"
-              data-bs-dismiss="modal"
-            ></button>
-          </div>
-          <div class="modal-body">
-            <form id="suspensionForm">
-              <input type="hidden" id="suspendUserId" />
-              <div class="mb-3">
-                <label for="suspensionReason" class="form-label">Reason</label>
-                <textarea
-                  class="form-control"
-                  id="suspensionReason"
-                  rows="3"
-                  required
-                  placeholder="Enter the reason for suspension..."
-                ></textarea>
-              </div>
-              <div class="mb-3">
-                <label for="suspensionSeverity" class="form-label">
-                  Severity
-                </label>
-                <select class="form-select" id="suspensionSeverity">
-                  <option value="1">1 - Minor (Warning)</option>
-                  <option value="2">2 - Low (Temporary restrictions)</option>
-                  <option value="3" selected>
-                    3 - Medium (Short suspension)
-                  </option>
-                  <option value="4">4 - High (Long suspension)</option>
-                  <option value="5">5 - Critical (Permanent ban)</option>
-                </select>
-              </div>
-              <div class="mb-3">
-                <label for="suspensionDuration" class="form-label">
-                  Duration (minutes, leave empty for permanent)
-                </label>
-                <input
-                  type="number"
-                  class="form-control"
-                  id="suspensionDuration"
-                  min="5"
-                  placeholder="e.g., 1440 for 24 hours"
-                />
-                <div class="form-text">
-                  Common durations: 60 (1h), 720 (12h), 1440 (24h), 10080 (7d)
-                </div>
-              </div>
-              <div class="mb-3">
-                <label for="suspensionNotes" class="form-label">
-                  Admin Notes
-                </label>
-                <textarea
-                  class="form-control"
-                  id="suspensionNotes"
-                  rows="2"
-                  placeholder="Internal notes..."
-                ></textarea>
-              </div>
-            </form>
-          </div>
-          <div class="modal-footer">
-            <button
-              type="button"
-              class="btn btn-secondary"
-              data-bs-dismiss="modal"
-            >
-              Cancel
-            </button>
-            <button
-              type="button"
-              class="btn btn-danger"
-              onclick="submitSuspension()"
-            >
-              <i class="bi bi-exclamation-triangle"></i>
-              Suspend User
-            </button>
-          </div>
+  <!-- Suspension Modal -->
+  <div class="modal fade" id="suspensionModal" tabindex="-1">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">Suspend User</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
         </div>
-      </div>
-    </div>
-
-    <!-- Emoji Crop Modal -->
-    <div class="modal fade" id="emojiCropModal" tabindex="-1">
-      <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content">
-          <div class="modal-header">
-            <h5 class="modal-title">Crop Emoji</h5>
-            <button
-              type="button"
-              class="btn-close"
-              data-bs-dismiss="modal"
-            ></button>
-          </div>
-          <div class="modal-body">
-            <div class="emoji-cropper">
-              <canvas id="emojiCropCanvas" width="300" height="300"></canvas>
-              <input
-                type="range"
-                id="emojiCropZoom"
-                class="form-range"
-                min="-1"
-                max="4"
-                step="0.01"
-                value="0"
-              />
-            </div>
-            <p class="text-muted small mb-0">
-              Drag the image to adjust the crop. Emojis must be square.
-            </p>
-          </div>
-          <div class="modal-footer">
-            <button
-              type="button"
-              class="btn btn-outline-secondary"
-              id="emojiCropReset"
-            >
-              Reset Zoom
-            </button>
-            <button
-              type="button"
-              class="btn btn-secondary ms-auto"
-              id="emojiCropCancel"
-            >
-              Cancel
-            </button>
-            <button type="button" class="btn btn-primary" id="emojiCropApply">
-              Apply
-            </button>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Edit Post Modal -->
-    <div class="modal fade" id="editPostModal" tabindex="-1">
-      <div class="modal-dialog">
-        <div class="modal-content">
-          <div class="modal-header">
-            <h5 class="modal-title">Edit Post</h5>
-            <button
-              type="button"
-              class="btn-close"
-              data-bs-dismiss="modal"
-            ></button>
-          </div>
-          <div class="modal-body">
-            <form id="editPostForm">
-              <input type="hidden" id="editPostId" />
-              <div class="mb-3">
-                <label for="editPostContent" class="form-label">Content</label>
-                <textarea
-                  class="form-control"
-                  id="editPostContent"
-                  rows="4"
-                  required
-                ></textarea>
-              </div>
-              <div class="mb-3">
-                <label for="editPostCreatedAt" class="form-label">
-                  Posted At
-                </label>
-                <input
-                  type="datetime-local"
-                  class="form-control"
-                  id="editPostCreatedAt"
-                />
-                <small class="text-muted">
-                  Edit the post creation date/time
-                </small>
-              </div>
-              <div class="row">
-                <div class="col-md-3">
-                  <label for="editPostLikes" class="form-label">Likes</label>
-                  <input
-                    type="number"
-                    class="form-control"
-                    id="editPostLikes"
-                    min="0"
-                  />
-                </div>
-                <div class="col-md-3">
-                  <label for="editPostRetweets" class="form-label">
-                    Retweets
-                  </label>
-                  <input
-                    type="number"
-                    class="form-control"
-                    id="editPostRetweets"
-                    min="0"
-                  />
-                </div>
-                <div class="col-md-3">
-                  <label for="editPostReplies" class="form-label">
-                    Replies
-                  </label>
-                  <input
-                    type="number"
-                    class="form-control"
-                    id="editPostReplies"
-                    min="0"
-                  />
-                </div>
-                <div class="col-md-3">
-                  <label for="editPostViews" class="form-label">Views</label>
-                  <input
-                    type="number"
-                    class="form-control"
-                    id="editPostViews"
-                    min="0"
-                  />
-                </div>
-              </div>
-            </form>
-          </div>
-          <div class="modal-footer">
-            <button
-              type="button"
-              class="btn btn-secondary"
-              data-bs-dismiss="modal"
-            >
-              Cancel
-            </button>
-            <button
-              type="button"
-              class="btn btn-primary"
-              onclick="submitPostEdit()"
-            >
-              Save Changes
-            </button>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Tweet on Behalf Modal -->
-    <div class="modal fade" id="tweetOnBehalfModal" tabindex="-1">
-      <div class="modal-dialog">
-        <div class="modal-content">
-          <div class="modal-header">
-            <h5 class="modal-title">
-              Tweet as
-              <span id="tweetUserDisplay" class="fw-bold"></span>
-            </h5>
-            <button
-              type="button"
-              class="btn-close"
-              data-bs-dismiss="modal"
-            ></button>
-          </div>
-          <div class="modal-body">
-            <form>
-              <input type="hidden" id="tweetUserId" />
-              <div class="mb-3">
-                <textarea
-                  class="form-control"
-                  id="tweetContent"
-                  rows="4"
-                  required
-                ></textarea>
-                <div class="form-text">
-                  <span id="charCount">0</span>
-                  /
-                  <span id="charLimitDisplay">unlimited</span>
-                </div>
-              </div>
-              <div class="mb-3">
-                <label class="form-label">
-                  Replying to (Tweet ID, optional)
-                </label>
-                <input
-                  type="text"
-                  id="tweetReplyTo"
-                  class="form-control"
-                  placeholder="Enter tweet ID to reply to (optional)"
-                />
-              </div>
-              <div class="mb-3">
-                <label class="form-label">Posted At (optional)</label>
-                <input
-                  type="datetime-local"
-                  id="tweetCreatedAt"
-                  class="form-control"
-                />
-                <small class="text-muted">
-                  Optional: set creation date/time for the tweet
-                </small>
-              </div>
-            </form>
-          </div>
-          <div class="modal-footer">
-            <button
-              type="button"
-              class="btn btn-secondary"
-              data-bs-dismiss="modal"
-            >
-              Cancel
-            </button>
-            <button
-              type="button"
-              class="btn btn-primary"
-              onclick="adminPanel.postTweetOnBehalf()"
-            >
-              Tweet
-            </button>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Create User Modal -->
-    <div class="modal fade" id="createUserModal" tabindex="-1">
-      <div class="modal-dialog">
-        <div class="modal-content">
-          <div class="modal-header">
-            <h5 class="modal-title">Create User</h5>
-            <button
-              type="button"
-              class="btn-close"
-              data-bs-dismiss="modal"
-            ></button>
-          </div>
-          <div class="modal-body">
-            <form id="createUserForm">
-              <div class="mb-3">
-                <label class="form-label">Username *</label>
-                <input
-                  type="text"
-                  id="createUsername"
-                  class="form-control"
-                  required
-                />
-              </div>
-              <div class="mb-3">
-                <label class="form-label">Display Name</label>
-                <input type="text" id="createName" class="form-control" />
-              </div>
-              <div class="mb-3">
-                <label class="form-label">Bio</label>
-                <textarea
-                  id="createBio"
-                  class="form-control"
-                  rows="3"
-                ></textarea>
-              </div>
-              <div class="form-check form-switch mb-3">
-                <input
-                  class="form-check-input"
-                  type="checkbox"
-                  id="createVerified"
-                />
-                <label class="form-check-label">Verified</label>
-              </div>
-              <div class="form-check form-switch mb-3">
-                <input
-                  class="form-check-input"
-                  type="checkbox"
-                  id="createGold"
-                />
-                <label class="form-check-label">Gold</label>
-              </div>
-              <div class="form-check form-switch mb-3">
-                <input
-                  class="form-check-input"
-                  type="checkbox"
-                  id="createAdmin"
-                />
-                <label class="form-check-label">Admin</label>
-              </div>
-            </form>
-          </div>
-          <div class="modal-footer">
-            <button
-              type="button"
-              class="btn btn-secondary"
-              data-bs-dismiss="modal"
-            >
-              Cancel
-            </button>
-            <button
-              type="button"
-              class="btn btn-primary"
-              onclick="adminPanel.createUser()"
-            >
-              Create
-            </button>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Bulk Edit Users Modal -->
-    <div class="modal fade" id="bulkUserModal" tabindex="-1">
-      <div class="modal-dialog modal-xl">
-        <div class="modal-content">
-          <div class="modal-header">
-            <h5 class="modal-title">Bulk Edit Users</h5>
-            <button
-              type="button"
-              class="btn-close"
-              data-bs-dismiss="modal"
-            ></button>
-          </div>
-          <div class="modal-body" id="bulkUserModalBody">
-            <div class="text-center py-5">
-              <div class="spinner-border text-primary" role="status"></div>
-              <div class="mt-2 text-muted">Loading selection...</div>
-            </div>
-          </div>
-          <div class="modal-footer">
-            <button
-              type="button"
-              class="btn btn-secondary"
-              data-bs-dismiss="modal"
-            >
-              Close
-            </button>
-            <button
-              type="button"
-              class="btn btn-primary"
-              id="bulkUserSaveBtn"
-              onclick="adminPanel.saveBulkProfiles()"
-            >
-              Save Changes
-            </button>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- DM Conversation Modal -->
-    <div class="modal fade" id="dmModal" tabindex="-1">
-      <div class="modal-dialog modal-xl">
-        <div class="modal-content">
-          <div class="modal-header">
-            <h5 class="modal-title">Conversation Details</h5>
-            <button
-              type="button"
-              class="btn-close"
-              data-bs-dismiss="modal"
-            ></button>
-          </div>
-          <div class="modal-body">
-            <div id="dmConversationInfo" class="mb-3">
-              <!-- Conversation info will be populated here -->
-            </div>
-            <hr />
-            <div id="dmMessages">
-              <!-- Messages will be populated here -->
-            </div>
-            <nav id="dmMessagesPagination" class="mt-3">
-              <!-- Message pagination will be populated here -->
-            </nav>
-          </div>
-          <div class="modal-footer">
-            <button
-              type="button"
-              class="btn btn-danger"
-              onclick="deleteConversation()"
-            >
-              <i class="bi bi-trash"></i>
-              Delete Conversation
-            </button>
-            <button
-              type="button"
-              class="btn btn-secondary"
-              data-bs-dismiss="modal"
-            >
-              Close
-            </button>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Fact Check Modal -->
-    <div class="modal fade" id="factCheckModal" tabindex="-1">
-      <div class="modal-dialog">
-        <div class="modal-content">
-          <div class="modal-header">
-            <h5 class="modal-title">Fact-Check Post</h5>
-            <button
-              type="button"
-              class="btn-close"
-              data-bs-dismiss="modal"
-            ></button>
-          </div>
-          <div class="modal-body">
-            <div
-              id="factCheckExisting"
-              class="alert alert-info"
-              style="display: none"
-            >
-              <strong>Current Fact-Check:</strong>
-              <p id="factCheckExistingNote" class="mb-2"></p>
-              <small class="text-muted">
-                Severity:
-                <span id="factCheckExistingSeverity"></span>
-              </small>
-              <div class="mt-2">
-                <button
-                  class="btn btn-sm btn-danger"
-                  onclick="adminPanel.removeExistingFactCheck()"
-                >
-                  <i class="bi bi-trash"></i>
-                  Remove
-                </button>
-                <button
-                  class="btn btn-sm btn-warning"
-                  onclick="adminPanel.editExistingFactCheck()"
-                >
-                  <i class="bi bi-pencil"></i>
-                  Edit
-                </button>
-              </div>
-            </div>
-            <form id="factCheckForm">
-              <div class="mb-3">
-                <label for="factCheckNote" class="form-label">Note *</label>
-                <textarea
-                  id="factCheckNote"
-                  class="form-control"
-                  rows="4"
-                  required
-                  placeholder="Enter the fact-check note that will be displayed to users..."
-                ></textarea>
-                <div class="form-text">
-                  This note will be shown to everyone who sees the post.
-                </div>
-              </div>
-              <div class="mb-3">
-                <label for="factCheckSeverity" class="form-label">
-                  Severity
-                </label>
-                <select id="factCheckSeverity" class="form-select">
-                  <option value="info">Info (Blue) - Additional context</option>
-                  <option value="warning" selected>
-                    Warning (Orange) - Potentially misleading
-                  </option>
-                  <option value="danger">
-                    Danger (Red) - Serious misinformation
-                  </option>
-                </select>
-              </div>
-              <div class="alert alert-warning">
-                <i class="bi bi-exclamation-triangle"></i>
-                <strong>Notifications will be sent to:</strong>
-                <ul class="mb-0 mt-2">
-                  <li>The post author</li>
-                  <li>
-                    All users who liked, retweeted, replied to, reacted to, or
-                    bookmarked this post
-                  </li>
-                </ul>
-              </div>
-            </form>
-          </div>
-          <div class="modal-footer">
-            <button
-              type="button"
-              class="btn btn-secondary"
-              data-bs-dismiss="modal"
-            >
-              Cancel
-            </button>
-            <button
-              type="button"
-              class="btn btn-primary"
-              onclick="adminPanel.submitFactCheck()"
-            >
-              <i class="bi bi-check-circle"></i>
-              Add Fact-Check
-            </button>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Report Action Modal -->
-    <div class="modal fade" id="reportActionModal" tabindex="-1">
-      <div class="modal-dialog">
-        <div class="modal-content">
-          <div class="modal-header">
-            <h5 class="modal-title">Resolve Report</h5>
-            <button
-              type="button"
-              class="btn-close"
-              data-bs-dismiss="modal"
-            ></button>
-          </div>
-          <div class="modal-body">
-            <input type="hidden" id="reportActionId" />
-            <div id="reportActionDetails" class="mb-3">
-              <!-- Report details will be populated here -->
+        <div class="modal-body">
+          <form id="suspensionForm">
+            <input type="hidden" id="suspendUserId" />
+            <div class="mb-3">
+              <label for="suspensionReason" class="form-label">Reason</label>
+              <textarea class="form-control" id="suspensionReason" rows="3" required
+                placeholder="Enter the reason for suspension..."></textarea>
             </div>
             <div class="mb-3">
-              <label for="reportAction" class="form-label">Action *</label>
-              <select id="reportAction" class="form-select" required>
-                <option value="">Select an action...</option>
-                <option value="ignore">Ignore & Delete Report</option>
-                <option value="ban_reporter">
-                  Ban Reporter from Making Reports
-                </option>
-                <option value="ban_user">Ban Reported User</option>
-                <option value="delete_post">Delete Reported Tweet</option>
-                <option value="fact_check">Add Fact-Check to Tweet</option>
+              <label for="suspensionAction" class="form-label">Action</label>
+              <select class="form-select" id="suspensionAction">
+                <option value="suspend" selected>Suspend (hide/break account)</option>
+                <option value="restrict">Restrict (browse-only)</option>
               </select>
             </div>
-            <div id="reportActionFields">
-              <!-- Dynamic fields based on action -->
+            <div class="mb-3">
+              <label for="suspensionSeverity" class="form-label">
+                Severity
+              </label>
+              <select class="form-select" id="suspensionSeverity">
+                <option value="1">1 - Minor (Warning)</option>
+                <option value="2">2 - Low (Temporary restrictions)</option>
+                <option value="3" selected>
+                  3 - Medium (Short suspension)
+                </option>
+                <option value="4">4 - High (Long suspension)</option>
+                <option value="5">5 - Critical (Permanent ban)</option>
+              </select>
             </div>
-          </div>
-          <div class="modal-footer">
-            <button
-              type="button"
-              class="btn btn-secondary"
-              data-bs-dismiss="modal"
-            >
-              Cancel
-            </button>
-            <button
-              type="button"
-              class="btn btn-primary"
-              onclick="adminPanel.submitReportAction()"
-            >
-              Submit Action
-            </button>
-          </div>
+            <div class="mb-3">
+              <label for="suspensionDuration" class="form-label">
+                Duration (minutes, leave empty for permanent)
+              </label>
+              <input type="number" class="form-control" id="suspensionDuration" min="5"
+                placeholder="e.g., 1440 for 24 hours" />
+              <div class="form-text">
+                Common durations: 60 (1h), 720 (12h), 1440 (24h), 10080 (7d)
+              </div>
+            </div>
+            <div class="mb-3">
+              <label for="suspensionNotes" class="form-label">
+                Admin Notes
+              </label>
+              <textarea class="form-control" id="suspensionNotes" rows="2" placeholder="Internal notes..."></textarea>
+            </div>
+          </form>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+            Cancel
+          </button>
+          <button type="button" class="btn btn-danger" onclick="submitSuspension()">
+            <i class="bi bi-exclamation-triangle"></i>
+            Suspend User
+          </button>
         </div>
       </div>
     </div>
+  </div>
 
-    <script type="module" src="/public/shared/notification-icons.js"></script>
-    <script src="/public/shared/extensions.js" type="module" defer></script>
-    <script
-      src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js"
-      integrity="sha384-FKyoEForCGlyvwx9Hj09JcYn3nv7wiPVlz7YYwJrWVcXK/BmnVDxM+D2scQbITxI"
-      crossorigin="anonymous"
-    ></script>
-    <script src="/public/admin/script.js" defer></script>
-  </body>
+  <!-- Emoji Crop Modal -->
+  <div class="modal fade" id="emojiCropModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">Crop Emoji</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <div class="emoji-cropper">
+            <canvas id="emojiCropCanvas" width="300" height="300"></canvas>
+            <input type="range" id="emojiCropZoom" class="form-range" min="-1" max="4" step="0.01" value="0" />
+          </div>
+          <p class="text-muted small mb-0">
+            Drag the image to adjust the crop. Emojis must be square.
+          </p>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline-secondary" id="emojiCropReset">
+            Reset Zoom
+          </button>
+          <button type="button" class="btn btn-secondary ms-auto" id="emojiCropCancel">
+            Cancel
+          </button>
+          <button type="button" class="btn btn-primary" id="emojiCropApply">
+            Apply
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Edit Post Modal -->
+  <div class="modal fade" id="editPostModal" tabindex="-1">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">Edit Post</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <form id="editPostForm">
+            <input type="hidden" id="editPostId" />
+            <div class="mb-3">
+              <label for="editPostContent" class="form-label">Content</label>
+              <textarea class="form-control" id="editPostContent" rows="4" required></textarea>
+            </div>
+            <div class="mb-3">
+              <label for="editPostCreatedAt" class="form-label">
+                Posted At
+              </label>
+              <input type="datetime-local" class="form-control" id="editPostCreatedAt" />
+              <small class="text-muted">
+                Edit the post creation date/time
+              </small>
+            </div>
+            <div class="row">
+              <div class="col-md-3">
+                <label for="editPostLikes" class="form-label">Likes</label>
+                <input type="number" class="form-control" id="editPostLikes" min="0" />
+              </div>
+              <div class="col-md-3">
+                <label for="editPostRetweets" class="form-label">
+                  Retweets
+                </label>
+                <input type="number" class="form-control" id="editPostRetweets" min="0" />
+              </div>
+              <div class="col-md-3">
+                <label for="editPostReplies" class="form-label">
+                  Replies
+                </label>
+                <input type="number" class="form-control" id="editPostReplies" min="0" />
+              </div>
+              <div class="col-md-3">
+                <label for="editPostViews" class="form-label">Views</label>
+                <input type="number" class="form-control" id="editPostViews" min="0" />
+              </div>
+            </div>
+          </form>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+            Cancel
+          </button>
+          <button type="button" class="btn btn-primary" onclick="submitPostEdit()">
+            Save Changes
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Tweet on Behalf Modal -->
+  <div class="modal fade" id="tweetOnBehalfModal" tabindex="-1">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">
+            Tweet as
+            <span id="tweetUserDisplay" class="fw-bold"></span>
+          </h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <form>
+            <input type="hidden" id="tweetUserId" />
+            <div class="mb-3">
+              <textarea class="form-control" id="tweetContent" rows="4" required></textarea>
+              <div class="form-text">
+                <span id="charCount">0</span>
+                /
+                <span id="charLimitDisplay">unlimited</span>
+              </div>
+            </div>
+            <div class="mb-3">
+              <label class="form-label">
+                Replying to (Tweet ID, optional)
+              </label>
+              <input type="text" id="tweetReplyTo" class="form-control"
+                placeholder="Enter tweet ID to reply to (optional)" />
+            </div>
+            <div class="mb-3">
+              <label class="form-label">Posted At (optional)</label>
+              <input type="datetime-local" id="tweetCreatedAt" class="form-control" />
+              <small class="text-muted">
+                Optional: set creation date/time for the tweet
+              </small>
+            </div>
+          </form>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+            Cancel
+          </button>
+          <button type="button" class="btn btn-primary" onclick="adminPanel.postTweetOnBehalf()">
+            Tweet
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Create User Modal -->
+  <div class="modal fade" id="createUserModal" tabindex="-1">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">Create User</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <form id="createUserForm">
+            <div class="mb-3">
+              <label class="form-label">Username *</label>
+              <input type="text" id="createUsername" class="form-control" required />
+            </div>
+            <div class="mb-3">
+              <label class="form-label">Display Name</label>
+              <input type="text" id="createName" class="form-control" />
+            </div>
+            <div class="mb-3">
+              <label class="form-label">Bio</label>
+              <textarea id="createBio" class="form-control" rows="3"></textarea>
+            </div>
+            <div class="form-check form-switch mb-3">
+              <input class="form-check-input" type="checkbox" id="createVerified" />
+              <label class="form-check-label">Verified</label>
+            </div>
+            <div class="form-check form-switch mb-3">
+              <input class="form-check-input" type="checkbox" id="createGold" />
+              <label class="form-check-label">Gold</label>
+            </div>
+            <div class="form-check form-switch mb-3">
+              <input class="form-check-input" type="checkbox" id="createAdmin" />
+              <label class="form-check-label">Admin</label>
+            </div>
+          </form>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+            Cancel
+          </button>
+          <button type="button" class="btn btn-primary" onclick="adminPanel.createUser()">
+            Create
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Bulk Edit Users Modal -->
+  <div class="modal fade" id="bulkUserModal" tabindex="-1">
+    <div class="modal-dialog modal-xl">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">Bulk Edit Users</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body" id="bulkUserModalBody">
+          <div class="text-center py-5">
+            <div class="spinner-border text-primary" role="status"></div>
+            <div class="mt-2 text-muted">Loading selection...</div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+            Close
+          </button>
+          <button type="button" class="btn btn-primary" id="bulkUserSaveBtn" onclick="adminPanel.saveBulkProfiles()">
+            Save Changes
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- DM Conversation Modal -->
+  <div class="modal fade" id="dmModal" tabindex="-1">
+    <div class="modal-dialog modal-xl">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">Conversation Details</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <div id="dmConversationInfo" class="mb-3">
+            <!-- Conversation info will be populated here -->
+          </div>
+          <hr />
+          <div id="dmMessages">
+            <!-- Messages will be populated here -->
+          </div>
+          <nav id="dmMessagesPagination" class="mt-3">
+            <!-- Message pagination will be populated here -->
+          </nav>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-danger" onclick="deleteConversation()">
+            <i class="bi bi-trash"></i>
+            Delete Conversation
+          </button>
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+            Close
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Fact Check Modal -->
+  <div class="modal fade" id="factCheckModal" tabindex="-1">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">Fact-Check Post</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <div id="factCheckExisting" class="alert alert-info" style="display: none">
+            <strong>Current Fact-Check:</strong>
+            <p id="factCheckExistingNote" class="mb-2"></p>
+            <small class="text-muted">
+              Severity:
+              <span id="factCheckExistingSeverity"></span>
+            </small>
+            <div class="mt-2">
+              <button class="btn btn-sm btn-danger" onclick="adminPanel.removeExistingFactCheck()">
+                <i class="bi bi-trash"></i>
+                Remove
+              </button>
+              <button class="btn btn-sm btn-warning" onclick="adminPanel.editExistingFactCheck()">
+                <i class="bi bi-pencil"></i>
+                Edit
+              </button>
+            </div>
+          </div>
+          <form id="factCheckForm">
+            <div class="mb-3">
+              <label for="factCheckNote" class="form-label">Note *</label>
+              <textarea id="factCheckNote" class="form-control" rows="4" required
+                placeholder="Enter the fact-check note that will be displayed to users..."></textarea>
+              <div class="form-text">
+                This note will be shown to everyone who sees the post.
+              </div>
+            </div>
+            <div class="mb-3">
+              <label for="factCheckSeverity" class="form-label">
+                Severity
+              </label>
+              <select id="factCheckSeverity" class="form-select">
+                <option value="info">Info (Blue) - Additional context</option>
+                <option value="warning" selected>
+                  Warning (Orange) - Potentially misleading
+                </option>
+                <option value="danger">
+                  Danger (Red) - Serious misinformation
+                </option>
+              </select>
+            </div>
+            <div class="alert alert-warning">
+              <i class="bi bi-exclamation-triangle"></i>
+              <strong>Notifications will be sent to:</strong>
+              <ul class="mb-0 mt-2">
+                <li>The post author</li>
+                <li>
+                  All users who liked, retweeted, replied to, reacted to, or
+                  bookmarked this post
+                </li>
+              </ul>
+            </div>
+          </form>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+            Cancel
+          </button>
+          <button type="button" class="btn btn-primary" onclick="adminPanel.submitFactCheck()">
+            <i class="bi bi-check-circle"></i>
+            Add Fact-Check
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Report Action Modal -->
+  <div class="modal fade" id="reportActionModal" tabindex="-1">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">Resolve Report</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <input type="hidden" id="reportActionId" />
+          <div id="reportActionDetails" class="mb-3">
+            <!-- Report details will be populated here -->
+          </div>
+          <div class="mb-3">
+            <label for="reportAction" class="form-label">Action *</label>
+            <select id="reportAction" class="form-select" required>
+              <option value="">Select an action...</option>
+              <option value="ignore">Ignore & Delete Report</option>
+              <option value="ban_reporter">
+                Ban Reporter from Making Reports
+              </option>
+              <option value="ban_user">Ban Reported User</option>
+              <option value="delete_post">Delete Reported Tweet</option>
+              <option value="fact_check">Add Fact-Check to Tweet</option>
+            </select>
+          </div>
+          <div id="reportActionFields">
+            <!-- Dynamic fields based on action -->
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+            Cancel
+          </button>
+          <button type="button" class="btn btn-primary" onclick="adminPanel.submitReportAction()">
+            Submit Action
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script type="module" src="/public/shared/notification-icons.js"></script>
+  <script src="/public/shared/extensions.js" type="module" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js"
+    integrity="sha384-FKyoEForCGlyvwx9Hj09JcYn3nv7wiPVlz7YYwJrWVcXK/BmnVDxM+D2scQbITxI"
+    crossorigin="anonymous"></script>
+  <script src="/public/admin/script.js" defer></script>
+</body>
+
 </html>

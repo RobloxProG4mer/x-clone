@@ -5,6 +5,7 @@
 * {
   box-sizing: border-box;
   -webkit-tap-highlight-color: rgba(255, 255, 255, 0);
+  text-underline-offset: 2px;
 }
 
 html,
@@ -114,15 +115,13 @@ img {
 @keyframes popupEnter {
   from {
     opacity: 0;
-    transform: translate(var(--popup-translate-x), var(--popup-translate-y))
-      scale(0.95);
+    transform: translate(var(--popup-translate-x), var(--popup-translate-y)) scale(0.95);
     backdrop-filter: blur(0px);
   }
 
   to {
     opacity: 1;
-    transform: translate(var(--popup-translate-x), var(--popup-translate-y))
-      scale(1);
+    transform: translate(var(--popup-translate-x), var(--popup-translate-y)) scale(1);
     backdrop-filter: blur(1px);
   }
 }
@@ -130,15 +129,13 @@ img {
 @keyframes popupExit {
   from {
     opacity: 1;
-    transform: translate(var(--popup-translate-x), var(--popup-translate-y))
-      scale(1);
+    transform: translate(var(--popup-translate-x), var(--popup-translate-y)) scale(1);
     backdrop-filter: blur(1px);
   }
 
   to {
     opacity: 0;
-    transform: translate(var(--popup-translate-x), var(--popup-translate-y))
-      scale(0.95);
+    transform: translate(var(--popup-translate-x), var(--popup-translate-y)) scale(0.95);
     backdrop-filter: blur(0px);
   }
 }
@@ -178,8 +175,7 @@ img {
   pointer-events: auto;
   transform-origin: top center;
   opacity: 0;
-  transform: translate(var(--popup-translate-x), var(--popup-translate-y))
-    scale(0.95);
+  transform: translate(var(--popup-translate-x), var(--popup-translate-y)) scale(0.95);
   animation: popupEnter 0.15s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
@@ -339,18 +335,21 @@ img {
   font-weight: 400;
   font-style: normal;
 }
+
 @font-face {
   font-family: "chirp";
   src: url("/public/shared/assets/fonts/chirpmedium.woff2") format("woff2");
   font-weight: 500;
   font-style: normal;
 }
+
 @font-face {
   font-family: "chirp";
   src: url("/public/shared/assets/fonts/chirpbold.woff2") format("woff2");
   font-weight: 700;
   font-style: normal;
 }
+
 @font-face {
   font-family: "chirp";
   src: url("/public/shared/assets/fonts/chirpheavy.woff2") format("woff2");

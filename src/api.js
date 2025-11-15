@@ -63,12 +63,19 @@ const isSuspendedQuery = db.prepare(`
   SELECT * FROM suspensions WHERE user_id = ? AND status = 'active' AND (expires_at IS NULL OR expires_at > datetime('now'))
 `);
 
+const isRestrictedQuery = db.prepare(`
+  SELECT * FROM suspensions WHERE user_id = ? AND status = 'active' AND action = 'restrict' AND (expires_at IS NULL OR expires_at > datetime('now'))
+`);
+
 const liftSuspension = db.prepare(`
   UPDATE suspensions SET status = 'lifted' WHERE id = ?
 `);
 
 const updateUserSuspended = db.prepare(
   "UPDATE users SET suspended = ? WHERE id = ?"
+);
+const updateUserRestricted = db.prepare(
+  "UPDATE users SET restricted = ? WHERE id = ?"
 );
 
 const suspensionCache = new Map();
@@ -106,6 +113,17 @@ export default new Elysia({
         }
       }
 
+      // Also handle restricted suspensions expiring
+      let restriction = isRestrictedQuery.get(userId);
+      if (restriction?.expires_at) {
+        const expiresAt = new Date(restriction.expires_at).getTime();
+        if (Date.now() > expiresAt) {
+          liftSuspension.run(restriction.id);
+          updateUserRestricted.run(false, userId);
+          restriction = null;
+        }
+      }
+
       cached = { suspension, expiry: now + CACHE_TTL };
       suspensionCache.set(userId, cached);
     }
@@ -127,6 +145,9 @@ export default new Elysia({
         suspension: suspensionHtml,
       };
     }
+    // We intentionally do not block restricted users at this middleware layer
+    // so that they can still browse content. Individual endpoints should
+    // check the user's restricted flag and return appropriate errors.
   })
   .get("/emojis", async () => {
     try {

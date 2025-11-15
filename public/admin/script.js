@@ -1013,9 +1013,11 @@ class AdminPanel {
 												? '<span class="badge bg-warning">Gold</span>'
 												: ""
 										}
-                    ${
+					${
 											user.suspended
 												? '<span class="badge bg-danger">Suspended</span>'
+												: user.restricted
+												? '<span class="badge bg-warning">Restricted</span>'
 												: ""
 										}
                   </div>
@@ -1039,19 +1041,19 @@ class AdminPanel {
 										}')">
                       <i class="bi bi-chat-text"></i> Tweet As
                     </button>
-                      ${
-												!user.suspended
-													? `
-                        <button class="btn btn-outline-danger btn-sm" onclick="adminPanel.showSuspensionModal('${user.id}')">
-                          <i class="bi bi-exclamation-triangle"></i> Suspend
-                        </button>
-                      `
-													: `
-                        <button class="btn btn-outline-success btn-sm" onclick="adminPanel.unsuspendUser('${user.id}')">
-                          <i class="bi bi-check-circle"></i> Unsuspend
-                        </button>
-                      `
-											}
+											${
+																								!(user.suspended || user.restricted)
+																										? `
+												<button class="btn btn-outline-danger btn-sm" onclick="adminPanel.showSuspensionModal('${user.id}')">
+													<i class="bi bi-exclamation-triangle"></i> Suspend/Restrict
+												</button>
+											`
+																										: `
+												<button class="btn btn-outline-success btn-sm" onclick="adminPanel.unsuspendUser('${user.id}')">
+													<i class="bi bi-check-circle"></i> Unsuspend
+												</button>
+											`
+																						}
                   
                       <button class="btn btn-outline-info btn-sm" onclick="adminPanel.impersonateUser('${
 												user.id
@@ -1265,7 +1267,7 @@ class AdminPanel {
             <tr>
               <th>User</th>
               <th>Reason</th>
-              <th>Severity</th>
+			  <th>Action</th>
               <th>By</th>
               <th>Date</th>
               <th>Expires</th>
@@ -1318,17 +1320,16 @@ class AdminPanel {
 											: ""
 									}
                 </td>
-                <td>
-                  <span class="badge ${
-										suspension.severity >= 4
-											? "bg-danger"
-											: suspension.severity >= 3
-												? "bg-warning"
-												: "bg-info"
-									}">
-                    ${suspension.severity}/5
-                  </span>
-                </td>
+								<td>
+									${
+										suspension.action === 'suspend'
+											? '<span class="badge bg-danger">Suspended</span>'
+											: suspension.action === 'restrict'
+											? '<span class="badge bg-warning">Restricted</span>'
+											: `<span class="badge bg-secondary">${this.escapeHtml(suspension.action || 'unknown')}</span>`
+									}
+									${suspension.severity ? `<small class="text-muted"> ${suspension.severity}/5</small>` : ""}
+								</td>
                 <td>
                   <small>@${suspension.suspended_by_username}</small>
                 </td>
@@ -1688,7 +1689,8 @@ class AdminPanel {
 										(suspension) => `
                   <div class="border-bottom pb-2 mb-2">
                     <div class="d-flex justify-content-between">
-                      <strong>Severity ${suspension.severity}/5</strong>
+					  <strong>${this.escapeHtml(suspension.action === 'suspend' ? 'Suspended' : suspension.action === 'restrict' ? 'Restricted' : (suspension.action || 'Unknown'))}</strong>
+					  ${suspension.severity ? `<small class="text-muted">(${suspension.severity}/5)</small>` : ""}
                       <span class="badge ${
 												suspension.status === "active"
 													? "bg-danger"
@@ -2038,6 +2040,7 @@ class AdminPanel {
 		const severity = parseInt(
 			document.getElementById("suspensionSeverity").value,
 		);
+		const action = document.getElementById("suspensionAction")?.value || 'suspend';
 		const duration = document.getElementById("suspensionDuration").value;
 		const notes = document.getElementById("suspensionNotes").value;
 
@@ -2049,6 +2052,7 @@ class AdminPanel {
 		const payload = {
 			reason: reason.trim(),
 			severity,
+			action,
 		};
 
 		if (duration?.trim()) {
