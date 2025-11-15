@@ -2605,7 +2605,7 @@ export default new Elysia({ prefix: "/admin" })
 	.post(
 		"/reports/:id/resolve",
 		async ({ params, body, user }) => {
-			const { action, duration, severity, note } = body;
+			const { action, duration, severity, note, banAction } = body;
 			const report = db
 				.query("SELECT * FROM reports WHERE id = ?")
 				.get(params.id);
@@ -2619,24 +2619,31 @@ export default new Elysia({ prefix: "/admin" })
 				const expiresAt = duration
 					? new Date(Date.now() + duration * 60 * 60 * 1000).toISOString()
 					: null;
-
+				const banActionToUse = banAction || 'suspend';
 				db.query(
 					`
-          INSERT INTO suspensions (id, user_id, suspended_by, reason, severity, expires_at)
-          VALUES (?, ?, ?, ?, ?, ?)
-        `,
+					INSERT INTO suspensions (id, user_id, suspended_by, reason, severity, action, expires_at)
+					VALUES (?, ?, ?, ?, ?, ?, ?)
+				`,
 				).run(
 					suspensionId,
 					report.reported_id,
 					user.id,
 					report.reason,
 					severity || 3,
+					banActionToUse,
 					expiresAt,
 				);
 
-				db.query("UPDATE users SET suspended = TRUE WHERE id = ?").run(
-					report.reported_id,
-				);
+				if (banActionToUse === 'restrict') {
+					db.query("UPDATE users SET restricted = TRUE WHERE id = ?").run(
+						report.reported_id,
+					);
+				} else {
+					db.query("UPDATE users SET suspended = TRUE WHERE id = ?").run(
+						report.reported_id,
+					);
+				}
 
 				logModerationAction(
 					user.id,

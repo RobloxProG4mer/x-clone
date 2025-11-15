@@ -55,14 +55,27 @@ const isSuspendedQuery = db.query(`
   SELECT * FROM suspensions WHERE user_id = ? AND status = 'active' AND (expires_at IS NULL OR expires_at > datetime('now'))
 `);
 
+const isRestrictedQuery = db.query(`
+  SELECT * FROM suspensions WHERE user_id = ? AND status = 'active' AND action = 'restrict' AND (expires_at IS NULL OR expires_at > datetime('now'))
+`);
+
 const getUserSuspendedFlag = db.query(`
   SELECT suspended FROM users WHERE id = ?
+`);
+const getUserRestrictedFlag = db.query(`
+  SELECT restricted FROM users WHERE id = ?
 `);
 
 const isUserSuspendedById = (userId) => {
   const suspensionRow = isSuspendedQuery.get(userId);
   const userSuspFlag = getUserSuspendedFlag.get(userId);
   return !!suspensionRow || !!userSuspFlag?.suspended;
+};
+
+const isUserRestrictedById = (userId) => {
+  const restrictionRow = isRestrictedQuery.get(userId);
+  const userResFlag = getUserRestrictedFlag.get(userId);
+  return !!restrictionRow || !!userResFlag?.restricted;
 };
 
 const getArticlePreviewById = db.query(`
@@ -460,6 +473,11 @@ export default new Elysia({ prefix: "/tweets" })
       const user = getUserByUsername.get(payload.username);
       if (!user) return { error: "User not found" };
 
+      // Restricted users cannot create new tweets
+      if (isUserRestrictedById(user.id)) {
+        return { error: "Action not allowed: account is restricted" };
+      }
+
       const {
         content,
         reply_to,
@@ -643,7 +661,7 @@ export default new Elysia({ prefix: "/tweets" })
         }
       }
 
-      const tweetId = Bun.randomUUIDv7();
+      const tweetId = Bun.randomUUIDv7().split("-").pop();
       let pollId = null;
 
       if (poll) {
@@ -766,7 +784,7 @@ export default new Elysia({ prefix: "/tweets" })
                 db
               );
               if (aiResponse) {
-                const aiTweetId = Bun.randomUUIDv7();
+                const aiTweetId = Bun.randomUUIDv7().split("-").pop();
                 createTweet.get(
                   aiTweetId,
                   aiUser.id,
@@ -911,6 +929,11 @@ export default new Elysia({ prefix: "/tweets" })
 
       const user = getUserByUsername.get(payload.username);
       if (!user) return { error: "User not found" };
+
+      // Restricted users cannot react
+      if (isUserRestrictedById(user.id)) {
+        return { error: "Action not allowed: account is restricted" };
+      }
 
       const { id: tweetId } = params;
       const { emoji } = body || {};
@@ -1239,6 +1262,11 @@ export default new Elysia({ prefix: "/tweets" })
       const user = getUserByUsername.get(payload.username);
       if (!user) return { error: "User not found" };
 
+      // Restricted users cannot like
+      if (isUserRestrictedById(user.id)) {
+        return { error: "Action not allowed: account is restricted" };
+      }
+
       const { id } = params;
       const tweet = getTweetById.get(id);
       if (!tweet) return { error: "Tweet not found" };
@@ -1300,6 +1328,11 @@ export default new Elysia({ prefix: "/tweets" })
       const user = getUserByUsername.get(payload.username);
       if (!user) return { error: "User not found" };
 
+      // Restricted users cannot retweet
+      if (isUserRestrictedById(user.id)) {
+        return { error: "Action not allowed: account is restricted" };
+      }
+
       const { id } = params;
       const tweet = getTweetById.get(id);
       if (!tweet) return { error: "Tweet not found" };
@@ -1357,6 +1390,11 @@ export default new Elysia({ prefix: "/tweets" })
 
       const user = getUserByUsername.get(payload.username);
       if (!user) return { error: "User not found" };
+
+      // Restricted users cannot vote on polls
+      if (isUserRestrictedById(user.id)) {
+        return { error: "Action not allowed: account is restricted" };
+      }
 
       const { id: tweetId } = params;
       const { optionId } = body;

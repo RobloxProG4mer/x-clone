@@ -4749,11 +4749,18 @@ class AdminPanel {
 				const fieldsContainer = document.getElementById("reportActionFields");
 
 				if (action === "ban_user") {
-					fieldsContainer.innerHTML = `
+						fieldsContainer.innerHTML = `
             <div class="mb-3">
               <label class="form-label">Duration (hours, leave empty for permanent)</label>
               <input type="number" id="banDuration" class="form-control" min="1" placeholder="e.g., 24">
             </div>
+						<div class="mb-3">
+							<label class="form-label">Action</label>
+							<select id="banAction" class="form-select">
+								<option value="suspend" selected>Suspend</option>
+								<option value="restrict">Restrict (browse-only)</option>
+							</select>
+						</div>
             <div class="mb-3">
               <label class="form-label">Severity</label>
               <select id="banSeverity" class="form-select">
@@ -4809,8 +4816,10 @@ class AdminPanel {
 		if (action === "ban_user") {
 			const duration = document.getElementById("banDuration")?.value;
 			const severity = document.getElementById("banSeverity")?.value;
+			const banAction = document.getElementById("banAction")?.value;
 			if (duration) body.duration = Number.parseInt(duration);
 			if (severity) body.severity = Number.parseInt(severity);
+			if (banAction) body.banAction = banAction;
 		} else if (action === "fact_check") {
 			const note = document.getElementById("factCheckNoteReport")?.value;
 			const severity = document.getElementById(

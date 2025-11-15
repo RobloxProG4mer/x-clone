@@ -75,11 +75,22 @@ const isSuspendedQuery = db.prepare(
 const getUserSuspendedFlag = db.prepare(
   "SELECT suspended FROM users WHERE id = ?"
 );
+const getUserRestrictedFlag = db.prepare(
+  "SELECT restricted FROM users WHERE id = ?"
+);
 const isUserSuspendedById = (userId) => {
   const s = isSuspendedQuery.get(userId);
   if (s) return true;
   const f = getUserSuspendedFlag.get(userId);
   return !!f?.suspended;
+};
+const isRestrictedQuery = db.prepare(
+  "SELECT 1 FROM suspensions WHERE user_id = ? AND status = 'active' AND action = 'restrict' AND (expires_at IS NULL OR expires_at > datetime('now'))"
+);
+const isUserRestrictedById = (userId) => {
+  const res = isRestrictedQuery.get(userId);
+  const f = getUserRestrictedFlag.get(userId);
+  return !!res || !!f?.restricted;
 };
 
 const getPollDataForTweet = (tweetId, userId) => {
@@ -196,6 +207,8 @@ export default new Elysia({ prefix: "/bookmarks" })
       const user = getUserByUsername.get(payload.username);
       if (!user) return { error: "User not found" };
 
+      if (isUserRestrictedById(user.id)) return { error: "Action not allowed: account is restricted" };
+
       const { postId } = body;
       if (!postId) return { error: "Post ID is required" };
 
@@ -231,6 +244,8 @@ export default new Elysia({ prefix: "/bookmarks" })
 
       const user = getUserByUsername.get(payload.username);
       if (!user) return { error: "User not found" };
+
+      if (isUserRestrictedById(user.id)) return { error: "Action not allowed: account is restricted" };
 
       const { postId } = body;
       if (!postId) return { error: "Post ID is required" };

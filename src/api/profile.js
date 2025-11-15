@@ -282,6 +282,14 @@ const getUserSuspendedFlag = db.prepare(`
   SELECT suspended FROM users WHERE id = ?
 `);
 
+// Helper for restricted flag and active restriction suspensions
+const isRestrictedQuery = db.prepare(`
+  SELECT * FROM suspensions WHERE user_id = ? AND status = 'active' AND action = 'restrict' AND (expires_at IS NULL OR expires_at > datetime('now'))
+`);
+const getUserRestrictedFlag = db.prepare(`
+  SELECT restricted FROM users WHERE id = ?
+`);
+
 const getTweetAttachments = (tweetId) => {
   return getAttachmentsByPostId.all(tweetId);
 };
