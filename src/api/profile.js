@@ -26,7 +26,7 @@ const getFollowing = db.prepare(`
 `);
 
 const getUserByUsername = db.prepare(
-  "SELECT * FROM users WHERE LOWER(username) = LOWER(?)"
+	"SELECT * FROM users WHERE LOWER(username) = LOWER(?)",
 );
 
 const updateProfile = db.prepare(`
@@ -178,19 +178,19 @@ const deleteFollowRequest = db.prepare(`
 
 // Affiliate request queries
 const getAffiliateRequest = db.prepare(
-  `SELECT * FROM affiliate_requests WHERE requester_id = ? AND target_id = ?`
+	`SELECT * FROM affiliate_requests WHERE requester_id = ? AND target_id = ?`,
 );
 
 const createAffiliateRequest = db.prepare(
-  `INSERT INTO affiliate_requests (id, requester_id, target_id) VALUES (?, ?, ?)`
+	`INSERT INTO affiliate_requests (id, requester_id, target_id) VALUES (?, ?, ?)`,
 );
 
 const updateUserAffiliateWith = db.prepare(
-  `UPDATE users SET affiliate = ?, affiliate_with = ? WHERE id = ?`
+	`UPDATE users SET affiliate = ?, affiliate_with = ? WHERE id = ?`,
 );
 
 const getUserById = db.prepare(
-  `SELECT id, username, name, avatar, verified, gold, avatar_radius FROM users WHERE id = ?`
+	`SELECT id, username, name, avatar, verified, gold, avatar_radius FROM users WHERE id = ?`,
 );
 
 const getFactCheckForPost = db.prepare(`
@@ -210,11 +210,11 @@ const getPendingAffiliateRequests = db.prepare(`
 `);
 
 const approveAffiliateRequest = db.prepare(
-  `UPDATE affiliate_requests SET status = 'approved', responded_at = datetime('now', 'utc') WHERE id = ?`
+	`UPDATE affiliate_requests SET status = 'approved', responded_at = datetime('now', 'utc') WHERE id = ?`,
 );
 
 const denyAffiliateRequest = db.prepare(
-  `UPDATE affiliate_requests SET status = 'denied', responded_at = datetime('now', 'utc') WHERE id = ?`
+	`UPDATE affiliate_requests SET status = 'denied', responded_at = datetime('now', 'utc') WHERE id = ?`,
 );
 
 const getAffiliatesList = db.prepare(`
@@ -274,9 +274,9 @@ const getQuotedTweet = db.prepare(`
 const getAttachmentsByPostId = db.prepare(`
   SELECT * FROM attachments WHERE post_id = ?
 `);
-const isSuspendedQuery = db.prepare(`
-  SELECT * FROM suspensions WHERE user_id = ? AND status = 'active' AND (expires_at IS NULL OR expires_at > datetime('now'))
-`);
+const isSuspendedQuery = db.prepare(
+	`SELECT * FROM suspensions WHERE user_id = ? AND status = 'active' AND action = 'suspend' AND (expires_at IS NULL OR expires_at > datetime('now'))`,
+);
 // Helper to check the users.suspended flag (legacy or quick lookup)
 const getUserSuspendedFlag = db.prepare(`
   SELECT suspended FROM users WHERE id = ?
@@ -291,7 +291,7 @@ const getUserRestrictedFlag = db.prepare(`
 `);
 
 const getTweetAttachments = (tweetId) => {
-  return getAttachmentsByPostId.all(tweetId);
+	return getAttachmentsByPostId.all(tweetId);
 };
 
 const getCardByPostId = db.prepare(`
@@ -303,89 +303,89 @@ const getCardOptions = db.prepare(`
 `);
 
 const getCardDataForTweet = (tweetId) => {
-  const card = getCardByPostId.get(tweetId);
-  if (!card) return null;
+	const card = getCardByPostId.get(tweetId);
+	if (!card) return null;
 
-  const options = getCardOptions.all(card.id);
-  return {
-    ...card,
-    options,
-  };
+	const options = getCardOptions.all(card.id);
+	return {
+		...card,
+		options,
+	};
 };
 
 const getQuotedTweetData = (quoteTweetId, userId) => {
-  if (!quoteTweetId) return null;
+	if (!quoteTweetId) return null;
 
-  const quotedTweet = getQuotedTweet.get(quoteTweetId);
-  if (!quotedTweet) return null;
+	const quotedTweet = getQuotedTweet.get(quoteTweetId);
+	if (!quotedTweet) return null;
 
-  const suspensionRow = isSuspendedQuery.get(quotedTweet.user_id);
-  const userSuspendedFlag = getUserSuspendedFlag.get(quotedTweet.user_id);
-  const authorSuspended = !!suspensionRow || !!userSuspendedFlag?.suspended;
+	const suspensionRow = isSuspendedQuery.get(quotedTweet.user_id);
+	const userSuspendedFlag = getUserSuspendedFlag.get(quotedTweet.user_id);
+	const authorSuspended = !!suspensionRow || !!userSuspendedFlag?.suspended;
 
-  if (authorSuspended) {
-    return {
-      id: quotedTweet.id,
-      unavailable_reason: "suspended",
-      created_at: quotedTweet.created_at,
-    };
-  }
+	if (authorSuspended) {
+		return {
+			id: quotedTweet.id,
+			unavailable_reason: "suspended",
+			created_at: quotedTweet.created_at,
+		};
+	}
 
-  const isUserRestrictedById = (userId) => {
-    const restrictionRow = isRestrictedQuery.get(userId);
-    const userRestrictedFlag = getUserRestrictedFlag.get(userId);
-    return !!restrictionRow || !!userRestrictedFlag?.restricted;
-  };
+	const isUserRestrictedById = (userId) => {
+		const restrictionRow = isRestrictedQuery.get(userId);
+		const userRestrictedFlag = getUserRestrictedFlag.get(userId);
+		return !!restrictionRow || !!userRestrictedFlag?.restricted;
+	};
 
-  const author = {
-    username: quotedTweet.username,
-    name: quotedTweet.name,
-    avatar: quotedTweet.avatar,
-    verified: quotedTweet.verified || false,
-    gold: quotedTweet.gold || false,
-    avatar_radius: quotedTweet.avatar_radius || null,
-    affiliate: quotedTweet.affiliate || false,
-    affiliate_with: quotedTweet.affiliate_with || null,
-  };
+	const author = {
+		username: quotedTweet.username,
+		name: quotedTweet.name,
+		avatar: quotedTweet.avatar,
+		verified: quotedTweet.verified || false,
+		gold: quotedTweet.gold || false,
+		avatar_radius: quotedTweet.avatar_radius || null,
+		affiliate: quotedTweet.affiliate || false,
+		affiliate_with: quotedTweet.affiliate_with || null,
+	};
 
-  if (author.affiliate && author.affiliate_with) {
-    const affiliateProfile = getUserById.get(author.affiliate_with);
-    if (affiliateProfile) {
-      author.affiliate_with_profile = affiliateProfile;
-    }
-  }
+	if (author.affiliate && author.affiliate_with) {
+		const affiliateProfile = getUserById.get(author.affiliate_with);
+		if (affiliateProfile) {
+			author.affiliate_with_profile = affiliateProfile;
+		}
+	}
 
-  return {
-    ...quotedTweet,
-    author,
-    poll: getPollDataForTweet(quotedTweet.id, userId),
-    attachments: getTweetAttachments(quotedTweet.id),
-    interactive_card: getCardDataForTweet(quotedTweet.id),
-  };
+	return {
+		...quotedTweet,
+		author,
+		poll: getPollDataForTweet(quotedTweet.id, userId),
+		attachments: getTweetAttachments(quotedTweet.id),
+		interactive_card: getCardDataForTweet(quotedTweet.id),
+	};
 };
 
 const getPollDataForTweet = (tweetId, userId) => {
-  const poll = getPollByPostId.get(tweetId);
-  if (!poll) return null;
+	const poll = getPollByPostId.get(tweetId);
+	if (!poll) return null;
 
-  const options = getPollOptions.all(poll.id);
-  const totalVotes = getTotalPollVotes.get(poll.id)?.total || 0;
-  const userVote = userId ? getUserPollVote.get(userId, poll.id) : null;
-  const isExpired = new Date() > new Date(poll.expires_at);
-  const voters = getPollVoters.all(poll.id);
+	const options = getPollOptions.all(poll.id);
+	const totalVotes = getTotalPollVotes.get(poll.id)?.total || 0;
+	const userVote = userId ? getUserPollVote.get(userId, poll.id) : null;
+	const isExpired = new Date() > new Date(poll.expires_at);
+	const voters = getPollVoters.all(poll.id);
 
-  return {
-    ...poll,
-    options: options.map((option) => ({
-      ...option,
-      percentage:
-        totalVotes > 0 ? Math.round((option.vote_count / totalVotes) * 100) : 0,
-    })),
-    totalVotes,
-    userVote: userVote?.option_id || null,
-    isExpired,
-    voters,
-  };
+	return {
+		...poll,
+		options: options.map((option) => ({
+			...option,
+			percentage:
+				totalVotes > 0 ? Math.round((option.vote_count / totalVotes) * 100) : 0,
+		})),
+		totalVotes,
+		userVote: userVote?.option_id || null,
+		isExpired,
+		voters,
+	};
 };
 
 const getPollDataForPost = getPollDataForTweet;
@@ -393,1565 +393,1565 @@ const getQuotedPostData = getQuotedTweetData;
 const getPostAttachments = getTweetAttachments;
 
 export default new Elysia({ prefix: "/profile" })
-  .use(jwt({ name: "jwt", secret: JWT_SECRET }))
-  .use(
-    rateLimit({
-      duration: 10_000,
-      max: 50,
-      scoping: "scoped",
-      generator: ratelimit,
-    })
-  )
-  .get("/:username", async ({ params, jwt, headers }) => {
-    try {
-      const { username } = params;
+	.use(jwt({ name: "jwt", secret: JWT_SECRET }))
+	.use(
+		rateLimit({
+			duration: 10_000,
+			max: 50,
+			scoping: "scoped",
+			generator: ratelimit,
+		}),
+	)
+	.get("/:username", async ({ params, jwt, headers }) => {
+		try {
+			const { username } = params;
 
-      const user = getUserByUsername.get(username);
-      if (!user) {
-        return { error: "User not found" };
-      }
+			const user = getUserByUsername.get(username);
+			if (!user) {
+				return { error: "User not found" };
+			}
 
-      const counts = getFollowCounts.get(
-        user.id,
-        user.id,
-        user.id,
-        user.id,
-        user.id
-      );
+			const counts = getFollowCounts.get(
+				user.id,
+				user.id,
+				user.id,
+				user.id,
+				user.id,
+			);
 
-      const suspensionRow = isSuspendedQuery.get(user.id);
-      const userSuspendedFlag = getUserSuspendedFlag.get(user.id);
-      const isSuspended = !!suspensionRow || !!userSuspendedFlag?.suspended;
+			const suspensionRow = isSuspendedQuery.get(user.id);
+			const userSuspendedFlag = getUserSuspendedFlag.get(user.id);
+			const isSuspended = !!suspensionRow || !!userSuspendedFlag?.suspended;
 
-      if (isSuspended) {
-        const minimalProfile = {
-          username: user.username,
-          name: user.name,
-          avatar: user.avatar || null,
-          banner: user.banner || null,
-          created_at: user.created_at || null,
-          following_count: counts?.following_count || 0,
-          follower_count: counts?.follower_count || 0,
-          post_count: counts?.post_count || 0,
-        };
+			if (isSuspended) {
+				const minimalProfile = {
+					username: user.username,
+					name: user.name,
+					avatar: user.avatar || null,
+					banner: user.banner || null,
+					created_at: user.created_at || null,
+					following_count: counts?.following_count || 0,
+					follower_count: counts?.follower_count || 0,
+					post_count: counts?.post_count || 0,
+				};
 
-        return { error: "User is suspended", profile: minimalProfile };
-      }
+				return { error: "User is suspended", profile: minimalProfile };
+			}
 
-      const userPosts = getUserPosts.all(user.id);
-      const userRetweets = getUserRetweets.all(user.id);
-      const replies = getUserReplies.all(user.id);
+			const userPosts = getUserPosts.all(user.id);
+			const userRetweets = getUserRetweets.all(user.id);
+			const replies = getUserReplies.all(user.id);
 
-      const profile = {
-        ...user,
-        following_count: counts.following_count,
-        follower_count: counts.follower_count,
-        post_count: counts.post_count,
-      };
+			const profile = {
+				...user,
+				following_count: counts.following_count,
+				follower_count: counts.follower_count,
+				post_count: counts.post_count,
+			};
 
-      // If this user is affiliated with another user, include a small
-      // profile blob for the affiliating user so the client can render
-      // "Affiliated with @userA" UI without an extra request.
-      if (profile.affiliate_with) {
-        try {
-          const aff = getUserById.get(profile.affiliate_with);
-          if (aff) {
-            profile.affiliate_with_profile = aff;
-          }
-        } catch (_) {}
-      }
+			// If this user is affiliated with another user, include a small
+			// profile blob for the affiliating user so the client can render
+			// "Affiliated with @userA" UI without an extra request.
+			if (profile.affiliate_with) {
+				try {
+					const aff = getUserById.get(profile.affiliate_with);
+					if (aff) {
+						profile.affiliate_with_profile = aff;
+					}
+				} catch (_) {}
+			}
 
-      let isFollowing = false;
-      let followsMe = false;
-      let isOwnProfile = false;
-      let currentUserId = null;
-      let followRequestStatus = null;
+			let isFollowing = false;
+			let followsMe = false;
+			let isOwnProfile = false;
+			let currentUserId = null;
+			let followRequestStatus = null;
 
-      const authorization = headers.authorization;
-      if (authorization) {
-        try {
-          const payload = await jwt.verify(
-            authorization.replace("Bearer ", "")
-          );
-          if (payload) {
-            const currentUser = getUserByUsername.get(payload.username);
-            if (currentUser) {
-              currentUserId = currentUser.id;
-              isOwnProfile = currentUser.id === user.id;
-              if (!isOwnProfile) {
-                const followStatus = getFollowStatus.get(
-                  currentUser.id,
-                  user.id
-                );
-                isFollowing = !!followStatus;
+			const authorization = headers.authorization;
+			if (authorization) {
+				try {
+					const payload = await jwt.verify(
+						authorization.replace("Bearer ", ""),
+					);
+					if (payload) {
+						const currentUser = getUserByUsername.get(payload.username);
+						if (currentUser) {
+							currentUserId = currentUser.id;
+							isOwnProfile = currentUser.id === user.id;
+							if (!isOwnProfile) {
+								const followStatus = getFollowStatus.get(
+									currentUser.id,
+									user.id,
+								);
+								isFollowing = !!followStatus;
 
-                const followsBackStatus = getFollowStatus.get(
-                  user.id,
-                  currentUser.id
-                );
-                followsMe = !!followsBackStatus;
+								const followsBackStatus = getFollowStatus.get(
+									user.id,
+									currentUser.id,
+								);
+								followsMe = !!followsBackStatus;
 
-                // Check for pending follow request
-                if (!isFollowing) {
-                  const followRequest = getFollowRequest.get(
-                    currentUser.id,
-                    user.id
-                  );
-                  followRequestStatus = followRequest?.status || null;
-                }
-              }
-            }
-          }
-        } catch {
-          // Invalid token, continue as unauthenticated
-        }
-      }
+								// Check for pending follow request
+								if (!isFollowing) {
+									const followRequest = getFollowRequest.get(
+										currentUser.id,
+										user.id,
+									);
+									followRequestStatus = followRequest?.status || null;
+								}
+							}
+						}
+					}
+				} catch {
+					// Invalid token, continue as unauthenticated
+				}
+			}
 
-      // If the viewer is authenticated and not the profile owner, check whether
-      // the profile owner has blocked the viewer. This is used by the frontend
-      // to show a banner and disable interactions.
-      let blockedByProfile = false;
-      if (currentUserId && !isOwnProfile) {
-        const blockedRow = db
-          .query("SELECT 1 FROM blocks WHERE blocker_id = ? AND blocked_id = ?")
-          .get(user.id, currentUserId);
-        blockedByProfile = !!blockedRow;
-      }
+			// If the viewer is authenticated and not the profile owner, check whether
+			// the profile owner has blocked the viewer. This is used by the frontend
+			// to show a banner and disable interactions.
+			let blockedByProfile = false;
+			if (currentUserId && !isOwnProfile) {
+				const blockedRow = db
+					.query("SELECT 1 FROM blocks WHERE blocker_id = ? AND blocked_id = ?")
+					.get(user.id, currentUserId);
+				blockedByProfile = !!blockedRow;
+			}
 
-      profile.blockedByProfile = blockedByProfile;
+			profile.blockedByProfile = blockedByProfile;
 
-      // Combine and sort by creation time
-      const allContent = [
-        ...userPosts.map((post) => {
-          const author = {
-            username: post.username,
-            name: post.name,
-            avatar: post.avatar,
-            verified: post.verified || false,
-            gold: post.gold || false,
-            avatar_radius: post.avatar_radius || null,
-            affiliate: post.affiliate || false,
-            affiliate_with: post.affiliate_with || null,
-          };
+			// Combine and sort by creation time
+			const allContent = [
+				...userPosts.map((post) => {
+					const author = {
+						username: post.username,
+						name: post.name,
+						avatar: post.avatar,
+						verified: post.verified || false,
+						gold: post.gold || false,
+						avatar_radius: post.avatar_radius || null,
+						affiliate: post.affiliate || false,
+						affiliate_with: post.affiliate_with || null,
+					};
 
-          if (author.affiliate && author.affiliate_with) {
-            const affiliateProfile = getUserById.get(author.affiliate_with);
-            if (affiliateProfile) {
-              author.affiliate_with_profile = affiliateProfile;
-            }
-          }
+					if (author.affiliate && author.affiliate_with) {
+						const affiliateProfile = getUserById.get(author.affiliate_with);
+						if (affiliateProfile) {
+							author.affiliate_with_profile = affiliateProfile;
+						}
+					}
 
-          return {
-            ...post,
-            content_type: "post",
-            sort_date: new Date(post.created_at),
-            author,
-          };
-        }),
-        ...userRetweets.map((retweet) => {
-          const author = {
-            username: retweet.username,
-            name: retweet.name,
-            avatar: retweet.avatar,
-            verified: retweet.verified || false,
-            gold: retweet.gold || false,
-            avatar_radius: retweet.avatar_radius || null,
-            affiliate: retweet.affiliate || false,
-            affiliate_with: retweet.affiliate_with || null,
-          };
+					return {
+						...post,
+						content_type: "post",
+						sort_date: new Date(post.created_at),
+						author,
+					};
+				}),
+				...userRetweets.map((retweet) => {
+					const author = {
+						username: retweet.username,
+						name: retweet.name,
+						avatar: retweet.avatar,
+						verified: retweet.verified || false,
+						gold: retweet.gold || false,
+						avatar_radius: retweet.avatar_radius || null,
+						affiliate: retweet.affiliate || false,
+						affiliate_with: retweet.affiliate_with || null,
+					};
 
-          if (author.affiliate && author.affiliate_with) {
-            const affiliateProfile = getUserById.get(author.affiliate_with);
-            if (affiliateProfile) {
-              author.affiliate_with_profile = affiliateProfile;
-            }
-          }
+					if (author.affiliate && author.affiliate_with) {
+						const affiliateProfile = getUserById.get(author.affiliate_with);
+						if (affiliateProfile) {
+							author.affiliate_with_profile = affiliateProfile;
+						}
+					}
 
-          return {
-            ...retweet,
-            content_type: "retweet",
-            sort_date: new Date(retweet.retweet_created_at),
-            retweet_created_at: retweet.retweet_created_at,
-            author,
-          };
-        }),
-      ]
-        .sort((a, b) => b.sort_date - a.sort_date)
-        .slice(0, 20);
+					return {
+						...retweet,
+						content_type: "retweet",
+						sort_date: new Date(retweet.retweet_created_at),
+						retweet_created_at: retweet.retweet_created_at,
+						author,
+					};
+				}),
+			]
+				.sort((a, b) => b.sort_date - a.sort_date)
+				.slice(0, 20);
 
-      // If account is private and viewer is not following and not owner, hide posts
-      let posts = [];
-      let processedReplies = [];
+			// If account is private and viewer is not following and not owner, hide posts
+			let posts = [];
+			let processedReplies = [];
 
-      if (user.private && !isFollowing && !isOwnProfile) {
-        posts = [];
-        processedReplies = [];
-      } else {
-        posts = allContent.map((post) => ({
-          ...post,
-          poll: getPollDataForPost(post.id, currentUserId),
-          quoted_tweet: getQuotedPostData(post.quote_tweet_id, currentUserId),
-          attachments: getPostAttachments(post.id),
-          liked_by_user: false,
-          retweeted_by_user: false,
-          fact_check: getFactCheckForPost.get(post.id) || null,
-          interactive_card: getCardDataForTweet(post.id),
-        }));
+			if (user.private && !isFollowing && !isOwnProfile) {
+				posts = [];
+				processedReplies = [];
+			} else {
+				posts = allContent.map((post) => ({
+					...post,
+					poll: getPollDataForPost(post.id, currentUserId),
+					quoted_tweet: getQuotedPostData(post.quote_tweet_id, currentUserId),
+					attachments: getPostAttachments(post.id),
+					liked_by_user: false,
+					retweeted_by_user: false,
+					fact_check: getFactCheckForPost.get(post.id) || null,
+					interactive_card: getCardDataForTweet(post.id),
+				}));
 
-        processedReplies = replies.map((reply) => {
-          const author = {
-            username: reply.username,
-            name: reply.name,
-            avatar: reply.avatar || null,
-            verified: reply.verified || false,
-            gold: reply.gold || false,
-            avatar_radius: reply.avatar_radius || null,
-            affiliate: reply.affiliate || false,
-            affiliate_with: reply.affiliate_with || null,
-          };
+				processedReplies = replies.map((reply) => {
+					const author = {
+						username: reply.username,
+						name: reply.name,
+						avatar: reply.avatar || null,
+						verified: reply.verified || false,
+						gold: reply.gold || false,
+						avatar_radius: reply.avatar_radius || null,
+						affiliate: reply.affiliate || false,
+						affiliate_with: reply.affiliate_with || null,
+					};
 
-          if (author.affiliate && author.affiliate_with) {
-            const affiliateProfile = getUserById.get(author.affiliate_with);
-            if (affiliateProfile) {
-              author.affiliate_with_profile = affiliateProfile;
-            }
-          }
+					if (author.affiliate && author.affiliate_with) {
+						const affiliateProfile = getUserById.get(author.affiliate_with);
+						if (affiliateProfile) {
+							author.affiliate_with_profile = affiliateProfile;
+						}
+					}
 
-          return {
-            ...reply,
-            author,
-            poll: getPollDataForPost(reply.id, currentUserId),
-            quoted_tweet: getQuotedPostData(
-              reply.quote_tweet_id,
-              currentUserId
-            ),
-            attachments: getPostAttachments(reply.id),
-            liked_by_user: false,
-            retweeted_by_user: false,
-            fact_check: getFactCheckForPost.get(reply.id) || null,
-            interactive_card: getCardDataForTweet(reply.id),
-          };
-        });
-      }
+					return {
+						...reply,
+						author,
+						poll: getPollDataForPost(reply.id, currentUserId),
+						quoted_tweet: getQuotedPostData(
+							reply.quote_tweet_id,
+							currentUserId,
+						),
+						attachments: getPostAttachments(reply.id),
+						liked_by_user: false,
+						retweeted_by_user: false,
+						fact_check: getFactCheckForPost.get(reply.id) || null,
+						interactive_card: getCardDataForTweet(reply.id),
+					};
+				});
+			}
 
-      // Get likes and retweets for current user
-      if (
-        currentUserId &&
-        allContent.length > 0 &&
-        (!user.private || isFollowing || isOwnProfile)
-      ) {
-        try {
-          const postIds = allContent.map((p) => p.id);
-          // Use dynamic query based on actual number of posts
-          const likesQuery = db.query(`
+			// Get likes and retweets for current user
+			if (
+				currentUserId &&
+				allContent.length > 0 &&
+				(!user.private || isFollowing || isOwnProfile)
+			) {
+				try {
+					const postIds = allContent.map((p) => p.id);
+					// Use dynamic query based on actual number of posts
+					const likesQuery = db.query(`
 						SELECT post_id FROM likes WHERE user_id = ? AND post_id IN (${postIds
-              .map(() => "?")
-              .join(",")})
+							.map(() => "?")
+							.join(",")})
 					`);
-          const retweetsQuery = db.query(`
+					const retweetsQuery = db.query(`
 						SELECT post_id FROM retweets WHERE user_id = ? AND post_id IN (${postIds
-              .map(() => "?")
-              .join(",")})
+							.map(() => "?")
+							.join(",")})
 					`);
 
-          const likedPosts = likesQuery.all(currentUserId, ...postIds);
-          const retweetedPosts = retweetsQuery.all(currentUserId, ...postIds);
+					const likedPosts = likesQuery.all(currentUserId, ...postIds);
+					const retweetedPosts = retweetsQuery.all(currentUserId, ...postIds);
 
-          const likedPostsSet = new Set(likedPosts.map((like) => like.post_id));
-          const retweetedPostsSet = new Set(
-            retweetedPosts.map((retweet) => retweet.post_id)
-          );
+					const likedPostsSet = new Set(likedPosts.map((like) => like.post_id));
+					const retweetedPostsSet = new Set(
+						retweetedPosts.map((retweet) => retweet.post_id),
+					);
 
-          posts.forEach((post) => {
-            post.liked_by_user = likedPostsSet.has(post.id);
-            post.retweeted_by_user = retweetedPostsSet.has(post.id);
-          });
-        } catch (e) {
-          // If likes/retweets query fails, continue without them
-          console.warn("Failed to fetch likes/retweets:", e);
-        }
-      }
+					posts.forEach((post) => {
+						post.liked_by_user = likedPostsSet.has(post.id);
+						post.retweeted_by_user = retweetedPostsSet.has(post.id);
+					});
+				} catch (e) {
+					// If likes/retweets query fails, continue without them
+					console.warn("Failed to fetch likes/retweets:", e);
+				}
+			}
 
-      return {
-        profile,
-        posts,
-        replies: processedReplies,
-        isFollowing,
-        followsMe,
-        isOwnProfile,
-        followRequestStatus,
-      };
-    } catch (error) {
-      console.error("Profile fetch error:", error);
-      return { error: "Failed to fetch profile" };
-    }
-  })
-  .get(
-    "/:username/replies",
-    async ({ params, query: queryParams, headers, jwt }) => {
-      try {
-        const { username } = params;
+			return {
+				profile,
+				posts,
+				replies: processedReplies,
+				isFollowing,
+				followsMe,
+				isOwnProfile,
+				followRequestStatus,
+			};
+		} catch (error) {
+			console.error("Profile fetch error:", error);
+			return { error: "Failed to fetch profile" };
+		}
+	})
+	.get(
+		"/:username/replies",
+		async ({ params, query: queryParams, headers, jwt }) => {
+			try {
+				const { username } = params;
 
-        const user = getUserByUsername.get(username);
-        if (!user) {
-          return { error: "User not found" };
-        }
+				const user = getUserByUsername.get(username);
+				if (!user) {
+					return { error: "User not found" };
+				}
 
-        const before = queryParams.before;
-        const limit = parseInt(queryParams.limit || "20", 10);
+				const before = queryParams.before;
+				const limit = parseInt(queryParams.limit || "20", 10);
 
-        let replies;
-        if (before) {
-          replies = getUserRepliesPaginated.all(user.id, before, limit);
-        } else {
-          replies = db
-            .query(
-              `
+				let replies;
+				if (before) {
+					replies = getUserRepliesPaginated.all(user.id, before, limit);
+				} else {
+					replies = db
+						.query(
+							`
           SELECT posts.*, users.username, users.name, users.avatar, users.verified, users.gold, users.avatar_radius, users.affiliate, users.affiliate_with
           FROM posts 
           JOIN users ON posts.user_id = users.id 
           WHERE posts.user_id = ? AND posts.reply_to IS NOT NULL
           ORDER BY posts.created_at DESC 
           LIMIT ?
-        `
-            )
-            .all(user.id, limit);
-        }
+        `,
+						)
+						.all(user.id, limit);
+				}
 
-        let currentUserId = null;
-        const authorization = headers.authorization;
-        if (authorization) {
-          try {
-            const payload = await jwt.verify(
-              authorization.replace("Bearer ", "")
-            );
-            if (payload) {
-              const currentUser = getUserByUsername.get(payload.username);
-              if (currentUser) {
-                currentUserId = currentUser.id;
-              }
-            }
-          } catch {}
-        }
+				let currentUserId = null;
+				const authorization = headers.authorization;
+				if (authorization) {
+					try {
+						const payload = await jwt.verify(
+							authorization.replace("Bearer ", ""),
+						);
+						if (payload) {
+							const currentUser = getUserByUsername.get(payload.username);
+							if (currentUser) {
+								currentUserId = currentUser.id;
+							}
+						}
+					} catch {}
+				}
 
-        const processedReplies = replies.map((reply) => {
-          const author = {
-            username: reply.username,
-            name: reply.name,
-            avatar: reply.avatar || null,
-            verified: reply.verified || false,
-            gold: reply.gold || false,
-            avatar_radius: reply.avatar_radius || null,
-            affiliate: reply.affiliate || false,
-            affiliate_with: reply.affiliate_with || null,
-          };
+				const processedReplies = replies.map((reply) => {
+					const author = {
+						username: reply.username,
+						name: reply.name,
+						avatar: reply.avatar || null,
+						verified: reply.verified || false,
+						gold: reply.gold || false,
+						avatar_radius: reply.avatar_radius || null,
+						affiliate: reply.affiliate || false,
+						affiliate_with: reply.affiliate_with || null,
+					};
 
-          if (author.affiliate && author.affiliate_with) {
-            const affiliateProfile = getUserById.get(author.affiliate_with);
-            if (affiliateProfile) {
-              author.affiliate_with_profile = affiliateProfile;
-            }
-          }
+					if (author.affiliate && author.affiliate_with) {
+						const affiliateProfile = getUserById.get(author.affiliate_with);
+						if (affiliateProfile) {
+							author.affiliate_with_profile = affiliateProfile;
+						}
+					}
 
-          return {
-            ...reply,
-            author,
-            poll: getPollDataForPost(reply.id, currentUserId),
-            quoted_tweet: getQuotedPostData(
-              reply.quote_tweet_id,
-              currentUserId
-            ),
-            attachments: getPostAttachments(reply.id),
-            liked_by_user: false,
-            retweeted_by_user: false,
-            fact_check: getFactCheckForPost.get(reply.id) || null,
-            interactive_card: getCardDataForTweet(reply.id),
-          };
-        });
+					return {
+						...reply,
+						author,
+						poll: getPollDataForPost(reply.id, currentUserId),
+						quoted_tweet: getQuotedPostData(
+							reply.quote_tweet_id,
+							currentUserId,
+						),
+						attachments: getPostAttachments(reply.id),
+						liked_by_user: false,
+						retweeted_by_user: false,
+						fact_check: getFactCheckForPost.get(reply.id) || null,
+						interactive_card: getCardDataForTweet(reply.id),
+					};
+				});
 
-        if (currentUserId && replies.length > 0) {
-          try {
-            const replyIds = replies.map((r) => r.id);
-            const likesQuery = db.query(`
+				if (currentUserId && replies.length > 0) {
+					try {
+						const replyIds = replies.map((r) => r.id);
+						const likesQuery = db.query(`
             SELECT post_id FROM likes WHERE user_id = ? AND post_id IN (${replyIds
-              .map(() => "?")
-              .join(",")})
+							.map(() => "?")
+							.join(",")})
           `);
-            const retweetsQuery = db.query(`
+						const retweetsQuery = db.query(`
             SELECT post_id FROM retweets WHERE user_id = ? AND post_id IN (${replyIds
-              .map(() => "?")
-              .join(",")})
+							.map(() => "?")
+							.join(",")})
           `);
 
-            const likedPosts = likesQuery.all(currentUserId, ...replyIds);
-            const retweetedPosts = retweetsQuery.all(
-              currentUserId,
-              ...replyIds
-            );
-
-            const likedPostsSet = new Set(
-              likedPosts.map((like) => like.post_id)
-            );
-            const retweetedPostsSet = new Set(
-              retweetedPosts.map((retweet) => retweet.post_id)
-            );
-
-            processedReplies.forEach((reply) => {
-              reply.liked_by_user = likedPostsSet.has(reply.id);
-              reply.retweeted_by_user = retweetedPostsSet.has(reply.id);
-            });
-          } catch (e) {
-            console.warn("Failed to fetch likes/retweets for replies:", e);
-          }
-        }
-
-        return {
-          replies: processedReplies,
-        };
-      } catch (error) {
-        console.error("Replies fetch error:", error);
-        return { error: "Failed to fetch replies" };
-      }
-    }
-  )
-  .get("/:username/media", async ({ params, query: queryParams }) => {
-    try {
-      const { username } = params;
-
-      const user = getUserByUsername.get(username);
-      if (!user) {
-        return { error: "User not found" };
-      }
-
-      const before = queryParams.before;
-      const limit = parseInt(queryParams.limit || "20", 10);
-
-      let media;
-      if (before) {
-        media = getUserMediaPaginated.all(user.id, before, limit);
-      } else {
-        media = getUserMedia.all(user.id, limit);
-      }
-
-      const processedMedia = media.map((post) => {
-        const author = {
-          username: post.username,
-          name: post.name,
-          avatar: post.avatar || null,
-          verified: post.verified || false,
-          gold: post.gold || false,
-          avatar_radius: post.avatar_radius || null,
-          affiliate: post.affiliate || false,
-          affiliate_with: post.affiliate_with || null,
-        };
-
-        if (author.affiliate && author.affiliate_with) {
-          const affiliateProfile = getUserById.get(author.affiliate_with);
-          if (affiliateProfile) {
-            author.affiliate_with_profile = affiliateProfile;
-          }
-        }
-
-        return {
-          ...post,
-          author,
-          attachments: getPostAttachments(post.id),
-          fact_check: getFactCheckForPost.get(post.id) || null,
-        };
-      });
-
-      return {
-        media: processedMedia,
-      };
-    } catch (error) {
-      console.error("Media fetch error:", error);
-      return { error: "Failed to fetch media" };
-    }
-  })
-  .put("/:username", async ({ params, jwt, headers, body }) => {
-    const authorization = headers.authorization;
-    if (!authorization) return { error: "Authentication required" };
-
-    try {
-      const payload = await jwt.verify(authorization.replace("Bearer ", ""));
-      if (!payload) return { error: "Invalid token" };
-
-      const currentUser = getUserByUsername.get(payload.username);
-      if (!currentUser) return { error: "User not found" };
-
-      const { username } = params;
-      if (currentUser.username !== username) {
-        return { error: "You can only edit your own profile" };
-      }
-
-      const { name, bio, location, website, pronouns } = body;
-
-      const { theme, accent_color } = body;
-
-      const { label_type, label_automated } = body;
-
-      let radiusToStore = currentUser.avatar_radius;
-      if (body.avatar_radius !== undefined) {
-        if (!currentUser.gold) {
-          return {
-            error: "Only gold accounts can customize avatar corner radius",
-          };
-        }
-        const parsed = parseInt(body.avatar_radius, 10);
-        if (Number.isNaN(parsed) || parsed < 0 || parsed > 1000) {
-          return { error: "Invalid avatar radius" };
-        }
-        radiusToStore = parsed;
-      }
-
-      if (name && name.length > 50) {
-        return { error: "Display name must be 50 characters or less" };
-      }
-
-      if (bio && bio.length > 160) {
-        return { error: "Bio must be 160 characters or less" };
-      }
-
-      if (location && location.length > 30) {
-        return { error: "Location must be 30 characters or less" };
-      }
-
-      if (website && website.length > 100) {
-        return { error: "Website must be 100 characters or less" };
-      }
-
-      if (pronouns && pronouns.length > 30) {
-        return { error: "Pronouns must be 30 characters or less" };
-      }
-
-      if (label_type !== undefined) {
-        const validLabels = ["parody", "fan", "commentary", null];
-        if (!validLabels.includes(label_type)) {
-          return {
-            error:
-              "Invalid label type. Must be parody, fan, commentary, or none",
-          };
-        }
-      }
-
-      const labelTypeToStore =
-        label_type !== undefined ? label_type : currentUser.label_type;
-      const labelAutomatedToStore =
-        label_automated !== undefined
-          ? !!label_automated
-          : currentUser.label_automated || false;
-
-      updateProfile.run(
-        name || currentUser.name,
-        bio !== undefined ? bio : currentUser.bio,
-        location !== undefined ? location : currentUser.location,
-        website !== undefined ? website : currentUser.website,
-        pronouns !== undefined ? pronouns : currentUser.pronouns,
-        radiusToStore,
-        currentUser.id
-      );
-      if (theme !== undefined || accent_color !== undefined) {
-        updateThemeAccent.run(
-          theme !== undefined ? theme : currentUser.theme,
-          accent_color !== undefined ? accent_color : currentUser.accent_color,
-          currentUser.id
-        );
-      }
-
-      if (label_type !== undefined || label_automated !== undefined) {
-        updateLabels.run(
-          labelTypeToStore,
-          labelAutomatedToStore,
-          currentUser.id
-        );
-      }
-
-      const updatedUser = getUserByUsername.get(currentUser.username);
-      return { success: true, profile: updatedUser };
-    } catch (error) {
-      console.error("Profile update error:", error);
-      return { error: "Failed to update profile" };
-    }
-  })
-  .post("/:username/follow", async ({ params, jwt, headers }) => {
-    const authorization = headers.authorization;
-    if (!authorization) return { error: "Authentication required" };
-
-    const payload = await jwt.verify(authorization.replace("Bearer ", ""));
-    if (!payload) return { error: "Invalid token" };
-
-    const currentUser = getUserByUsername.get(payload.username);
-    if (!currentUser) return { error: "User not found" };
-
-    // Restrict follow action for restricted accounts
-    if (isUserRestrictedById(currentUser.id)) {
-      return { error: "Action not allowed: account is restricted" };
-    }
-
-    const { username } = params;
-    const targetUser = getUserByUsername.get(username);
-    if (!targetUser) return { error: "User not found" };
-
-    if (currentUser.id === targetUser.id) {
-      return { error: "You cannot follow yourself" };
-    }
-
-    const blocked = db
-      .query(
-        "SELECT 1 FROM blocks WHERE (blocker_id = ? AND blocked_id = ?) OR (blocker_id = ? AND blocked_id = ?)"
-      )
-      .get(currentUser.id, targetUser.id, targetUser.id, currentUser.id);
-    if (blocked) {
-      return { error: "Cannot follow this user" };
-    }
-
-    const existingFollow = getFollowStatus.get(currentUser.id, targetUser.id);
-    if (existingFollow) {
-      return { error: "Already following this user" };
-    }
-
-    const existingRequest = getFollowRequest.get(currentUser.id, targetUser.id);
-    if (existingRequest) {
-      if (existingRequest.status === "pending") {
-        return { error: "Follow request already sent" };
-      }
-      if (existingRequest.status === "denied") {
-        // Allow re-requesting after denial
-        deleteFollowRequest.run(currentUser.id, targetUser.id);
-      }
-    }
-
-    if (targetUser.private) {
-      const requestId = Bun.randomUUIDv7();
-      createFollowRequest.run(requestId, currentUser.id, targetUser.id);
-
-      addNotification(
-        targetUser.id,
-        "follow_request",
-        `has requested to follow you`,
-        currentUser.username,
-        currentUser.id,
-        currentUser.username,
-        currentUser.name || currentUser.username
-      );
-
-      return { success: true, requestSent: true };
-    } else {
-      const followId = Bun.randomUUIDv7();
-      addFollow.run(followId, currentUser.id, targetUser.id);
-
-      addNotification(
-        targetUser.id,
-        "follow",
-        `followed you`,
-        currentUser.username,
-        currentUser.id,
-        currentUser.username,
-        currentUser.name || currentUser.username
-      );
-
-      return { success: true, requestSent: false };
-    }
-  })
-  .delete("/:username/follow", async ({ params, jwt, headers }) => {
-    const authorization = headers.authorization;
-    if (!authorization) return { error: "Authentication required" };
-
-    try {
-      const payload = await jwt.verify(authorization.replace("Bearer ", ""));
-      if (!payload) return { error: "Invalid token" };
-
-      const currentUser = getUserByUsername.get(payload.username);
-      if (!currentUser) return { error: "User not found" };
-
-      const { username } = params;
-      const targetUser = getUserByUsername.get(username);
-      if (!targetUser) return { error: "User not found" };
-
-      const existingFollow = getFollowStatus.get(currentUser.id, targetUser.id);
-      const existingRequest = getFollowRequest.get(
-        currentUser.id,
-        targetUser.id
-      );
-
-      if (existingFollow) {
-        removeFollow.run(currentUser.id, targetUser.id);
-        return { success: true, action: "unfollowed" };
-      } else if (existingRequest && existingRequest.status === "pending") {
-        deleteFollowRequest.run(currentUser.id, targetUser.id);
-        return { success: true, action: "request_cancelled" };
-      } else {
-        return { error: "Not following this user and no pending request" };
-      }
-    } catch (error) {
-      console.error("Unfollow error:", error);
-      return { error: "Failed to unfollow user" };
-    }
-  })
-  .post("/:username/avatar", async ({ params, jwt, headers, body }) => {
-    const authorization = headers.authorization;
-    if (!authorization) return { error: "Authentication required" };
-
-    try {
-      const payload = await jwt.verify(authorization.replace("Bearer ", ""));
-      if (!payload) return { error: "Invalid token" };
-
-      const currentUser = getUserByUsername.get(payload.username);
-      if (!currentUser) return { error: "User not found" };
-
-      const { username } = params;
-      if (currentUser.username !== username) {
-        return { error: "You can only update your own avatar" };
-      }
-
-      const { avatar } = body;
-      if (!avatar || !avatar.stream) {
-        return { error: "Avatar file is required" };
-      }
-
-      const allowedTypes = {
-        "image/webp": ".webp",
-      };
-
-      if (currentUser.gold) {
-        allowedTypes["image/gif"] = ".gif";
-      }
-
-      const fileExtension = allowedTypes[avatar.type];
-      if (!fileExtension) {
-        return {
-          error: currentUser.gold
-            ? "Invalid file type. Only WebP images (and GIF for Gold accounts) are allowed for avatars."
-            : "Invalid file type. Only WebP images are allowed for avatars.",
-        };
-      }
-
-      if (avatar.size > 5 * 1024 * 1024) {
-        return {
-          error: "File too large. Please upload an image smaller than 5MB.",
-        };
-      }
-
-      const uploadsDir = "./.data/uploads";
-
-      // Calculate secure hash for filename
-      const arrayBuffer = await avatar.arrayBuffer();
-
-      // Detect animated WebP (contains 'ANIM' chunk) and only allow it for gold users
-      if (avatar.type === "image/webp") {
-        try {
-          const bytes = new Uint8Array(arrayBuffer);
-          let hasANIM = false;
-          for (let i = 0; i < bytes.length - 3; i++) {
-            if (
-              bytes[i] === 0x41 &&
-              bytes[i + 1] === 0x4e &&
-              bytes[i + 2] === 0x49 &&
-              bytes[i + 3] === 0x4d
-            ) {
-              hasANIM = true;
-              break;
-            }
-          }
-
-          if (hasANIM && !currentUser.gold) {
-            return {
-              error:
-                "Animated WebP avatars are allowed for Gold accounts only.",
-            };
-          }
-        } catch {}
-      }
-
-      const hasher = new Bun.CryptoHasher("sha256");
-      hasher.update(arrayBuffer);
-      const fileHash = hasher.digest("hex");
-
-      const fileName = `${fileHash}${fileExtension}`;
-      const filePath = `${uploadsDir}/${fileName}`;
-
-      await Bun.write(filePath, arrayBuffer);
-
-      const avatarUrl = `/api/uploads/${fileName}`;
-      updateAvatar.run(avatarUrl, currentUser.id);
-
-      const updatedUser = getUserByUsername.get(currentUser.username);
-      return { success: true, avatar: updatedUser.avatar };
-    } catch (error) {
-      console.error("Avatar upload error:", error);
-      return { error: "Failed to upload avatar" };
-    }
-  })
-  .delete("/:username/avatar", async ({ params, jwt, headers }) => {
-    const authorization = headers.authorization;
-    if (!authorization) return { error: "Authentication required" };
-
-    try {
-      const payload = await jwt.verify(authorization.replace("Bearer ", ""));
-      if (!payload) return { error: "Invalid token" };
-
-      const currentUser = getUserByUsername.get(payload.username);
-      if (!currentUser) return { error: "User not found" };
-
-      const { username } = params;
-      if (currentUser.username !== username) {
-        return { error: "You can only update your own avatar" };
-      }
-
-      // Remove avatar from database
-      updateAvatar.run(null, currentUser.id);
-
-      return { success: true };
-    } catch (error) {
-      console.error("Avatar removal error:", error);
-      return { error: "Failed to remove avatar" };
-    }
-  })
-  .post("/:username/banner", async ({ params, jwt, headers, body }) => {
-    const authorization = headers.authorization;
-    if (!authorization) return { error: "Authentication required" };
-
-    try {
-      const payload = await jwt.verify(authorization.replace("Bearer ", ""));
-      if (!payload) return { error: "Invalid token" };
-
-      const currentUser = getUserByUsername.get(payload.username);
-      if (!currentUser) return { error: "User not found" };
-
-      const { username } = params;
-      if (currentUser.username !== username) {
-        return { error: "You can only update your own banner" };
-      }
-
-      const { banner } = body;
-      if (!banner || !banner.stream) {
-        return { error: "Banner file is required" };
-      }
-
-      // Get file extension based on MIME type first
-      const allowedTypes = {
-        "image/webp": ".webp",
-      };
-
-      const fileExtension = allowedTypes[banner.type];
-      if (!fileExtension) {
-        return {
-          error: "Invalid file type. Only WebP images are allowed for banners.",
-        };
-      }
-
-      if (banner.size > 10 * 1024 * 1024) {
-        return {
-          error: "File too large. Please upload an image smaller than 10MB.",
-        };
-      }
-
-      const uploadsDir = "./.data/uploads";
-
-      // Calculate secure hash for filename
-      const arrayBuffer = await banner.arrayBuffer();
-      const hasher = new Bun.CryptoHasher("sha256");
-      hasher.update(arrayBuffer);
-      const fileHash = hasher.digest("hex");
-
-      const fileName = `${fileHash}${fileExtension}`;
-      const filePath = `${uploadsDir}/${fileName}`;
-
-      await Bun.write(filePath, arrayBuffer);
-
-      const bannerUrl = `/api/uploads/${fileName}`;
-      updateBanner.run(bannerUrl, currentUser.id);
-
-      const updatedUser = getUserByUsername.get(currentUser.username);
-      return { success: true, banner: updatedUser.banner };
-    } catch (error) {
-      console.error("Banner upload error:", error);
-      return { error: "Failed to upload banner" };
-    }
-  })
-  .delete("/:username/banner", async ({ params, jwt, headers }) => {
-    const authorization = headers.authorization;
-    if (!authorization) return { error: "Authentication required" };
-
-    try {
-      const payload = await jwt.verify(authorization.replace("Bearer ", ""));
-      if (!payload) return { error: "Invalid token" };
-
-      const currentUser = getUserByUsername.get(payload.username);
-      if (!currentUser) return { error: "User not found" };
-
-      const { username } = params;
-      if (currentUser.username !== username) {
-        return { error: "You can only update your own banner" };
-      }
-
-      // Remove banner from database
-      updateBanner.run(null, currentUser.id);
-
-      return { success: true };
-    } catch (error) {
-      console.error("Banner removal error:", error);
-      return { error: "Failed to remove banner" };
-    }
-  })
-  .get("/:username/followers", async ({ params, jwt, headers }) => {
-    const authorization = headers.authorization;
-    if (!authorization) return { error: "Authentication required" };
-
-    try {
-      const payload = await jwt.verify(authorization.replace("Bearer ", ""));
-      if (!payload) return { error: "Invalid token" };
-
-      const { username } = params;
-      const user = getUserByUsername.get(username);
-      if (!user) return { error: "User not found" };
-
-      const followers = getFollowers.all(user.id);
-      return { followers };
-    } catch (error) {
-      console.error("Get followers error:", error);
-      return { error: "Failed to get followers" };
-    }
-  })
-  .get("/:username/following", async ({ params, jwt, headers }) => {
-    const authorization = headers.authorization;
-    if (!authorization) return { error: "Authentication required" };
-
-    try {
-      const payload = await jwt.verify(authorization.replace("Bearer ", ""));
-      if (!payload) return { error: "Invalid token" };
-
-      const { username } = params;
-      const user = getUserByUsername.get(username);
-      if (!user) return { error: "User not found" };
-
-      const following = getFollowing.all(user.id);
-      return { following };
-    } catch (error) {
-      console.error("Get following error:", error);
-      return { error: "Failed to get following" };
-    }
-  })
-  .patch("/:username/username", async ({ params, jwt, headers, body }) => {
-    const authorization = headers.authorization;
-    if (!authorization) return { error: "Authentication required" };
-
-    try {
-      const payload = await jwt.verify(authorization.replace("Bearer ", ""));
-      if (!payload) return { error: "Invalid token" };
-
-      const currentUser = getUserByUsername.get(payload.username);
-      if (!currentUser) return { error: "User not found" };
-
-      const { username } = params;
-      if (currentUser.username !== username) {
-        return { error: "You can only change your own username" };
-      }
-
-      const { newUsername } = body;
-      if (!newUsername || newUsername.length < 3 || newUsername.length > 20) {
-        return { error: "Username must be between 3 and 20 characters" };
-      }
-
-      if (!/^[a-zA-Z0-9_]+$/.test(newUsername)) {
-        return {
-          error: "Username can only contain letters, numbers, and underscores",
-        };
-      }
-
-      const existingUser = getUserByUsername.get(newUsername);
-      if (existingUser && existingUser.id !== currentUser.id) {
-        return { error: "Username is already taken" };
-      }
-
-      updateUsername.run(newUsername, currentUser.id);
-
-      const newToken = await jwt.sign({
-        username: newUsername,
-        userId: currentUser.id,
-      });
-
-      return { success: true, username: newUsername, token: newToken };
-    } catch (error) {
-      console.error("Update username error:", error);
-      return { error: "Failed to update username" };
-    }
-  })
-  .patch("/:username/password", async ({ params, jwt, headers, body }) => {
-    const authorization = headers.authorization;
-    if (!authorization) return { error: "Authentication required" };
-
-    try {
-      const payload = await jwt.verify(authorization.replace("Bearer ", ""));
-      if (!payload) return { error: "Invalid token" };
-
-      const currentUser = getUserByUsername.get(payload.username);
-      if (!currentUser) return { error: "User not found" };
-
-      const { username } = params;
-      if (currentUser.username !== username) {
-        return { error: "You can only change your own password" };
-      }
-
-      const { currentPassword, newPassword } = body;
-
-      if (!newPassword || newPassword.length < 8) {
-        return { error: "New password must be at least 8 characters long" };
-      }
-
-      if (currentUser.password_hash) {
-        if (!currentPassword) {
-          return { error: "Current password is required" };
-        }
-
-        const isValid = await Bun.password.verify(
-          currentPassword,
-          currentUser.password_hash
-        );
-        if (!isValid) {
-          return { error: "Current password is incorrect" };
-        }
-      }
-
-      const passwordHash = await Bun.password.hash(newPassword);
-      updatePassword.run(passwordHash, currentUser.id);
-
-      return { success: true, message: "Password updated successfully" };
-    } catch (error) {
-      console.error("Update password error:", error);
-      return { error: "Failed to update password" };
-    }
-  })
-  .delete("/:username", async ({ params, jwt, headers, body }) => {
-    const authorization = headers.authorization;
-    if (!authorization) return { error: "Authentication required" };
-
-    try {
-      const payload = await jwt.verify(authorization.replace("Bearer ", ""));
-      if (!payload) return { error: "Invalid token" };
-
-      const currentUser = getUserByUsername.get(payload.username);
-      if (!currentUser) return { error: "User not found" };
-
-      const { username } = params;
-      if (currentUser.username !== username) {
-        return { error: "You can only delete your own account" };
-      }
-
-      const { confirmationText } = body;
-      if (confirmationText !== "DELETE MY ACCOUNT") {
-        return { error: "Please type 'DELETE MY ACCOUNT' to confirm" };
-      }
-
-      deleteUser.run(currentUser.id);
-
-      return { success: true, message: "Account deleted successfully" };
-    } catch (error) {
-      console.error("Delete account error:", error);
-      return { error: "Failed to delete account" };
-    }
-  })
-  .post("/:username/password", async ({ params, jwt, headers, body }) => {
-    const authorization = headers.authorization;
-    if (!authorization) return { error: "Authentication required" };
-
-    try {
-      const payload = await jwt.verify(authorization.replace("Bearer ", ""));
-      if (!payload) return { error: "Invalid token" };
-
-      const currentUser = getUserByUsername.get(payload.username);
-      if (!currentUser) return { error: "User not found" };
-
-      const { username } = params;
-      if (currentUser.username !== username) {
-        return { error: "You can only add a password to your own account" };
-      }
-
-      const { password } = body;
-      if (!password || password.length < 6) {
-        return { error: "Password must be at least 6 characters long" };
-      }
-
-      const passwordHash = await Bun.password.hash(password);
-      updatePassword.run(passwordHash, currentUser.id);
-
-      return { success: true, message: "Password added successfully" };
-    } catch (error) {
-      console.error("Add password error:", error);
-      return { error: "Failed to add password" };
-    }
-  })
-  .get("/follow-requests", async ({ jwt, headers }) => {
-    const authorization = headers.authorization;
-    if (!authorization) return { error: "Authentication required" };
-
-    try {
-      const payload = await jwt.verify(authorization.replace("Bearer ", ""));
-      if (!payload) return { error: "Invalid token" };
-
-      const currentUser = getUserByUsername.get(payload.username);
-      if (!currentUser) return { error: "User not found" };
-
-      const requests = getPendingFollowRequests.all(currentUser.id);
-      return { requests };
-    } catch (error) {
-      console.error("Get follow requests error:", error);
-      return { error: "Failed to get follow requests" };
-    }
-  })
-  .post(
-    "/follow-requests/:requestId/approve",
-    async ({ params, jwt, headers }) => {
-      const authorization = headers.authorization;
-      if (!authorization) return { error: "Authentication required" };
-
-      try {
-        const payload = await jwt.verify(authorization.replace("Bearer ", ""));
-        if (!payload) return { error: "Invalid token" };
-
-        const currentUser = getUserByUsername.get(payload.username);
-        if (!currentUser) return { error: "User not found" };
-
-        const { requestId } = params;
-        const request = db
-          .query("SELECT * FROM follow_requests WHERE id = ?")
-          .get(requestId);
-
-        if (!request) return { error: "Follow request not found" };
-        if (request.target_id !== currentUser.id)
-          return { error: "Unauthorized" };
-        if (request.status !== "pending")
-          return { error: "Request already processed" };
-
-        // Approve request and create follow relationship
-        approveFollowRequest.run(requestId);
-        const followId = Bun.randomUUIDv7();
-        addFollow.run(followId, request.requester_id, currentUser.id);
-
-        // Notify the requester
-        const requester = db
-          .query("SELECT * FROM users WHERE id = ?")
-          .get(request.requester_id);
-        if (requester) {
-          addNotification(
-            requester.id,
-            "follow_approved",
-            `has approved your follow request`,
-            currentUser.username,
-            currentUser.id,
-            currentUser.username,
-            currentUser.name || currentUser.username
-          );
-        }
-
-        return { success: true };
-      } catch (error) {
-        console.error("Approve follow request error:", error);
-        return { error: "Failed to approve follow request" };
-      }
-    }
-  )
-  .post(
-    "/follow-requests/:requestId/deny",
-    async ({ params, jwt, headers }) => {
-      const authorization = headers.authorization;
-      if (!authorization) return { error: "Authentication required" };
-
-      try {
-        const payload = await jwt.verify(authorization.replace("Bearer ", ""));
-        if (!payload) return { error: "Invalid token" };
-
-        const currentUser = getUserByUsername.get(payload.username);
-        if (!currentUser) return { error: "User not found" };
-
-        const { requestId } = params;
-        const request = db
-          .query("SELECT * FROM follow_requests WHERE id = ?")
-          .get(requestId);
-
-        if (!request) return { error: "Follow request not found" };
-        if (request.target_id !== currentUser.id)
-          return { error: "Unauthorized" };
-        if (request.status !== "pending")
-          return { error: "Request already processed" };
-
-        denyFollowRequest.run(requestId);
-
-        return { success: true };
-      } catch (error) {
-        console.error("Deny follow request error:", error);
-        return { error: "Failed to deny follow request" };
-      }
-    }
-  )
-  // Affiliate endpoints: send request, list pending, approve, deny
-  .post("/:username/affiliate", async ({ params, jwt, headers }) => {
-    const authorization = headers.authorization;
-    if (!authorization) return { error: "Authentication required" };
-
-    const payload = await jwt.verify(authorization.replace("Bearer ", ""));
-    if (!payload) return { error: "Invalid token" };
-
-    const currentUser = getUserByUsername.get(payload.username);
-    if (!currentUser) return { error: "User not found" };
-
-    const { username } = params;
-    const targetUser = getUserByUsername.get(username);
-    if (!targetUser) return { error: "User not found" };
-
-    if (currentUser.id === targetUser.id) {
-      return { error: "You cannot request affiliate for yourself" };
-    }
-
-    const existing = getAffiliateRequest.get(currentUser.id, targetUser.id);
-    if (existing) {
-      if (existing.status === "pending")
-        return { error: "Affiliate request already sent" };
-    }
-
-    db.query(
-      "DELETE FROM affiliate_requests WHERE requester_id = ? AND target_id = ?"
-    ).run(currentUser.id, targetUser.id);
-
-    const id = Bun.randomUUIDv7();
-    try {
-      createAffiliateRequest.run(id, currentUser.id, targetUser.id);
-
-      addNotification(
-        targetUser.id,
-        "affiliate_request",
-        `${currentUser.username} requested you to become an affiliate`,
-        `affiliate_request:${id}`,
-        currentUser.id,
-        currentUser.username,
-        currentUser.name || currentUser.username
-      );
-
-      return { success: true };
-    } catch (err) {
-      console.error("Create affiliate request error:", err);
-      return { error: "Failed to send affiliate request" };
-    }
-  })
-
-  .get("/affiliate-requests", async ({ jwt, headers }) => {
-    const authorization = headers.authorization;
-    if (!authorization) return { error: "Authentication required" };
-
-    const payload = await jwt.verify(authorization.replace("Bearer ", ""));
-    if (!payload) return { error: "Invalid token" };
-
-    const currentUser = getUserByUsername.get(payload.username);
-    if (!currentUser) return { error: "User not found" };
-
-    try {
-      const requests = getPendingAffiliateRequests.all(currentUser.id);
-      return { requests };
-    } catch (err) {
-      console.error("Get affiliate requests error:", err);
-      return { error: "Failed to get affiliate requests" };
-    }
-  })
-
-  .post(
-    "/affiliate-requests/:requestId/approve",
-    async ({ params, jwt, headers }) => {
-      const authorization = headers.authorization;
-      if (!authorization) return { error: "Authentication required" };
-
-      try {
-        const payload = await jwt.verify(authorization.replace("Bearer ", ""));
-        if (!payload) return { error: "Invalid token" };
-
-        const currentUser = getUserByUsername.get(payload.username);
-        if (!currentUser) return { error: "User not found" };
-
-        const { requestId } = params;
-        const request = db
-          .query("SELECT * FROM affiliate_requests WHERE id = ?")
-          .get(requestId);
-        if (!request) return { error: "Affiliate request not found" };
-        if (request.target_id !== currentUser.id)
-          return { error: "Unauthorized" };
-        if (request.status !== "pending")
-          return { error: "Request already processed" };
-
-        approveAffiliateRequest.run(requestId);
-        // Set affiliate flag and record who they are affiliated with
-        updateUserAffiliateWith.run(1, request.requester_id, currentUser.id);
-
-        const requester = db
-          .query("SELECT * FROM users WHERE id = ?")
-          .get(request.requester_id);
-        if (requester) {
-          addNotification(
-            requester.id,
-            "affiliate_approved",
-            `accepted your affiliate request`,
-            currentUser.username,
-            currentUser.id,
-            currentUser.username,
-            currentUser.name || currentUser.username
-          );
-        }
-
-        return { success: true };
-      } catch (err) {
-        console.error("Approve affiliate request error:", err);
-        return { error: "Failed to approve affiliate request" };
-      }
-    }
-  )
-
-  .post(
-    "/affiliate-requests/:requestId/deny",
-    async ({ params, jwt, headers }) => {
-      const authorization = headers.authorization;
-      if (!authorization) return { error: "Authentication required" };
-
-      try {
-        const payload = await jwt.verify(authorization.replace("Bearer ", ""));
-        if (!payload) return { error: "Invalid token" };
-
-        const currentUser = getUserByUsername.get(payload.username);
-        if (!currentUser) return { error: "User not found" };
-
-        const { requestId } = params;
-        const request = db
-          .query("SELECT * FROM affiliate_requests WHERE id = ?")
-          .get(requestId);
-        if (!request) return { error: "Affiliate request not found" };
-        if (request.target_id !== currentUser.id)
-          return { error: "Unauthorized" };
-        if (request.status !== "pending")
-          return { error: "Request already processed" };
-
-        denyAffiliateRequest.run(requestId);
-
-        return { success: true };
-      } catch (err) {
-        console.error("Deny affiliate request error:", err);
-        return { error: "Failed to deny affiliate request" };
-      }
-    }
-  )
-  .get("/:username/affiliates", async ({ params }) => {
-    try {
-      const { username } = params;
-      const user = getUserByUsername.get(username);
-      if (!user) return { error: "User not found" };
-
-      const affiliates = getAffiliatesList.all(user.id);
-      return { affiliates };
-    } catch (err) {
-      console.error("Get affiliates error:", err);
-      return { error: "Failed to get affiliates" };
-    }
-  })
-  .delete("/remove-affiliate", async ({ jwt, headers }) => {
-    const authorization = headers.authorization;
-    if (!authorization) return { error: "Authentication required" };
-
-    try {
-      const payload = await jwt.verify(authorization.replace("Bearer ", ""));
-      if (!payload) return { error: "Invalid token" };
-
-      const currentUser = getUserByUsername.get(payload.username);
-      if (!currentUser) return { error: "User not found" };
-
-      updateUserAffiliateWith.run(0, null, currentUser.id);
-
-      return { success: true };
-    } catch (err) {
-      console.error("Remove affiliate error:", err);
-      return { error: "Failed to remove affiliate" };
-    }
-  })
-  .post("/pin/:tweetId", async ({ params, jwt, headers }) => {
-    const authorization = headers.authorization;
-    if (!authorization) return { error: "Authentication required" };
-
-    try {
-      const payload = await jwt.verify(authorization.replace("Bearer ", ""));
-      if (!payload) return { error: "Invalid token" };
-
-      const currentUser = getUserByUsername.get(payload.username);
-      if (!currentUser) return { error: "User not found" };
-
-      const { tweetId } = params;
-
-      const tweet = db
-        .query("SELECT * FROM posts WHERE id = ? AND user_id = ?")
-        .get(tweetId, currentUser.id);
-      if (!tweet) {
-        return { error: "Tweet not found or doesn't belong to you" };
-      }
-
-      const existingPinned = db
-        .query("SELECT * FROM posts WHERE user_id = ? AND pinned = 1")
-        .get(currentUser.id);
-      if (existingPinned) {
-        db.query("UPDATE posts SET pinned = 0 WHERE id = ?").run(
-          existingPinned.id
-        );
-      }
-
-      db.query("UPDATE posts SET pinned = 1 WHERE id = ?").run(tweetId);
-
-      return { success: true };
-    } catch (error) {
-      console.error("Pin tweet error:", error);
-      return { error: "Failed to pin tweet" };
-    }
-  })
-  .delete("/pin/:tweetId", async ({ params, jwt, headers }) => {
-    const authorization = headers.authorization;
-    if (!authorization) return { error: "Authentication required" };
-
-    try {
-      const payload = await jwt.verify(authorization.replace("Bearer ", ""));
-      if (!payload) return { error: "Invalid token" };
-
-      const currentUser = getUserByUsername.get(payload.username);
-      if (!currentUser) return { error: "User not found" };
-
-      const { tweetId } = params;
-
-      // Unpin the tweet
-      db.query("UPDATE posts SET pinned = 0 WHERE id = ?").run(tweetId);
-
-      return { success: true };
-    } catch (error) {
-      console.error("Unpin tweet error:", error);
-      return { error: "Failed to unpin tweet" };
-    }
-  })
-  .post("/:username/pin/:tweetId", async ({ params, jwt, headers }) => {
-    const authorization = headers.authorization;
-    if (!authorization) return { error: "Authentication required" };
-
-    try {
-      const payload = await jwt.verify(authorization.replace("Bearer ", ""));
-      if (!payload) return { error: "Invalid token" };
-
-      const currentUser = getUserByUsername.get(payload.username);
-      if (!currentUser) return { error: "User not found" };
-
-      const { username, tweetId } = params;
-      if (currentUser.username !== username) {
-        return { error: "You can only pin your own tweets" };
-      }
-
-      // Check if tweet exists and belongs to user
-      const tweet = db
-        .query("SELECT * FROM posts WHERE id = ? AND user_id = ?")
-        .get(tweetId, currentUser.id);
-      if (!tweet) {
-        return { error: "Tweet not found or doesn't belong to you" };
-      }
-
-      // Check if user already has a pinned tweet
-      const existingPinned = db
-        .query("SELECT * FROM posts WHERE user_id = ? AND pinned = 1")
-        .get(currentUser.id);
-      if (existingPinned) {
-        // Unpin the existing tweet
-        db.query("UPDATE posts SET pinned = 0 WHERE id = ?").run(
-          existingPinned.id
-        );
-      }
-
-      // Pin the new tweet
-      db.query("UPDATE posts SET pinned = 1 WHERE id = ?").run(tweetId);
-
-      return { success: true };
-    } catch (error) {
-      console.error("Pin tweet error:", error);
-      return { error: "Failed to pin tweet" };
-    }
-  })
-  .delete("/:username/pin/:tweetId", async ({ params, jwt, headers }) => {
-    const authorization = headers.authorization;
-    if (!authorization) return { error: "Authentication required" };
-
-    try {
-      const payload = await jwt.verify(authorization.replace("Bearer ", ""));
-      if (!payload) return { error: "Invalid token" };
-
-      const currentUser = getUserByUsername.get(payload.username);
-      if (!currentUser) return { error: "User not found" };
-
-      const { username, tweetId } = params;
-      if (currentUser.username !== username) {
-        return { error: "You can only unpin your own tweets" };
-      }
-
-      // Unpin the tweet
-      db.query("UPDATE posts SET pinned = 0 WHERE id = ?").run(tweetId);
-
-      return { success: true };
-    } catch (error) {
-      console.error("Unpin tweet error:", error);
-      return { error: "Failed to unpin tweet" };
-    }
-  })
-  .post("/settings/c-algorithm", async ({ jwt, headers, body }) => {
-    const authorization = headers.authorization;
-    if (!authorization) return { error: "Authentication required" };
-
-    try {
-      const payload = await jwt.verify(authorization.replace("Bearer ", ""));
-      if (!payload) return { error: "Invalid token" };
-
-      const currentUser = getUserByUsername.get(payload.username);
-      if (!currentUser) return { error: "User not found" };
-
-      const { enabled } = body;
-
-      db.query("UPDATE users SET use_c_algorithm = ? WHERE id = ?").run(
-        enabled ? 1 : 0,
-        currentUser.id
-      );
-
-      return { success: true };
-    } catch (error) {
-      console.error("Update C algorithm setting error:", error);
-      return { error: "Failed to update setting" };
-    }
-  })
-  .post("/settings/private", async ({ jwt, headers, body }) => {
-    const authorization = headers.authorization;
-    if (!authorization) return { error: "Authentication required" };
-
-    try {
-      const payload = await jwt.verify(authorization.replace("Bearer ", ""));
-      if (!payload) return { error: "Invalid token" };
-
-      const currentUser = getUserByUsername.get(payload.username);
-      if (!currentUser) return { error: "User not found" };
-
-      const { enabled } = body;
-
-      updatePrivacy.run(enabled ? 1 : 0, currentUser.id);
-
-      return { success: true };
-    } catch (error) {
-      console.error("Update privacy setting error:", error);
-      return { error: "Failed to update setting" };
-    }
-  });
+						const likedPosts = likesQuery.all(currentUserId, ...replyIds);
+						const retweetedPosts = retweetsQuery.all(
+							currentUserId,
+							...replyIds,
+						);
+
+						const likedPostsSet = new Set(
+							likedPosts.map((like) => like.post_id),
+						);
+						const retweetedPostsSet = new Set(
+							retweetedPosts.map((retweet) => retweet.post_id),
+						);
+
+						processedReplies.forEach((reply) => {
+							reply.liked_by_user = likedPostsSet.has(reply.id);
+							reply.retweeted_by_user = retweetedPostsSet.has(reply.id);
+						});
+					} catch (e) {
+						console.warn("Failed to fetch likes/retweets for replies:", e);
+					}
+				}
+
+				return {
+					replies: processedReplies,
+				};
+			} catch (error) {
+				console.error("Replies fetch error:", error);
+				return { error: "Failed to fetch replies" };
+			}
+		},
+	)
+	.get("/:username/media", async ({ params, query: queryParams }) => {
+		try {
+			const { username } = params;
+
+			const user = getUserByUsername.get(username);
+			if (!user) {
+				return { error: "User not found" };
+			}
+
+			const before = queryParams.before;
+			const limit = parseInt(queryParams.limit || "20", 10);
+
+			let media;
+			if (before) {
+				media = getUserMediaPaginated.all(user.id, before, limit);
+			} else {
+				media = getUserMedia.all(user.id, limit);
+			}
+
+			const processedMedia = media.map((post) => {
+				const author = {
+					username: post.username,
+					name: post.name,
+					avatar: post.avatar || null,
+					verified: post.verified || false,
+					gold: post.gold || false,
+					avatar_radius: post.avatar_radius || null,
+					affiliate: post.affiliate || false,
+					affiliate_with: post.affiliate_with || null,
+				};
+
+				if (author.affiliate && author.affiliate_with) {
+					const affiliateProfile = getUserById.get(author.affiliate_with);
+					if (affiliateProfile) {
+						author.affiliate_with_profile = affiliateProfile;
+					}
+				}
+
+				return {
+					...post,
+					author,
+					attachments: getPostAttachments(post.id),
+					fact_check: getFactCheckForPost.get(post.id) || null,
+				};
+			});
+
+			return {
+				media: processedMedia,
+			};
+		} catch (error) {
+			console.error("Media fetch error:", error);
+			return { error: "Failed to fetch media" };
+		}
+	})
+	.put("/:username", async ({ params, jwt, headers, body }) => {
+		const authorization = headers.authorization;
+		if (!authorization) return { error: "Authentication required" };
+
+		try {
+			const payload = await jwt.verify(authorization.replace("Bearer ", ""));
+			if (!payload) return { error: "Invalid token" };
+
+			const currentUser = getUserByUsername.get(payload.username);
+			if (!currentUser) return { error: "User not found" };
+
+			const { username } = params;
+			if (currentUser.username !== username) {
+				return { error: "You can only edit your own profile" };
+			}
+
+			const { name, bio, location, website, pronouns } = body;
+
+			const { theme, accent_color } = body;
+
+			const { label_type, label_automated } = body;
+
+			let radiusToStore = currentUser.avatar_radius;
+			if (body.avatar_radius !== undefined) {
+				if (!currentUser.gold) {
+					return {
+						error: "Only gold accounts can customize avatar corner radius",
+					};
+				}
+				const parsed = parseInt(body.avatar_radius, 10);
+				if (Number.isNaN(parsed) || parsed < 0 || parsed > 1000) {
+					return { error: "Invalid avatar radius" };
+				}
+				radiusToStore = parsed;
+			}
+
+			if (name && name.length > 50) {
+				return { error: "Display name must be 50 characters or less" };
+			}
+
+			if (bio && bio.length > 160) {
+				return { error: "Bio must be 160 characters or less" };
+			}
+
+			if (location && location.length > 30) {
+				return { error: "Location must be 30 characters or less" };
+			}
+
+			if (website && website.length > 100) {
+				return { error: "Website must be 100 characters or less" };
+			}
+
+			if (pronouns && pronouns.length > 30) {
+				return { error: "Pronouns must be 30 characters or less" };
+			}
+
+			if (label_type !== undefined) {
+				const validLabels = ["parody", "fan", "commentary", null];
+				if (!validLabels.includes(label_type)) {
+					return {
+						error:
+							"Invalid label type. Must be parody, fan, commentary, or none",
+					};
+				}
+			}
+
+			const labelTypeToStore =
+				label_type !== undefined ? label_type : currentUser.label_type;
+			const labelAutomatedToStore =
+				label_automated !== undefined
+					? !!label_automated
+					: currentUser.label_automated || false;
+
+			updateProfile.run(
+				name || currentUser.name,
+				bio !== undefined ? bio : currentUser.bio,
+				location !== undefined ? location : currentUser.location,
+				website !== undefined ? website : currentUser.website,
+				pronouns !== undefined ? pronouns : currentUser.pronouns,
+				radiusToStore,
+				currentUser.id,
+			);
+			if (theme !== undefined || accent_color !== undefined) {
+				updateThemeAccent.run(
+					theme !== undefined ? theme : currentUser.theme,
+					accent_color !== undefined ? accent_color : currentUser.accent_color,
+					currentUser.id,
+				);
+			}
+
+			if (label_type !== undefined || label_automated !== undefined) {
+				updateLabels.run(
+					labelTypeToStore,
+					labelAutomatedToStore,
+					currentUser.id,
+				);
+			}
+
+			const updatedUser = getUserByUsername.get(currentUser.username);
+			return { success: true, profile: updatedUser };
+		} catch (error) {
+			console.error("Profile update error:", error);
+			return { error: "Failed to update profile" };
+		}
+	})
+	.post("/:username/follow", async ({ params, jwt, headers }) => {
+		const authorization = headers.authorization;
+		if (!authorization) return { error: "Authentication required" };
+
+		const payload = await jwt.verify(authorization.replace("Bearer ", ""));
+		if (!payload) return { error: "Invalid token" };
+
+		const currentUser = getUserByUsername.get(payload.username);
+		if (!currentUser) return { error: "User not found" };
+
+		// Restrict follow action for restricted accounts
+		if (isUserRestrictedById(currentUser.id)) {
+			return { error: "Action not allowed: account is restricted" };
+		}
+
+		const { username } = params;
+		const targetUser = getUserByUsername.get(username);
+		if (!targetUser) return { error: "User not found" };
+
+		if (currentUser.id === targetUser.id) {
+			return { error: "You cannot follow yourself" };
+		}
+
+		const blocked = db
+			.query(
+				"SELECT 1 FROM blocks WHERE (blocker_id = ? AND blocked_id = ?) OR (blocker_id = ? AND blocked_id = ?)",
+			)
+			.get(currentUser.id, targetUser.id, targetUser.id, currentUser.id);
+		if (blocked) {
+			return { error: "Cannot follow this user" };
+		}
+
+		const existingFollow = getFollowStatus.get(currentUser.id, targetUser.id);
+		if (existingFollow) {
+			return { error: "Already following this user" };
+		}
+
+		const existingRequest = getFollowRequest.get(currentUser.id, targetUser.id);
+		if (existingRequest) {
+			if (existingRequest.status === "pending") {
+				return { error: "Follow request already sent" };
+			}
+			if (existingRequest.status === "denied") {
+				// Allow re-requesting after denial
+				deleteFollowRequest.run(currentUser.id, targetUser.id);
+			}
+		}
+
+		if (targetUser.private) {
+			const requestId = Bun.randomUUIDv7();
+			createFollowRequest.run(requestId, currentUser.id, targetUser.id);
+
+			addNotification(
+				targetUser.id,
+				"follow_request",
+				`has requested to follow you`,
+				currentUser.username,
+				currentUser.id,
+				currentUser.username,
+				currentUser.name || currentUser.username,
+			);
+
+			return { success: true, requestSent: true };
+		} else {
+			const followId = Bun.randomUUIDv7();
+			addFollow.run(followId, currentUser.id, targetUser.id);
+
+			addNotification(
+				targetUser.id,
+				"follow",
+				`followed you`,
+				currentUser.username,
+				currentUser.id,
+				currentUser.username,
+				currentUser.name || currentUser.username,
+			);
+
+			return { success: true, requestSent: false };
+		}
+	})
+	.delete("/:username/follow", async ({ params, jwt, headers }) => {
+		const authorization = headers.authorization;
+		if (!authorization) return { error: "Authentication required" };
+
+		try {
+			const payload = await jwt.verify(authorization.replace("Bearer ", ""));
+			if (!payload) return { error: "Invalid token" };
+
+			const currentUser = getUserByUsername.get(payload.username);
+			if (!currentUser) return { error: "User not found" };
+
+			const { username } = params;
+			const targetUser = getUserByUsername.get(username);
+			if (!targetUser) return { error: "User not found" };
+
+			const existingFollow = getFollowStatus.get(currentUser.id, targetUser.id);
+			const existingRequest = getFollowRequest.get(
+				currentUser.id,
+				targetUser.id,
+			);
+
+			if (existingFollow) {
+				removeFollow.run(currentUser.id, targetUser.id);
+				return { success: true, action: "unfollowed" };
+			} else if (existingRequest && existingRequest.status === "pending") {
+				deleteFollowRequest.run(currentUser.id, targetUser.id);
+				return { success: true, action: "request_cancelled" };
+			} else {
+				return { error: "Not following this user and no pending request" };
+			}
+		} catch (error) {
+			console.error("Unfollow error:", error);
+			return { error: "Failed to unfollow user" };
+		}
+	})
+	.post("/:username/avatar", async ({ params, jwt, headers, body }) => {
+		const authorization = headers.authorization;
+		if (!authorization) return { error: "Authentication required" };
+
+		try {
+			const payload = await jwt.verify(authorization.replace("Bearer ", ""));
+			if (!payload) return { error: "Invalid token" };
+
+			const currentUser = getUserByUsername.get(payload.username);
+			if (!currentUser) return { error: "User not found" };
+
+			const { username } = params;
+			if (currentUser.username !== username) {
+				return { error: "You can only update your own avatar" };
+			}
+
+			const { avatar } = body;
+			if (!avatar || !avatar.stream) {
+				return { error: "Avatar file is required" };
+			}
+
+			const allowedTypes = {
+				"image/webp": ".webp",
+			};
+
+			if (currentUser.gold) {
+				allowedTypes["image/gif"] = ".gif";
+			}
+
+			const fileExtension = allowedTypes[avatar.type];
+			if (!fileExtension) {
+				return {
+					error: currentUser.gold
+						? "Invalid file type. Only WebP images (and GIF for Gold accounts) are allowed for avatars."
+						: "Invalid file type. Only WebP images are allowed for avatars.",
+				};
+			}
+
+			if (avatar.size > 5 * 1024 * 1024) {
+				return {
+					error: "File too large. Please upload an image smaller than 5MB.",
+				};
+			}
+
+			const uploadsDir = "./.data/uploads";
+
+			// Calculate secure hash for filename
+			const arrayBuffer = await avatar.arrayBuffer();
+
+			// Detect animated WebP (contains 'ANIM' chunk) and only allow it for gold users
+			if (avatar.type === "image/webp") {
+				try {
+					const bytes = new Uint8Array(arrayBuffer);
+					let hasANIM = false;
+					for (let i = 0; i < bytes.length - 3; i++) {
+						if (
+							bytes[i] === 0x41 &&
+							bytes[i + 1] === 0x4e &&
+							bytes[i + 2] === 0x49 &&
+							bytes[i + 3] === 0x4d
+						) {
+							hasANIM = true;
+							break;
+						}
+					}
+
+					if (hasANIM && !currentUser.gold) {
+						return {
+							error:
+								"Animated WebP avatars are allowed for Gold accounts only.",
+						};
+					}
+				} catch {}
+			}
+
+			const hasher = new Bun.CryptoHasher("sha256");
+			hasher.update(arrayBuffer);
+			const fileHash = hasher.digest("hex");
+
+			const fileName = `${fileHash}${fileExtension}`;
+			const filePath = `${uploadsDir}/${fileName}`;
+
+			await Bun.write(filePath, arrayBuffer);
+
+			const avatarUrl = `/api/uploads/${fileName}`;
+			updateAvatar.run(avatarUrl, currentUser.id);
+
+			const updatedUser = getUserByUsername.get(currentUser.username);
+			return { success: true, avatar: updatedUser.avatar };
+		} catch (error) {
+			console.error("Avatar upload error:", error);
+			return { error: "Failed to upload avatar" };
+		}
+	})
+	.delete("/:username/avatar", async ({ params, jwt, headers }) => {
+		const authorization = headers.authorization;
+		if (!authorization) return { error: "Authentication required" };
+
+		try {
+			const payload = await jwt.verify(authorization.replace("Bearer ", ""));
+			if (!payload) return { error: "Invalid token" };
+
+			const currentUser = getUserByUsername.get(payload.username);
+			if (!currentUser) return { error: "User not found" };
+
+			const { username } = params;
+			if (currentUser.username !== username) {
+				return { error: "You can only update your own avatar" };
+			}
+
+			// Remove avatar from database
+			updateAvatar.run(null, currentUser.id);
+
+			return { success: true };
+		} catch (error) {
+			console.error("Avatar removal error:", error);
+			return { error: "Failed to remove avatar" };
+		}
+	})
+	.post("/:username/banner", async ({ params, jwt, headers, body }) => {
+		const authorization = headers.authorization;
+		if (!authorization) return { error: "Authentication required" };
+
+		try {
+			const payload = await jwt.verify(authorization.replace("Bearer ", ""));
+			if (!payload) return { error: "Invalid token" };
+
+			const currentUser = getUserByUsername.get(payload.username);
+			if (!currentUser) return { error: "User not found" };
+
+			const { username } = params;
+			if (currentUser.username !== username) {
+				return { error: "You can only update your own banner" };
+			}
+
+			const { banner } = body;
+			if (!banner || !banner.stream) {
+				return { error: "Banner file is required" };
+			}
+
+			// Get file extension based on MIME type first
+			const allowedTypes = {
+				"image/webp": ".webp",
+			};
+
+			const fileExtension = allowedTypes[banner.type];
+			if (!fileExtension) {
+				return {
+					error: "Invalid file type. Only WebP images are allowed for banners.",
+				};
+			}
+
+			if (banner.size > 10 * 1024 * 1024) {
+				return {
+					error: "File too large. Please upload an image smaller than 10MB.",
+				};
+			}
+
+			const uploadsDir = "./.data/uploads";
+
+			// Calculate secure hash for filename
+			const arrayBuffer = await banner.arrayBuffer();
+			const hasher = new Bun.CryptoHasher("sha256");
+			hasher.update(arrayBuffer);
+			const fileHash = hasher.digest("hex");
+
+			const fileName = `${fileHash}${fileExtension}`;
+			const filePath = `${uploadsDir}/${fileName}`;
+
+			await Bun.write(filePath, arrayBuffer);
+
+			const bannerUrl = `/api/uploads/${fileName}`;
+			updateBanner.run(bannerUrl, currentUser.id);
+
+			const updatedUser = getUserByUsername.get(currentUser.username);
+			return { success: true, banner: updatedUser.banner };
+		} catch (error) {
+			console.error("Banner upload error:", error);
+			return { error: "Failed to upload banner" };
+		}
+	})
+	.delete("/:username/banner", async ({ params, jwt, headers }) => {
+		const authorization = headers.authorization;
+		if (!authorization) return { error: "Authentication required" };
+
+		try {
+			const payload = await jwt.verify(authorization.replace("Bearer ", ""));
+			if (!payload) return { error: "Invalid token" };
+
+			const currentUser = getUserByUsername.get(payload.username);
+			if (!currentUser) return { error: "User not found" };
+
+			const { username } = params;
+			if (currentUser.username !== username) {
+				return { error: "You can only update your own banner" };
+			}
+
+			// Remove banner from database
+			updateBanner.run(null, currentUser.id);
+
+			return { success: true };
+		} catch (error) {
+			console.error("Banner removal error:", error);
+			return { error: "Failed to remove banner" };
+		}
+	})
+	.get("/:username/followers", async ({ params, jwt, headers }) => {
+		const authorization = headers.authorization;
+		if (!authorization) return { error: "Authentication required" };
+
+		try {
+			const payload = await jwt.verify(authorization.replace("Bearer ", ""));
+			if (!payload) return { error: "Invalid token" };
+
+			const { username } = params;
+			const user = getUserByUsername.get(username);
+			if (!user) return { error: "User not found" };
+
+			const followers = getFollowers.all(user.id);
+			return { followers };
+		} catch (error) {
+			console.error("Get followers error:", error);
+			return { error: "Failed to get followers" };
+		}
+	})
+	.get("/:username/following", async ({ params, jwt, headers }) => {
+		const authorization = headers.authorization;
+		if (!authorization) return { error: "Authentication required" };
+
+		try {
+			const payload = await jwt.verify(authorization.replace("Bearer ", ""));
+			if (!payload) return { error: "Invalid token" };
+
+			const { username } = params;
+			const user = getUserByUsername.get(username);
+			if (!user) return { error: "User not found" };
+
+			const following = getFollowing.all(user.id);
+			return { following };
+		} catch (error) {
+			console.error("Get following error:", error);
+			return { error: "Failed to get following" };
+		}
+	})
+	.patch("/:username/username", async ({ params, jwt, headers, body }) => {
+		const authorization = headers.authorization;
+		if (!authorization) return { error: "Authentication required" };
+
+		try {
+			const payload = await jwt.verify(authorization.replace("Bearer ", ""));
+			if (!payload) return { error: "Invalid token" };
+
+			const currentUser = getUserByUsername.get(payload.username);
+			if (!currentUser) return { error: "User not found" };
+
+			const { username } = params;
+			if (currentUser.username !== username) {
+				return { error: "You can only change your own username" };
+			}
+
+			const { newUsername } = body;
+			if (!newUsername || newUsername.length < 3 || newUsername.length > 20) {
+				return { error: "Username must be between 3 and 20 characters" };
+			}
+
+			if (!/^[a-zA-Z0-9_]+$/.test(newUsername)) {
+				return {
+					error: "Username can only contain letters, numbers, and underscores",
+				};
+			}
+
+			const existingUser = getUserByUsername.get(newUsername);
+			if (existingUser && existingUser.id !== currentUser.id) {
+				return { error: "Username is already taken" };
+			}
+
+			updateUsername.run(newUsername, currentUser.id);
+
+			const newToken = await jwt.sign({
+				username: newUsername,
+				userId: currentUser.id,
+			});
+
+			return { success: true, username: newUsername, token: newToken };
+		} catch (error) {
+			console.error("Update username error:", error);
+			return { error: "Failed to update username" };
+		}
+	})
+	.patch("/:username/password", async ({ params, jwt, headers, body }) => {
+		const authorization = headers.authorization;
+		if (!authorization) return { error: "Authentication required" };
+
+		try {
+			const payload = await jwt.verify(authorization.replace("Bearer ", ""));
+			if (!payload) return { error: "Invalid token" };
+
+			const currentUser = getUserByUsername.get(payload.username);
+			if (!currentUser) return { error: "User not found" };
+
+			const { username } = params;
+			if (currentUser.username !== username) {
+				return { error: "You can only change your own password" };
+			}
+
+			const { currentPassword, newPassword } = body;
+
+			if (!newPassword || newPassword.length < 8) {
+				return { error: "New password must be at least 8 characters long" };
+			}
+
+			if (currentUser.password_hash) {
+				if (!currentPassword) {
+					return { error: "Current password is required" };
+				}
+
+				const isValid = await Bun.password.verify(
+					currentPassword,
+					currentUser.password_hash,
+				);
+				if (!isValid) {
+					return { error: "Current password is incorrect" };
+				}
+			}
+
+			const passwordHash = await Bun.password.hash(newPassword);
+			updatePassword.run(passwordHash, currentUser.id);
+
+			return { success: true, message: "Password updated successfully" };
+		} catch (error) {
+			console.error("Update password error:", error);
+			return { error: "Failed to update password" };
+		}
+	})
+	.delete("/:username", async ({ params, jwt, headers, body }) => {
+		const authorization = headers.authorization;
+		if (!authorization) return { error: "Authentication required" };
+
+		try {
+			const payload = await jwt.verify(authorization.replace("Bearer ", ""));
+			if (!payload) return { error: "Invalid token" };
+
+			const currentUser = getUserByUsername.get(payload.username);
+			if (!currentUser) return { error: "User not found" };
+
+			const { username } = params;
+			if (currentUser.username !== username) {
+				return { error: "You can only delete your own account" };
+			}
+
+			const { confirmationText } = body;
+			if (confirmationText !== "DELETE MY ACCOUNT") {
+				return { error: "Please type 'DELETE MY ACCOUNT' to confirm" };
+			}
+
+			deleteUser.run(currentUser.id);
+
+			return { success: true, message: "Account deleted successfully" };
+		} catch (error) {
+			console.error("Delete account error:", error);
+			return { error: "Failed to delete account" };
+		}
+	})
+	.post("/:username/password", async ({ params, jwt, headers, body }) => {
+		const authorization = headers.authorization;
+		if (!authorization) return { error: "Authentication required" };
+
+		try {
+			const payload = await jwt.verify(authorization.replace("Bearer ", ""));
+			if (!payload) return { error: "Invalid token" };
+
+			const currentUser = getUserByUsername.get(payload.username);
+			if (!currentUser) return { error: "User not found" };
+
+			const { username } = params;
+			if (currentUser.username !== username) {
+				return { error: "You can only add a password to your own account" };
+			}
+
+			const { password } = body;
+			if (!password || password.length < 6) {
+				return { error: "Password must be at least 6 characters long" };
+			}
+
+			const passwordHash = await Bun.password.hash(password);
+			updatePassword.run(passwordHash, currentUser.id);
+
+			return { success: true, message: "Password added successfully" };
+		} catch (error) {
+			console.error("Add password error:", error);
+			return { error: "Failed to add password" };
+		}
+	})
+	.get("/follow-requests", async ({ jwt, headers }) => {
+		const authorization = headers.authorization;
+		if (!authorization) return { error: "Authentication required" };
+
+		try {
+			const payload = await jwt.verify(authorization.replace("Bearer ", ""));
+			if (!payload) return { error: "Invalid token" };
+
+			const currentUser = getUserByUsername.get(payload.username);
+			if (!currentUser) return { error: "User not found" };
+
+			const requests = getPendingFollowRequests.all(currentUser.id);
+			return { requests };
+		} catch (error) {
+			console.error("Get follow requests error:", error);
+			return { error: "Failed to get follow requests" };
+		}
+	})
+	.post(
+		"/follow-requests/:requestId/approve",
+		async ({ params, jwt, headers }) => {
+			const authorization = headers.authorization;
+			if (!authorization) return { error: "Authentication required" };
+
+			try {
+				const payload = await jwt.verify(authorization.replace("Bearer ", ""));
+				if (!payload) return { error: "Invalid token" };
+
+				const currentUser = getUserByUsername.get(payload.username);
+				if (!currentUser) return { error: "User not found" };
+
+				const { requestId } = params;
+				const request = db
+					.query("SELECT * FROM follow_requests WHERE id = ?")
+					.get(requestId);
+
+				if (!request) return { error: "Follow request not found" };
+				if (request.target_id !== currentUser.id)
+					return { error: "Unauthorized" };
+				if (request.status !== "pending")
+					return { error: "Request already processed" };
+
+				// Approve request and create follow relationship
+				approveFollowRequest.run(requestId);
+				const followId = Bun.randomUUIDv7();
+				addFollow.run(followId, request.requester_id, currentUser.id);
+
+				// Notify the requester
+				const requester = db
+					.query("SELECT * FROM users WHERE id = ?")
+					.get(request.requester_id);
+				if (requester) {
+					addNotification(
+						requester.id,
+						"follow_approved",
+						`has approved your follow request`,
+						currentUser.username,
+						currentUser.id,
+						currentUser.username,
+						currentUser.name || currentUser.username,
+					);
+				}
+
+				return { success: true };
+			} catch (error) {
+				console.error("Approve follow request error:", error);
+				return { error: "Failed to approve follow request" };
+			}
+		},
+	)
+	.post(
+		"/follow-requests/:requestId/deny",
+		async ({ params, jwt, headers }) => {
+			const authorization = headers.authorization;
+			if (!authorization) return { error: "Authentication required" };
+
+			try {
+				const payload = await jwt.verify(authorization.replace("Bearer ", ""));
+				if (!payload) return { error: "Invalid token" };
+
+				const currentUser = getUserByUsername.get(payload.username);
+				if (!currentUser) return { error: "User not found" };
+
+				const { requestId } = params;
+				const request = db
+					.query("SELECT * FROM follow_requests WHERE id = ?")
+					.get(requestId);
+
+				if (!request) return { error: "Follow request not found" };
+				if (request.target_id !== currentUser.id)
+					return { error: "Unauthorized" };
+				if (request.status !== "pending")
+					return { error: "Request already processed" };
+
+				denyFollowRequest.run(requestId);
+
+				return { success: true };
+			} catch (error) {
+				console.error("Deny follow request error:", error);
+				return { error: "Failed to deny follow request" };
+			}
+		},
+	)
+	// Affiliate endpoints: send request, list pending, approve, deny
+	.post("/:username/affiliate", async ({ params, jwt, headers }) => {
+		const authorization = headers.authorization;
+		if (!authorization) return { error: "Authentication required" };
+
+		const payload = await jwt.verify(authorization.replace("Bearer ", ""));
+		if (!payload) return { error: "Invalid token" };
+
+		const currentUser = getUserByUsername.get(payload.username);
+		if (!currentUser) return { error: "User not found" };
+
+		const { username } = params;
+		const targetUser = getUserByUsername.get(username);
+		if (!targetUser) return { error: "User not found" };
+
+		if (currentUser.id === targetUser.id) {
+			return { error: "You cannot request affiliate for yourself" };
+		}
+
+		const existing = getAffiliateRequest.get(currentUser.id, targetUser.id);
+		if (existing) {
+			if (existing.status === "pending")
+				return { error: "Affiliate request already sent" };
+		}
+
+		db.query(
+			"DELETE FROM affiliate_requests WHERE requester_id = ? AND target_id = ?",
+		).run(currentUser.id, targetUser.id);
+
+		const id = Bun.randomUUIDv7();
+		try {
+			createAffiliateRequest.run(id, currentUser.id, targetUser.id);
+
+			addNotification(
+				targetUser.id,
+				"affiliate_request",
+				`${currentUser.username} requested you to become an affiliate`,
+				`affiliate_request:${id}`,
+				currentUser.id,
+				currentUser.username,
+				currentUser.name || currentUser.username,
+			);
+
+			return { success: true };
+		} catch (err) {
+			console.error("Create affiliate request error:", err);
+			return { error: "Failed to send affiliate request" };
+		}
+	})
+
+	.get("/affiliate-requests", async ({ jwt, headers }) => {
+		const authorization = headers.authorization;
+		if (!authorization) return { error: "Authentication required" };
+
+		const payload = await jwt.verify(authorization.replace("Bearer ", ""));
+		if (!payload) return { error: "Invalid token" };
+
+		const currentUser = getUserByUsername.get(payload.username);
+		if (!currentUser) return { error: "User not found" };
+
+		try {
+			const requests = getPendingAffiliateRequests.all(currentUser.id);
+			return { requests };
+		} catch (err) {
+			console.error("Get affiliate requests error:", err);
+			return { error: "Failed to get affiliate requests" };
+		}
+	})
+
+	.post(
+		"/affiliate-requests/:requestId/approve",
+		async ({ params, jwt, headers }) => {
+			const authorization = headers.authorization;
+			if (!authorization) return { error: "Authentication required" };
+
+			try {
+				const payload = await jwt.verify(authorization.replace("Bearer ", ""));
+				if (!payload) return { error: "Invalid token" };
+
+				const currentUser = getUserByUsername.get(payload.username);
+				if (!currentUser) return { error: "User not found" };
+
+				const { requestId } = params;
+				const request = db
+					.query("SELECT * FROM affiliate_requests WHERE id = ?")
+					.get(requestId);
+				if (!request) return { error: "Affiliate request not found" };
+				if (request.target_id !== currentUser.id)
+					return { error: "Unauthorized" };
+				if (request.status !== "pending")
+					return { error: "Request already processed" };
+
+				approveAffiliateRequest.run(requestId);
+				// Set affiliate flag and record who they are affiliated with
+				updateUserAffiliateWith.run(1, request.requester_id, currentUser.id);
+
+				const requester = db
+					.query("SELECT * FROM users WHERE id = ?")
+					.get(request.requester_id);
+				if (requester) {
+					addNotification(
+						requester.id,
+						"affiliate_approved",
+						`accepted your affiliate request`,
+						currentUser.username,
+						currentUser.id,
+						currentUser.username,
+						currentUser.name || currentUser.username,
+					);
+				}
+
+				return { success: true };
+			} catch (err) {
+				console.error("Approve affiliate request error:", err);
+				return { error: "Failed to approve affiliate request" };
+			}
+		},
+	)
+
+	.post(
+		"/affiliate-requests/:requestId/deny",
+		async ({ params, jwt, headers }) => {
+			const authorization = headers.authorization;
+			if (!authorization) return { error: "Authentication required" };
+
+			try {
+				const payload = await jwt.verify(authorization.replace("Bearer ", ""));
+				if (!payload) return { error: "Invalid token" };
+
+				const currentUser = getUserByUsername.get(payload.username);
+				if (!currentUser) return { error: "User not found" };
+
+				const { requestId } = params;
+				const request = db
+					.query("SELECT * FROM affiliate_requests WHERE id = ?")
+					.get(requestId);
+				if (!request) return { error: "Affiliate request not found" };
+				if (request.target_id !== currentUser.id)
+					return { error: "Unauthorized" };
+				if (request.status !== "pending")
+					return { error: "Request already processed" };
+
+				denyAffiliateRequest.run(requestId);
+
+				return { success: true };
+			} catch (err) {
+				console.error("Deny affiliate request error:", err);
+				return { error: "Failed to deny affiliate request" };
+			}
+		},
+	)
+	.get("/:username/affiliates", async ({ params }) => {
+		try {
+			const { username } = params;
+			const user = getUserByUsername.get(username);
+			if (!user) return { error: "User not found" };
+
+			const affiliates = getAffiliatesList.all(user.id);
+			return { affiliates };
+		} catch (err) {
+			console.error("Get affiliates error:", err);
+			return { error: "Failed to get affiliates" };
+		}
+	})
+	.delete("/remove-affiliate", async ({ jwt, headers }) => {
+		const authorization = headers.authorization;
+		if (!authorization) return { error: "Authentication required" };
+
+		try {
+			const payload = await jwt.verify(authorization.replace("Bearer ", ""));
+			if (!payload) return { error: "Invalid token" };
+
+			const currentUser = getUserByUsername.get(payload.username);
+			if (!currentUser) return { error: "User not found" };
+
+			updateUserAffiliateWith.run(0, null, currentUser.id);
+
+			return { success: true };
+		} catch (err) {
+			console.error("Remove affiliate error:", err);
+			return { error: "Failed to remove affiliate" };
+		}
+	})
+	.post("/pin/:tweetId", async ({ params, jwt, headers }) => {
+		const authorization = headers.authorization;
+		if (!authorization) return { error: "Authentication required" };
+
+		try {
+			const payload = await jwt.verify(authorization.replace("Bearer ", ""));
+			if (!payload) return { error: "Invalid token" };
+
+			const currentUser = getUserByUsername.get(payload.username);
+			if (!currentUser) return { error: "User not found" };
+
+			const { tweetId } = params;
+
+			const tweet = db
+				.query("SELECT * FROM posts WHERE id = ? AND user_id = ?")
+				.get(tweetId, currentUser.id);
+			if (!tweet) {
+				return { error: "Tweet not found or doesn't belong to you" };
+			}
+
+			const existingPinned = db
+				.query("SELECT * FROM posts WHERE user_id = ? AND pinned = 1")
+				.get(currentUser.id);
+			if (existingPinned) {
+				db.query("UPDATE posts SET pinned = 0 WHERE id = ?").run(
+					existingPinned.id,
+				);
+			}
+
+			db.query("UPDATE posts SET pinned = 1 WHERE id = ?").run(tweetId);
+
+			return { success: true };
+		} catch (error) {
+			console.error("Pin tweet error:", error);
+			return { error: "Failed to pin tweet" };
+		}
+	})
+	.delete("/pin/:tweetId", async ({ params, jwt, headers }) => {
+		const authorization = headers.authorization;
+		if (!authorization) return { error: "Authentication required" };
+
+		try {
+			const payload = await jwt.verify(authorization.replace("Bearer ", ""));
+			if (!payload) return { error: "Invalid token" };
+
+			const currentUser = getUserByUsername.get(payload.username);
+			if (!currentUser) return { error: "User not found" };
+
+			const { tweetId } = params;
+
+			// Unpin the tweet
+			db.query("UPDATE posts SET pinned = 0 WHERE id = ?").run(tweetId);
+
+			return { success: true };
+		} catch (error) {
+			console.error("Unpin tweet error:", error);
+			return { error: "Failed to unpin tweet" };
+		}
+	})
+	.post("/:username/pin/:tweetId", async ({ params, jwt, headers }) => {
+		const authorization = headers.authorization;
+		if (!authorization) return { error: "Authentication required" };
+
+		try {
+			const payload = await jwt.verify(authorization.replace("Bearer ", ""));
+			if (!payload) return { error: "Invalid token" };
+
+			const currentUser = getUserByUsername.get(payload.username);
+			if (!currentUser) return { error: "User not found" };
+
+			const { username, tweetId } = params;
+			if (currentUser.username !== username) {
+				return { error: "You can only pin your own tweets" };
+			}
+
+			// Check if tweet exists and belongs to user
+			const tweet = db
+				.query("SELECT * FROM posts WHERE id = ? AND user_id = ?")
+				.get(tweetId, currentUser.id);
+			if (!tweet) {
+				return { error: "Tweet not found or doesn't belong to you" };
+			}
+
+			// Check if user already has a pinned tweet
+			const existingPinned = db
+				.query("SELECT * FROM posts WHERE user_id = ? AND pinned = 1")
+				.get(currentUser.id);
+			if (existingPinned) {
+				// Unpin the existing tweet
+				db.query("UPDATE posts SET pinned = 0 WHERE id = ?").run(
+					existingPinned.id,
+				);
+			}
+
+			// Pin the new tweet
+			db.query("UPDATE posts SET pinned = 1 WHERE id = ?").run(tweetId);
+
+			return { success: true };
+		} catch (error) {
+			console.error("Pin tweet error:", error);
+			return { error: "Failed to pin tweet" };
+		}
+	})
+	.delete("/:username/pin/:tweetId", async ({ params, jwt, headers }) => {
+		const authorization = headers.authorization;
+		if (!authorization) return { error: "Authentication required" };
+
+		try {
+			const payload = await jwt.verify(authorization.replace("Bearer ", ""));
+			if (!payload) return { error: "Invalid token" };
+
+			const currentUser = getUserByUsername.get(payload.username);
+			if (!currentUser) return { error: "User not found" };
+
+			const { username, tweetId } = params;
+			if (currentUser.username !== username) {
+				return { error: "You can only unpin your own tweets" };
+			}
+
+			// Unpin the tweet
+			db.query("UPDATE posts SET pinned = 0 WHERE id = ?").run(tweetId);
+
+			return { success: true };
+		} catch (error) {
+			console.error("Unpin tweet error:", error);
+			return { error: "Failed to unpin tweet" };
+		}
+	})
+	.post("/settings/c-algorithm", async ({ jwt, headers, body }) => {
+		const authorization = headers.authorization;
+		if (!authorization) return { error: "Authentication required" };
+
+		try {
+			const payload = await jwt.verify(authorization.replace("Bearer ", ""));
+			if (!payload) return { error: "Invalid token" };
+
+			const currentUser = getUserByUsername.get(payload.username);
+			if (!currentUser) return { error: "User not found" };
+
+			const { enabled } = body;
+
+			db.query("UPDATE users SET use_c_algorithm = ? WHERE id = ?").run(
+				enabled ? 1 : 0,
+				currentUser.id,
+			);
+
+			return { success: true };
+		} catch (error) {
+			console.error("Update C algorithm setting error:", error);
+			return { error: "Failed to update setting" };
+		}
+	})
+	.post("/settings/private", async ({ jwt, headers, body }) => {
+		const authorization = headers.authorization;
+		if (!authorization) return { error: "Authentication required" };
+
+		try {
+			const payload = await jwt.verify(authorization.replace("Bearer ", ""));
+			if (!payload) return { error: "Invalid token" };
+
+			const currentUser = getUserByUsername.get(payload.username);
+			if (!currentUser) return { error: "User not found" };
+
+			const { enabled } = body;
+
+			updatePrivacy.run(enabled ? 1 : 0, currentUser.id);
+
+			return { success: true };
+		} catch (error) {
+			console.error("Update privacy setting error:", error);
+			return { error: "Failed to update setting" };
+		}
+	});
 
 export const avatarRoutes = new Elysia({ prefix: "/avatars" }).get(
-  "/:filename",
-  ({ params }) => {
-    const { filename } = params;
+	"/:filename",
+	({ params }) => {
+		const { filename } = params;
 
-    // Legacy avatar route - redirect to uploads (allow webp and gif)
-    if (!/^[a-f0-9]{64}\.(webp|gif)$/i.test(filename)) {
-      return new Response("Invalid filename", { status: 400 });
-    }
+		// Legacy avatar route - redirect to uploads (allow webp and gif)
+		if (!/^[a-f0-9]{64}\.(webp|gif)$/i.test(filename)) {
+			return new Response("Invalid filename", { status: 400 });
+		}
 
-    const filePath = `./.data/uploads/${filename}`;
-    return file(filePath);
-  }
+		const filePath = `./.data/uploads/${filename}`;
+		return file(filePath);
+	},
 );
