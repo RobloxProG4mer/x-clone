@@ -144,9 +144,6 @@ function connectSSE() {
 
     if (sseFailureCount >= MAX_SSE_FAILURES) {
       if (!sseDisabledNotified) {
-        toastQueue.add(
-          "Real-time updates temporarily disabled. Refresh the page to try again."
-        );
         sseDisabledNotified = true;
       }
       return;

@@ -274,7 +274,7 @@ async function callOpenAI(messages, db) {
 					content: m.content,
 				})),
 				tools: tools,
-				max_output_tokens: 1_000,
+				max_output_tokens: 500,
 			}),
 		});
 
@@ -285,32 +285,23 @@ async function callOpenAI(messages, db) {
 		}
 
 		let data = await response.json();
-
-		if (data.output_text) {
-			return data.output_text.trim();
-		}
-
 		const output = data.output;
 		if (!output || output.length === 0) return null;
 
-		const toolCalls = [];
-		for (const item of output) {
-			if (item.type === "message") {
-				for (const content of item.content) {
-					if (content.type === "tool_use") {
-						toolCalls.push(content);
-					}
-				}
-			}
-		}
+		const functionCalls = output.filter((item) => item.type === "function_call");
 
-		if (toolCalls.length > 0) {
+		if (functionCalls.length > 0) {
 			const toolResults = [];
-			for (const toolCall of toolCalls) {
-				const toolResult = await executeTool(toolCall.name, toolCall.input, db);
+			for (const call of functionCalls) {
+				const toolResult = await executeTool(
+					call.name,
+					JSON.parse(call.arguments),
+					db,
+				);
 				toolResults.push({
-					type: "tool_result",
-					tool_use_id: toolCall.id,
+					type: "function_result",
+					call_id: call.call_id,
+					name: call.name,
 					content: JSON.stringify(toolResult),
 				});
 			}
@@ -329,12 +320,15 @@ async function callOpenAI(messages, db) {
 							role: "user",
 							content: m.content,
 						})),
-						{
-							role: "assistant",
-							content: toolResults,
-						},
+						...functionCalls.map((fc) => ({
+							type: "function_call",
+							call_id: fc.call_id,
+							name: fc.name,
+							arguments: fc.arguments,
+						})),
+						...toolResults,
 					],
-					max_output_tokens: 1_000,
+					max_output_tokens: 500,
 				}),
 			});
 
@@ -347,7 +341,22 @@ async function callOpenAI(messages, db) {
 			data = await response.json();
 		}
 
-		return data.output_text?.trim() || null;
+		if (data.output_text) {
+			return data.output_text.trim();
+		}
+
+		const messages = data.output.filter((item) => item.type === "message");
+		if (messages.length > 0) {
+			const lastMessage = messages[messages.length - 1];
+			const textContent = lastMessage.content.find(
+				(c) => c.type === "output_text",
+			);
+			if (textContent) {
+				return textContent.text.trim();
+			}
+		}
+
+		return null;
 	} catch (error) {
 		console.error("OpenAI API call error:", error);
 		return null;
