@@ -123,6 +123,10 @@ function connectSSE() {
 				handleTypingStop(data);
 			} else if (data.type === "message-edit") {
 				handleMessageEdit(data);
+			} else if (data.type === "message-delete") {
+				handleMessageDelete(data);
+			} else if (data.type === "disappearing-update") {
+				handleDisappearingUpdate(data);
 			}
 		} catch (error) {
 			console.error("Error parsing SSE message:", error);
@@ -243,6 +247,36 @@ function handleMessageEdit(data) {
 	if (messageIndex !== -1) {
 		currentMessages[messageIndex] = data.message;
 		renderMessages();
+	}
+}
+
+function handleMessageDelete(data) {
+	if (!data.conversationId || data.conversationId !== currentConversation?.id)
+		return;
+	if (!data.messageId) return;
+
+	const messageIndex = currentMessages.findIndex(
+		(m) => m.id === data.messageId,
+	);
+	if (messageIndex !== -1) {
+		currentMessages.splice(messageIndex, 1);
+		messageOffset -= 1;
+		renderMessages();
+	}
+}
+
+function handleDisappearingUpdate(data) {
+	if (!data.conversationId || data.conversationId !== currentConversation?.id)
+		return;
+
+	if (currentConversation) {
+		currentConversation.disappearing_enabled = data.enabled;
+		currentConversation.disappearing_duration = data.duration;
+		
+		const statusText = data.enabled 
+			? `Disappearing messages enabled (${formatDisappearingDuration(data.duration)})`
+			: "Disappearing messages disabled";
+		toastQueue.add(statusText);
 	}
 }
 
@@ -542,7 +576,11 @@ function renderConversationHeader() {
 		}
 
 		if (actionsElement) {
-			actionsElement.innerHTML = "";
+			actionsElement.innerHTML = `
+        <button class="dm-action-btn" onclick="openDirectSettings()" title="Conversation Settings">
+          ⚙️
+        </button>
+      `;
 		}
 	}
 }
@@ -692,6 +730,11 @@ function createMessageElement(message, currentUser) {
 						<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
 							<path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
 							<path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+						</svg>
+					</button>
+					<button class="dm-message-action-btn dm-delete-btn" onclick="deleteMessage('${message.id}')" title="Delete">
+						<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+							<path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
 						</svg>
 					</button>`
 							: ""
@@ -982,9 +1025,24 @@ function openGroupSettings() {
 
 	const modal = document.getElementById("groupSettingsModal");
 	const groupNameInput = document.getElementById("groupNameInput");
+	const disappearingEnabled = document.getElementById("disappearingEnabled");
+	const disappearingDuration = document.getElementById("disappearingDuration");
+	const disappearingDurationSelect = document.getElementById("disappearingDurationSelect");
 
 	if (modal && groupNameInput) {
 		groupNameInput.value = currentConversation.title || "";
+		
+		if (disappearingEnabled) {
+			disappearingEnabled.checked = !!currentConversation.disappearing_enabled;
+			if (disappearingDuration) {
+				disappearingDuration.style.display = disappearingEnabled.checked ? "block" : "none";
+			}
+		}
+		
+		if (disappearingDurationSelect && currentConversation.disappearing_duration) {
+			disappearingDurationSelect.value = currentConversation.disappearing_duration.toString();
+		}
+		
 		renderParticipantsList();
 		modal.style.display = "flex";
 	}
@@ -1040,6 +1098,8 @@ async function saveGroupSettings() {
 
 	const groupNameInput = document.getElementById("groupNameInput");
 	const newTitle = groupNameInput?.value?.trim() || null;
+	const disappearingEnabled = document.getElementById("disappearingEnabled");
+	const disappearingDurationSelect = document.getElementById("disappearingDurationSelect");
 
 	if (newTitle !== (currentConversation.title || "")) {
 		try {
@@ -1064,6 +1124,44 @@ async function saveGroupSettings() {
 		} catch (error) {
 			console.error("Failed to update group settings:", error);
 			return;
+		}
+	}
+
+	if (disappearingEnabled && disappearingDurationSelect) {
+		const enabled = disappearingEnabled.checked;
+		const duration = enabled ? parseInt(disappearingDurationSelect.value) : null;
+
+		if (enabled !== currentConversation.disappearing_enabled || 
+			duration !== currentConversation.disappearing_duration) {
+			try {
+				const data = await query(
+					`/dm/conversations/${currentConversation.id}/disappearing`,
+					{
+						method: "PATCH",
+						headers: {
+							"Content-Type": "application/json",
+						},
+						body: JSON.stringify({ enabled, duration }),
+					},
+				);
+
+				if (data.error) {
+					toastQueue.add(data.error);
+					return;
+				}
+
+				currentConversation.disappearing_enabled = enabled;
+				currentConversation.disappearing_duration = duration;
+				
+				const statusText = enabled 
+					? `Disappearing messages enabled (${formatDisappearingDuration(duration)})`
+					: "Disappearing messages disabled";
+				toastQueue.add(statusText);
+			} catch (error) {
+				console.error("Failed to update disappearing messages:", error);
+				toastQueue.add("Failed to update disappearing messages");
+				return;
+			}
 		}
 	}
 
@@ -1555,6 +1653,14 @@ document.addEventListener("DOMContentLoaded", () => {
 			groupTitleInput.style.display = e.target.checked ? "block" : "none";
 		}
 	});
+
+	const disappearingEnabled = document.getElementById("disappearingEnabled");
+	const disappearingDuration = document.getElementById("disappearingDuration");
+	disappearingEnabled?.addEventListener("change", (e) => {
+		if (disappearingDuration) {
+			disappearingDuration.style.display = e.target.checked ? "block" : "none";
+		}
+	});
 	dmFileInput?.addEventListener("change", (e) => {
 		if (e.target.files.length > 0) {
 			handleFileUpload(Array.from(e.target.files));
@@ -2001,6 +2107,49 @@ async function editMessage(messageId) {
 }
 
 window.editMessage = editMessage;
+
+async function deleteMessage(messageId) {
+	const message = currentMessages.find((m) => m.id === messageId);
+	if (!message) {
+		toastQueue.add("Message not found");
+		return;
+	}
+
+	if (!confirm("Are you sure you want to delete this message? This cannot be undone.")) {
+		return;
+	}
+
+	try {
+		const result = await query(`/dm/messages/${messageId}`, {
+			method: "DELETE",
+		});
+
+		if (result.success) {
+			const messageIndex = currentMessages.findIndex((m) => m.id === messageId);
+			if (messageIndex !== -1) {
+				currentMessages.splice(messageIndex, 1);
+				messageOffset -= 1;
+				renderMessages();
+			}
+			toastQueue.add("Message deleted");
+		} else {
+			toastQueue.add(result.error || "Failed to delete message");
+		}
+	} catch (error) {
+		console.error("Delete message error:", error);
+		toastQueue.add("Failed to delete message");
+	}
+}
+
+function formatDisappearingDuration(seconds) {
+	if (!seconds) return "Unknown";
+	if (seconds < 60) return `${seconds}s`;
+	if (seconds < 3600) return `${Math.floor(seconds / 60)}m`;
+	if (seconds < 86400) return `${Math.floor(seconds / 3600)}h`;
+	return `${Math.floor(seconds / 86400)}d`;
+}
+
+window.deleteMessage = deleteMessage;
 
 export default {
 	loadConversations,

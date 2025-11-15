@@ -37,11 +37,11 @@ export default async (url, options = {}) => {
 
 		if (parsed?.restricted) {
 			// Only show this once per short time window to avoid multiple duplicate toasts
-			const key = 'restricted-notice';
+			const key = "restricted-notice";
 			if (!shownToasts.has(key)) {
 				shownToasts.add(key);
 				toastQueue.add(
-					`<h1>Account restricted</h1><p>Your account has limited privileges — you can browse posts, but interactions such as tweeting, liking, retweeting, DMs, and following are disabled.</p>`,
+					`<h1>Account restricted</h1><p>Your account has limited privileges - you can browse posts, but interactions such as tweeting, liking, retweeting, DMs, and following are disabled.</p>`,
 				);
 				// remove key after 1 minute so the notice can show again if needed
 				setTimeout(() => shownToasts.delete(key), 60 * 1000);

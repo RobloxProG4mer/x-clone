@@ -47,7 +47,8 @@
         gap: 12px;
 
         .image-cropper-cancel,
-        .image-cropper-apply {
+        .image-cropper-apply,
+        .image-cropper-reset {
           width: auto;
           min-width: 110px;
           margin-bottom: 0;
@@ -58,7 +59,8 @@
           align-items: stretch;
 
           .image-cropper-cancel,
-          .image-cropper-apply {
+          .image-cropper-apply,
+          .image-cropper-reset {
             min-width: 100%;
             width: 100%;
           }

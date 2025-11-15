@@ -280,7 +280,9 @@ CREATE TABLE IF NOT EXISTS conversations (
   type TEXT DEFAULT 'direct',
   title TEXT DEFAULT NULL,
   created_at TIMESTAMP DEFAULT (datetime('now', 'utc')),
-  updated_at TIMESTAMP DEFAULT (datetime('now', 'utc'))
+  updated_at TIMESTAMP DEFAULT (datetime('now', 'utc')),
+  disappearing_enabled BOOLEAN DEFAULT FALSE,
+  disappearing_duration INTEGER DEFAULT NULL
 );
 
 CREATE TABLE IF NOT EXISTS conversation_participants (
@@ -303,10 +305,15 @@ CREATE TABLE IF NOT EXISTS dm_messages (
   reply_to TEXT DEFAULT NULL,
   created_at TIMESTAMP DEFAULT (datetime('now', 'utc')),
   edited_at TIMESTAMP DEFAULT NULL,
+  deleted_at TIMESTAMP DEFAULT NULL,
+  expires_at TIMESTAMP DEFAULT NULL,
   FOREIGN KEY (conversation_id) REFERENCES conversations(id) ON DELETE CASCADE,
   FOREIGN KEY (sender_id) REFERENCES users(id) ON DELETE CASCADE,
   FOREIGN KEY (reply_to) REFERENCES dm_messages(id) ON DELETE SET NULL
 );
+
+CREATE INDEX IF NOT EXISTS idx_dm_messages_expires_at ON dm_messages(expires_at) WHERE expires_at IS NOT NULL;
+CREATE INDEX IF NOT EXISTS idx_dm_messages_deleted_at ON dm_messages(deleted_at) WHERE deleted_at IS NOT NULL;
 
 CREATE TABLE IF NOT EXISTS dm_attachments (
   id TEXT PRIMARY KEY,
@@ -624,6 +631,22 @@ CREATE TABLE IF NOT EXISTS interactive_card_options (
 );
 
 CREATE INDEX IF NOT EXISTS idx_interactive_card_options_card_id ON interactive_card_options(card_id);
+
+CREATE TABLE IF NOT EXISTS delegates (
+  id TEXT PRIMARY KEY,
+  owner_id TEXT NOT NULL,
+  delegate_id TEXT NOT NULL,
+  status TEXT DEFAULT 'pending',
+  created_at TIMESTAMP DEFAULT (datetime('now', 'utc')),
+  accepted_at TIMESTAMP DEFAULT NULL,
+  FOREIGN KEY (owner_id) REFERENCES users(id) ON DELETE CASCADE,
+  FOREIGN KEY (delegate_id) REFERENCES users(id) ON DELETE CASCADE,
+  UNIQUE(owner_id, delegate_id)
+);
+
+CREATE INDEX IF NOT EXISTS idx_delegates_owner_id ON delegates(owner_id);
+CREATE INDEX IF NOT EXISTS idx_delegates_delegate_id ON delegates(delegate_id);
+CREATE INDEX IF NOT EXISTS idx_delegates_status ON delegates(status);
 `,
 ).run();
 

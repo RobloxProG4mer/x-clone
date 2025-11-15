@@ -72,6 +72,8 @@ class AdminPanel {
 			return;
 		}
 
+		// admin init: validate and continue
+
 		try {
 			const user = await this.getCurrentUser();
 			if (!user || !user.admin) {
@@ -1024,13 +1026,19 @@ class AdminPanel {
 												: ""
 										}
 					${
-						user.suspended
-							? '<span class="badge bg-danger">Suspended</span>'
-							: user.restricted
+						(
+							user.suspended
+								? '<span class="badge bg-danger">Suspended</span>'
+								: ""
+						) +
+						(
+							user.restricted
 								? '<span class="badge bg-warning">Restricted</span>'
-								: user.shadowbanned
-									? '<span class="badge bg-secondary">Shadowbanned</span>'
-									: ""
+								: ""
+						) +
+						(user.shadowbanned
+							? '<span class="badge bg-secondary">Shadowbanned</span>'
+							: "")
 					}
                   </div>
                 </td>
@@ -1053,30 +1061,9 @@ class AdminPanel {
 										}')">
                       <i class="bi bi-chat-text"></i> Tweet As
                     </button>
-											${
-												!(user.suspended || user.restricted)
-													? `
-												<button class="btn btn-outline-danger btn-sm" onclick="adminPanel.showSuspensionModal('${user.id}')">
-													<i class="bi bi-exclamation-triangle"></i> Suspend/Restrict
-												</button>
-												<button class="btn btn-outline-secondary btn-sm" onclick="adminPanel.showShadowbanModal('${user.id}')">
-												  <i class="bi bi-person-dash"></i> Shadowban
-												</button>
-											`
-													: `
-																<button class="btn btn-outline-success btn-sm" onclick="adminPanel.unsuspendUser('${user.id}')">
-																	<i class="bi bi-check-circle"></i> ${
-																		user.suspended && user.restricted
-																			? "Unsuspend & Unrestrict"
-																			: user.suspended
-																				? "Unsuspend"
-																				: user.restricted
-																					? "Unrestrict"
-																					: "Lift"
-																	}
-																</button>
-															`
-											}
+											<button class="btn btn-outline-danger btn-sm" onclick="adminPanel.showSuspensionModal('${user.id}')">
+												<i class="bi bi-exclamation-triangle"></i> Moderate
+											</button>
                   
                       <button class="btn btn-outline-info btn-sm" onclick="adminPanel.impersonateUser('${
 												user.id
@@ -1214,6 +1201,15 @@ class AdminPanel {
 		}
 
 		new bootstrap.Modal(document.getElementById("bulkTweetModal")).hide();
+		// Reset controlled fields and selection
+		const form = document.getElementById("bulkTweetForm");
+		if (form) form.reset();
+		this.selectedUsers.clear();
+		this.syncSelectedUserCheckboxes();
+		this.updateBulkEditControls();
+		const selectedList = document.getElementById("bulkTweetSelectedUsers");
+		if (selectedList) selectedList.textContent = "None selected";
+		this.loadUsers(this.currentPage.users);
 		this.showSuccess(`Mass tweet completed: ${successCount}/${total} success`);
 		if (successCount !== total) {
 			console.warn(
@@ -1458,13 +1454,13 @@ class AdminPanel {
 											: "Permanent"
 									}</small>
                 </td>
-                <td>
-                  <button class="btn btn-outline-success btn-sm" onclick="adminPanel.unsuspendUser('${
+								<td>
+									<button class="btn btn-outline-success btn-sm" onclick="adminPanel.showLiftModal('${
 										suspension.user_id
-									}')">
-                    <i class="bi bi-check-circle"></i> Lift
-                  </button>
-                </td>
+									}', ['${suspension.action}'])">
+										<i class="bi bi-check-circle"></i> Lift
+									</button>
+								</td>
               </tr>
             `,
 							)
@@ -1625,16 +1621,22 @@ class AdminPanel {
             </h4>
             <p class="text-muted">@${user.username}</p>
             <div class="d-flex justify-content-center gap-2 mb-3">
-			${user.admin ? '<span class="badge bg-primary">Admin</span>' : ""}
-			  ${
-					user.suspended
-						? '<span class="badge bg-danger">Suspended</span>'
-						: user.restricted
-							? '<span class="badge bg-warning">Restricted</span>'
-							: user.shadowbanned
-								? '<span class="badge bg-secondary">Shadowbanned</span>'
-								: ""
-				}
+							${user.admin ? '<span class="badge bg-primary">Admin</span>' : ""}
+							${
+								(
+									user.suspended
+										? '<span class="badge bg-danger">Suspended</span>'
+										: ""
+								) +
+								(
+									user.restricted
+										? '<span class="badge bg-warning">Restricted</span>'
+										: ""
+								) +
+								(user.shadowbanned
+									? '<span class="badge bg-secondary">Shadowbanned</span>'
+									: "")
+							}
             </div>
           </div>
           <div class="col-md-8">
@@ -1854,12 +1856,9 @@ class AdminPanel {
           <button type="button" class="btn btn-warning dropdown-toggle" data-bs-toggle="dropdown">
             Actions
           </button>
-          <ul class="dropdown-menu dropdown-menu-end">
-			${
-				!user.suspended
-					? `<li><a class="dropdown-item" href="#" onclick="adminPanel.showSuspensionModal('${user.id}')">Suspend/Restrict User</a></li><li><a class="dropdown-item" href="#" onclick="adminPanel.showShadowbanModal('${user.id}')">Shadowban User</a></li>`
-					: `<li><a class="dropdown-item" href="#" onclick="adminPanel.unsuspendUser('${user.id}')">${user.suspended && user.restricted ? "Unsuspend & Unrestrict" : user.suspended ? "Unsuspend User" : "Unrestrict User"}</a></li>`
-			}
+					<ul class="dropdown-menu dropdown-menu-end">
+						    <li><a class="dropdown-item" href="#" onclick="adminPanel.showSuspensionModal('${user.id}')">Moderate User</a></li>
+						    ${user.suspended || user.restricted || user.shadowbanned ? `<li><a class="dropdown-item" href="#" onclick="adminPanel.showLiftModal('${user.id}')">Lift (Unsuspend/Unrestrict/Unshadowban)</a></li>` : ``}
             <li><a class="dropdown-item text-danger" href="#" onclick="adminPanel.deleteUser('${
 							user.id
 						}', '@${user.username}')">Delete User</a></li>
@@ -2146,27 +2145,207 @@ class AdminPanel {
 		}
 	}
 
-	showSuspensionModal(userId) {
-		document.getElementById("suspendUserId").value = userId;
-		document.getElementById("suspensionForm").reset();
-		new bootstrap.Modal(document.getElementById("suspensionModal")).show();
-	}
-
-	showShadowbanModal(userId) {
+	async showSuspensionModal(
+		userId,
+		defaultAction = "suspend",
+		liftDefaults = null,
+	) {
 		document.getElementById("suspendUserId").value = userId;
 		const form = document.getElementById("suspensionForm");
 		if (form) form.reset();
-		const actionSelect = document.getElementById("suspensionAction");
-		if (actionSelect) actionSelect.value = "shadowban";
+		// Prefill action and disable options that represent already-applied statuses
+		try {
+			const cached = this.userCache.get(userId);
+			let userData;
+			if (cached && typeof cached.then === "function") {
+				userData = await cached;
+			} else if (cached) {
+				userData = cached;
+			} else {
+				userData = await this.apiCall(`/api/admin/users/${userId}`);
+			}
+			const user = userData?.user || {};
+
+			const actionSelect = document.getElementById("suspensionAction");
+			if (actionSelect) {
+				// Reset all options: we will disable ones that are already active
+				for (const opt of Array.from(actionSelect.options)) {
+					opt.disabled = false;
+				}
+				// Cannot re-apply the same active state
+				if (user.suspended || user.restricted || user.shadowbanned) {
+					const opt = actionSelect.querySelector("option[value='suspend']");
+					if (opt) {
+						opt.disabled = true;
+						opt.title = "Cannot suspend while restricted or shadowbanned";
+					}
+				}
+				if (user.restricted) {
+					const opt = actionSelect.querySelector("option[value='restrict']");
+					if (opt) opt.disabled = true;
+				}
+				if (user.shadowbanned) {
+					const opt = actionSelect.querySelector("option[value='shadowban']");
+					if (opt) opt.disabled = true;
+				}
+				// If the default action is disabled, fall back to 'suspend' or first available
+				let toSet = defaultAction;
+				const selectedOpt = actionSelect.querySelector(
+					`option[value='${toSet}']`,
+				);
+				if (!selectedOpt || selectedOpt.disabled) {
+					// pick first non-disabled option
+					const available = Array.from(actionSelect.options).find(
+						(o) => !o.disabled,
+					);
+					toSet = available ? available.value : defaultAction;
+				}
+				actionSelect.value = toSet;
+				// Update modal title/button now
+				this.updateSuspensionModalForAction(toSet);
+				// Update on change
+				actionSelect.onchange = (e) => {
+					const v = e.target.value;
+					this.updateSuspensionModalForAction(v);
+				};
+				// Pre-populate lift checkboxes (if present) based on user state
+				const liftSuspendCb = document.getElementById("liftSuspendCheckbox");
+				const liftRestrictCb = document.getElementById("liftRestrictCheckbox");
+				const liftShadowbanCb = document.getElementById(
+					"liftShadowbanCheckbox",
+				);
+				if (liftSuspendCb) {
+					liftSuspendCb.checked = Array.isArray(liftDefaults)
+						? liftDefaults.includes("suspend")
+						: !!user.suspended;
+					// Allow admin to click lift checkboxes; server will validate
+					// and only apply lifts that actually affect the user.
+					liftSuspendCb.disabled = false;
+				}
+				if (liftRestrictCb) {
+					liftRestrictCb.checked = Array.isArray(liftDefaults)
+						? liftDefaults.includes("restrict")
+						: !!user.restricted;
+					liftRestrictCb.disabled = false;
+				}
+				if (liftShadowbanCb) {
+					liftShadowbanCb.checked = Array.isArray(liftDefaults)
+						? liftDefaults.includes("shadowban")
+						: !!user.shadowbanned;
+					liftShadowbanCb.disabled = false;
+				}
+			}
+		} catch {
+			// If we failed to fetch user, just reset and allow default
+		}
+
 		new bootstrap.Modal(document.getElementById("suspensionModal")).show();
 	}
+
+	updateSuspensionModalForAction(action) {
+		const titleEl = document.getElementById("suspensionModalTitle");
+		const submitBtn = document.getElementById("suspensionSubmitBtn");
+		const reasonEl = document.getElementById("suspensionReason");
+		const durationEl = document.getElementById("suspensionDuration");
+
+		if (!titleEl || !submitBtn) return;
+
+		const map = {
+			suspend: {
+				title: "Suspend User",
+				btnClass: "btn-danger",
+				icon: "bi bi-exclamation-triangle",
+				text: "Suspend User",
+				reasonRequired: true,
+				showDuration: true,
+			},
+			restrict: {
+				title: "Restrict User",
+				btnClass: "btn-warning",
+				icon: "bi bi-eye-slash",
+				text: "Restrict User",
+				reasonRequired: true,
+				showDuration: true,
+			},
+			shadowban: {
+				title: "Shadowban User",
+				btnClass: "btn-secondary",
+				icon: "bi bi-person-dash",
+				text: "Shadowban User",
+				reasonRequired: true,
+				showDuration: true,
+			},
+			lift: {
+				title: "Lift Suspensions",
+				btnClass: "btn-success",
+				icon: "bi bi-check-circle",
+				text: "Lift",
+				reasonRequired: false,
+				showDuration: false,
+			},
+		};
+
+		const cfg = map[action] || map.suspend;
+		titleEl.textContent = cfg.title;
+
+		// update submit button classes
+		submitBtn.classList.remove(
+			"btn-danger",
+			"btn-warning",
+			"btn-secondary",
+			"btn-success",
+		);
+		submitBtn.classList.add(cfg.btnClass);
+		submitBtn.innerHTML = `<i class="${cfg.icon}"></i> ${cfg.text}`;
+
+		if (reasonEl) {
+			if (cfg.reasonRequired) {
+				reasonEl.setAttribute("required", "");
+				reasonEl.placeholder = "Enter the reason for action...";
+			} else {
+				reasonEl.removeAttribute("required");
+				reasonEl.placeholder = "Optional reason for lifting...";
+			}
+		}
+
+		if (durationEl) {
+			if (cfg.showDuration) {
+				durationEl.closest(".mb-3").style.display = "";
+			} else {
+				durationEl.closest(".mb-3").style.display = "none";
+			}
+		}
+
+		// Lift checkboxes shown only for lift action
+		const liftOptionsEl = document.getElementById("liftOptions");
+		if (liftOptionsEl) {
+			if (action === "lift") {
+				liftOptionsEl.style.display = "";
+			} else {
+				liftOptionsEl.style.display = "none";
+			}
+		}
+	}
+
+	// showShadowbanModal removed; use showSuspensionModal(userId, 'shadowban') instead
 
 	async submitSuspension() {
 		const userId = document.getElementById("suspendUserId").value;
 		let reason = document.getElementById("suspensionReason").value;
 		// severity removed for suspensions; admin may choose an action only
-		const action =
-			document.getElementById("suspensionAction")?.value || "suspend";
+		const actionSelectEl = document.getElementById("suspensionAction");
+		const action = actionSelectEl?.value || "suspend";
+
+		// Prevent submitting an action that's disabled (already applied)
+		if (actionSelectEl) {
+			const selectedOpt = actionSelectEl.querySelector(
+				`option[value='${action}']`,
+			);
+			if (!selectedOpt || selectedOpt.disabled) {
+				this.showError("This action is already applied to the user");
+				return;
+			}
+		}
 		const duration = document.getElementById("suspensionDuration").value;
 		const notes = document.getElementById("suspensionNotes").value;
 
@@ -2185,6 +2364,22 @@ class AdminPanel {
 		}
 		if (notes?.trim()) {
 			payload.notes = notes.trim();
+		}
+
+		if (action === "lift") {
+			const lifts = [];
+			const liftSuspendCb = document.getElementById("liftSuspendCheckbox");
+			const liftRestrictCb = document.getElementById("liftRestrictCheckbox");
+			const liftShadowbanCb = document.getElementById("liftShadowbanCheckbox");
+			if (liftSuspendCb?.checked) lifts.push("suspend");
+			if (liftRestrictCb?.checked) lifts.push("restrict");
+			if (liftShadowbanCb?.checked) lifts.push("shadowban");
+
+			if (!lifts.length) {
+				this.showError("Please select at least one action to lift");
+				return;
+			}
+			payload.lift = lifts;
 		}
 
 		try {
@@ -2213,16 +2408,13 @@ class AdminPanel {
 
 	async unsuspendUser(userId) {
 		// Unified 'lift' action: open the same suspension modal prefilled with 'lift' action
-		this.showLiftModal(userId);
+		// default to lifting 'suspend' only
+		this.showLiftModal(userId, ["suspend"]);
 	}
 
-	showLiftModal(userId) {
-		document.getElementById("suspendUserId").value = userId;
-		const form = document.getElementById("suspensionForm");
-		if (form) form.reset();
-		const actionSelect = document.getElementById("suspensionAction");
-		if (actionSelect) actionSelect.value = "lift";
-		new bootstrap.Modal(document.getElementById("suspensionModal")).show();
+	showLiftModal(userId, liftDefaults = null) {
+		// Reuse suspension modal; preselect 'lift' and optionally check defaults
+		this.showSuspensionModal(userId, "lift", liftDefaults);
 	}
 
 	async impersonateUser(userId) {
@@ -2925,7 +3117,7 @@ class AdminPanel {
 	}
 
 	formatDate(dateInput) {
-		const d = dateInput instanceof Date ? dateInput : new Date(dateInput);
+		const d = this.parseUtcDate(dateInput);
 		if (Number.isNaN(d.getTime())) return "";
 		if (d.getFullYear() < 1926) {
 			return d.toLocaleString(undefined, {
@@ -2940,8 +3132,25 @@ class AdminPanel {
 		return d.toLocaleString();
 	}
 
+	// Parse an incoming date string or value and treat ambiguous timestamps as UTC.
+	// This helps when backend stores UTC timestamps without timezone indicator, e.g. "YYYY-MM-DD HH:MM:SS".
+	parseUtcDate(dateInput) {
+		if (dateInput instanceof Date) return dateInput;
+		if (dateInput === undefined || dateInput === null)
+			return new Date(dateInput);
+		if (typeof dateInput === "number") return new Date(dateInput);
+		const s = String(dateInput);
+		// If string contains timezone or 'T' assume it has explicit timezone information.
+		if (s.includes("T") || /[Zz]|[+-]\d{2}:\d{2}$/.test(s)) {
+			return new Date(s);
+		}
+		// Convert 'YYYY-MM-DD HH:MM:SS' or similar to 'YYYY-MM-DDTHH:MM:SSZ' (UTC) for correct parsing.
+		const normalized = s.replace(" ", "T") + "Z";
+		return new Date(normalized);
+	}
+
 	formatDateOnly(dateInput) {
-		const d = dateInput instanceof Date ? dateInput : new Date(dateInput);
+		const d = this.parseUtcDate(dateInput);
 		if (Number.isNaN(d.getTime())) return "";
 		if (d.getFullYear() < 1926) {
 			return d.toLocaleDateString(undefined, {
@@ -5933,5 +6142,11 @@ window.deleteConversation = deleteConversation;
 function loadConversationMessages(page) {
 	adminPanel.loadConversationMessages(page);
 }
+
+function showLiftModal(userId) {
+	adminPanel.showLiftModal(userId);
+}
+
+window.showLiftModal = showLiftModal;
 
 window.loadConversationMessages = loadConversationMessages;

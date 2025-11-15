@@ -5,1358 +5,1370 @@ import query from "./api.js";
 import getUser from "./auth.js";
 
 export const useComposer = (
-  element,
-  callback,
-  {
-    replyTo = null,
-    quoteTweet = null,
-    article = null,
-    maxChars = 400,
-    communityId = null,
-    communitySelector = null,
-    interactiveCard = null,
-    cardOnly = false,
-  } = {}
+	element,
+	callback,
+	{
+		replyTo = null,
+		quoteTweet = null,
+		article = null,
+		maxChars = 400,
+		communityId = null,
+		communitySelector = null,
+		interactiveCard = null,
+		cardOnly = false,
+	} = {},
 ) => {
-  const textarea = element.querySelector("#tweet-textarea");
-  const charCount = element.querySelector("#char-count");
-  const tweetButton = element.querySelector("#tweet-button");
-  const pollToggle = element.querySelector("#poll-toggle");
-  const pollContainer = element.querySelector("#poll-container");
-  const addPollOptionBtn = element.querySelector("#add-poll-option");
-  const pollDuration = element.querySelector("#poll-duration");
-  const fileInput = element.querySelector("#file-input");
-  const fileUploadBtn = element.querySelector("#file-upload-btn");
-  const attachmentPreview = element.querySelector("#attachment-preview");
-  const gifBtn = element.querySelector("#gif-btn");
-  const gifPicker = element.querySelector("#gif-picker");
-  const gifSearchInput = element.querySelector("#gif-search-input");
-  const gifResults = element.querySelector("#gif-results");
-  const gifPickerClose = element.querySelector("#gif-picker-close");
-  const emojiBtn = element.querySelector("#emoji-btn");
-  const replyRestrictionSelect = element.querySelector(
-    "#reply-restriction-select"
-  );
-  const scheduleBtn = element.querySelector("#schedule-btn");
-  const scheduleModal = element.querySelector("#schedule-modal");
-  const scheduleModalClose = element.querySelector("#schedule-modal-close");
-  const scheduleDateInput = element.querySelector("#schedule-date");
-  const scheduleTimeInput = element.querySelector("#schedule-time");
-  const confirmScheduleBtn = element.querySelector("#confirm-schedule-btn");
-  const clearScheduleBtn = element.querySelector("#clear-schedule-btn");
-  const cardToggleBtn = element.querySelector("#card-toggle");
-  const cardModal = element.querySelector("#card-modal");
-  const cardModalClose = element.querySelector("#card-modal-close");
-  const cardMediaInput = element.querySelector("#card-media-input");
-  const cardMediaUploadBtn = element.querySelector("#card-media-upload-btn");
-  const confirmCardBtn = element.querySelector("#confirm-card-btn");
-  const clearCardBtn = element.querySelector("#clear-card-btn");
+	const textarea = element.querySelector("#tweet-textarea");
+	const charCount = element.querySelector("#char-count");
+	const tweetButton = element.querySelector("#tweet-button");
+	const pollToggle = element.querySelector("#poll-toggle");
+	const pollContainer = element.querySelector("#poll-container");
+	const addPollOptionBtn = element.querySelector("#add-poll-option");
+	const pollDuration = element.querySelector("#poll-duration");
+	const fileInput = element.querySelector("#file-input");
+	const fileUploadBtn = element.querySelector("#file-upload-btn");
+	const attachmentPreview = element.querySelector("#attachment-preview");
+	const gifBtn = element.querySelector("#gif-btn");
+	const gifPicker = element.querySelector("#gif-picker");
+	const gifSearchInput = element.querySelector("#gif-search-input");
+	const gifResults = element.querySelector("#gif-results");
+	const gifPickerClose = element.querySelector("#gif-picker-close");
+	const emojiBtn = element.querySelector("#emoji-btn");
+	const replyRestrictionSelect = element.querySelector(
+		"#reply-restriction-select",
+	);
+	const scheduleBtn = element.querySelector("#schedule-btn");
+	const scheduleModal = element.querySelector("#schedule-modal");
+	const scheduleModalClose = element.querySelector("#schedule-modal-close");
+	const scheduleDateInput = element.querySelector("#schedule-date");
+	const scheduleTimeInput = element.querySelector("#schedule-time");
+	const confirmScheduleBtn = element.querySelector("#confirm-schedule-btn");
+	const clearScheduleBtn = element.querySelector("#clear-schedule-btn");
+	const cardToggleBtn = element.querySelector("#card-toggle");
+	const cardModal = element.querySelector("#card-modal");
+	const cardModalClose = element.querySelector("#card-modal-close");
+	const cardMediaInput = element.querySelector("#card-media-input");
+	const cardMediaUploadBtn = element.querySelector("#card-media-upload-btn");
+	const confirmCardBtn = element.querySelector("#confirm-card-btn");
+	const clearCardBtn = element.querySelector("#clear-card-btn");
 
-  let pollEnabled = false;
-  let pendingFiles = [];
-  let replyRestriction = "everyone";
-  let selectedGif = null;
-  let scheduledFor = null;
+	let pollEnabled = false;
+	let pendingFiles = [];
+	let replyRestriction = "everyone";
+	let selectedGif = null;
+	let scheduledFor = null;
 
-  const updateCharacterCount = () => {
-    const length = textarea.value.length;
-    charCount.textContent = length;
+	const updateCharacterCount = () => {
+		if (!textarea || !charCount || !tweetButton) return;
+		const length = textarea.value.length;
+		charCount.textContent = length;
 
-    if (length > maxChars) {
-      charCount.parentElement.id = "over-limit";
-      tweetButton.disabled = true;
-    } else {
-      charCount.parentElement.id = "";
-      const hasExtras =
-        (pendingFiles && pendingFiles.length > 0) ||
-        !!selectedGif ||
-        pollEnabled ||
-        !!interactiveCard ||
-        !!article;
-      tweetButton.disabled = !hasExtras && length === 0;
-    }
-  };
+		if (length > maxChars) {
+			charCount.parentElement.id = "over-limit";
+			tweetButton.disabled = true;
+		} else {
+			charCount.parentElement.id = "";
+			const hasExtras =
+				(pendingFiles && pendingFiles.length > 0) ||
+				!!selectedGif ||
+				pollEnabled ||
+				!!interactiveCard ||
+				!!article;
+			tweetButton.disabled = !hasExtras && length === 0;
+		}
+	};
 
-  const addPollOption = (text = "") => {
-    if (!pollContainer) return;
-    const optionIndex = pollContainer.querySelectorAll(".poll-option").length;
-    if (optionIndex >= 4) return;
+	const addPollOption = (text = "") => {
+		if (!pollContainer) return;
+		const optionIndex = pollContainer.querySelectorAll(".poll-option").length;
+		if (optionIndex >= 4) return;
 
-    const optionDiv = document.createElement("div");
-    optionDiv.className = "poll-option";
-    optionDiv.innerHTML = `
+		const optionDiv = document.createElement("div");
+		optionDiv.className = "poll-option";
+		optionDiv.innerHTML = `
 			<input type="text" placeholder="Choice ${
-        optionIndex + 1
-      }" maxlength="100" value="${text}">
+				optionIndex + 1
+			}" maxlength="100" value="${text}">
 			${
-        optionIndex >= 2
-          ? '<button type="button" class="remove-option">×</button>'
-          : ""
-      }
+				optionIndex >= 2
+					? '<button type="button" class="remove-option">×</button>'
+					: ""
+			}
 		`;
 
-    pollContainer.querySelector(".poll-options").appendChild(optionDiv);
+		pollContainer.querySelector(".poll-options").appendChild(optionDiv);
 
-    if (optionDiv.querySelector(".remove-option")) {
-      optionDiv
-        .querySelector(".remove-option")
-        .addEventListener("click", () => {
-          optionDiv.remove();
-          updateAddOptionButton();
-        });
-    }
+		if (optionDiv.querySelector(".remove-option")) {
+			optionDiv
+				.querySelector(".remove-option")
+				.addEventListener("click", () => {
+					optionDiv.remove();
+					updateAddOptionButton();
+				});
+		}
 
-    updateAddOptionButton();
-  };
+		updateAddOptionButton();
+	};
 
-  const updateAddOptionButton = () => {
-    if (!pollContainer || !addPollOptionBtn) return;
-    const optionCount = pollContainer.querySelectorAll(".poll-option").length;
-    addPollOptionBtn.style.display = optionCount >= 4 ? "none" : "block";
-  };
+	const updateAddOptionButton = () => {
+		if (!pollContainer || !addPollOptionBtn) return;
+		const optionCount = pollContainer.querySelectorAll(".poll-option").length;
+		addPollOptionBtn.style.display = optionCount >= 4 ? "none" : "block";
+	};
 
-  const togglePoll = () => {
-    if (!pollContainer || !pollToggle) return;
-    if (cardOnly) {
-      toastQueue.add(
-        `<h1>Polls not available</h1><p>Polls cannot be used in card composer mode</p>`
-      );
-      return;
-    }
-    pollEnabled = !pollEnabled;
-    pollContainer.style.display = pollEnabled ? "block" : "none";
-    pollToggle.innerHTML = pollEnabled
-      ? `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-circle-x-icon lucide-circle-x"><circle cx="12" cy="12" r="10"/><path d="m15 9-6 6"/><path d="m9 9 6 6"/></svg>`
-      : `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-chart-column-big-icon lucide-chart-column-big"><path d="M3 3v16a2 2 0 0 0 2 2h16"/><rect x="15" y="5" width="4" height="12" rx="1"/><rect x="7" y="8" width="4" height="9" rx="1"/></svg>`;
+	const togglePoll = () => {
+		if (!pollContainer || !pollToggle) return;
+		if (cardOnly) {
+			toastQueue.add(
+				`<h1>Polls not available</h1><p>Polls cannot be used in card composer mode</p>`,
+			);
+			return;
+		}
+		pollEnabled = !pollEnabled;
+		pollContainer.style.display = pollEnabled ? "block" : "none";
+		pollToggle.innerHTML = pollEnabled
+			? `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-circle-x-icon lucide-circle-x"><circle cx="12" cy="12" r="10"/><path d="m15 9-6 6"/><path d="m9 9 6 6"/></svg>`
+			: `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-chart-column-big-icon lucide-chart-column-big"><path d="M3 3v16a2 2 0 0 0 2 2h16"/><rect x="15" y="5" width="4" height="12" rx="1"/><rect x="7" y="8" width="4" height="9" rx="1"/></svg>`;
 
-    if (
-      pollEnabled &&
-      pollContainer.querySelectorAll(".poll-option").length === 0
-    ) {
-      addPollOption();
-      addPollOption();
-    }
-  };
+		if (
+			pollEnabled &&
+			pollContainer.querySelectorAll(".poll-option").length === 0
+		) {
+			addPollOption();
+			addPollOption();
+		}
+	};
 
-  textarea.addEventListener("input", updateCharacterCount);
+	textarea.addEventListener("input", updateCharacterCount);
 
-  if (cardOnly) {
-    if (fileUploadBtn) fileUploadBtn.style.display = "none";
-    if (gifBtn) gifBtn.style.display = "none";
-    if (pollToggle) pollToggle.style.display = "none";
-  }
+	if (cardOnly) {
+		if (fileUploadBtn) fileUploadBtn.style.display = "none";
+		if (gifBtn) gifBtn.style.display = "none";
+		if (pollToggle) pollToggle.style.display = "none";
+	}
 
-  textarea.addEventListener("input", () => {
-    textarea.style.height = "0px";
-    void textarea.offsetHeight;
-    if (textarea.scrollHeight === 30) {
-      textarea.style.height = `25px`;
-    } else {
-      textarea.style.height = `${Math.max(textarea.scrollHeight, 25)}px`;
-    }
+	textarea.addEventListener("input", () => {
+		textarea.style.height = "0px";
+		void textarea.offsetHeight;
+		if (textarea.scrollHeight === 30) {
+			textarea.style.height = `25px`;
+		} else {
+			textarea.style.height = `${Math.max(textarea.scrollHeight, 25)}px`;
+		}
 
-    if (textarea.scrollHeight < 250) {
-      textarea.style.overflow = "hidden";
-    } else {
-      textarea.style.overflow = "auto";
-    }
-  });
+		if (textarea.scrollHeight < 250) {
+			textarea.style.overflow = "hidden";
+		} else {
+			textarea.style.overflow = "auto";
+		}
+	});
 
-  if (pollToggle) {
-    pollToggle.addEventListener("click", togglePoll);
-  }
+	if (pollToggle) {
+		pollToggle.addEventListener("click", togglePoll);
+	}
 
-  const convertToWebP = (file, quality = 0.8) => {
-    return new Promise((resolve) => {
-      if (!file.type.startsWith("image/")) {
-        resolve(file);
-        return;
-      }
+	const convertToWebP = (file, quality = 0.8) => {
+		return new Promise((resolve) => {
+			if (!file.type.startsWith("image/")) {
+				resolve(file);
+				return;
+			}
 
-      if (file.type === "image/webp") {
-        resolve(file);
-        return;
-      }
+			if (file.type === "image/webp") {
+				resolve(file);
+				return;
+			}
 
-      if (!isConvertibleImage(file)) {
-        resolve(file);
-        return;
-      }
+			if (!isConvertibleImage(file)) {
+				resolve(file);
+				return;
+			}
 
-      const canvas = document.createElement("canvas");
-      const ctx = canvas.getContext("2d");
-      const img = new Image();
+			const canvas = document.createElement("canvas");
+			const ctx = canvas.getContext("2d");
+			const img = new Image();
 
-      img.onload = () => {
-        canvas.width = img.width;
-        canvas.height = img.height;
+			img.onload = () => {
+				canvas.width = img.width;
+				canvas.height = img.height;
 
-        ctx.drawImage(img, 0, 0);
+				ctx.drawImage(img, 0, 0);
 
-        canvas.toBlob(
-          (blob) => {
-            if (blob) {
-              const webpFile = new File(
-                [blob],
-                file.name.replace(/\.[^/.]+$/, ".webp"),
-                {
-                  type: "image/webp",
-                  lastModified: Date.now(),
-                }
-              );
-              resolve(webpFile);
-            } else {
-              resolve(file);
-            }
+				canvas.toBlob(
+					(blob) => {
+						if (blob) {
+							const webpFile = new File(
+								[blob],
+								file.name.replace(/\.[^/.]+$/, ".webp"),
+								{
+									type: "image/webp",
+									lastModified: Date.now(),
+								},
+							);
+							resolve(webpFile);
+						} else {
+							resolve(file);
+						}
 
-            URL.revokeObjectURL(img.src);
-          },
-          "image/webp",
-          quality
-        );
-      };
+						URL.revokeObjectURL(img.src);
+					},
+					"image/webp",
+					quality,
+				);
+			};
 
-      img.onerror = () => {
-        URL.revokeObjectURL(img.src);
-        resolve(file);
-      };
+			img.onerror = () => {
+				URL.revokeObjectURL(img.src);
+				resolve(file);
+			};
 
-      img.src = URL.createObjectURL(file);
-    });
-  };
+			img.src = URL.createObjectURL(file);
+		});
+	};
 
-  const processFileForUpload = async (file) => {
-    try {
-      const processedFile = await convertToWebP(file);
+	const processFileForUpload = async (file) => {
+		try {
+			const processedFile = await convertToWebP(file);
 
-      const allowedTypes = ["image/webp", "video/mp4"];
+			const allowedTypes = ["image/webp", "video/mp4"];
 
-      if (!allowedTypes.includes(processedFile.type)) {
-        toastQueue.add(
-          `<h1>Unsupported file type</h1><p>Only WebP images and MP4 videos are allowed</p>`
-        );
-        return null;
-      }
+			if (!allowedTypes.includes(processedFile.type)) {
+				toastQueue.add(
+					`<h1>Unsupported file type</h1><p>Only WebP images and MP4 videos are allowed</p>`,
+				);
+				return null;
+			}
 
-      const maxSize =
-        processedFile.type === "video/mp4"
-          ? 100 * 1024 * 1024
-          : 10 * 1024 * 1024;
-      if (processedFile.size > maxSize) {
-        const maxSizeMB = maxSize / 1024 / 1024;
-        const fileSizeMB = (processedFile.size / 1024 / 1024).toFixed(1);
-        toastQueue.add(
-          `<h1>File too large</h1><p>Your file is ${fileSizeMB}MB, but you can only upload up to ${maxSizeMB}MB${
-            processedFile.type === "video/mp4"
-              ? " (videos will be compressed if needed)"
-              : ""
-          }</p>`
-        );
-        return null;
-      }
+			const maxSize =
+				processedFile.type === "video/mp4"
+					? 100 * 1024 * 1024
+					: 10 * 1024 * 1024;
+			if (processedFile.size > maxSize) {
+				const maxSizeMB = maxSize / 1024 / 1024;
+				const fileSizeMB = (processedFile.size / 1024 / 1024).toFixed(1);
+				toastQueue.add(
+					`<h1>File too large</h1><p>Your file is ${fileSizeMB}MB, but you can only upload up to ${maxSizeMB}MB${
+						processedFile.type === "video/mp4"
+							? " (videos will be compressed if needed)"
+							: ""
+					}</p>`,
+				);
+				return null;
+			}
 
-      const tempId = crypto.randomUUID();
+			const tempId = crypto.randomUUID();
 
-      const fileData = {
-        tempId,
-        name: processedFile.name,
-        type: processedFile.type,
-        size: processedFile.size,
-        file: processedFile,
-        uploaded: false,
-      };
+			const fileData = {
+				tempId,
+				name: processedFile.name,
+				type: processedFile.type,
+				size: processedFile.size,
+				file: processedFile,
+				uploaded: false,
+			};
 
-      pendingFiles.push(fileData);
-      displayAttachmentPreview(fileData);
+			pendingFiles.push(fileData);
+			displayAttachmentPreview(fileData);
 
-      updateCharacterCount();
-      return fileData;
-    } catch (error) {
-      console.error("File processing error:", error);
-      toastQueue.add(`<h1>File processing failed</h1><p>Please try again</p>`);
-      return null;
-    }
-  };
+			updateCharacterCount();
+			return fileData;
+		} catch (error) {
+			console.error("File processing error:", error);
+			toastQueue.add(`<h1>File processing failed</h1><p>Please try again</p>`);
+			return null;
+		}
+	};
 
-  const displayAttachmentPreview = (fileData) => {
-    const previewEl = document.createElement("div");
-    previewEl.className = "attachment-preview-item";
-    previewEl.dataset.tempId = fileData.tempId;
-    previewEl.dataset.isSpoiler = "false";
+	const displayAttachmentPreview = (fileData) => {
+		const previewEl = document.createElement("div");
+		previewEl.className = "attachment-preview-item";
+		previewEl.dataset.tempId = fileData.tempId;
+		previewEl.dataset.isSpoiler = "false";
 
-    if (fileData.type.startsWith("image/")) {
-      const objectUrl = URL.createObjectURL(fileData.file);
-      previewEl.innerHTML = `
+		if (fileData.type.startsWith("image/")) {
+			const objectUrl = URL.createObjectURL(fileData.file);
+			previewEl.innerHTML = `
 				<img src="${objectUrl}" alt="${fileData.name}" />
 				<button type="button" class="toggle-spoiler" title="Mark as spoiler">🚫</button>
 				<button type="button" class="remove-attachment">×</button>
 			`;
-      previewEl
-        .querySelector(".toggle-spoiler")
-        ?.addEventListener("click", (e) => {
-          e.preventDefault();
-          e.stopPropagation();
-          const isSpoiler = previewEl.dataset.isSpoiler === "true";
-          previewEl.dataset.isSpoiler = isSpoiler ? "false" : "true";
-          const btn = previewEl.querySelector(".toggle-spoiler");
-          btn.textContent = isSpoiler ? "🚫" : "⚠️";
-          btn.title = isSpoiler ? "Mark as spoiler" : "Unmark as spoiler";
-          previewEl.classList.toggle("spoiler-marked", !isSpoiler);
-        });
-    } else if (fileData.type === "video/mp4") {
-      const objectUrl = URL.createObjectURL(fileData.file);
-      previewEl.innerHTML = `
+			previewEl
+				.querySelector(".toggle-spoiler")
+				?.addEventListener("click", (e) => {
+					e.preventDefault();
+					e.stopPropagation();
+					const isSpoiler = previewEl.dataset.isSpoiler === "true";
+					previewEl.dataset.isSpoiler = isSpoiler ? "false" : "true";
+					const btn = previewEl.querySelector(".toggle-spoiler");
+					btn.textContent = isSpoiler ? "🚫" : "⚠️";
+					btn.title = isSpoiler ? "Mark as spoiler" : "Unmark as spoiler";
+					previewEl.classList.toggle("spoiler-marked", !isSpoiler);
+				});
+		} else if (fileData.type === "video/mp4") {
+			const objectUrl = URL.createObjectURL(fileData.file);
+			previewEl.innerHTML = `
 				<video src="${objectUrl}" controls></video>
 				<button type="button" class="remove-attachment">×</button>
 			`;
-    }
+		}
 
-    previewEl
-      .querySelector(".remove-attachment")
-      ?.addEventListener("click", () => {
-        pendingFiles = pendingFiles.filter((f) => f.tempId !== fileData.tempId);
-        previewEl.remove();
-        updateCharacterCount();
-      });
+		previewEl
+			.querySelector(".remove-attachment")
+			?.addEventListener("click", () => {
+				pendingFiles = pendingFiles.filter((f) => f.tempId !== fileData.tempId);
+				previewEl.remove();
+				updateCharacterCount();
+			});
 
-    attachmentPreview.appendChild(previewEl);
-  };
+		attachmentPreview.appendChild(previewEl);
+	};
 
-  if (fileUploadBtn && fileInput) {
-    fileUploadBtn.addEventListener("click", () => {
-      if (cardOnly) {
-        toastQueue.add(
-          `<h1>Media upload not available</h1><p>Images and videos cannot be uploaded in card composer mode</p>`
-        );
-        return;
-      }
-      if (selectedGif) {
-        toastQueue.add(
-          `<h1>Cannot add files</h1><p>Remove the GIF first to upload files</p>`
-        );
-        return;
-      }
-      fileInput.click();
-    });
+	if (fileUploadBtn && fileInput) {
+		fileUploadBtn.addEventListener("click", () => {
+			if (cardOnly) {
+				toastQueue.add(
+					`<h1>Media upload not available</h1><p>Images and videos cannot be uploaded in card composer mode</p>`,
+				);
+				return;
+			}
+			if (selectedGif) {
+				toastQueue.add(
+					`<h1>Cannot add files</h1><p>Remove the GIF first to upload files</p>`,
+				);
+				return;
+			}
+			fileInput.click();
+		});
 
-    fileInput.addEventListener("change", async (e) => {
-      if (cardOnly) {
-        toastQueue.add(
-          `<h1>Media upload not available</h1><p>Images and videos cannot be uploaded in card composer mode</p>`
-        );
-        e.target.value = "";
-        return;
-      }
-      if (selectedGif) {
-        toastQueue.add(
-          `<h1>Cannot add files</h1><p>Remove the GIF first to upload files</p>`
-        );
-        e.target.value = "";
-        return;
-      }
-      const files = Array.from(e.target.files);
-      for (const file of files) {
-        await processFileForUpload(file);
-      }
-      e.target.value = "";
-    });
-  }
+		fileInput.addEventListener("change", async (e) => {
+			if (cardOnly) {
+				toastQueue.add(
+					`<h1>Media upload not available</h1><p>Images and videos cannot be uploaded in card composer mode</p>`,
+				);
+				e.target.value = "";
+				return;
+			}
+			if (selectedGif) {
+				toastQueue.add(
+					`<h1>Cannot add files</h1><p>Remove the GIF first to upload files</p>`,
+				);
+				e.target.value = "";
+				return;
+			}
+			const files = Array.from(e.target.files);
+			for (const file of files) {
+				await processFileForUpload(file);
+			}
+			e.target.value = "";
+		});
+	}
 
-  textarea.addEventListener("paste", async (e) => {
-    if (cardOnly) return;
-    const items = Array.from(e.clipboardData.items);
-    const fileItems = items.filter((item) => item.kind === "file");
+	textarea.addEventListener("paste", async (e) => {
+		if (cardOnly) return;
+		const items = Array.from(e.clipboardData.items);
+		const fileItems = items.filter((item) => item.kind === "file");
 
-    if (fileItems.length > 0) {
-      e.preventDefault();
-      for (const item of fileItems) {
-        const file = item.getAsFile();
-        if (file && (isConvertibleImage(file) || file.type === "video/mp4")) {
-          await processFileForUpload(file);
-        }
-      }
-    }
-  });
+		if (fileItems.length > 0) {
+			e.preventDefault();
+			for (const item of fileItems) {
+				const file = item.getAsFile();
+				if (file && (isConvertibleImage(file) || file.type === "video/mp4")) {
+					await processFileForUpload(file);
+				}
+			}
+		}
+	});
 
-  let mentionBox = document.querySelector("#mention-suggestions-popup");
-  if (!mentionBox) {
-    mentionBox = document.createElement("div");
-    mentionBox.id = "mention-suggestions-popup";
-    mentionBox.className = "mention-suggestions popup";
-    mentionBox.style.display = "none";
-    mentionBox.style.position = "absolute";
-    mentionBox.style.zIndex = 10000;
-    document.body.appendChild(mentionBox);
-  }
-  let mentionCandidates = [];
-  let mentionIndex = -1;
-  let mentionQuery = "";
-  let mentionDebounce;
+	let mentionBox = document.querySelector("#mention-suggestions-popup");
+	if (!mentionBox) {
+		mentionBox = document.createElement("div");
+		mentionBox.id = "mention-suggestions-popup";
+		mentionBox.className = "mention-suggestions popup";
+		mentionBox.style.display = "none";
+		mentionBox.style.position = "absolute";
+		mentionBox.style.zIndex = 10000;
+		document.body.appendChild(mentionBox);
+	}
+	let mentionCandidates = [];
+	let mentionIndex = -1;
+	let mentionQuery = "";
+	let mentionDebounce;
 
-  const closeMentions = () => {
-    mentionCandidates = [];
-    mentionIndex = -1;
-    mentionQuery = "";
-    if (mentionBox) mentionBox.style.display = "none";
-  };
+	const closeMentions = () => {
+		mentionCandidates = [];
+		mentionIndex = -1;
+		mentionQuery = "";
+		if (mentionBox) mentionBox.style.display = "none";
+	};
 
-  const renderMentions = () => {
-    if (!mentionBox) return;
-    if (!mentionCandidates) mentionCandidates = [];
-    if (mentionCandidates.length === 0) {
-      const rect = textarea.getBoundingClientRect();
-      mentionBox.style.left = `${rect.left + window.scrollX}px`;
-      mentionBox.style.top = `${rect.bottom + window.scrollY + 6}px`;
-      mentionBox.style.minWidth = `${Math.max(220, rect.width)}px`;
-      mentionBox.innerHTML = `<div class="no-results">No users found</div>`;
-      mentionBox.style.display = "block";
-      return;
-    }
+	const renderMentions = () => {
+		if (!mentionBox) return;
+		if (!mentionCandidates) mentionCandidates = [];
+		if (mentionCandidates.length === 0) {
+			const rect = textarea.getBoundingClientRect();
+			mentionBox.style.left = `${rect.left + window.scrollX}px`;
+			mentionBox.style.top = `${rect.bottom + window.scrollY + 6}px`;
+			mentionBox.style.minWidth = `${Math.max(220, rect.width)}px`;
+			mentionBox.innerHTML = `<div class="no-results">No users found</div>`;
+			mentionBox.style.display = "block";
+			return;
+		}
 
-    const rect = textarea.getBoundingClientRect();
-    mentionBox.style.left = `${rect.left + window.scrollX}px`;
-    mentionBox.style.top = `${rect.bottom + window.scrollY + 6}px`;
-    mentionBox.style.minWidth = `${Math.max(220, rect.width)}px`;
-    mentionBox.style.maxWidth = `420px`;
-    mentionBox.innerHTML = "";
-    mentionCandidates.forEach((user, i) => {
-      const div = document.createElement("button");
-      div.type = "button";
-      div.className =
-        `mention-suggestion ${i === mentionIndex ? " selected" : ""}`;
-      div.innerHTML = `
+		const rect = textarea.getBoundingClientRect();
+		mentionBox.style.left = `${rect.left + window.scrollX}px`;
+		mentionBox.style.top = `${rect.bottom + window.scrollY + 6}px`;
+		mentionBox.style.minWidth = `${Math.max(220, rect.width)}px`;
+		mentionBox.style.maxWidth = `420px`;
+		mentionBox.innerHTML = "";
+		mentionCandidates.forEach((user, i) => {
+			const div = document.createElement("button");
+			div.type = "button";
+			div.className = `mention-suggestion ${i === mentionIndex ? " selected" : ""}`;
+			div.innerHTML = `
         <img class="mention-avatar" src="${
-          user.avatar || "/public/shared/assets/default-avatar.svg"
-        }" alt="" />
+					user.avatar || "/public/shared/assets/default-avatar.svg"
+				}" alt="" />
         <div class="mention-info">
           <div class="mention-name">${user.name}</div>
           <div class="mention-username">@${user.username}</div>
         </div>
       `;
-      div.addEventListener("mousedown", (ev) => {
-        ev.preventDefault();
-        selectMention(i);
-      });
-      mentionBox.appendChild(div);
-    });
-    mentionBox.style.display = "block";
-  };
+			div.addEventListener("mousedown", (ev) => {
+				ev.preventDefault();
+				selectMention(i);
+			});
+			mentionBox.appendChild(div);
+		});
+		mentionBox.style.display = "block";
+	};
 
-  const selectMention = (i) => {
-    const user = mentionCandidates[i];
-    if (!user) return;
+	const selectMention = (i) => {
+		const user = mentionCandidates[i];
+		if (!user) return;
 
-    const value = textarea.value;
-    const selStart = textarea.selectionStart;
-    const upto = value.slice(0, selStart);
-    const atMatch = upto.match(/@([\w\d_\-.]{0,64})$/);
-    if (!atMatch) return closeMentions();
+		const value = textarea.value;
+		const selStart = textarea.selectionStart;
+		const upto = value.slice(0, selStart);
+		const atMatch = upto.match(/@([\w\d_\-.]{0,64})$/);
+		if (!atMatch) return closeMentions();
 
-    const prefixStart = selStart - atMatch[0].length;
-    const before = value.slice(0, prefixStart);
-    const after = value.slice(selStart);
-    const insert = `@${user.username} `;
-    const newPos = before.length + insert.length;
-    textarea.value = before + insert + after;
-    textarea.focus();
-    textarea.setSelectionRange(newPos, newPos);
-    updateCharacterCount();
-    closeMentions();
-  };
+		const prefixStart = selStart - atMatch[0].length;
+		const before = value.slice(0, prefixStart);
+		const after = value.slice(selStart);
+		const insert = `@${user.username} `;
+		const newPos = before.length + insert.length;
+		textarea.value = before + insert + after;
+		textarea.focus();
+		textarea.setSelectionRange(newPos, newPos);
+		updateCharacterCount();
+		closeMentions();
+	};
 
-  const searchMentions = async (q) => {
-    if (!q || q.trim().length === 0) {
-      mentionCandidates = [];
-      renderMentions();
-      return;
-    }
+	const searchMentions = async (q) => {
+		if (!q || q.trim().length === 0) {
+			mentionCandidates = [];
+			renderMentions();
+			return;
+		}
 
-    try {
-      const { users, error } = await query(
-        `/search/users?q=${encodeURIComponent(q)}`
-      );
-      if (error) {
-        mentionCandidates = [];
-      } else {
-        const lower = q.toLowerCase();
-        const filtered = (users || []).filter((u) => {
-          if (!u) return false;
-          if (u.suspended) return false;
-          const uname = (u.username || "").toLowerCase();
-          const name = (u.name || "").toLowerCase();
-          return (
-            uname.startsWith(lower) ||
-            name.startsWith(lower) ||
-            uname.includes(lower) ||
-            name.includes(lower)
-          );
-        });
-        mentionCandidates = filtered.slice(0, 8);
-      }
-    } catch {
-      mentionCandidates = [];
-    }
-    mentionIndex = 0;
-    renderMentions();
-  };
+		try {
+			const { users, error } = await query(
+				`/search/users?q=${encodeURIComponent(q)}`,
+			);
+			if (error) {
+				mentionCandidates = [];
+			} else {
+				const lower = q.toLowerCase();
+				const filtered = (users || []).filter((u) => {
+					if (!u) return false;
+					if (u.suspended) return false;
+					const uname = (u.username || "").toLowerCase();
+					const name = (u.name || "").toLowerCase();
+					return (
+						uname.startsWith(lower) ||
+						name.startsWith(lower) ||
+						uname.includes(lower) ||
+						name.includes(lower)
+					);
+				});
+				mentionCandidates = filtered.slice(0, 8);
+			}
+		} catch {
+			mentionCandidates = [];
+		}
+		mentionIndex = 0;
+		renderMentions();
+	};
 
-  textarea.addEventListener("input", () => {
-    const selStart = textarea.selectionStart;
-    const upto = textarea.value.slice(0, selStart);
-    const match = upto.match(/@([\w\d_\-.]{0,64})$/);
-    if (!match) {
-      closeMentions();
-      return;
-    }
+	textarea.addEventListener("input", () => {
+		const selStart = textarea.selectionStart;
+		const upto = textarea.value.slice(0, selStart);
+		const match = upto.match(/@([\w\d_\-.]{0,64})$/);
+		if (!match) {
+			closeMentions();
+			return;
+		}
 
-    mentionQuery = match[1];
-    clearTimeout(mentionDebounce);
-    mentionDebounce = setTimeout(() => searchMentions(mentionQuery), 200);
-  });
+		mentionQuery = match[1];
+		clearTimeout(mentionDebounce);
+		mentionDebounce = setTimeout(() => searchMentions(mentionQuery), 200);
+	});
 
-  textarea.addEventListener("keydown", (e) => {
-    if (!mentionBox || mentionBox.style.display === "none") return;
-    if (e.key === "ArrowDown") {
-      e.preventDefault();
-      mentionIndex = (mentionIndex + 1) % mentionCandidates.length;
-      renderMentions();
-    } else if (e.key === "ArrowUp") {
-      e.preventDefault();
-      mentionIndex =
-        (mentionIndex - 1 + mentionCandidates.length) %
-        mentionCandidates.length;
-      renderMentions();
-    } else if (e.key === "Enter" || e.key === "Tab") {
-      if (mentionCandidates.length > 0) {
-        e.preventDefault();
-        selectMention(mentionIndex >= 0 ? mentionIndex : 0);
-      }
-    } else if (e.key === "Escape") {
-      closeMentions();
-    }
-  });
+	textarea.addEventListener("keydown", (e) => {
+		if (!mentionBox || mentionBox.style.display === "none") return;
+		if (e.key === "ArrowDown") {
+			e.preventDefault();
+			mentionIndex = (mentionIndex + 1) % mentionCandidates.length;
+			renderMentions();
+		} else if (e.key === "ArrowUp") {
+			e.preventDefault();
+			mentionIndex =
+				(mentionIndex - 1 + mentionCandidates.length) %
+				mentionCandidates.length;
+			renderMentions();
+		} else if (e.key === "Enter" || e.key === "Tab") {
+			if (mentionCandidates.length > 0) {
+				e.preventDefault();
+				selectMention(mentionIndex >= 0 ? mentionIndex : 0);
+			}
+		} else if (e.key === "Escape") {
+			closeMentions();
+		}
+	});
 
-  document.addEventListener("click", (e) => {
-    if (!mentionBox) return;
-    if (!element.contains(e.target) && e.target !== mentionBox) {
-      closeMentions();
-    }
-  });
+	document.addEventListener("click", (e) => {
+		if (!mentionBox) return;
+		if (!element.contains(e.target) && e.target !== mentionBox) {
+			closeMentions();
+		}
+	});
 
-  const handleDragOver = (e) => {
-    e.preventDefault();
-    textarea.classList.add("drag-over");
-  };
+	const handleDragOver = (e) => {
+		e.preventDefault();
+		textarea.classList.add("drag-over");
+	};
 
-  const handleDragLeave = (e) => {
-    e.preventDefault();
-    if (!textarea.contains(e.relatedTarget)) {
-      textarea.classList.remove("drag-over");
-    }
-  };
+	const handleDragLeave = (e) => {
+		e.preventDefault();
+		if (!textarea.contains(e.relatedTarget)) {
+			textarea.classList.remove("drag-over");
+		}
+	};
 
-  const handleDrop = async (e) => {
-    e.preventDefault();
-    textarea.classList.remove("drag-over");
+	const handleDrop = async (e) => {
+		e.preventDefault();
+		textarea.classList.remove("drag-over");
 
-    if (cardOnly) {
-      toastQueue.add(
-        `<h1>Media upload not available</h1><p>Images and videos cannot be uploaded in card composer mode</p>`
-      );
-      return;
-    }
+		if (cardOnly) {
+			toastQueue.add(
+				`<h1>Media upload not available</h1><p>Images and videos cannot be uploaded in card composer mode</p>`,
+			);
+			return;
+		}
 
-    const files = Array.from(e.dataTransfer.files);
-    const validFiles = files.filter(
-      (file) => isConvertibleImage(file) || file.type === "video/mp4"
-    );
+		const files = Array.from(e.dataTransfer.files);
+		const validFiles = files.filter(
+			(file) => isConvertibleImage(file) || file.type === "video/mp4",
+		);
 
-    for (const file of validFiles) {
-      await processFileForUpload(file);
-    }
-  };
+		for (const file of validFiles) {
+			await processFileForUpload(file);
+		}
+	};
 
-  textarea.addEventListener("dragover", handleDragOver);
-  textarea.addEventListener("dragleave", handleDragLeave);
-  textarea.addEventListener("drop", handleDrop);
+	textarea.addEventListener("dragover", handleDragOver);
+	textarea.addEventListener("dragleave", handleDragLeave);
+	textarea.addEventListener("drop", handleDrop);
 
-  if (gifBtn && gifPicker && gifSearchInput && gifResults && gifPickerClose) {
-    let searchTimeout;
+	if (gifBtn && gifPicker && gifSearchInput && gifResults && gifPickerClose) {
+		let searchTimeout;
 
-    gifBtn.addEventListener("click", () => {
-      if (cardOnly) {
-        toastQueue.add(
-          `<h1>GIFs not available</h1><p>GIFs cannot be used in card composer mode</p>`
-        );
-        return;
-      }
-      if (pendingFiles.length > 0) {
-        toastQueue.add(
-          `<h1>Cannot add GIF</h1><p>Remove uploaded files first to select a GIF</p>`
-        );
-        return;
-      }
-      const isVisible = gifPicker.style.display === "block";
-      gifPicker.style.display = isVisible ? "none" : "block";
-      if (!isVisible) {
-        gifSearchInput.focus();
-        if (gifResults.children.length === 0) {
-          gifResults.innerHTML = "";
-        }
-      }
-    });
+		gifBtn.addEventListener("click", () => {
+			if (cardOnly) {
+				toastQueue.add(
+					`<h1>GIFs not available</h1><p>GIFs cannot be used in card composer mode</p>`,
+				);
+				return;
+			}
+			if (pendingFiles.length > 0) {
+				toastQueue.add(
+					`<h1>Cannot add GIF</h1><p>Remove uploaded files first to select a GIF</p>`,
+				);
+				return;
+			}
+			const isVisible = gifPicker.style.display === "block";
+			gifPicker.style.display = isVisible ? "none" : "block";
+			if (!isVisible) {
+				gifSearchInput.focus();
+				if (gifResults.children.length === 0) {
+					gifResults.innerHTML = "";
+				}
+			}
+		});
 
-    gifPickerClose.addEventListener("click", () => {
-      gifPicker.style.display = "none";
-    });
+		gifPickerClose.addEventListener("click", () => {
+			gifPicker.style.display = "none";
+		});
 
-    const searchGifs = async (q) => {
-      if (!q || q.trim().length === 0) {
-        gifResults.innerHTML = "";
-        return;
-      }
+		const searchGifs = async (q) => {
+			if (!q || q.trim().length === 0) {
+				gifResults.innerHTML = "";
+				return;
+			}
 
-      gifResults.innerHTML = `
+			gifResults.innerHTML = `
         <div style="text-align: center; padding: 40px;">
           <div class="spinner"></div>
         </div>
       `;
 
-      try {
-        const { results, error } = await query(
-          `/tenor/search?q=${encodeURIComponent(q)}&limit=12`
-        );
+			try {
+				const { results, error } = await query(
+					`/tenor/search?q=${encodeURIComponent(q)}&limit=12`,
+				);
 
-        if (error) {
-          gifResults.innerHTML = `
+				if (error) {
+					gifResults.innerHTML = `
             <div style="text-align: center; padding: 40px; color: var(--text-secondary);">
               <p>Failed to load GIFs</p>
             </div>
           `;
-          return;
-        }
+					return;
+				}
 
-        if (!results || results.length === 0) {
-          gifResults.innerHTML = `
+				if (!results || results.length === 0) {
+					gifResults.innerHTML = `
             <div style="text-align: center; padding: 40px; color: var(--text-secondary);">
               <p>No GIFs found</p>
             </div>
           `;
-          return;
-        }
+					return;
+				}
 
-        gifResults.innerHTML = "";
-        results.forEach((gif) => {
-          const gifEl = document.createElement("div");
-          gifEl.className = "gif-item";
-          const gifUrl =
-            gif.media_formats?.tinygif?.url || gif.media_formats?.gif?.url;
-          const previewUrl =
-            gif.media_formats?.tinygif?.url || gif.media_formats?.nanogif?.url;
+				gifResults.innerHTML = "";
+				results.forEach((gif) => {
+					const gifEl = document.createElement("div");
+					gifEl.className = "gif-item";
+					const gifUrl =
+						gif.media_formats?.tinygif?.url || gif.media_formats?.gif?.url;
+					const previewUrl =
+						gif.media_formats?.tinygif?.url || gif.media_formats?.nanogif?.url;
 
-          gifEl.innerHTML = `<img src="${previewUrl}" alt="${gif.content_description}" loading="lazy" />`;
+					gifEl.innerHTML = `<img src="${previewUrl}" alt="${gif.content_description}" loading="lazy" />`;
 
-          gifEl.addEventListener("click", () => {
-            selectedGif = gifUrl;
-            pendingFiles = [];
-            attachmentPreview.innerHTML = "";
+					gifEl.addEventListener("click", () => {
+						selectedGif = gifUrl;
+						pendingFiles = [];
+						attachmentPreview.innerHTML = "";
 
-            const previewEl = document.createElement("div");
-            previewEl.className = "attachment-preview-item";
-            previewEl.innerHTML = `
+						const previewEl = document.createElement("div");
+						previewEl.className = "attachment-preview-item";
+						previewEl.innerHTML = `
               <img src="${gifUrl}" alt="Selected GIF" />
               <button type="button" class="remove-attachment">
 </button>
             `;
 
-            previewEl
-              .querySelector(".remove-attachment")
-              .addEventListener("click", () => {
-                selectedGif = null;
-                previewEl.remove();
-                updateCharacterCount();
-              });
+						previewEl
+							.querySelector(".remove-attachment")
+							.addEventListener("click", () => {
+								selectedGif = null;
+								previewEl.remove();
+								updateCharacterCount();
+							});
 
-            attachmentPreview.appendChild(previewEl);
-            gifPicker.style.display = "none";
-            gifSearchInput.value = "";
-            updateCharacterCount();
-          });
+						attachmentPreview.appendChild(previewEl);
+						gifPicker.style.display = "none";
+						gifSearchInput.value = "";
+						updateCharacterCount();
+					});
 
-          gifResults.appendChild(gifEl);
-        });
-      } catch (error) {
-        console.error("GIF search error:", error);
-        gifResults.innerHTML = `
+					gifResults.appendChild(gifEl);
+				});
+			} catch (error) {
+				console.error("GIF search error:", error);
+				gifResults.innerHTML = `
           <div style="text-align: center; padding: 40px; color: var(--text-secondary);">
             <p>Failed to load GIFs</p>
           </div>
         `;
-      }
-    };
+			}
+		};
 
-    gifSearchInput.addEventListener("input", (e) => {
-      clearTimeout(searchTimeout);
-      searchTimeout = setTimeout(() => {
-        searchGifs(e.target.value);
-      }, 500);
-    });
-  }
+		gifSearchInput.addEventListener("input", (e) => {
+			clearTimeout(searchTimeout);
+			searchTimeout = setTimeout(() => {
+				searchGifs(e.target.value);
+			}, 500);
+		});
+	}
 
-  if (emojiBtn) {
-    emojiBtn.addEventListener("click", async (e) => {
-      e.preventDefault();
-      const rect = emojiBtn.getBoundingClientRect();
-      await showEmojiPickerPopup(
-        (emoji) => {
-          if (!emoji) return;
-          const start = textarea.selectionStart;
-          const end = textarea.selectionEnd;
-          const text = textarea.value;
-          textarea.value =
-            text.substring(0, start) + emoji + text.substring(end);
-          const newPos = start + emoji.length;
-          textarea.selectionStart = textarea.selectionEnd = newPos;
-          textarea.focus();
-          updateCharacterCount();
-        },
-        {
-          x: rect.left,
-          y: rect.bottom + 8,
-        }
-      );
-    });
-  }
+	if (emojiBtn) {
+		emojiBtn.addEventListener("click", async (e) => {
+			e.preventDefault();
+			const rect = emojiBtn.getBoundingClientRect();
+			await showEmojiPickerPopup(
+				(emoji) => {
+					if (!emoji) return;
+					const start = textarea.selectionStart;
+					const end = textarea.selectionEnd;
+					const text = textarea.value;
+					textarea.value =
+						text.substring(0, start) + emoji + text.substring(end);
+					const newPos = start + emoji.length;
+					textarea.selectionStart = textarea.selectionEnd = newPos;
+					textarea.focus();
+					updateCharacterCount();
+				},
+				{
+					x: rect.left,
+					y: rect.bottom + 8,
+				},
+			);
+		});
+	}
 
-  if (scheduleBtn && scheduleModal && scheduleModalClose) {
-    if (replyTo) {
-      scheduleBtn.style.display = "none";
-    } else {
-      scheduleBtn.addEventListener("click", () => {
-        scheduleModal.style.display = "flex";
-        const now = new Date();
-        now.setMinutes(now.getMinutes() + 5);
-        const dateStr = now.toISOString().split("T")[0];
-        const timeStr = now.toTimeString().slice(0, 5);
-        scheduleDateInput.value = dateStr;
-        scheduleTimeInput.value = timeStr;
-      });
-    }
+	if (scheduleBtn && scheduleModal && scheduleModalClose) {
+		if (replyTo) {
+			scheduleBtn.style.display = "none";
+		} else {
+			scheduleBtn.addEventListener("click", () => {
+				scheduleModal.style.display = "flex";
+				const now = new Date();
+				now.setMinutes(now.getMinutes() + 5);
+				const dateStr = now.toISOString().split("T")[0];
+				const timeStr = now.toTimeString().slice(0, 5);
+				scheduleDateInput.value = dateStr;
+				scheduleTimeInput.value = timeStr;
+			});
+		}
 
-    scheduleModalClose.addEventListener("click", () => {
-      scheduleModal.style.display = "none";
-    });
+		scheduleModalClose.addEventListener("click", () => {
+			scheduleModal.style.display = "none";
+		});
 
-    confirmScheduleBtn.addEventListener("click", () => {
-      const date = scheduleDateInput.value;
-      const time = scheduleTimeInput.value;
-      if (date && time) {
-        scheduledFor = new Date(`${date}T${time}`);
-        scheduleBtn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>`;
-        scheduleBtn.style.color = "var(--primary)";
-        scheduleBtn.title = `Scheduled for ${scheduledFor.toLocaleString()}`;
-        scheduleModal.style.display = "none";
-      }
-    });
+		confirmScheduleBtn.addEventListener("click", () => {
+			const date = scheduleDateInput.value;
+			const time = scheduleTimeInput.value;
+			if (date && time) {
+				scheduledFor = new Date(`${date}T${time}`);
+				scheduleBtn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>`;
+				scheduleBtn.style.color = "var(--primary)";
+				scheduleBtn.title = `Scheduled for ${scheduledFor.toLocaleString()}`;
+				scheduleModal.style.display = "none";
+			}
+		});
 
-    clearScheduleBtn.addEventListener("click", () => {
-      scheduledFor = null;
-      scheduleBtn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>`;
-      scheduleBtn.style.color = "";
-      scheduleBtn.title = "Schedule tweet";
-      scheduleModal.style.display = "none";
-    });
+		clearScheduleBtn.addEventListener("click", () => {
+			scheduledFor = null;
+			scheduleBtn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>`;
+			scheduleBtn.style.color = "";
+			scheduleBtn.title = "Schedule tweet";
+			scheduleModal.style.display = "none";
+		});
 
-    scheduleModal.addEventListener("click", (e) => {
-      if (e.target === scheduleModal) {
-        scheduleModal.style.display = "none";
-      }
-    });
-  }
+		scheduleModal.addEventListener("click", (e) => {
+			if (e.target === scheduleModal) {
+				scheduleModal.style.display = "none";
+			}
+		});
+	}
 
-  addPollOptionBtn.addEventListener("click", () => addPollOption());
+	addPollOptionBtn.addEventListener("click", () => addPollOption());
 
-  if (replyTo) {
-    replyRestrictionSelect.style.display = "none";
-  }
+	if (replyTo) {
+		replyRestrictionSelect.style.display = "none";
+	}
 
-  replyRestrictionSelect.addEventListener("change", () => {
-    replyRestriction = replyRestrictionSelect.value;
-  });
+	replyRestrictionSelect.addEventListener("change", () => {
+		replyRestriction = replyRestrictionSelect.value;
+	});
 
-  let communityOnly = false;
+	let communityOnly = false;
 
-  if (communityId) {
-    const communityOnlyContainer = document.createElement("div");
-    communityOnlyContainer.className = "community-only-container";
+	if (communityId) {
+		const communityOnlyContainer = document.createElement("div");
+		communityOnlyContainer.className = "community-only-container";
 
-    const checkbox = document.createElement("input");
-    checkbox.type = "checkbox";
-    checkbox.id = "community-only-checkbox";
-    checkbox.className = "community-only-checkbox";
-    checkbox.addEventListener("change", (e) => {
-      communityOnly = e.target.checked;
-    });
+		const checkbox = document.createElement("input");
+		checkbox.type = "checkbox";
+		checkbox.id = "community-only-checkbox";
+		checkbox.className = "community-only-checkbox";
+		checkbox.addEventListener("change", (e) => {
+			communityOnly = e.target.checked;
+		});
 
-    const label = document.createElement("label");
-    label.htmlFor = "community-only-checkbox";
-    label.textContent = "Only show in this community (hide from main timeline)";
-    label.className = "community-only-label";
+		const label = document.createElement("label");
+		label.htmlFor = "community-only-checkbox";
+		label.textContent = "Only show in this community (hide from main timeline)";
+		label.className = "community-only-label";
 
-    communityOnlyContainer.appendChild(checkbox);
-    communityOnlyContainer.appendChild(label);
+		communityOnlyContainer.appendChild(checkbox);
+		communityOnlyContainer.appendChild(label);
 
-    const composeInput = element.querySelector(".compose-input");
-    composeInput.appendChild(communityOnlyContainer);
-  }
+		const composeInput = element.querySelector(".compose-input");
+		composeInput.appendChild(communityOnlyContainer);
+	}
 
-  if (communitySelector) {
-    const communitySelectorBtn = element.querySelector(
-      "#community-selector-btn"
-    );
-    const communitySelectorDropdown = element.querySelector(
-      "#community-selector-dropdown"
-    );
+	if (communitySelector) {
+		const communitySelectorBtn = element.querySelector(
+			"#community-selector-btn",
+		);
+		const communitySelectorDropdown = element.querySelector(
+			"#community-selector-dropdown",
+		);
 
-    if (communitySelectorBtn && communitySelectorDropdown) {
-      communitySelectorBtn.addEventListener("click", async () => {
-        const isVisible = communitySelectorDropdown.style.display !== "none";
-        if (isVisible) {
-          communitySelectorDropdown.style.display = "none";
-          return;
-        }
+		if (communitySelectorBtn && communitySelectorDropdown) {
+			communitySelectorBtn.addEventListener("click", async () => {
+				const isVisible = communitySelectorDropdown.style.display !== "none";
+				if (isVisible) {
+					communitySelectorDropdown.style.display = "none";
+					return;
+				}
 
-        communitySelectorDropdown.innerHTML =
-          '<div style="padding: 12px; color: var(--text-secondary);">Loading...</div>';
-        communitySelectorDropdown.style.display = "block";
+				communitySelectorDropdown.innerHTML =
+					'<div style="padding: 12px; color: var(--text-secondary);">Loading...</div>';
+				communitySelectorDropdown.style.display = "block";
 
-        try {
-          const user = await getUser();
-          console.log("Fetching communities for user:", user.userId);
-          const result = await query(
-            `/users/${user.userId}/communities?limit=50`
-          );
+				try {
+					const user = await getUser();
+					console.log("Fetching communities for user:", user.userId);
+					const result = await query(
+						`/users/${user.userId}/communities?limit=50`,
+					);
 
-          console.log("Communities API response:", result);
+					console.log("Communities API response:", result);
 
-          if (result.error) {
-            communitySelectorDropdown.innerHTML = `<div style="padding: 12px; color: var(--error-color); font-size: 14px;">Error: ${result.error}</div>`;
-            console.error("Communities API error:", result.error);
-            return;
-          }
+					if (result.error) {
+						communitySelectorDropdown.innerHTML = `<div style="padding: 12px; color: var(--error-color); font-size: 14px;">Error: ${result.error}</div>`;
+						console.error("Communities API error:", result.error);
+						return;
+					}
 
-          const communities = result.communities || [];
-          console.log("Communities found:", communities.length, communities);
+					const communities = result.communities || [];
+					console.log("Communities found:", communities.length, communities);
 
-          if (communities.length === 0) {
-            communitySelectorDropdown.innerHTML =
-              '<div style="padding: 12px; color: var(--text-secondary); font-size: 14px;">No communities joined yet</div>';
-            return;
-          }
+					if (communities.length === 0) {
+						communitySelectorDropdown.innerHTML =
+							'<div style="padding: 12px; color: var(--text-secondary); font-size: 14px;">No communities joined yet</div>';
+						return;
+					}
 
-          communitySelectorDropdown.innerHTML = `
+					communitySelectorDropdown.innerHTML = `
             <div style="padding: 8px; border-bottom: 1px solid var(--border-primary);">
               <div class="community-option" data-community-id="" style="padding: 8px; cursor: pointer; border-radius: 6px; font-size: 14px; color: var(--text-primary); font-weight: 500;">
                 <strong>Everyone</strong>
               </div>
             </div>
             ${communities
-              .map(
-                (c) => `
+							.map(
+								(c) => `
               <div class="community-option" data-community-id="${
-                c.id
-              }" style="padding: 8px; cursor: pointer; border-radius: 6px; display: flex; align-items: center; gap: 8px;">
+								c.id
+							}" style="padding: 8px; cursor: pointer; border-radius: 6px; display: flex; align-items: center; gap: 8px;">
                 ${
-                  c.icon
-                    ? `<img src="/public/shared/assets/uploads/${c.icon}" style="width: 24px; height: 24px; border-radius: 6px; object-fit: cover;" />`
-                    : `<div style="width: 24px; height: 24px; border-radius: 6px; background: var(--primary); color: white; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 700;">${c.name[0].toUpperCase()}</div>`
-                }
+									c.icon
+										? `<img src="/public/shared/assets/uploads/${c.icon}" style="width: 24px; height: 24px; border-radius: 6px; object-fit: cover;" />`
+										: `<div style="width: 24px; height: 24px; border-radius: 6px; background: var(--primary); color: white; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 700;">${c.name[0].toUpperCase()}</div>`
+								}
                 <span style="font-size: 14px; color: var(--text-primary);">${
-                  c.name
-                }</span>
+									c.name
+								}</span>
               </div>
-            `
-              )
-              .join("")}
+            `,
+							)
+							.join("")}
           `;
 
-          communitySelectorDropdown
-            .querySelectorAll(".community-option")
-            .forEach((option) => {
-              option.addEventListener("mouseenter", () => {
-                option.style.background = "var(--bg-secondary)";
-              });
-              option.addEventListener("mouseleave", () => {
-                option.style.background = "transparent";
-              });
-              option.addEventListener("click", () => {
-                const communityId = option.dataset.communityId;
-                communitySelector.selectedCommunityId = communityId || null;
+					communitySelectorDropdown
+						.querySelectorAll(".community-option")
+						.forEach((option) => {
+							option.addEventListener("mouseenter", () => {
+								option.style.background = "var(--bg-secondary)";
+							});
+							option.addEventListener("mouseleave", () => {
+								option.style.background = "transparent";
+							});
+							option.addEventListener("click", () => {
+								const communityId = option.dataset.communityId;
+								communitySelector.selectedCommunityId = communityId || null;
 
-                const communityName = communityId
-                  ? communities.find((c) => c.id === communityId)?.name
-                  : "Everyone";
-                communitySelectorBtn.title = communityId
-                  ? `Posting to ${communityName}`
-                  : "Select community";
+								const communityName = communityId
+									? communities.find((c) => c.id === communityId)?.name
+									: "Everyone";
+								communitySelectorBtn.title = communityId
+									? `Posting to ${communityName}`
+									: "Select community";
 
-                if (communityId) {
-                  communitySelectorBtn.style.color = "var(--primary)";
-                } else {
-                  communitySelectorBtn.style.color = "";
-                }
+								if (communityId) {
+									communitySelectorBtn.style.color = "var(--primary)";
+								} else {
+									communitySelectorBtn.style.color = "";
+								}
 
-                communitySelectorDropdown.style.display = "none";
-              });
-            });
-        } catch (error) {
-          console.error("Failed to load communities:", error);
-          communitySelectorDropdown.innerHTML = `<div style="padding: 12px; color: var(--error-color); font-size: 14px;">Failed to load: ${error.message}</div>`;
-        }
-      });
+								communitySelectorDropdown.style.display = "none";
+							});
+						});
+				} catch (error) {
+					console.error("Failed to load communities:", error);
+					communitySelectorDropdown.innerHTML = `<div style="padding: 12px; color: var(--error-color); font-size: 14px;">Failed to load: ${error.message}</div>`;
+				}
+			});
 
-      document.addEventListener("click", (e) => {
-        if (
-          !communitySelectorBtn.contains(e.target) &&
-          !communitySelectorDropdown.contains(e.target)
-        ) {
-          communitySelectorDropdown.style.display = "none";
-        }
-      });
-    }
-  }
+			document.addEventListener("click", (e) => {
+				if (
+					!communitySelectorBtn.contains(e.target) &&
+					!communitySelectorDropdown.contains(e.target)
+				) {
+					communitySelectorDropdown.style.display = "none";
+				}
+			});
+		}
+	}
 
-  if (cardToggleBtn && cardModal && cardModalClose) {
-    const addCardOption = () => {
-      const optionsContainer = element.querySelector("#card-options-container");
-      const optionCount =
-        optionsContainer.querySelectorAll(".card-option").length;
-      if (optionCount >= 4) return;
+	if (cardToggleBtn && cardModal && cardModalClose) {
+		const addCardOption = () => {
+			const optionsContainer = element.querySelector("#card-options-container");
+			const optionCount =
+				optionsContainer.querySelectorAll(".card-option").length;
+			if (optionCount >= 4) return;
 
-      const optionDiv = document.createElement("div");
-      optionDiv.className = "card-option";
-      optionDiv.style.cssText =
-        "margin-bottom: 12px; padding: 12px; border: 1px solid var(--border-primary); border-radius: 8px; background: var(--bg-secondary);";
-      optionDiv.innerHTML = `
+			const optionDiv = document.createElement("div");
+			optionDiv.className = "card-option";
+			optionDiv.style.cssText =
+				"margin-bottom: 12px; padding: 12px; border: 1px solid var(--border-primary); border-radius: 8px; background: var(--bg-secondary);";
+			optionDiv.innerHTML = `
         <input type="text" placeholder="Post #${
-          optionCount + 1
-        }" maxlength="100" style="width: 100%; padding: 8px; margin-bottom: 8px; border: 1px solid var(--border-primary); border-radius: 6px; background: var(--bg-primary); color: var(--text-primary);" class="card-option-description" />
+					optionCount + 1
+				}" maxlength="100" style="width: 100%; padding: 8px; margin-bottom: 8px; border: 1px solid var(--border-primary); border-radius: 6px; background: var(--bg-primary); color: var(--text-primary);" class="card-option-description" />
         <textarea placeholder="Tweet text when clicked..." maxlength="280" style="width: 100%; padding: 8px; border: 1px solid var(--border-primary); border-radius: 6px; background: var(--bg-primary); color: var(--text-primary); min-height: 60px; resize: vertical;" class="card-option-tweet"></textarea>
         ${
-          optionCount >= 2
-            ? '<button type="button" class="remove-card-option" style="margin-top: 8px; padding: 6px 12px; border: none; border-radius: 6px; background: var(--error-color); color: white; cursor: pointer;">Remove</button>'
-            : ""
-        }
+					optionCount >= 2
+						? '<button type="button" class="remove-card-option" style="margin-top: 8px; padding: 6px 12px; border: none; border-radius: 6px; background: var(--error-color); color: white; cursor: pointer;">Remove</button>'
+						: ""
+				}
       `;
 
-      if (optionCount >= 2) {
-        optionDiv
-          .querySelector(".remove-card-option")
-          .addEventListener("click", () => {
-            optionDiv.remove();
-          });
-      }
+			if (optionCount >= 2) {
+				optionDiv
+					.querySelector(".remove-card-option")
+					.addEventListener("click", () => {
+						optionDiv.remove();
+					});
+			}
 
-      optionsContainer.appendChild(optionDiv);
-    };
+			optionsContainer.appendChild(optionDiv);
+		};
 
-    if (cardOnly) {
-      cardToggleBtn.style.display = "block";
-      cardModal.style.display = "flex";
-      const optionsContainer = element.querySelector("#card-options-container");
-      if (optionsContainer.querySelectorAll(".card-option").length === 0) {
-        addCardOption();
-        addCardOption();
-      }
-    }
+		if (cardOnly) {
+			cardToggleBtn.style.display = "block";
+			cardModal.style.display = "flex";
+			const optionsContainer = element.querySelector("#card-options-container");
+			if (optionsContainer.querySelectorAll(".card-option").length === 0) {
+				addCardOption();
+				addCardOption();
+			}
+		}
 
-    cardToggleBtn.addEventListener("click", () => {
-      cardModal.style.display = "flex";
-      const optionsContainer = element.querySelector("#card-options-container");
-      if (optionsContainer.querySelectorAll(".card-option").length === 0) {
-        addCardOption();
-        addCardOption();
-      }
-    });
+		cardToggleBtn.addEventListener("click", () => {
+			cardModal.style.display = "flex";
+			const optionsContainer = element.querySelector("#card-options-container");
+			if (optionsContainer.querySelectorAll(".card-option").length === 0) {
+				addCardOption();
+				addCardOption();
+			}
+		});
 
-    cardModalClose.addEventListener("click", () => {
-      cardModal.style.display = "none";
-    });
+		cardModalClose.addEventListener("click", () => {
+			cardModal.style.display = "none";
+		});
 
-    cardModal.addEventListener("click", (e) => {
-      if (e.target === cardModal) {
-        cardModal.style.display = "none";
-      }
-    });
+		cardModal.addEventListener("click", (e) => {
+			if (e.target === cardModal) {
+				cardModal.style.display = "none";
+			}
+		});
 
-    const addCardOptionBtn = element.querySelector("#add-card-option");
-    if (addCardOptionBtn) {
-      addCardOptionBtn.addEventListener("click", addCardOption);
-    }
+		const addCardOptionBtn = element.querySelector("#add-card-option");
+		if (addCardOptionBtn) {
+			addCardOptionBtn.addEventListener("click", addCardOption);
+		}
 
-    if (cardMediaUploadBtn && cardMediaInput) {
-      cardMediaUploadBtn.addEventListener("click", () => {
-        cardMediaInput.click();
-      });
+		if (cardMediaUploadBtn && cardMediaInput) {
+			cardMediaUploadBtn.addEventListener("click", () => {
+				cardMediaInput.click();
+			});
 
-      cardMediaInput.addEventListener("change", async (e) => {
-        const file = e.target.files[0];
-        if (!file) return;
+			cardMediaInput.addEventListener("change", async (e) => {
+				const file = e.target.files[0];
+				if (!file) return;
 
-        const formData = new FormData();
-        formData.append("file", file);
+				const formData = new FormData();
+				formData.append("file", file);
 
-        try {
-          const result = await query("/upload", {
-            method: "POST",
-            body: formData,
-          });
+				try {
+					const result = await query("/upload", {
+						method: "POST",
+						body: formData,
+					});
 
-          if (result.success) {
-            const preview = element.querySelector("#card-media-preview");
-            const mediaType = file.type.startsWith("image/")
-              ? "image"
-              : file.type === "video/mp4"
-              ? "video"
-              : "gif";
+					if (result.success) {
+						const preview = element.querySelector("#card-media-preview");
+						const mediaType = file.type.startsWith("image/")
+							? "image"
+							: file.type === "video/mp4"
+								? "video"
+								: "gif";
 
-            preview.innerHTML = `
+						preview.innerHTML = `
               <div style="position: relative; border-radius: 8px; overflow: hidden;">
                 ${
-                  mediaType === "image"
-                    ? `<img src="${result.file.url}" style="width: 100%; border-radius: 8px;" />`
-                    : `<video src="${result.file.url}" controls style="width: 100%; border-radius: 8px;"></video>`
-                }
+									mediaType === "image"
+										? `<img src="${result.file.url}" style="width: 100%; border-radius: 8px;" />`
+										: `<video src="${result.file.url}" controls style="width: 100%; border-radius: 8px;"></video>`
+								}
                 <button type="button" id="remove-card-media" style="position: absolute; top: 8px; right: 8px; padding: 6px 12px; border: none; border-radius: 6px; background: rgba(0,0,0,0.7); color: white; cursor: pointer;">Remove</button>
               </div>
             `;
 
-            preview
-              .querySelector("#remove-card-media")
-              .addEventListener("click", () => {
-                preview.innerHTML = "";
-                cardMediaInput.value = "";
-                interactiveCard = null;
-              });
+						preview
+							.querySelector("#remove-card-media")
+							.addEventListener("click", () => {
+								preview.innerHTML = "";
+								cardMediaInput.value = "";
+								interactiveCard = null;
+							});
 
-            if (!interactiveCard) {
-              interactiveCard = {};
-            }
-            interactiveCard.media_url = result.file.url;
-            interactiveCard.media_type = mediaType;
-          } else {
-            toastQueue.add(`<h1>Upload failed</h1><p>${result.error}</p>`);
-          }
-        } catch (error) {
-          console.error("Media upload error:", error);
-          toastQueue.add(`<h1>Upload failed</h1>`);
-        }
-      });
-    }
+						if (!interactiveCard) {
+							interactiveCard = {};
+						}
+						interactiveCard.media_url = result.file.url;
+						interactiveCard.media_type = mediaType;
+					} else {
+						toastQueue.add(`<h1>Upload failed</h1><p>${result.error}</p>`);
+					}
+				} catch (error) {
+					console.error("Media upload error:", error);
+					toastQueue.add(`<h1>Upload failed</h1>`);
+				}
+			});
+		}
 
-    if (confirmCardBtn) {
-      confirmCardBtn.addEventListener("click", () => {
-        const optionsContainer = element.querySelector(
-          "#card-options-container"
-        );
-        const optionElements =
-          optionsContainer.querySelectorAll(".card-option");
+		if (confirmCardBtn) {
+			confirmCardBtn.addEventListener("click", () => {
+				const optionsContainer = element.querySelector(
+					"#card-options-container",
+				);
+				const optionElements =
+					optionsContainer.querySelectorAll(".card-option");
 
-        if (!interactiveCard || !interactiveCard.media_url) {
-          toastQueue.add(`<h1>Please upload media for the card</h1>`);
-          return;
-        }
+				if (!interactiveCard || !interactiveCard.media_url) {
+					toastQueue.add(`<h1>Please upload media for the card</h1>`);
+					return;
+				}
 
-        if (optionElements.length < 2) {
-          toastQueue.add(`<h1>Card must have at least 2 options</h1>`);
-          return;
-        }
+				if (optionElements.length < 2) {
+					toastQueue.add(`<h1>Card must have at least 2 options</h1>`);
+					return;
+				}
 
-        const options = [];
-        for (const optionEl of optionElements) {
-          const description = optionEl
-            .querySelector(".card-option-description")
-            .value.trim();
-          const tweetText = optionEl
-            .querySelector(".card-option-tweet")
-            .value.trim();
+				const options = [];
+				for (const optionEl of optionElements) {
+					const description = optionEl
+						.querySelector(".card-option-description")
+						.value.trim();
+					const tweetText = optionEl
+						.querySelector(".card-option-tweet")
+						.value.trim();
 
-          if (!description || !tweetText) {
-            toastQueue.add(
-              `<h1>All options must have description and tweet text</h1>`
-            );
-            return;
-          }
+					if (!description || !tweetText) {
+						toastQueue.add(
+							`<h1>All options must have description and tweet text</h1>`,
+						);
+						return;
+					}
 
-          options.push({ description, tweet_text: tweetText });
-        }
+					options.push({ description, tweet_text: tweetText });
+				}
 
-        interactiveCard.options = options;
-        cardModal.style.display = "none";
-        cardToggleBtn.style.color = "var(--primary)";
-        cardToggleBtn.title = "Edit interactive card";
-        updateCharacterCount();
-      });
-    }
+				interactiveCard.options = options;
+				cardModal.style.display = "none";
+				cardToggleBtn.style.color = "var(--primary)";
+				cardToggleBtn.title = "Edit interactive card";
+				updateCharacterCount();
+			});
+		}
 
-    if (clearCardBtn) {
-      clearCardBtn.addEventListener("click", () => {
-        interactiveCard = null;
-        cardModal.style.display = "none";
-        cardToggleBtn.style.color = "";
-        cardToggleBtn.title = "Create interactive card";
-        element.querySelector("#card-media-preview").innerHTML = "";
-        element.querySelector("#card-media-input").value = "";
-        element
-          .querySelector("#card-options-container")
-          .querySelectorAll(".card-option")
-          .forEach((el) => el.remove());
-        updateCharacterCount();
-      });
-    }
-  }
+		if (clearCardBtn) {
+			clearCardBtn.addEventListener("click", () => {
+				interactiveCard = null;
+				cardModal.style.display = "none";
+				cardToggleBtn.style.color = "";
+				cardToggleBtn.title = "Create interactive card";
+				element.querySelector("#card-media-preview").innerHTML = "";
+				element.querySelector("#card-media-input").value = "";
+				element
+					.querySelector("#card-options-container")
+					.querySelectorAll(".card-option")
+					.forEach((el) => {
+						el.remove();
+					});
+				updateCharacterCount();
+			});
+		}
+	}
 
-  tweetButton.addEventListener("click", async () => {
-    const content = textarea.value.trim();
-    const hasExtras =
-      (pendingFiles && pendingFiles.length > 0) ||
-      !!selectedGif ||
-      pollEnabled ||
-      !!interactiveCard ||
-      !!article;
+	tweetButton.addEventListener("click", async () => {
+		const content = textarea.value.trim();
+		const hasExtras =
+			(pendingFiles && pendingFiles.length > 0) ||
+			!!selectedGif ||
+			pollEnabled ||
+			!!interactiveCard ||
+			!!article;
 
-    if ((content.length === 0 && !hasExtras) || content.length > maxChars) {
-      toastQueue.add(
-        `<h1>Invalid tweet</h1><p>Make sure your tweet is 1 to ${maxChars} characters long.</p>`
-      );
-      return;
-    }
+		if ((content.length === 0 && !hasExtras) || content.length > maxChars) {
+			toastQueue.add(
+				`<h1>Invalid tweet</h1><p>Make sure your tweet is 1 to ${maxChars} characters long.</p>`,
+			);
+			return;
+		}
 
-    let poll = null;
-    if (pollEnabled && pollContainer && pollDuration) {
-      const pollOptions = Array.from(
-        pollContainer.querySelectorAll(".poll-option input")
-      )
-        .map((input) => input.value.trim())
-        .filter((value) => value.length > 0);
+		let poll = null;
+		if (pollEnabled && pollContainer && pollDuration) {
+			const pollOptions = Array.from(
+				pollContainer.querySelectorAll(".poll-option input"),
+			)
+				.map((input) => input.value.trim())
+				.filter((value) => value.length > 0);
 
-      if (pollOptions.length < 2) {
-        toastQueue.add(
-          `<h1>Invalid poll</h1><p>Please provide at least 2 poll options.</p>`
-        );
-        return;
-      }
+			if (pollOptions.length < 2) {
+				toastQueue.add(
+					`<h1>Invalid poll</h1><p>Please provide at least 2 poll options.</p>`,
+				);
+				return;
+			}
 
-      poll = {
-        options: pollOptions,
-        duration: parseInt(pollDuration.value),
-      };
-    }
+			poll = {
+				options: pollOptions,
+				duration: parseInt(pollDuration.value),
+			};
+		}
 
-    tweetButton.disabled = true;
+		tweetButton.disabled = true;
 
-    try {
-      const uploadedFiles = [];
-      for (const fileData of pendingFiles) {
-        const formData = new FormData();
-        formData.append("file", fileData.file);
+		try {
+			const uploadedFiles = [];
+			for (const fileData of pendingFiles) {
+				const formData = new FormData();
+				formData.append("file", fileData.file);
 
-        const uploadResult = await query("/upload", {
-          method: "POST",
-          body: formData,
-        });
+				const uploadResult = await query("/upload", {
+					method: "POST",
+					body: formData,
+				});
 
-        if (uploadResult.success) {
-          uploadedFiles.push(uploadResult.file);
-        } else {
-          toastQueue.add(`<h1>Upload failed</h1><p>${uploadResult.error}</p>`);
-          return;
-        }
-      }
+				if (uploadResult.success) {
+					uploadedFiles.push(uploadResult.file);
+				} else {
+					toastQueue.add(`<h1>Upload failed</h1><p>${uploadResult.error}</p>`);
+					return;
+				}
+			}
 
-      if (scheduledFor) {
-        const requestBody = {
-          content,
-          scheduled_for: scheduledFor.toISOString(),
-          files: uploadedFiles,
-          reply_restriction: replyRestriction,
-        };
+			if (scheduledFor) {
+				const requestBody = {
+					content,
+					scheduled_for: scheduledFor.toISOString(),
+					files: uploadedFiles,
+					reply_restriction: replyRestriction,
+				};
 
-        const spoilerFlags = [];
-        document
-          .querySelectorAll(".attachment-preview-item")
-          .forEach((el, index) => {
-            if (el.dataset.isSpoiler === "true") {
-              spoilerFlags.push(index);
-            }
-          });
-        if (spoilerFlags.length > 0) {
-          requestBody.spoiler_flags = spoilerFlags;
-        }
+				const spoilerFlags = [];
+				document
+					.querySelectorAll(".attachment-preview-item")
+					.forEach((el, index) => {
+						if (el.dataset.isSpoiler === "true") {
+							spoilerFlags.push(index);
+						}
+					});
+				if (spoilerFlags.length > 0) {
+					requestBody.spoiler_flags = spoilerFlags;
+				}
 
-        if (selectedGif) {
-          requestBody.gif_url = selectedGif;
-        }
+				if (selectedGif) {
+					requestBody.gif_url = selectedGif;
+				}
 
-        if (poll) {
-          requestBody.poll = poll;
-        }
+				if (poll) {
+					requestBody.poll = poll;
+				}
 
-        const { error, scheduledPost } = await query("/scheduled/", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify(requestBody),
-        });
+				const { error, scheduledPost } = await query("/scheduled/", {
+					method: "POST",
+					headers: {
+						"Content-Type": "application/json",
+					},
+					body: JSON.stringify(requestBody),
+				});
 
-        if (!scheduledPost) {
-          toastQueue.add(`<h1>${error || "Failed to schedule tweet"}</h1>`);
-          return;
-        }
+				if (!scheduledPost) {
+					toastQueue.add(`<h1>${error || "Failed to schedule tweet"}</h1>`);
+					return;
+				}
 
-        textarea.value = "";
-        charCount.textContent = "0";
-        tweetButton.disabled = true;
-        textarea.style.height = "25px";
+				textarea.value = "";
+				charCount.textContent = "0";
+				tweetButton.disabled = true;
+				textarea.style.height = "25px";
 
-        pendingFiles = [];
-        selectedGif = null;
-        scheduledFor = null;
-        attachmentPreview.innerHTML = "";
+				pendingFiles = [];
+				selectedGif = null;
+				scheduledFor = null;
+				attachmentPreview.innerHTML = "";
 
-        if (scheduleBtn) {
-          scheduleBtn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>`;
-          scheduleBtn.style.color = "";
-          scheduleBtn.title = "Schedule tweet";
-        }
+				if (scheduleBtn) {
+					scheduleBtn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>`;
+					scheduleBtn.style.color = "";
+					scheduleBtn.title = "Schedule tweet";
+				}
 
-        if (pollEnabled && pollContainer) {
-          pollContainer
-            .querySelectorAll(".poll-option")
-            .forEach((option) => option.remove());
-          togglePoll();
-        }
+				if (pollEnabled && pollContainer) {
+					pollContainer.querySelectorAll(".poll-option").forEach((option) => {
+						option.remove();
+					});
+					togglePoll();
+				}
 
-        toastQueue.add(
-          `<h1>Tweet Scheduled!</h1><p>Your tweet will be posted at ${new Date(
-            scheduledPost.scheduled_for
-          ).toLocaleString()}</p>`
-        );
+				toastQueue.add(
+					`<h1>Tweet Scheduled!</h1><p>Your tweet will be posted at ${new Date(
+						scheduledPost.scheduled_for,
+					).toLocaleString()}</p>`,
+				);
 
-        return;
-      }
+				return;
+			}
 
-      const requestBody = {
-        content,
-        reply_to: replyTo,
-        quote_tweet_id: quoteTweet?.id || null,
-        source: /Mobi|Android|iPhone|iPad|iPod/i.test(navigator.userAgent)
-          ? "mobile_web"
-          : "desktop_web",
-        files: uploadedFiles,
-        reply_restriction: replyRestriction,
-        article_id: article?.id || null,
-        community_id: communitySelector?.selectedCommunityId || communityId,
-        community_only: communityOnly,
-      };
+			const requestBody = {
+				content,
+				reply_to: replyTo,
+				quote_tweet_id: quoteTweet?.id || null,
+				source: /Mobi|Android|iPhone|iPad|iPod/i.test(navigator.userAgent)
+					? "mobile_web"
+					: "desktop_web",
+				files: uploadedFiles,
+				reply_restriction: replyRestriction,
+				article_id: article?.id || null,
+				community_id: communitySelector?.selectedCommunityId || communityId,
+				community_only: communityOnly,
+			};
 
-      const spoilerFlags = [];
-      document
-        .querySelectorAll(".attachment-preview-item")
-        .forEach((el, index) => {
-          if (el.dataset.isSpoiler === "true") {
-            spoilerFlags.push(index);
-          }
-        });
-      if (spoilerFlags.length > 0) {
-        requestBody.spoiler_flags = spoilerFlags;
-      }
+			const postAsSelect = element.querySelector("#post-as-select");
+			if (postAsSelect?.value) {
+				requestBody.posted_as_user_id = postAsSelect.value;
+			}
 
-      if (selectedGif) {
-        requestBody.gif_url = selectedGif;
-      }
+			const spoilerFlags = [];
+			document
+				.querySelectorAll(".attachment-preview-item")
+				.forEach((el, index) => {
+					if (el.dataset.isSpoiler === "true") {
+						spoilerFlags.push(index);
+					}
+				});
+			if (spoilerFlags.length > 0) {
+				requestBody.spoiler_flags = spoilerFlags;
+			}
 
-      if (poll) {
-        requestBody.poll = poll;
-      }
+			if (selectedGif) {
+				requestBody.gif_url = selectedGif;
+			}
 
-      if (interactiveCard) {
-        requestBody.interactive_card = interactiveCard;
-      }
+			if (poll) {
+				requestBody.poll = poll;
+			}
 
-      const { error, tweet } = await query("/tweets/", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(requestBody),
-      });
+			if (interactiveCard) {
+				requestBody.interactive_card = interactiveCard;
+			}
 
-      if (!tweet) {
-        toastQueue.add(`<h1>${error || "Failed to post tweet"}</h1>`);
-        return;
-      }
+			const { error, tweet } = await query("/tweets/", {
+				method: "POST",
+				headers: {
+					"Content-Type": "application/json",
+				},
+				body: JSON.stringify(requestBody),
+			});
 
-      textarea.value = "";
-      tweetButton.disabled = true;
-      charCount.textContent = "0";
-      textarea.style.height = "25px";
+			if (!tweet) {
+				toastQueue.add(`<h1>${error || "Failed to post tweet"}</h1>`);
+				return;
+			}
 
-      pendingFiles = [];
-      selectedGif = null;
-      attachmentPreview.innerHTML = "";
-      interactiveCard = null;
-      if (cardToggleBtn) {
-        cardToggleBtn.style.color = "";
-      }
+			textarea.value = "";
+			tweetButton.disabled = true;
+			charCount.textContent = "0";
+			textarea.style.height = "25px";
 
-      if (pollEnabled && pollContainer) {
-        pollContainer
-          .querySelectorAll(".poll-option")
-          .forEach((option) => option.remove());
-        togglePoll();
-      }
+			pendingFiles = [];
+			selectedGif = null;
+			attachmentPreview.innerHTML = "";
+			interactiveCard = null;
+			if (cardToggleBtn) {
+				cardToggleBtn.style.color = "";
+			}
 
-      callback(tweet);
-    } catch {
-      toastQueue.add(`<h1>Network error. Please try again.</h1>`);
-    } finally {
-      tweetButton.disabled = false;
-    }
-  });
+			if (pollEnabled && pollContainer) {
+				pollContainer.querySelectorAll(".poll-option").forEach((option) => {
+					option.remove();
+				});
+				togglePoll();
+			}
 
-  textarea.addEventListener("keydown", (e) => {
-    if ((e.ctrlKey || e.metaKey) && e.key === "Enter") {
-      e.preventDefault();
-      if (!tweetButton.disabled) {
-        tweetButton.click();
-      }
-    }
-  });
+			callback(tweet);
+		} catch {
+			toastQueue.add(`<h1>Network error. Please try again.</h1>`);
+		} finally {
+			tweetButton.disabled = false;
+		}
+	});
 
-  updateCharacterCount();
+	textarea.addEventListener("keydown", (e) => {
+		if ((e.ctrlKey || e.metaKey) && e.key === "Enter") {
+			e.preventDefault();
+			if (!tweetButton.disabled) {
+				tweetButton.click();
+			}
+		}
+	});
+
+	updateCharacterCount();
 };
 
 export const createComposer = async ({
-  callback = () => {},
-  placeholder = "What is happening?! Did a browser just go angry?!",
-  replyTo = null,
-  quoteTweet = null,
-  communityId = null,
-  autofocus = false,
-  interactiveCard = null,
-  cardOnly = false,
+	callback = () => {},
+	placeholder = "What is happening?! Did a browser just go angry?!",
+	replyTo = null,
+	quoteTweet = null,
+	communityId = null,
+	autofocus = false,
+	interactiveCard = null,
+	cardOnly = false,
 }) => {
-  const el = document.createElement("div");
-  el.classList.add("compose-tweet");
-  el.innerHTML = `
+	const el = document.createElement("div");
+	el.classList.add("compose-tweet");
+	el.innerHTML = `
         <div class="compose-header">
           <img src="" alt="Your avatar" id="compose-avatar">
           <div class="compose-input">
+            <div id="delegation-selector" style="display: none; margin-bottom: 8px;">
+              <select id="post-as-select" style="padding: 6px 12px; border: 1px solid var(--border-primary); border-radius: 8px; background: var(--bg-secondary); color: var(--text-primary); font-size: 14px;">
+                <option value="">Post as yourself</option>
+              </select>
+            </div>
             <textarea id="tweet-textarea" style="overflow:hidden"${
-              autofocus ? "autofocus" : ""
-            }></textarea>
+							autofocus ? "autofocus" : ""
+						}></textarea>
             <div id="quoted-tweet-container"></div>
             <div id="poll-container" style="display: none;">
               <div class="poll-options"></div>
@@ -1473,92 +1485,131 @@ export const createComposer = async ({
             </div>
           </div>
         </div>`;
-  el.querySelector("#tweet-textarea").placeholder = placeholder;
+	el.querySelector("#tweet-textarea").placeholder = placeholder;
 
-  if (quoteTweet) {
-    const { createTweetElement } = await import("./tweets.js");
-    const quotedTweetEl = createTweetElement(quoteTweet, {
-      clickToOpen: false,
-      showTopReply: false,
-      isTopReply: false,
-      size: "preview",
-    });
-    el.querySelector("#quoted-tweet-container").appendChild(quotedTweetEl);
-  }
+	if (quoteTweet) {
+		const { createTweetElement } = await import("./tweets.js");
+		const quotedTweetEl = createTweetElement(quoteTweet, {
+			clickToOpen: false,
+			showTopReply: false,
+			isTopReply: false,
+			size: "preview",
+		});
+		el.querySelector("#quoted-tweet-container").appendChild(quotedTweetEl);
+	}
 
-  try {
-    const user = await getUser();
-    const avatarImg = el.querySelector(".compose-header img");
-    avatarImg.src = user?.avatar || "/public/shared/assets/default-avatar.svg";
+	try {
+		const user = await getUser();
+		const avatarImg = el.querySelector(".compose-header img");
+		avatarImg.src = user?.avatar || "/public/shared/assets/default-avatar.svg";
 
-    const radius = user?.avatar_radius ?? (user?.gold ? 4 : 50);
-    avatarImg.style.borderRadius = `${radius}%`;
-  } catch (error) {
-    console.error("Error loading user avatar:", error);
-    const avatarImg = el.querySelector(".compose-header img");
-    avatarImg.src = "/public/shared/assets/default-avatar.svg";
-    avatarImg.style.borderRadius = "50%";
-  }
+		const radius = user?.avatar_radius ?? (user?.gold ? 4 : 50);
+		avatarImg.style.borderRadius = `${radius}%`;
 
-  try {
-    const user = await getUser();
+		try {
+			const delegationsData = await query("/delegates/my-delegations");
+			if (
+				delegationsData.delegations &&
+				delegationsData.delegations.length > 0
+			) {
+				const delegationSelector = el.querySelector("#delegation-selector");
+				const postAsSelect = el.querySelector("#post-as-select");
 
-    if (user?.restricted) {
-      el.style.display = "none";
-      return el;
-    }
+				delegationsData.delegations.forEach((delegation) => {
+					const option = document.createElement("option");
+					option.value = delegation.owner_id;
+					option.textContent = `Post as @${delegation.username}`;
+					postAsSelect.appendChild(option);
+				});
 
-    const maxChars =
-      user?.character_limit !== null && user?.character_limit !== undefined
-        ? user.character_limit
-        : user?.gold
-        ? 16500
-        : user?.verified
-        ? 5500
-        : 400;
+				delegationSelector.style.display = "block";
 
-    const counter = el.querySelector(".character-counter");
-    if (counter) {
-      counter.innerHTML = `<span id="char-count">0</span>/${maxChars}`;
-    }
+				postAsSelect.addEventListener("change", () => {
+					const selectedUserId = postAsSelect.value;
+					if (selectedUserId) {
+						const selectedDelegation = delegationsData.delegations.find(
+							(d) => d.owner_id === selectedUserId,
+						);
+						if (selectedDelegation) {
+							avatarImg.src =
+								selectedDelegation.avatar ||
+								"/public/shared/assets/default-avatar.svg";
+						}
+					} else {
+						avatarImg.src =
+							user?.avatar || "/public/shared/assets/default-avatar.svg";
+					}
+				});
+			}
+		} catch (error) {
+			console.error("Failed to load delegations:", error);
+		}
+	} catch (error) {
+		console.error("Error loading user avatar:", error);
+		const avatarImg = el.querySelector(".compose-header img");
+		avatarImg.src = "/public/shared/assets/default-avatar.svg";
+		avatarImg.style.borderRadius = "50%";
+	}
 
-    if (maxChars > 999999) {
-      counter.style.display = "none";
-    }
+	try {
+		const user = await getUser();
 
-    const textareaEl = el.querySelector("#tweet-textarea");
-    if (textareaEl) textareaEl.setAttribute("maxlength", String(maxChars));
+		if (user?.restricted) {
+			el.style.display = "none";
+			return el;
+		}
 
-    const cardToggleBtn = el.querySelector("#card-toggle");
-    if (cardToggleBtn && cardOnly) {
-      cardToggleBtn.style.display = "block";
-    }
+		const maxChars =
+			user?.character_limit !== null && user?.character_limit !== undefined
+				? user.character_limit
+				: user?.gold
+					? 16500
+					: user?.verified
+						? 5500
+						: 400;
 
-    const communitySelector = communityId
-      ? null
-      : { selectedCommunityId: null };
-    useComposer(el, callback, {
-      replyTo,
-      quoteTweet,
-      maxChars,
-      communityId,
-      communitySelector,
-      interactiveCard,
-      cardOnly,
-    });
-  } catch {
-    const communitySelector = communityId
-      ? null
-      : { selectedCommunityId: null };
-    useComposer(el, callback, {
-      replyTo,
-      quoteTweet,
-      communityId,
-      communitySelector,
-      interactiveCard,
-      cardOnly,
-    });
-  }
+		const counter = el.querySelector(".character-counter");
+		if (counter) {
+			counter.innerHTML = `<span id="char-count">0</span>/${maxChars}`;
+		}
 
-  return el;
+		if (maxChars > 999999) {
+			counter.style.display = "none";
+		}
+
+		const textareaEl = el.querySelector("#tweet-textarea");
+		if (textareaEl) textareaEl.setAttribute("maxlength", String(maxChars));
+
+		const cardToggleBtn = el.querySelector("#card-toggle");
+		if (cardToggleBtn && cardOnly) {
+			cardToggleBtn.style.display = "block";
+		}
+
+		const communitySelector = communityId
+			? null
+			: { selectedCommunityId: null };
+		useComposer(el, callback, {
+			replyTo,
+			quoteTweet,
+			maxChars,
+			communityId,
+			communitySelector,
+			interactiveCard,
+			cardOnly,
+		});
+	} catch {
+		const communitySelector = communityId
+			? null
+			: { selectedCommunityId: null };
+		useComposer(el, callback, {
+			replyTo,
+			quoteTweet,
+			communityId,
+			communitySelector,
+			interactiveCard,
+			cardOnly,
+		});
+	}
+
+	return el;
 };

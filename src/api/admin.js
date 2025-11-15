@@ -1042,7 +1042,7 @@ export default new Elysia({ prefix: "/admin" })
 		async ({ params, body, user }) => {
 			const { reason, duration, notes, action } = body;
 
-			// If caller requested a lift via the suspend endpoint, unify the behavior: lift suspensions and flags.
+			// If caller requested a lift via the suspend endpoint, allow lifting specific flags
 			if (action === "lift") {
 				const targetUser = adminQueries.findUserById.get(params.id);
 				if (!targetUser) return { error: "User not found" };
@@ -1050,25 +1050,59 @@ export default new Elysia({ prefix: "/admin" })
 				const wasRestricted = !!targetUser?.restricted;
 				const wasShadowbanned = !!targetUser?.shadowbanned;
 
-				adminQueries.updateUserSuspended.run(false, params.id);
-				adminQueries.updateUserRestricted.run(false, params.id);
-				db.query("UPDATE users SET shadowbanned = FALSE WHERE id = ?").run(params.id);
-				adminQueries.updateSuspensionStatus.run("lifted", params.id);
+				// Expect body.lift to be an array of specific actions to lift: 'suspend', 'restrict', 'shadowban'
+				const lifts = Array.isArray(body.lift) ? body.lift : [];
+				if (!lifts.length) {
+					return {
+						error:
+							"No lift actions specified. Provide an array of actions to lift.",
+					};
+				}
 
-				if (wasSuspended) {
-					logModerationAction(user.id, "unsuspend_user", "user", params.id, {
-						username: targetUser?.username,
-					});
+				let changed = false;
+				for (const liftAction of lifts) {
+					if (liftAction === "suspend" && wasSuspended) {
+						adminQueries.updateUserSuspended.run(false, params.id);
+						db.query(
+							"UPDATE suspensions SET status = 'lifted' WHERE user_id = ? AND action = 'suspend' AND status = 'active'",
+						).run(params.id);
+						logModerationAction(user.id, "unsuspend_user", "user", params.id, {
+							username: targetUser?.username,
+						});
+						changed = true;
+					}
+					if (liftAction === "restrict" && wasRestricted) {
+						adminQueries.updateUserRestricted.run(false, params.id);
+						db.query(
+							"UPDATE suspensions SET status = 'lifted' WHERE user_id = ? AND action = 'restrict' AND status = 'active'",
+						).run(params.id);
+						logModerationAction(user.id, "unrestrict_user", "user", params.id, {
+							username: targetUser?.username,
+						});
+						changed = true;
+					}
+					if (liftAction === "shadowban" && wasShadowbanned) {
+						db.query("UPDATE users SET shadowbanned = FALSE WHERE id = ?").run(
+							params.id,
+						);
+						db.query(
+							"UPDATE suspensions SET status = 'lifted' WHERE user_id = ? AND action = 'shadowban' AND status = 'active'",
+						).run(params.id);
+						logModerationAction(
+							user.id,
+							"unshadowban_user",
+							"user",
+							params.id,
+							{
+								username: targetUser?.username,
+							},
+						);
+						changed = true;
+					}
 				}
-				if (wasRestricted) {
-					logModerationAction(user.id, "unrestrict_user", "user", params.id, {
-						username: targetUser?.username,
-					});
-				}
-				if (wasShadowbanned) {
-					logModerationAction(user.id, "unshadowban_user", "user", params.id, {
-						username: targetUser?.username,
-					});
+
+				if (!changed) {
+					return { error: "Selected lift actions did not apply to the user" };
 				}
 
 				try {
@@ -1082,12 +1116,20 @@ export default new Elysia({ prefix: "/admin" })
 
 			if (!targetUser) return { error: "User not found" };
 
-			// Validate state constraints: no suspended + restricted/shadowban
-			if (
-				targetUser.suspended &&
-				(action === "restrict" || action === "shadowban")
-			) {
-				return { error: "Cannot restrict or shadowban a suspended user" };
+			// Prevent repeated actions (e.g., suspending an already suspended user),
+			// but allow combinations such as restricting and shadowbanning the same user.
+			if (action === "suspend") {
+				if (targetUser.suspended) return { error: "User is already suspended" };
+				// Do not allow suspending a user who is currently restricted or shadowbanned.
+				if (targetUser.restricted || targetUser.shadowbanned) {
+					return { error: "Cannot suspend a restricted or shadowbanned user" };
+				}
+			}
+			if (action === "restrict" && targetUser.restricted) {
+				return { error: "User is already restricted" };
+			}
+			if (action === "shadowban" && targetUser.shadowbanned) {
+				return { error: "User is already shadowbanned" };
 			}
 
 			const expiresAt = duration
@@ -1107,23 +1149,20 @@ export default new Elysia({ prefix: "/admin" })
 			);
 
 			if ((action || "suspend") === "suspend") {
+				// Suspend overrides other states
 				adminQueries.updateUserSuspended.run(true, params.id);
 				adminQueries.updateUserRestricted.run(false, params.id);
 				db.query("UPDATE users SET shadowbanned = FALSE WHERE id = ?").run(
 					params.id,
 				);
 			} else if ((action || "suspend") === "restrict") {
+				// Apply a restriction without touching other flags (allow combining with shadowban)
 				adminQueries.updateUserRestricted.run(true, params.id);
-				adminQueries.updateUserSuspended.run(false, params.id);
-				db.query("UPDATE users SET shadowbanned = FALSE WHERE id = ?").run(
-					params.id,
-				);
 			} else if ((action || "suspend") === "shadowban") {
+				// Apply shadowban without touching other flags (allow combining with restrict)
 				db.query("UPDATE users SET shadowbanned = TRUE WHERE id = ?").run(
 					params.id,
 				);
-				adminQueries.updateUserSuspended.run(false, params.id);
-				adminQueries.updateUserRestricted.run(false, params.id);
 			}
 
 			const moderationActionName =
@@ -1150,7 +1189,17 @@ export default new Elysia({ prefix: "/admin" })
 						t.Literal("suspend"),
 						t.Literal("restrict"),
 						t.Literal("shadowban"),
+						t.Literal("lift"),
 					]),
+				),
+				lift: t.Optional(
+					t.Array(
+						t.Union([
+							t.Literal("suspend"),
+							t.Literal("restrict"),
+							t.Literal("shadowban"),
+						]),
+					),
 				),
 				duration: t.Optional(t.Number()),
 				notes: t.Optional(t.String()),
@@ -2195,7 +2244,7 @@ export default new Elysia({ prefix: "/admin" })
 
 		if (
 			targetUser.admin &&
-			!(process.env.SUPERADMIN_ID && user.id === process.env.SUPERADMIN_ID)
+			!(process.env.SUPERADMIN_IDS && SUPERADMIN_IDS.split(";").includes(user.id))
 		) {
 			return { error: "Cannot impersonate admin users" };
 		}

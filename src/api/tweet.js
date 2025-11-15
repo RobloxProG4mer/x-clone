@@ -133,8 +133,8 @@ const getTweetRepliesBefore = db.query(`
 `);
 
 const createTweet = db.query(`
-	INSERT INTO posts (id, user_id, content, reply_to, source, poll_id, quote_tweet_id, reply_restriction, article_id, community_id, community_only) 
-  VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+	INSERT INTO posts (id, user_id, content, reply_to, source, poll_id, quote_tweet_id, reply_restriction, article_id, community_id, community_only, posted_as_id) 
+  VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
 	RETURNING *
 `);
 
@@ -516,6 +516,7 @@ export default new Elysia({ prefix: "/tweets" })
 				community_only,
 				spoiler_flags,
 				interactive_card,
+				posted_as_user_id,
 			} = body;
 			const tweetContent = typeof content === "string" ? content : "";
 			const trimmedContent = tweetContent.trim();
@@ -523,12 +524,49 @@ export default new Elysia({ prefix: "/tweets" })
 			const hasBody = trimmedContent.length > 0;
 			const targetArticleId = article_id ? String(article_id) : null;
 
+			let effectiveUserId = user.id;
+			let postedAsUserId = null;
+
+			if (posted_as_user_id && posted_as_user_id !== user.id) {
+				const delegation = db
+					.query(
+						"SELECT * FROM delegates WHERE owner_id = ? AND delegate_id = ? AND status = 'accepted'",
+					)
+					.get(posted_as_user_id, user.id);
+
+				if (!delegation) {
+					return {
+						error: "You are not authorized to post as this user",
+					};
+				}
+
+				const postedAsUser = getUserById.get(posted_as_user_id);
+				if (!postedAsUser) {
+					return { error: "Posted-as user not found" };
+				}
+
+				if (isUserSuspendedById(postedAsUser.id)) {
+					return {
+						error: "Cannot post as a suspended user",
+					};
+				}
+
+				if (isUserRestrictedById(postedAsUser.id)) {
+					return {
+						error: "Cannot post as a restricted user",
+					};
+				}
+
+				effectiveUserId = posted_as_user_id;
+				postedAsUserId = posted_as_user_id;
+			}
+
 			if (community_id) {
 				const isMember = db
 					.query(
 						"SELECT 1 FROM community_members WHERE community_id = ? AND user_id = ? AND banned = FALSE",
 					)
-					.get(community_id, user.id);
+					.get(community_id, effectiveUserId);
 
 				if (!isMember) {
 					return { error: "You must be a community member to post here" };
@@ -704,7 +742,7 @@ export default new Elysia({ prefix: "/tweets" })
 
 			const tweet = createTweet.get(
 				tweetId,
-				user.id,
+				effectiveUserId,
 				trimmedContent,
 				reply_to || null,
 				source || null,
@@ -714,6 +752,7 @@ export default new Elysia({ prefix: "/tweets" })
 				targetArticleId,
 				community_id || null,
 				community_only || false,
+				postedAsUserId,
 			);
 
 			if (trimmedContent.length > 0) {
@@ -821,6 +860,7 @@ export default new Elysia({ prefix: "/tweets" })
 									null,
 									null,
 									false,
+									null,
 								);
 								updatePostCounts.run(tweetId);
 								addNotification(
@@ -925,11 +965,14 @@ export default new Elysia({ prefix: "/tweets" })
 				};
 			}
 
+			const effectiveUser =
+				effectiveUserId !== user.id ? getUserById.get(effectiveUserId) : user;
+
 			return {
 				success: true,
 				tweet: {
 					...tweet,
-					author: user,
+					author: effectiveUser,
 					liked_by_user: false,
 					retweeted_by_user: false,
 					poll: getPollDataForTweet(tweet.id, user.id),

@@ -1,0 +1,285 @@
+:root {
+  --admin-body-bg: #131314;
+}
+
+* {
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+    Oxygen, Ubuntu, Cantarell, "Open Sans", "Helvetica Neue", sans-serif;
+  border-radius: 0 !important;
+}
+
+body {
+  background-color: var(--admin-body-bg);
+  --bs-body-bg: var(--admin-body-bg);
+}
+
+.sidebar {
+  min-height: 100vh;
+  background-color: #212529;
+}
+
+.sidebar .nav-link {
+  color: #adb5bd;
+}
+
+.sidebar .nav-link:hover,
+.sidebar .nav-link.active {
+  color: #fff;
+  background-color: #495057;
+}
+
+.stat-card {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: #fff;
+  border: none;
+}
+
+.stat-card.warning {
+  background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+}
+
+.stat-card.success {
+  background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+}
+
+.stat-card.danger {
+  background: linear-gradient(135deg, #ff9a9e 0%, #f6416c 100%);
+}
+
+.user-avatar {
+  width: 40px;
+  height: 40px;
+  object-fit: cover;
+  border-radius: 50%;
+}
+
+.modal-lg {
+  max-width: 800px;
+}
+
+.suspension-form {
+  background-color: #f8f9fa;
+  padding: 20px;
+  border-radius: 8px;
+  margin-top: 15px;
+}
+
+.emoji-cropper {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  align-items: center;
+}
+
+.emoji-cropper canvas {
+  width: 300px;
+  height: 300px;
+  border-radius: 8px;
+  background-color: #1f1f1f;
+  cursor: grab;
+}
+
+.emoji-cropper canvas:active {
+  cursor: grabbing;
+}
+
+.emoji-cropper .form-range {
+  width: 100%;
+}
+
+/* Apply site dark-mode variables when admin uses Bootstrap data-bs-theme="dark" */
+body[data-bs-theme="dark"] {
+  color-scheme: dark;
+
+  /* copy essential variables from shared .dark to cover cropper and common components */
+  --primary-rgb: 172, 151, 255;
+  --primary-hover: #a08dee;
+  --primary-focus: #9986e5;
+  --primary-fg: black;
+
+  --text-primary: #cdd6f4;
+  --text-secondary: #bac2de;
+  --text-tertiary: #a6adc8;
+  --text-placeholder: #9399b2;
+  --text-muted: #bac2de;
+
+  --bg-primary: #181825;
+  --bg-rgb: 24, 24, 37;
+  --bg-secondary: #181825;
+  --bg-overlay: rgba(0, 0, 0, 0.6);
+  --bg-overlay-light: rgba(255, 255, 255, 0.05);
+
+  --border-primary: #313244;
+  --border-secondary: #45475a;
+  --border-tertiary: #585b70;
+  --border-hover: #6c7086;
+  --border-input: rgba(255, 255, 255, 0.1);
+
+  --btn-secondary-border: var(--border-tertiary);
+  --btn-disabled-bg: #45475a;
+  --btn-disabled-color: #6c7086;
+}
+
+/* Cropper-specific tweaks so controls look right on admin dark theme */
+.image-cropper-panel {
+  background-color: var(--bg-primary);
+  border: 1px solid var(--border-primary);
+}
+
+.image-cropper-overlay {
+  background-color: rgba(0, 0, 0, 0.6);
+}
+
+.image-cropper-canvas {
+  background-color: var(--bg-secondary);
+  box-shadow: inset 0 0 0 1px var(--border-primary);
+}
+
+/* Scoped cropper button and control styles to mimic site base.css without global overrides */
+.image-cropper-panel .btn {
+  padding: 10px 14px;
+  height: 40px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;
+  border: none;
+  cursor: pointer;
+  transition: background-color 0.12s ease;
+  margin-bottom: 0;
+}
+
+.image-cropper-panel .btn.primary {
+  background: var(--primary);
+  color: var(--primary-fg);
+}
+
+.image-cropper-panel .btn.secondary {
+  background: transparent;
+  color: var(--text-primary);
+  border: 1px solid var(--btn-secondary-border);
+}
+
+.image-cropper-panel .btn.primary:hover:not(:disabled) {
+  background: var(--primary-hover);
+}
+
+.image-cropper-panel .btn.primary:focus:not(:disabled) {
+  background-color: var(--primary-focus);
+}
+
+.image-cropper-panel .btn.secondary:hover:not(:disabled) {
+  border-color: var(--border-hover);
+}
+
+.image-cropper-panel .btn:disabled {
+  background: var(--btn-disabled-bg);
+  color: var(--btn-disabled-color);
+  cursor: not-allowed;
+}
+
+.image-cropper-panel .image-cropper-controls {
+  gap: 12px;
+}
+
+.image-cropper-panel .image-cropper-zoom,
+.image-cropper-panel input[type="range"].image-cropper-zoom {
+  width: 100%;
+}
+
+.image-cropper-panel .image-cropper-action-row {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+}
+
+.image-cropper-panel .image-cropper-action-row .image-cropper-cancel,
+.image-cropper-panel .image-cropper-action-row .image-cropper-apply,
+.image-cropper-panel .image-cropper-action-row .image-cropper-reset {
+  min-width: 110px;
+  margin-bottom: 0;
+  width: auto;
+}
+
+/* The following is the full flattened cropper CSS from shared/image-cropper.css,
+   scoped with body[data-admin="1"] so it only applies in the admin panel
+   (keeps admin panel styles isolated from the main site CSS). */
+body[data-admin="1"] .image-cropper-overlay {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: rgba(0, 0, 0, 0.6);
+  z-index: 99999;
+  padding: 16px;
+  backdrop-filter: blur(2px);
+}
+
+body[data-admin="1"] .image-cropper-overlay .image-cropper-panel {
+  background-color: var(--bg-primary);
+  border: 1px solid var(--border-primary);
+  border-radius: 16px;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  width: min(640px, calc(100vw - 32px));
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.35);
+  max-height: min(90vh, 720px);
+}
+
+body[data-admin="1"] .image-cropper-overlay .image-cropper-panel .image-cropper-canvas {
+  width: 100%;
+  height: auto;
+  border-radius: 12px;
+  background-color: var(--bg-secondary);
+  box-shadow: inset 0 0 0 1px var(--border-primary);
+  cursor: grab;
+  touch-action: none;
+  position: relative;
+}
+
+body[data-admin="1"] .image-cropper-overlay .image-cropper-panel .image-cropper-controls {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+body[data-admin="1"] .image-cropper-overlay .image-cropper-panel .image-cropper-controls .image-cropper-zoom {
+  width: 100%;
+}
+
+body[data-admin="1"] .image-cropper-overlay .image-cropper-panel .image-cropper-controls .image-cropper-action-row {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+}
+
+body[data-admin="1"] .image-cropper-overlay .image-cropper-panel .image-cropper-controls .image-cropper-action-row .image-cropper-cancel,
+body[data-admin="1"] .image-cropper-overlay .image-cropper-panel .image-cropper-controls .image-cropper-action-row .image-cropper-apply,
+body[data-admin="1"] .image-cropper-overlay .image-cropper-panel .image-cropper-controls .image-cropper-action-row .image-cropper-reset {
+  width: auto;
+  min-width: 110px;
+  margin-bottom: 0;
+}
+
+@media (max-width: 768px) {
+  body[data-admin="1"] .image-cropper-overlay .image-cropper-panel .image-cropper-controls .image-cropper-action-row {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  body[data-admin="1"] .image-cropper-overlay .image-cropper-panel .image-cropper-controls .image-cropper-action-row .image-cropper-cancel,
+  body[data-admin="1"] .image-cropper-overlay .image-cropper-panel .image-cropper-controls .image-cropper-action-row .image-cropper-apply,
+  body[data-admin="1"] .image-cropper-overlay .image-cropper-panel .image-cropper-controls .image-cropper-action-row .image-cropper-reset {
+    min-width: 100%;
+    width: 100%;
+  }
+
+  body[data-admin="1"] .image-cropper-overlay .image-cropper-panel {
+    width: calc(100vw - 24px);
+    padding: 16px;
+    border-radius: 14px;
+  }
+}

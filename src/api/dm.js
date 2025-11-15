@@ -107,7 +107,7 @@ const getConversationMessages = db.query(`
     u.gold
   FROM dm_messages dm
   JOIN users u ON dm.sender_id = u.id
-  WHERE dm.conversation_id = ?
+  WHERE dm.conversation_id = ? AND dm.deleted_at IS NULL AND (dm.expires_at IS NULL OR dm.expires_at > datetime('now', 'utc'))
   ORDER BY dm.created_at DESC
   LIMIT ? OFFSET ?
 `);
@@ -320,6 +320,8 @@ export default new Elysia({ prefix: "/dm" })
 				conversation: {
 					...conversation,
 					participants,
+					disappearing_enabled: !!conversation.disappearing_enabled,
+					disappearing_duration: conversation.disappearing_duration,
 				},
 				messages: enhancedMessages,
 			};
@@ -439,13 +441,25 @@ export default new Elysia({ prefix: "/dm" })
 				const messageId = Bun.randomUUIDv7();
 				const messageType = files && files.length > 0 ? "media" : "text";
 
-				const message = createMessage.get(
+				let expiresAt = null;
+				if (conversation.disappearing_enabled && conversation.disappearing_duration) {
+					const expirationDate = new Date();
+					expirationDate.setSeconds(expirationDate.getSeconds() + conversation.disappearing_duration);
+					expiresAt = expirationDate.toISOString().replace('T', ' ').substring(0, 19);
+				}
+
+				const message = db.query(`
+					INSERT INTO dm_messages (id, conversation_id, sender_id, content, message_type, reply_to, expires_at)
+					VALUES (?, ?, ?, ?, ?, ?, ?)
+					RETURNING *
+				`).get(
 					messageId,
 					id,
 					user.id,
 					content || "",
 					messageType,
 					replyTo || null,
+					expiresAt
 				);
 
 				const attachments = [];
@@ -1049,6 +1063,100 @@ export default new Elysia({ prefix: "/dm" })
 		{
 			body: t.Object({
 				content: t.String(),
+			}),
+		},
+	)
+
+	.delete("/messages/:messageId", ({ params, headers }) => {
+		try {
+			const token = headers.authorization?.replace("Bearer ", "");
+			if (!token) return { error: "Unauthorized" };
+
+			const payload = JSON.parse(atob(token.split(".")[1]));
+			const user = getUserByUsername.get(payload.username);
+			if (!user) return { error: "User not found" };
+
+			const { messageId } = params;
+
+			const message = db
+				.query("SELECT * FROM dm_messages WHERE id = ?")
+				.get(messageId);
+			if (!message) return { error: "Message not found" };
+
+			if (message.sender_id !== user.id) {
+				return { error: "You can only delete your own messages" };
+			}
+
+			db.query(
+				"UPDATE dm_messages SET deleted_at = datetime('now', 'utc') WHERE id = ?",
+			).run(messageId);
+
+			const recipients = getConversationParticipants
+				.all(message.conversation_id)
+				.filter((p) => p.user_id !== user.id);
+
+			for (const participant of recipients) {
+				broadcastToUser(participant.user_id, {
+					type: "message-delete",
+					conversationId: message.conversation_id,
+					messageId: messageId,
+				});
+			}
+
+			return { success: true };
+		} catch (error) {
+			console.error("Error deleting message:", error);
+			return { error: "Internal server error" };
+		}
+	})
+
+	.patch(
+		"/conversations/:id/disappearing",
+		({ params, body, headers }) => {
+			try {
+				const token = headers.authorization?.replace("Bearer ", "");
+				if (!token) return { error: "Unauthorized" };
+
+				const payload = JSON.parse(atob(token.split(".")[1]));
+				const user = getUserByUsername.get(payload.username);
+				if (!user) return { error: "User not found" };
+
+				const { id } = params;
+				const { enabled, duration } = body;
+
+				const conversation = getConversationById.get(id);
+				if (!conversation) return { error: "Conversation not found" };
+
+				const participant = checkParticipant.get(id, user.id);
+				if (!participant) return { error: "Access denied" };
+
+				db.query(
+					"UPDATE conversations SET disappearing_enabled = ?, disappearing_duration = ?, updated_at = datetime('now', 'utc') WHERE id = ?",
+				).run(enabled ? 1 : 0, duration || null, id);
+
+				const recipients = getConversationParticipants
+					.all(id)
+					.filter((p) => p.user_id !== user.id);
+
+				for (const participant of recipients) {
+					broadcastToUser(participant.user_id, {
+						type: "disappearing-update",
+						conversationId: id,
+						enabled,
+						duration,
+					});
+				}
+
+				return { success: true, enabled, duration };
+			} catch (error) {
+				console.error("Error updating disappearing messages:", error);
+				return { error: "Internal server error" };
+			}
+		},
+		{
+			body: t.Object({
+				enabled: t.Boolean(),
+				duration: t.Optional(t.Union([t.Number(), t.Null()])),
 			}),
 		},
 	);

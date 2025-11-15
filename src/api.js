@@ -6,6 +6,7 @@ import auth from "./api/auth.js";
 import blocking from "./api/blocking.js";
 import bookmarks from "./api/bookmarks.js";
 import communities from "./api/communities.js";
+import delegates from "./api/delegates.js";
 import dm from "./api/dm.js";
 import extensions from "./api/extensions.js";
 import hashtags from "./api/hashtags.js";
@@ -20,7 +21,10 @@ import tweet from "./api/tweet.js";
 import upload, { uploadRoutes } from "./api/upload.js";
 import db from "./db.js";
 import ratelimit from "./helpers/ratelimit.js";
-import { getSuspensionCache, setSuspensionCache } from "./helpers/suspensionCache.js";
+import {
+	getSuspensionCache,
+	setSuspensionCache,
+} from "./helpers/suspensionCache.js";
 
 function formatExpiry(expiryStr) {
 	const now = new Date();
@@ -193,6 +197,7 @@ export default new Elysia({
 	.use(blocking)
 	.use(bookmarks)
 	.use(communities)
+	.use(delegates)
 	.use(tweet)
 	.use(articles)
 	.use(profile)

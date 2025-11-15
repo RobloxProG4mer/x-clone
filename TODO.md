@@ -10,7 +10,7 @@
 - tweetapus circles like twiter circle
 
 - keyboard shortcuts
-- db indexes for speedse's
+- db indexes for speed
 - switching between accounts
 - delegates
 

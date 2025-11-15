@@ -64,6 +64,42 @@ export function sendUnreadCounts(userId) {
   });
 }
 
+const cleanupExpiredMessages = () => {
+  try {
+    const expiredMessages = db.query(`
+      SELECT id, conversation_id FROM dm_messages 
+      WHERE expires_at IS NOT NULL 
+      AND expires_at <= datetime('now', 'utc') 
+      AND deleted_at IS NULL
+    `).all();
+
+    if (expiredMessages.length > 0) {
+      const deleteStmt = db.prepare("UPDATE dm_messages SET deleted_at = datetime('now', 'utc') WHERE id = ?");
+      
+      for (const message of expiredMessages) {
+        deleteStmt.run(message.id);
+        
+        const participants = db.query(
+          "SELECT user_id FROM conversation_participants WHERE conversation_id = ?"
+        ).all(message.conversation_id);
+
+        for (const participant of participants) {
+          broadcastToUser(participant.user_id, {
+            type: "message-delete",
+            conversationId: message.conversation_id,
+            messageId: message.id,
+          });
+        }
+      }
+    }
+  } catch (error) {
+    console.error("Error cleaning up expired messages:", error);
+  }
+};
+
+setInterval(cleanupExpiredMessages, 60000);
+cleanupExpiredMessages();
+
 new Elysia()
   .use(compression)
   .use(staticPlugin())
