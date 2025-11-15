@@ -5,6 +5,7 @@ import { Elysia, t } from "elysia";
 import { unzipSync, zipSync } from "fflate";
 import db from "../db.js";
 import { addNotification } from "./notifications.js";
+import { clearSuspensionCache } from "../helpers/suspensionCache.js";
 
 const logModerationAction = (
 	moderatorId,
@@ -1125,10 +1126,17 @@ export default new Elysia({ prefix: "/admin" })
 		const targetUser = adminQueries.findUserById.get(params.id);
 		const wasSuspended = !!targetUser?.suspended;
 		const wasRestricted = !!targetUser?.restricted;
+		const wasShadowbanned = !!targetUser?.shadowbanned;
 
 		adminQueries.updateUserSuspended.run(false, params.id);
 		adminQueries.updateUserRestricted.run(false, params.id);
+		// Also clear shadowbanned flag so users regain visibility after unsuspend
+		db.query("UPDATE users SET shadowbanned = FALSE WHERE id = ?").run(params.id);
 		adminQueries.updateSuspensionStatus.run("lifted", params.id);
+		// Invalidate any cached suspension status server-side so it takes effect immediately
+		try {
+			clearSuspensionCache(params.id);
+		} catch (_e) {}
 
 		if (wasSuspended) {
 			logModerationAction(user.id, "unsuspend_user", "user", params.id, {
@@ -1137,6 +1145,11 @@ export default new Elysia({ prefix: "/admin" })
 		}
 		if (wasRestricted) {
 			logModerationAction(user.id, "unrestrict_user", "user", params.id, {
+				username: targetUser?.username,
+			});
+		}
+		if (wasShadowbanned) {
+			logModerationAction(user.id, "unshadowban_user", "user", params.id, {
 				username: targetUser?.username,
 			});
 		}

@@ -513,6 +513,10 @@ const renderProfile = (data) => {
 		profileContainerEl.classList.toggle("suspended", suspended);
 	if (profileContainerEl)
 		profileContainerEl.classList.toggle("restricted", restricted);
+	// Add separate class when the viewer is the restricted account owner so only the owner
+	// sees the UI disabled; other visitors should still be able to interact.
+	if (profileContainerEl)
+		profileContainerEl.classList.toggle("restricted-self", restricted && isOwnProfile);
 
 	// Add restricted account banner
 	const existingBanner = profileContainerEl?.querySelector(
@@ -1118,7 +1122,7 @@ function setupNotificationButton(username, initialNotifyState) {
 	btn.onclick = async (e) => {
 		e.stopPropagation();
 
-		const modal = createModal();
+		const { modal, close: closeModal } = createModal({});
 		modal.classList.add("notification-settings-modal");
 
 		const content = document.createElement("div");
@@ -1216,7 +1220,7 @@ function setupNotificationButton(username, initialNotifyState) {
 				notifyTweets = newNotifyState;
 				updateBellIcon(notifyTweets);
 				toastQueue.add(`<h1>Notification settings updated</h1>`);
-				modal.remove();
+				closeModal();
 			} else {
 				toastQueue.add(`<h1>Failed to update settings</h1>`);
 			}
@@ -1227,11 +1231,10 @@ function setupNotificationButton(username, initialNotifyState) {
 		content.appendChild(option2);
 		content.appendChild(saveBtn);
 		modal.appendChild(content);
-		document.body.appendChild(modal);
 
 		modal.onclick = (e) => {
 			if (e.target === modal) {
-				modal.remove();
+				closeModal();
 			}
 		};
 	};

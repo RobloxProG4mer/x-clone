@@ -20,43 +20,48 @@ import tweet from "./api/tweet.js";
 import upload, { uploadRoutes } from "./api/upload.js";
 import db from "./db.js";
 import ratelimit from "./helpers/ratelimit.js";
+import {
+	clearSuspensionCache,
+	getSuspensionCache,
+	setSuspensionCache,
+} from "./helpers/suspensionCache.js";
 
 function formatExpiry(expiryStr) {
-  const now = new Date();
-  const expiry = new Date(expiryStr);
+	const now = new Date();
+	const expiry = new Date(expiryStr);
 
-  const diffMs = expiry - now;
-  if (diffMs <= 0) return "expired";
+	const diffMs = expiry - now;
+	if (diffMs <= 0) return "expired";
 
-  const diffSec = Math.floor(diffMs / 1000);
-  const diffMin = Math.floor(diffSec / 60);
-  const diffHour = Math.floor(diffMin / 60);
-  const diffDay = Math.floor(diffHour / 24);
+	const diffSec = Math.floor(diffMs / 1000);
+	const diffMin = Math.floor(diffSec / 60);
+	const diffHour = Math.floor(diffMin / 60);
+	const diffDay = Math.floor(diffHour / 24);
 
-  if (diffSec < 60) return "in less than 1 minute";
-  if (diffMin < 60) return `in ${diffMin} minute${diffMin > 1 ? "s" : ""}`;
-  if (diffHour < 24) {
-    const hours = diffHour;
-    const minutes = diffMin % 60;
-    return `in ${hours} hour${hours > 1 ? "s" : ""}${
-      minutes ? ` and ${minutes} minute${minutes > 1 ? "s" : ""}` : ""
-    }`;
-  }
-  if (diffDay < 7) {
-    const days = diffDay;
-    const hours = diffHour % 24;
-    return `in ${days} day${days > 1 ? "s" : ""}${
-      hours ? ` and ${hours} hour${hours > 1 ? "s" : ""}` : ""
-    }`;
-  }
+	if (diffSec < 60) return "in less than 1 minute";
+	if (diffMin < 60) return `in ${diffMin} minute${diffMin > 1 ? "s" : ""}`;
+	if (diffHour < 24) {
+		const hours = diffHour;
+		const minutes = diffMin % 60;
+		return `in ${hours} hour${hours > 1 ? "s" : ""}${
+			minutes ? ` and ${minutes} minute${minutes > 1 ? "s" : ""}` : ""
+		}`;
+	}
+	if (diffDay < 7) {
+		const days = diffDay;
+		const hours = diffHour % 24;
+		return `in ${days} day${days > 1 ? "s" : ""}${
+			hours ? ` and ${hours} hour${hours > 1 ? "s" : ""}` : ""
+		}`;
+	}
 
-  return expiry.toLocaleString("en-US", {
-    month: "long",
-    day: "numeric",
-    year: "numeric",
-    hour: "numeric",
-    minute: "2-digit",
-  });
+	return expiry.toLocaleString("en-US", {
+		month: "long",
+		day: "numeric",
+		year: "numeric",
+		hour: "numeric",
+		minute: "2-digit",
+	});
 }
 
 const isSuspendedQuery = db.prepare(`
@@ -72,138 +77,138 @@ const liftSuspension = db.prepare(`
 `);
 
 const updateUserSuspended = db.prepare(
-  "UPDATE users SET suspended = ? WHERE id = ?"
+	"UPDATE users SET suspended = ? WHERE id = ?",
 );
 const updateUserRestricted = db.prepare(
-  "UPDATE users SET restricted = ? WHERE id = ?"
+	"UPDATE users SET restricted = ? WHERE id = ?",
 );
 
-const suspensionCache = new Map();
 const CACHE_TTL = 30_000;
 
 export default new Elysia({
-  prefix: "/api",
+	prefix: "/api",
 })
-  .use(
-    rateLimit({
-      duration: 10_000,
-      max: 30,
-      scoping: "scoped",
-      generator: ratelimit,
-    })
-  )
-  .onBeforeHandle(async ({ headers, request, set }) => {
-    const token = headers.authorization?.split(" ")[1];
-    if (!token) return;
+	.use(
+		rateLimit({
+			duration: 10_000,
+			max: 30,
+			scoping: "scoped",
+			generator: ratelimit,
+		}),
+	)
+	.onBeforeHandle(async ({ headers, request, set }) => {
+		const token = headers.authorization?.split(" ")[1];
+		if (!token) return;
 
-    const parts = token.split(".");
-    if (parts.length !== 3) return;
+		const parts = token.split(".");
+		if (parts.length !== 3) return;
 
-    let payload;
-    try {
-        payload = JSON.parse(atob(parts[1]));
-    } catch (e) {
-        return;
-    }
-    const { userId } = payload;
-    if (!userId) return;
+		let payload;
+		try {
+			payload = JSON.parse(atob(parts[1]));
+		} catch (e) {
+			return;
+		}
+		const { userId } = payload;
+		if (!userId) return;
 
-    const now = Date.now();
-    let cached = suspensionCache.get(userId);
-    let suspension = null;
-    let restriction = null;
+		const now = Date.now();
+		let cached = getSuspensionCache(userId);
+		let suspension = null;
+		let restriction = null;
 
-    if (!cached || cached.expiry < now) {
-      suspension = isSuspendedQuery.get(userId);
+		if (!cached || cached.expiry < now) {
+			suspension = isSuspendedQuery.get(userId);
 
-      if (suspension?.expires_at) {
-        const expiresAt = new Date(suspension.expires_at).getTime();
-        if (Date.now() > expiresAt) {
-          liftSuspension.run(suspension.id);
-          updateUserSuspended.run(false, userId);
-          suspension = null;
-        }
-      }
+			if (suspension?.expires_at) {
+				const expiresAt = new Date(suspension.expires_at).getTime();
+				if (Date.now() > expiresAt) {
+					liftSuspension.run(suspension.id);
+					updateUserSuspended.run(false, userId);
+					suspension = null;
+				}
+			}
 
-      restriction = isRestrictedQuery.get(userId);
-      if (restriction?.expires_at) {
-        const expiresAt = new Date(restriction.expires_at).getTime();
-        if (Date.now() > expiresAt) {
-          liftSuspension.run(restriction.id);
-          updateUserRestricted.run(false, userId);
-          restriction = null;
-        }
-      }
+			restriction = isRestrictedQuery.get(userId);
+			if (restriction?.expires_at) {
+				const expiresAt = new Date(restriction.expires_at).getTime();
+				if (Date.now() > expiresAt) {
+					liftSuspension.run(restriction.id);
+					updateUserRestricted.run(false, userId);
+					restriction = null;
+				}
+			}
 
-      cached = { 
-        suspension: suspension, 
-        restriction: restriction, 
-        expiry: now + CACHE_TTL 
-      };
-      suspensionCache.set(userId, cached);
-    }
-    
-    suspension = cached.suspension;
-    restriction = cached.restriction;
+			cached = {
+				suspension: suspension,
+				restriction: restriction,
+				expiry: now + CACHE_TTL,
+			};
+			setSuspensionCache(userId, cached);
+		}
 
-    if (suspension) {
-      const suspensionHtml = (
-        await Bun.file("./src/assets/suspended.html").text()
-      ).replace(
-        "%%text%%",
-        `${suspension.reason}${
-          suspension.expires_at
-            ? `<br>Expires ${formatExpiry(suspension.expires_at)}`
-            : ""
-        }`
-      );
+		suspension = cached.suspension;
+		restriction = cached.restriction;
 
-      return {
-        error: "You are suspended",
-        suspension: suspensionHtml,
-      };
-    }
+		if (suspension) {
+			const suspensionHtml = (
+				await Bun.file("./src/assets/suspended.html").text()
+			).replace(
+				"%%text%%",
+				`${suspension.reason}${
+					suspension.expires_at
+						? `<br>Expires ${formatExpiry(suspension.expires_at)}`
+						: ""
+				}`,
+			);
 
-    if (restriction && !["GET", "OPTIONS"].includes(request.method)) {
-      return {
-        success: false,
-        restricted: true,
-        error: "Your account is in a read-only state and is not allowed to perform this action",
-      };
-    }
-    if (restriction && request.url.endsWith("/auth/me")) {
-      set.restricted = true;
-    }
-  })
-  .get("/emojis", async () => {
-    try {
-      const rows = db
-        .query(
-          "SELECT id, name, file_hash, file_url, created_by, created_at FROM emojis ORDER BY created_at DESC"
-        )
-        .all();
-      return { emojis: rows };
-    } catch (_err) {
-      return { emojis: [] };
-    }
-  })
-  .use(auth)
-  .use(admin)
-  .use(blocking)
-  .use(bookmarks)
-  .use(communities)
-  .use(tweet)
-  .use(articles)
-  .use(profile)
-  .use(timeline)
-  .use(search)
-  .use(upload)
-  .use(extensions)
-  .use(notifications)
-  .use(dm)
-  .use(tenor)
-  .use(hashtags)
-  .use(scheduled)
-  .use(reports)
-  .use(avatarRoutes)
-  .use(uploadRoutes);
+			return {
+				error: "You are suspended",
+				suspension: suspensionHtml,
+			};
+		}
+
+		if (restriction && !["GET", "OPTIONS"].includes(request.method)) {
+			return {
+				success: false,
+				restricted: true,
+				error:
+					"Your account is in a read-only state and is not allowed to perform this action",
+			};
+		}
+		if (restriction && request.url.endsWith("/auth/me")) {
+			set.restricted = true;
+		}
+	})
+	.get("/emojis", async () => {
+		try {
+			const rows = db
+				.query(
+					"SELECT id, name, file_hash, file_url, created_by, created_at FROM emojis ORDER BY created_at DESC",
+				)
+				.all();
+			return { emojis: rows };
+		} catch (_err) {
+			return { emojis: [] };
+		}
+	})
+	.use(auth)
+	.use(admin)
+	.use(blocking)
+	.use(bookmarks)
+	.use(communities)
+	.use(tweet)
+	.use(articles)
+	.use(profile)
+	.use(timeline)
+	.use(search)
+	.use(upload)
+	.use(extensions)
+	.use(notifications)
+	.use(dm)
+	.use(tenor)
+	.use(hashtags)
+	.use(scheduled)
+	.use(reports)
+	.use(avatarRoutes)
+	.use(uploadRoutes);

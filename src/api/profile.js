@@ -284,11 +284,18 @@ const getUserSuspendedFlag = db.prepare(`
 
 // Helper for restricted flag and active restriction suspensions
 const isRestrictedQuery = db.prepare(`
-  SELECT * FROM suspensions WHERE user_id = ? AND status = 'active' AND action = 'restrict' AND (expires_at IS NULL OR expires_at > datetime('now'))
+	SELECT * FROM suspensions WHERE user_id = ? AND status = 'active' AND action = 'restrict' AND (expires_at IS NULL OR expires_at > datetime('now'))
 `);
 const getUserRestrictedFlag = db.prepare(`
-  SELECT restricted FROM users WHERE id = ?
+	SELECT restricted FROM users WHERE id = ?
 `);
+
+// Helper for restricted checks to reuse across profile handlers
+const _isUserRestrictedById = (userId) => {
+	const r = isRestrictedQuery.get(userId);
+	const f = getUserRestrictedFlag.get(userId);
+	return !!r || !!f?.restricted;
+};
 
 const getTweetAttachments = (tweetId) => {
 	return getAttachmentsByPostId.all(tweetId);
@@ -331,11 +338,7 @@ const getQuotedTweetData = (quoteTweetId, userId) => {
 		};
 	}
 
-	const isUserRestrictedById = (userId) => {
-		const restrictionRow = isRestrictedQuery.get(userId);
-		const userRestrictedFlag = getUserRestrictedFlag.get(userId);
-		return !!restrictionRow || !!userRestrictedFlag?.restricted;
-	};
+	// Reuse the module-level `_isUserRestrictedById` helper if needed
 
 	const author = {
 		username: quotedTweet.username,
@@ -974,83 +977,91 @@ export default new Elysia({ prefix: "/profile" })
 		}
 	})
 	.post("/:username/follow", async ({ params, jwt, headers }) => {
-		const authorization = headers.authorization;
-		if (!authorization) return { error: "Authentication required" };
+		try {
+			const authorization = headers.authorization;
+			if (!authorization) return { error: "Authentication required" };
 
-		const payload = await jwt.verify(authorization.replace("Bearer ", ""));
-		if (!payload) return { error: "Invalid token" };
+			const payload = await jwt.verify(authorization.replace("Bearer ", ""));
+			if (!payload) return { error: "Invalid token" };
 
-		const currentUser = getUserByUsername.get(payload.username);
-		if (!currentUser) return { error: "User not found" };
+			const currentUser = getUserByUsername.get(payload.username);
+			if (!currentUser) return { error: "User not found" };
 
-		// Restrict follow action for restricted accounts
-		if (isUserRestrictedById(currentUser.id)) {
-			return { error: "Action not allowed: account is restricted" };
-		}
-
-		const { username } = params;
-		const targetUser = getUserByUsername.get(username);
-		if (!targetUser) return { error: "User not found" };
-
-		if (currentUser.id === targetUser.id) {
-			return { error: "You cannot follow yourself" };
-		}
-
-		const blocked = db
-			.query(
-				"SELECT 1 FROM blocks WHERE (blocker_id = ? AND blocked_id = ?) OR (blocker_id = ? AND blocked_id = ?)",
-			)
-			.get(currentUser.id, targetUser.id, targetUser.id, currentUser.id);
-		if (blocked) {
-			return { error: "Cannot follow this user" };
-		}
-
-		const existingFollow = getFollowStatus.get(currentUser.id, targetUser.id);
-		if (existingFollow) {
-			return { error: "Already following this user" };
-		}
-
-		const existingRequest = getFollowRequest.get(currentUser.id, targetUser.id);
-		if (existingRequest) {
-			if (existingRequest.status === "pending") {
-				return { error: "Follow request already sent" };
+			// Restrict follow action for restricted accounts
+			if (_isUserRestrictedById(currentUser.id)) {
+				return { error: "Action not allowed: account is restricted" };
 			}
-			if (existingRequest.status === "denied") {
-				// Allow re-requesting after denial
-				deleteFollowRequest.run(currentUser.id, targetUser.id);
+
+			const { username } = params;
+			const targetUser = getUserByUsername.get(username);
+			if (!targetUser) return { error: "User not found" };
+
+			if (currentUser.id === targetUser.id) {
+				return { error: "You cannot follow yourself" };
 			}
-		}
 
-		if (targetUser.private) {
-			const requestId = Bun.randomUUIDv7();
-			createFollowRequest.run(requestId, currentUser.id, targetUser.id);
+			const blocked = db
+				.query(
+					"SELECT 1 FROM blocks WHERE (blocker_id = ? AND blocked_id = ?) OR (blocker_id = ? AND blocked_id = ?)",
+				)
+				.get(currentUser.id, targetUser.id, targetUser.id, currentUser.id);
+			if (blocked) {
+				return { error: "Cannot follow this user" };
+			}
 
-			addNotification(
-				targetUser.id,
-				"follow_request",
-				`has requested to follow you`,
-				currentUser.username,
+			const existingFollow = getFollowStatus.get(currentUser.id, targetUser.id);
+			if (existingFollow) {
+				return { error: "Already following this user" };
+			}
+
+			const existingRequest = getFollowRequest.get(
 				currentUser.id,
-				currentUser.username,
-				currentUser.name || currentUser.username,
-			);
-
-			return { success: true, requestSent: true };
-		} else {
-			const followId = Bun.randomUUIDv7();
-			addFollow.run(followId, currentUser.id, targetUser.id);
-
-			addNotification(
 				targetUser.id,
-				"follow",
-				`followed you`,
-				currentUser.username,
-				currentUser.id,
-				currentUser.username,
-				currentUser.name || currentUser.username,
 			);
+			if (existingRequest) {
+				if (existingRequest.status === "pending") {
+					return { error: "Follow request already sent" };
+				}
+				if (existingRequest.status === "denied") {
+					// Allow re-requesting after denial
+					deleteFollowRequest.run(currentUser.id, targetUser.id);
+				}
+			}
 
-			return { success: true, requestSent: false };
+			if (targetUser.private) {
+				const requestId = Bun.randomUUIDv7();
+				createFollowRequest.run(requestId, currentUser.id, targetUser.id);
+
+				addNotification(
+					targetUser.id,
+					"follow_request",
+					`has requested to follow you`,
+					currentUser.username,
+					currentUser.id,
+					currentUser.username,
+					currentUser.name || currentUser.username,
+				);
+
+				return { success: true, requestSent: true };
+			} else {
+				const followId = Bun.randomUUIDv7();
+				addFollow.run(followId, currentUser.id, targetUser.id);
+
+				addNotification(
+					targetUser.id,
+					"follow",
+					`followed you`,
+					currentUser.username,
+					currentUser.id,
+					currentUser.username,
+					currentUser.name || currentUser.username,
+				);
+
+				return { success: true, requestSent: false };
+			}
+		} catch (error) {
+			console.error("Follow error:", error);
+			return { error: "Failed to follow user" };
 		}
 	})
 	.delete("/:username/follow", async ({ params, jwt, headers }) => {

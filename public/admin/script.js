@@ -1028,7 +1028,9 @@ class AdminPanel {
 							? '<span class="badge bg-danger">Suspended</span>'
 							: user.restricted
 								? '<span class="badge bg-warning">Restricted</span>'
-								: ""
+								: user.shadowbanned
+									? '<span class="badge bg-secondary">Shadowbanned</span>'
+									: ""
 					}
                   </div>
                 </td>
@@ -1056,6 +1058,9 @@ class AdminPanel {
 													? `
 												<button class="btn btn-outline-danger btn-sm" onclick="adminPanel.showSuspensionModal('${user.id}')">
 													<i class="bi bi-exclamation-triangle"></i> Suspend/Restrict
+												</button>
+												<button class="btn btn-outline-secondary btn-sm" onclick="adminPanel.showShadowbanModal('${user.id}')">
+												  <i class="bi bi-person-dash"></i> Shadowban
 												</button>
 											`
 													: `
@@ -1121,8 +1126,82 @@ class AdminPanel {
 		if (btn) {
 			btn.disabled = count === 0;
 		}
+		const tweetBtn = document.getElementById("bulkTweetBtn");
+		if (tweetBtn) {
+			tweetBtn.disabled = count === 0;
+		}
 		if (countBadge) {
 			countBadge.textContent = String(count);
+		}
+	}
+
+	showBulkTweetModal() {
+		if (!this.selectedUsers.size) {
+			this.showError("Select at least one user to mass tweet as");
+			return;
+		}
+
+		const modalEl = document.getElementById("bulkTweetModal");
+		const selectedList = document.getElementById("bulkTweetSelectedUsers");
+		if (!modalEl || !selectedList) return;
+
+		const usernames = [];
+		for (const id of this.selectedUsers) {
+			const cached = this.userCache.get(id);
+			let username = id;
+			if (cached && cached.username) username = cached.username || id;
+			usernames.push(username);
+		}
+		selectedList.textContent = usernames.join(", ") || "None selected";
+
+		new bootstrap.Modal(modalEl).show();
+	}
+
+	async postBulkTweets() {
+		const content = document.getElementById("bulkTweetContent")?.value || "";
+		if (!content.trim()) {
+			this.showError("Content is required");
+			return;
+		}
+
+		const noCharLimit = !!document.getElementById("bulkTweetNoCharLimit")?.checked;
+		const replyTo = document.getElementById("bulkTweetReplyTo")?.value || null;
+		let createdAt = null;
+		const createdAtInput = document.getElementById("bulkTweetCreatedAt");
+		if (createdAtInput && createdAtInput.value) {
+			try {
+				const d = new Date(createdAtInput.value);
+				if (!Number.isNaN(d.getTime())) createdAt = d.toISOString();
+			} catch (_err) {}
+		}
+
+		const total = this.selectedUsers.size;
+		let successCount = 0;
+		const results = [];
+
+		for (const id of Array.from(this.selectedUsers)) {
+			try {
+				await this.apiCall(`/api/admin/tweets`, {
+					method: "POST",
+					body: JSON.stringify({
+						userId: id,
+						content: content.trim(),
+						replyTo: replyTo || null,
+						noCharLimit,
+						created_at: createdAt || undefined,
+					}),
+				});
+				successCount++;
+				results.push({ id, ok: true });
+			} catch (err) {
+				results.push({ id, ok: false, error: err.message });
+			}
+		}
+
+		new bootstrap.Modal(document.getElementById("bulkTweetModal")).hide();
+		this.showSuccess(`Mass tweet completed: ${successCount}/${total} success`);
+		if (successCount !== total) {
+			console.warn("Bulk tweet errors:", results.filter((r) => !r.ok));
 		}
 	}
 
@@ -1528,13 +1607,15 @@ class AdminPanel {
             </h4>
             <p class="text-muted">@${user.username}</p>
             <div class="d-flex justify-content-center gap-2 mb-3">
-              ${user.admin ? '<span class="badge bg-primary">Admin</span>' : ""}
+			${user.admin ? '<span class="badge bg-primary">Admin</span>' : ""}
 			  ${
 					user.suspended
 						? '<span class="badge bg-danger">Suspended</span>'
 						: user.restricted
 							? '<span class="badge bg-warning">Restricted</span>'
-							: ""
+							: user.shadowbanned
+								? '<span class="badge bg-secondary">Shadowbanned</span>'
+								: ""
 				}
             </div>
           </div>
@@ -1756,9 +1837,9 @@ class AdminPanel {
             Actions
           </button>
           <ul class="dropdown-menu dropdown-menu-end">
-            ${
+			${
 							!user.suspended
-								? `<li><a class="dropdown-item" href="#" onclick="adminPanel.showSuspensionModal('${user.id}')">Suspend/Restrict User</a></li>`
+								? `<li><a class="dropdown-item" href="#" onclick="adminPanel.showSuspensionModal('${user.id}')">Suspend/Restrict User</a></li><li><a class="dropdown-item" href="#" onclick="adminPanel.showShadowbanModal('${user.id}')">Shadowban User</a></li>`
 								: `<li><a class="dropdown-item" href="#" onclick="adminPanel.unsuspendUser('${user.id}')">${user.suspended && user.restricted ? "Unsuspend & Unrestrict" : user.suspended ? "Unsuspend User" : "Unrestrict User"}</a></li>`
 						}
             <li><a class="dropdown-item text-danger" href="#" onclick="adminPanel.deleteUser('${
@@ -2050,6 +2131,15 @@ class AdminPanel {
 	showSuspensionModal(userId) {
 		document.getElementById("suspendUserId").value = userId;
 		document.getElementById("suspensionForm").reset();
+		new bootstrap.Modal(document.getElementById("suspensionModal")).show();
+	}
+
+	showShadowbanModal(userId) {
+		document.getElementById("suspendUserId").value = userId;
+		const form = document.getElementById("suspensionForm");
+		if (form) form.reset();
+		const actionSelect = document.getElementById("suspensionAction");
+		if (actionSelect) actionSelect.value = "shadowban";
 		new bootstrap.Modal(document.getElementById("suspensionModal")).show();
 	}
 

@@ -1,5 +1,8 @@
 import toastQueue from "../../shared/toasts.js";
 
+// Keep a short-lived dedupe set to avoid showing the same toast repeatedly
+const shownToasts = new Set();
+
 function hash(str) {
 	let h = 2166136261n;
 	for (let i = 0; i < str.length; i++) {
@@ -33,9 +36,16 @@ export default async (url, options = {}) => {
 		}
 
 		if (parsed?.restricted) {
-			toastQueue.add(
-				`<h1>Account restricted</h1><p>Your account has limited privileges — you can browse posts, but interactions such as tweeting, liking, retweeting, DMs, and following are disabled.</p>`,
-			);
+			// Only show this once per short time window to avoid multiple duplicate toasts
+			const key = 'restricted-notice';
+			if (!shownToasts.has(key)) {
+				shownToasts.add(key);
+				toastQueue.add(
+					`<h1>Account restricted</h1><p>Your account has limited privileges — you can browse posts, but interactions such as tweeting, liking, retweeting, DMs, and following are disabled.</p>`,
+				);
+				// remove key after 1 minute so the notice can show again if needed
+				setTimeout(() => shownToasts.delete(key), 60 * 1000);
+			}
 		}
 
 		if (res.ok) return parsed;

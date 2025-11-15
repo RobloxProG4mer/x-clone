@@ -206,10 +206,7 @@ export default new Elysia({ prefix: "/extensions" })
 	.get("/", async () => {
 		const enabledRows = enabledExtensionsQuery.all();
 		const allRows = allExtensionsQuery.all();
-		// Only expose managed & enabled extensions on the public endpoint.
-		// Do NOT include manual/un-imported directories here — they should
-		// only be visible via the admin APIs. Returning manual entries here
-		// causes client-side loaders to inject un-imported extensions.
+
 		const managed = enabledRows.map(mapExtensionRecord);
 		return { extensions: [...managed] };
 	})

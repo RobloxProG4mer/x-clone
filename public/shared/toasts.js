@@ -330,6 +330,15 @@ class $ {
 		for (const s of e(this, h)) if (s.id === t) return s;
 	}
 	add(t, s) {
+		// Prevent exact duplicate content messages from stacking repeatedly
+		for (const existing of e(this, h)) {
+			if (existing.content === t) {
+				// Reset the timer for this toast instead of creating a duplicate
+				existing.timer && existing.timer.pause();
+				existing.timer && existing.timer.resume();
+				return existing;
+			}
+		}
 		const n = (s == null ? void 0 : s.timeout) || e(this, T),
 			o = Math.random().toString(36).slice(2),
 			f = {
