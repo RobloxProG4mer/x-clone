@@ -6,6 +6,7 @@
       "name": "template",
       "dependencies": {
         "@elysiajs/jwt": "^1.4.0",
+        "@elysiajs/openapi": "^1.4.11",
         "@elysiajs/static": "^1.4.0",
         "@simplewebauthn/server": "^13.2.2",
         "elysia-rate-limit": "^4.4.0",
@@ -40,6 +41,8 @@
     "@biomejs/cli-win32-x64": ["@biomejs/cli-win32-x64@2.3.5", "", { "os": "win32", "cpu": "x64" }, "sha512-nUmR8gb6yvrKhtRgzwo/gDimPwnO5a4sCydf8ZS2kHIJhEmSmk+STsusr1LHTuM//wXppBawvSQi2xFXJCdgKQ=="],
 
     "@elysiajs/jwt": ["@elysiajs/jwt@1.4.0", "", { "dependencies": { "jose": "^6.0.11" }, "peerDependencies": { "elysia": ">= 1.4.0" } }, "sha512-Z0PvZhQxdDeKZ8HslXzDoXXD83NKExNPmoiAPki3nI2Xvh5wtUrBH+zWOD17yP14IbRo8fxGj3L25MRCAPsgPA=="],
+
+    "@elysiajs/openapi": ["@elysiajs/openapi@1.4.11", "", { "peerDependencies": { "elysia": ">= 1.4.0" } }, "sha512-d75bMxYJpN6qSDi/z9L1S7SLk1S/8Px+cTb3W2lrYzU8uQ5E0kXdy1oOMJEfTyVsz3OA19NP9KNxE7ztSbLBLg=="],
 
     "@elysiajs/static": ["@elysiajs/static@1.4.0", "", { "dependencies": { "node-cache": "^5.1.2" }, "peerDependencies": { "elysia": ">= 1.4.0" } }, "sha512-ejZIgmRRethfBrr1iKEca4iBqGjVGppveyVyM0LG7JUhnxns9NtFTC6UQoQLUkRzMRlF65veQg32jwMS01dwzA=="],
 

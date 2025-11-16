@@ -1,4 +1,5 @@
 import { jwt } from "@elysiajs/jwt";
+import { fromTypes, openapi } from "@elysiajs/openapi";
 import { staticPlugin } from "@elysiajs/static";
 import { Elysia, file } from "elysia";
 
@@ -109,6 +110,11 @@ cleanupExpiredMessages();
 new Elysia()
 	.use(compression)
 	.use(staticPlugin())
+	.use(
+		openapi({
+			references: fromTypes(),
+		}),
+	)
 	.use(jwt({ name: "jwt", secret: process.env.JWT_SECRET }))
 	.get("/sse", async ({ jwt, query, set }) => {
 		const { token } = query;
@@ -191,7 +197,6 @@ new Elysia()
 	.get("/admin", () => file("./public/admin/index.html"))
 	.get("/settings", ({ redirect }) => redirect("/settings/account"))
 	.get("/legal", () => file("./public/legal.html"))
-	.get("/__old__account__", () => file("./public/account/index.html"))
 	.get("*", ({ cookie }) => {
 		return cookie.agree?.value === "yes"
 			? file("./public/timeline/index.html")
