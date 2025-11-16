@@ -223,7 +223,9 @@ export default new Elysia({ prefix: "/auth", tags: ["Auth"] })
 			return { available };
 		},
 		{
-			description: "Checks if a username is available",
+			detail: {
+				description: "Checks if a username is available",
+			},
 			response: t.Object({
 				available: t.Boolean(),
 			}),
