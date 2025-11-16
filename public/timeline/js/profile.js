@@ -775,7 +775,7 @@ const renderProfile = (data) => {
 	if (usernameEl) {
 		usernameEl.textContent = `@${profile.username}`;
 		const existingLabels = usernameEl.querySelectorAll(".profile-label");
-		existingLabels.forEach((l) => l.remove());
+		existingLabels.forEach((l) => { l.remove() });
 		if (!suspended) {
 			if (profile.label_type) {
 				const labelEl = document.createElement("span");
@@ -1005,7 +1005,7 @@ const renderProfile = (data) => {
 
 	document
 		.querySelectorAll(".profile-tab-btn")
-		.forEach((btn) => btn.classList.remove("active"));
+		.forEach((btn) => { btn.classList.remove("active") });
 	const postTabBtn = document.querySelector(
 		'.profile-tab-btn[data-tab="posts"]',
 	);
@@ -1364,7 +1364,7 @@ const showEditModal = () => {
 	modalEl.setAttribute("aria-hidden", "false");
 	document
 		.querySelectorAll(".main-content, nav")
-		.forEach((el) => el.setAttribute("aria-hidden", "true"));
+		.forEach((el) => { el.setAttribute("aria-hidden", "true") });
 
 	setTimeout(() => {
 		const firstInput = document.getElementById("editDisplayName");
@@ -1385,7 +1385,7 @@ const closeEditModal = () => {
 	modalEl.setAttribute("aria-hidden", "true");
 	document
 		.querySelectorAll(".main-content, nav")
-		.forEach((el) => el.removeAttribute("aria-hidden"));
+		.forEach((el) => { el.removeAttribute("aria-hidden") });
 
 	if (modalEl._escHandler) {
 		document.removeEventListener("keydown", modalEl._escHandler);
@@ -2022,7 +2022,7 @@ document.querySelectorAll(".profile-tab-btn").forEach((btn) => {
 	btn.addEventListener("click", () => {
 		document
 			.querySelectorAll(".profile-tab-btn")
-			.forEach((b) => b.classList.remove("active"));
+			.forEach((b) => { b.classList.remove("active") });
 		btn.classList.add("active");
 
 		switchTab(btn.dataset.tab);

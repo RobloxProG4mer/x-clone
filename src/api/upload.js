@@ -35,7 +35,7 @@ const MAX_FILE_SIZE = 50 * 1024 * 1024;
 const MAX_VIDEO_SIZE = 100 * 1024 * 1024;
 const MAX_COMPRESSED_SIZE = 10 * 1024 * 1024;
 
-export default new Elysia({ prefix: "/upload" })
+export default new Elysia({ prefix: "/upload", tags: ["Upload"] })
 	.use(jwt({ name: "jwt", secret: JWT_SECRET }))
 	.use(
 		rateLimit({
@@ -224,13 +224,11 @@ export default new Elysia({ prefix: "/upload" })
 		}
 	});
 
-// Secure file serving route
-export const uploadRoutes = new Elysia({ prefix: "/uploads" }).get(
+export const uploadRoutes = new Elysia({ prefix: "/uploads", tags: ["Upload"] }).get(
 	"/:filename",
 	({ params }) => {
 		const { filename } = params;
 
-		// Strict filename validation to prevent path traversal
 		if (!/^[a-f0-9]{64}\.(webp|mp4|gif)$/i.test(filename)) {
 			return new Response("Invalid filename", { status: 400 });
 		}

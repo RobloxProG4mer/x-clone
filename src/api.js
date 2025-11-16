@@ -10,9 +10,8 @@ import communities from "./api/communities.js";
 import delegates from "./api/delegates.js";
 import dm from "./api/dm.js";
 import extensions from "./api/extensions.js";
-import hashtags from "./api/hashtags.js";
 import notifications from "./api/notifications.js";
-import profile, { avatarRoutes } from "./api/profile.js";
+import profile from "./api/profile.js";
 import reports from "./api/reports.js";
 import scheduled from "./api/scheduled.js";
 import search from "./api/search.js";
@@ -198,6 +197,7 @@ export default new Elysia({
 		{
 			detail: {
 				description: "Lists all custom emojis",
+				tags: ["Emojis"],
 			},
 			response: t.Object({
 				emojis: t.Array(
@@ -229,8 +229,6 @@ export default new Elysia({
 	.use(notifications)
 	.use(dm)
 	.use(tenor)
-	.use(hashtags)
 	.use(scheduled)
 	.use(reports)
-	.use(avatarRoutes)
 	.use(uploadRoutes);

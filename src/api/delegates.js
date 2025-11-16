@@ -50,7 +50,7 @@ const isUserRestrictedById = (userId) => {
 	return !!res || !!f?.restricted;
 };
 
-export default new Elysia({ prefix: "/delegates" })
+export default new Elysia({ prefix: "/delegates", tags: ["Delegates"] })
 	.use(jwt({ name: "jwt", secret: JWT_SECRET }))
 	.use(
 		rateLimit({

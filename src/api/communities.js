@@ -112,7 +112,7 @@ const getUserCommunities = db.prepare(`
   LIMIT ? OFFSET ?
 `);
 
-export default new Elysia()
+export default new Elysia({ tags: ["Communities"] })
 	.use(jwt({ name: "jwt", secret: JWT_SECRET }))
 	.derive(async ({ jwt, headers }) => {
 		const authorization = headers.authorization;
@@ -140,9 +140,41 @@ export default new Elysia()
 				return { error: "Community name is required" };
 			}
 
+<<<<<<< HEAD
 			if (name.length > 50) {
 				set.status = 400;
 				return { error: "Community name must be 50 characters or less" };
+=======
+			const community = getCommunity.get(communityId);
+			return { success: true, community };
+		} catch {
+			set.status = 500;
+			return { error: "Failed to create community" };
+		}
+	})
+	.get("/communities", async ({ query }) => {
+		const limit = Math.min(parseInt(query.limit, 10) || 20, 100);
+		const offset = parseInt(query.offset, 10) || 0;
+
+		const communities = getCommunities.all(limit, offset);
+		return { communities };
+	})
+	.get("/communities/:id", async ({ params, user, set }) => {
+		const community = getCommunity.get(params.id);
+
+		if (!community) {
+			set.status = 404;
+			return { error: "Community not found" };
+		}
+
+		let member = null;
+		let joinRequest = null;
+
+		if (user) {
+			member = getMember.get(params.id, user.userId);
+			if (!member) {
+				joinRequest = getJoinRequest.get(params.id, user.userId);
+>>>>>>> main
 			}
 
 			const existing = getCommunityByName.get(name.trim());
