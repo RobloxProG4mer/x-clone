@@ -1,5 +1,5 @@
 import { jwt } from "@elysiajs/jwt";
-import { Elysia } from "elysia";
+import { Elysia, t } from "elysia";
 import { rateLimit } from "elysia-rate-limit";
 import db from "./../db.js";
 import ratelimit from "../helpers/ratelimit.js";
@@ -203,29 +203,41 @@ export default new Elysia({ prefix: "/search", tags: ["Search"] })
 			generator: ratelimit,
 		}),
 	)
-	.get("/users", async ({ query: { q }, jwt, headers }) => {
-		const authorization = headers.authorization;
+	.get(
+		"/users",
+		async ({ query: { q }, jwt, headers }) => {
+			const authorization = headers.authorization;
 
-		if (authorization) {
-			try {
-				const payload = await jwt.verify(authorization.replace("Bearer ", ""));
-				if (payload) {
-					getUserByUsername.get(payload.username) || null;
+			if (authorization) {
+				try {
+					const payload = await jwt.verify(authorization.replace("Bearer ", ""));
+					if (payload) {
+						getUserByUsername.get(payload.username) || null;
+					}
+				} catch (e) {
+					console.error("Search users: JWT verify failed", e);
 				}
-			} catch (e) {
-				console.error("Search users: JWT verify failed", e);
 			}
-		}
 
-		if (!q || q.trim().length === 0) return { users: [] };
+			if (!q || q.trim().length === 0) return { users: [] };
 
-		const raw = q.trim();
-		// Always use a contains match so short queries behave like normal searches
-		const searchTerm = `%${raw}%`;
-		const users = searchUsersQuery.all(searchTerm, searchTerm);
+			const raw = q.trim();
+			// Always use a contains match so short queries behave like normal searches
+			const searchTerm = `%${raw}%`;
+			const users = searchUsersQuery.all(searchTerm, searchTerm);
 
-		return { users };
-	})
+			return { users };
+		},
+		{
+			detail: {
+				description: "Searches for users by username or name",
+			},
+			query: t.Object({
+				q: t.String(),
+			}),
+			response: t.Any(),
+		},
+	)
 	.get("/posts", async ({ query: { q }, jwt, headers }) => {
 		const authorization = headers.authorization;
 		let user = null;
@@ -335,4 +347,12 @@ export default new Elysia({ prefix: "/search", tags: ["Search"] })
 		});
 
 		return { posts: enrichedPosts };
+	}, {
+		detail: {
+			description: "Searches for posts by content",
+		},
+		query: t.Object({
+			q: t.String(),
+		}),
+		response: t.Any(),
 	});
