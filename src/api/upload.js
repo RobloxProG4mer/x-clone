@@ -224,13 +224,11 @@ export default new Elysia({ prefix: "/upload", tags: ["Upload"] })
 		}
 	});
 
-// Secure file serving route
-export const uploadRoutes = new Elysia({ prefix: "/uploads" }).get(
+export const uploadRoutes = new Elysia({ prefix: "/uploads", tags: ["Upload"] }).get(
 	"/:filename",
 	({ params }) => {
 		const { filename } = params;
 
-		// Strict filename validation to prevent path traversal
 		if (!/^[a-f0-9]{64}\.(webp|mp4|gif)$/i.test(filename)) {
 			return new Response("Invalid filename", { status: 400 });
 		}

@@ -2564,8 +2564,8 @@ export default new Elysia({ prefix: "/admin", tags: ["Admin"] })
 	})
 
 	.get("/moderation-logs/moderator/:id", async ({ params, query }) => {
-		const page = parseInt(query.page) || 1;
-		const limit = parseInt(query.limit) || 50;
+		const page = parseInt(query.page, 10) || 1;
+		const limit = parseInt(query.limit, 10) || 50;
 		const offset = (page - 1) * limit;
 
 		const logs = adminQueries.getModerationLogsByModerator.all(

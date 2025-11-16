@@ -1976,18 +1976,3 @@ export default new Elysia({ prefix: "/profile", tags: ["Profile"] })
 			return { error: "Failed to update setting" };
 		}
 	});
-
-export const avatarRoutes = new Elysia({ prefix: "/avatars" }).get(
-	"/:filename",
-	({ params }) => {
-		const { filename } = params;
-
-		// Legacy avatar route - redirect to uploads (allow webp and gif)
-		if (!/^[a-f0-9]{64}\.(webp|gif)$/i.test(filename)) {
-			return new Response("Invalid filename", { status: 400 });
-		}
-
-		const filePath = `./.data/uploads/${filename}`;
-		return file(filePath);
-	},
-);
