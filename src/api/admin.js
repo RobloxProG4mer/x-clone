@@ -3026,77 +3026,114 @@ export default new Elysia({ prefix: "/admin", tags: ["admin"] })
 			success: true,
 			factCheck: { id, post_id: params.postId, note, severity },
 		};
+	}, {
+		detail: {
+			description: "Adds a fact-check warning to a post",
+		},
+		params: t.Object({
+			postId: t.String(),
+		}),
+		body: t.Object({
+			note: t.String(),
+			severity: t.Optional(t.String()),
+		}),
+		response: t.Any(),
 	})
 
-	.delete("/fact-check/:id", async ({ params, user }) => {
-		const factCheck = db
-			.query("SELECT * FROM fact_checks WHERE id = ?")
-			.get(params.id);
-		if (!factCheck) return { error: "Fact-check not found" };
+	.delete(
+		"/fact-check/:id",
+		async ({ params, user }) => {
+			const factCheck = db
+				.query("SELECT * FROM fact_checks WHERE id = ?")
+				.get(params.id);
+			if (!factCheck) return { error: "Fact-check not found" };
 
-		adminQueries.deleteFactCheck.run(params.id);
+			adminQueries.deleteFactCheck.run(params.id);
 
-		logModerationAction(
-			user.id,
-			"remove_fact_check",
-			"post",
-			factCheck.post_id,
-			{},
-		);
+			logModerationAction(
+				user.id,
+				"remove_fact_check",
+				"post",
+				factCheck.post_id,
+				{},
+			);
 
-		return { success: true };
-	})
+			return { success: true };
+		},
+		{
+			detail: {
+				description: "Removes a fact-check from a post",
+			},
+			params: t.Object({
+				id: t.String(),
+			}),
+			response: t.Any(),
+		},
+	)
 
-	.get("/reports", async ({ query }) => {
-		const limit = Number.parseInt(query.limit) || 50;
-		const offset = Number.parseInt(query.offset) || 0;
+	.get(
+		"/reports",
+		async ({ query }) => {
+			const limit = Number.parseInt(query.limit) || 50;
+			const offset = Number.parseInt(query.offset) || 0;
 
-		const totalRow = db.query("SELECT COUNT(*) AS count FROM reports").get();
-		const totalReports = totalRow?.count || 0;
+			const totalRow = db.query("SELECT COUNT(*) AS count FROM reports").get();
+			const totalReports = totalRow?.count || 0;
 
-		const reports = db
-			.query(
-				`
+			const reports = db
+				.query(
+					`
       SELECT * FROM reports
       ORDER BY created_at DESC
       LIMIT ? OFFSET ?
     `,
-			)
-			.all(limit, offset);
+				)
+				.all(limit, offset);
 
-		const getUser = db.query(
-			"SELECT id, username, name, avatar FROM users WHERE id = ?",
-		);
-		const getPost = db.query(
-			"SELECT id, user_id, content FROM posts WHERE id = ?",
-		);
+			const getUser = db.query(
+				"SELECT id, username, name, avatar FROM users WHERE id = ?",
+			);
+			const getPost = db.query(
+				"SELECT id, user_id, content FROM posts WHERE id = ?",
+			);
 
-		const enrichedReports = reports.map((report) => {
-			const reporter = getUser.get(report.reporter_id);
-			let reported = null;
+			const enrichedReports = reports.map((report) => {
+				const reporter = getUser.get(report.reporter_id);
+				let reported = null;
 
-			if (report.reported_type === "user") {
-				reported = getUser.get(report.reported_id);
-			} else if (report.reported_type === "post") {
-				reported = getPost.get(report.reported_id);
-			}
+				if (report.reported_type === "user") {
+					reported = getUser.get(report.reported_id);
+				} else if (report.reported_type === "post") {
+					reported = getPost.get(report.reported_id);
+				}
 
-			return {
-				...report,
-				reporter: reporter
-					? {
-							id: reporter.id,
-							username: reporter.username,
-							name: reporter.name,
-							avatar: reporter.avatar,
-						}
-					: null,
-				reported,
-			};
-		});
+				return {
+					...report,
+					reporter: reporter
+						? {
+								id: reporter.id,
+								username: reporter.username,
+								name: reporter.name,
+								avatar: reporter.avatar,
+							}
+						: null,
+					reported,
+				};
+			});
 
-		return { reports: enrichedReports, total: totalReports };
-	})
+			return { reports: enrichedReports, total: totalReports };
+		},
+		{
+			detail: {
+				description: "Lists all reports with pagination",
+			},
+			query: t.Object({
+				limit: t.Optional(t.String()),
+				offset: t.Optional(t.String()),
+			}),
+			response: t.Any(),
+		},
+	)
 
 	.post(
 		"/reports/:id/resolve",
@@ -3778,7 +3815,19 @@ export default new Elysia({ prefix: "/admin", tags: ["admin"] })
 		return { success: true };
 	})
 
-	.get("/fact-check/:postId", async ({ params }) => {
-		const factCheck = adminQueries.getFactCheck.get(params.postId);
-		return { factCheck };
-	});
+	.get(
+		"/fact-check/:postId",
+		async ({ params }) => {
+			const factCheck = adminQueries.getFactCheck.get(params.postId);
+			return { factCheck };
+		},
+		{
+			detail: {
+				description: "Gets the fact-check for a post",
+			},
+			params: t.Object({
+				postId: t.String(),
+			}),
+			response: t.Any(),
+		},
+	);

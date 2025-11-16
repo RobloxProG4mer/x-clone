@@ -232,92 +232,104 @@ export default new Elysia({ prefix: "/auth" })
 			}),
 		},
 	)
-	.post("/generate-registration-options", async ({ body, jwt, headers }) => {
-		const username = body.username?.trim();
+	.post(
+		"/generate-registration-options",
+		async ({ body, jwt, headers }) => {
+			const username = body.username?.trim();
 
-		if (!username) {
-			return { error: "Username is required" };
-		}
-
-		if (username.length > 40) {
-			return { error: "Username must be less than 40 characters" };
-		}
-
-		if (!/^[a-zA-Z0-9._-]+$/.test(username)) {
-			return {
-				error:
-					"Username can only contain lowercase letters, numbers, periods, and hyphens",
-			};
-		}
-
-		const user = getUserByUsername.get(username);
-		let excludeCredentials = [];
-		let userId;
-
-		if (user) {
-			const authorization = headers.authorization;
-			if (!authorization) {
-				return { error: "This username has already been taken." };
+			if (!username) {
+				return { error: "Username is required" };
 			}
 
-			const token = authorization.replace("Bearer ", "");
-			try {
-				const payload = await jwt.verify(token);
-				if (!payload || payload.username !== username) {
+			if (username.length > 40) {
+				return { error: "Username must be less than 40 characters" };
+			}
+
+			if (!/^[a-zA-Z0-9._-]+$/.test(username)) {
+				return {
+					error:
+						"Username can only contain lowercase letters, numbers, periods, and hyphens",
+				};
+			}
+
+			const user = getUserByUsername.get(username);
+			let excludeCredentials = [];
+			let userId;
+
+			if (user) {
+				const authorization = headers.authorization;
+				if (!authorization) {
 					return { error: "This username has already been taken." };
 				}
-			} catch {
-				return { error: "This username has already been taken." };
+
+				const token = authorization.replace("Bearer ", "");
+				try {
+					const payload = await jwt.verify(token);
+					if (!payload || payload.username !== username) {
+						return { error: "This username has already been taken." };
+					}
+				} catch {
+					return { error: "This username has already been taken." };
+				}
+
+				const userPasskeys = db
+					.query("SELECT * FROM passkeys WHERE internal_user_id = ?")
+					.all(user.id);
+
+				excludeCredentials = userPasskeys.map((passkey) => ({
+					id: passkey.cred_id,
+					transports: JSON.parse(passkey.transports || "[]"),
+				}));
+
+				userId = user.id;
+			} else {
+				userId = Bun.randomUUIDv7();
 			}
 
-			const userPasskeys = db
-				.query("SELECT * FROM passkeys WHERE internal_user_id = ?")
-				.all(user.id);
+			let options;
 
-			excludeCredentials = userPasskeys.map((passkey) => ({
-				id: passkey.cred_id,
-				transports: JSON.parse(passkey.transports || "[]"),
-			}));
+			try {
+				options = await generateRegistrationOptions({
+					rpName,
+					rpID,
+					userID: isoUint8Array.fromUTF8String(userId),
+					userName: username,
+					userDisplayName: username,
+					excludeCredentials,
+					authenticatorSelection: {
+						residentKey: "preferred",
+						userVerification: "preferred",
+					},
+				});
+			} catch (error) {
+				console.error("Registration options generation error:", error);
+				return { error: error.message };
+			}
 
-			userId = user.id;
-		} else {
-			userId = Bun.randomUUIDv7();
-		}
+			if (options.error) return { error: options.error };
 
-		let options;
+			return {
+				options,
+				challenge: await jwt.sign({
+					regchallenge: options.challenge,
+					userId: userId,
+					username: username,
 
-		try {
-			options = await generateRegistrationOptions({
-				rpName,
-				rpID,
-				userID: isoUint8Array.fromUTF8String(userId),
-				userName: username,
-				userDisplayName: username,
-				excludeCredentials,
-				authenticatorSelection: {
-					residentKey: "preferred",
-					userVerification: "preferred",
-				},
-			});
-		} catch (error) {
-			console.error("Registration options generation error:", error);
-			return { error: error.message };
-		}
-
-		if (options.error) return { error: options.error };
-
-		return {
-			options,
-			challenge: await jwt.sign({
-				regchallenge: options.challenge,
-				userId: userId,
-				username: username,
-
-				// 2.5 minutes
-				exp: Math.floor(Date.now() / 1000) + 2.5 * 60,
+					// 2.5 minutes
+					exp: Math.floor(Date.now() / 1000) + 2.5 * 60,
+				}),
+			};
+		},
+		{
+			detail: {
+				description: "Generates WebAuthn registration options",
+			},
+			body: t.Object({
+				username: t.String(),
 			}),
-		};
-	})
+			response: t.Any(),
+		},
+	)
 	.post("/verify-registration", async ({ body, jwt }) => {
 		const { username, credential, challenge } = body;
 
@@ -433,94 +445,116 @@ export default new Elysia({ prefix: "/auth" })
 			return { error: error.message };
 		}
 	})
-	.post("/generate-authentication-options", async ({ jwt }) => {
-		const options = await generateAuthenticationOptions({
-			rpID,
-			allowCredentials: [],
-			userVerification: "preferred",
-		});
-
-		if (options.error) return { error: options.error };
-
-		return {
-			options,
-			expectedChallenge: await jwt.sign({
-				challenge: options.challenge,
-
-				// 2.5 minutes
-				exp: Math.floor(Date.now() / 1000) + 2.5 * 60,
-			}),
-		};
-	})
-	.post("/verify-authentication", async ({ body, jwt }) => {
-		const { expectedChallenge, credential } = body;
-
-		if (!expectedChallenge || !credential) {
-			return { error: "expectedChallenge and credential are required" };
-		}
-
-		if (!credential.rawId) {
-			console.error("Missing credential.rawId:", credential);
-			return { error: "Invalid credential format" };
-		}
-
-		const credId =
-			typeof credential.rawId === "string"
-				? credential.rawId
-				: isoBase64URL.fromBuffer(credential.rawId);
-
-		const passkey = getPasskeyByCredId(credId);
-		if (!passkey) {
-			return { error: "Passkey not found" };
-		}
-
-		try {
-			const verification = await verifyAuthenticationResponse({
-				response: credential,
-				expectedChallenge: (await jwt.verify(expectedChallenge)).challenge,
-				expectedOrigin: origin,
-				expectedRPID: [rpID],
-				credential: {
-					id: isoBase64URL.toBuffer(passkey.cred_id),
-					publicKey: new Uint8Array(passkey.cred_public_key),
-					counter: passkey.counter,
-				},
+	.post(
+		"/generate-authentication-options",
+		async ({ jwt }) => {
+			const options = await generateAuthenticationOptions({
+				rpID,
+				allowCredentials: [],
+				userVerification: "preferred",
 			});
 
-			if (!verification.verified || !verification.authenticationInfo) {
-				return { verified: false, error: "Authentication verification failed" };
-			}
-
-			const user = db
-				.query("SELECT * FROM users WHERE id = ?")
-				.get(passkey.internal_user_id);
-
-			if (!user) {
-				return {
-					verified: false,
-					error: "User associated with this passkey no longer exists",
-				};
-			}
-
-			updatePasskeyCounter(credId, verification.authenticationInfo.newCounter);
-
-			const token = await jwt.sign({
-				userId: user.id,
-				username: user.username,
-				iat: Math.floor(Date.now() / 1000),
-				exp: Math.floor(Date.now() / 1000) + 7 * 24 * 60 * 60, // 7 days
-			});
+			if (options.error) return { error: options.error };
 
 			return {
-				verified: true,
-				user: { id: user.id, username: user.username },
-				token,
+				options,
+				expectedChallenge: await jwt.sign({
+					challenge: options.challenge,
+
+					// 2.5 minutes
+					exp: Math.floor(Date.now() / 1000) + 2.5 * 60,
+				}),
 			};
-		} catch (error) {
-			console.error("Authentication verification error:", error);
-			return { error: "Authentication verification failed" };
-		}
-	})
+		},
+		{
+			detail: {
+				description: "Generates WebAuthn authentication options",
+			},
+			response: t.Any(),
+		},
+	)
+	.post(
+		"/verify-authentication",
+		async ({ body, jwt }) => {
+			const { expectedChallenge, credential } = body;
+
+			if (!expectedChallenge || !credential) {
+				return { error: "expectedChallenge and credential are required" };
+			}
+
+			if (!credential.rawId) {
+				console.error("Missing credential.rawId:", credential);
+				return { error: "Invalid credential format" };
+			}
+
+			const credId =
+				typeof credential.rawId === "string"
+					? credential.rawId
+					: isoBase64URL.fromBuffer(credential.rawId);
+
+			const passkey = getPasskeyByCredId(credId);
+			if (!passkey) {
+				return { error: "Passkey not found" };
+			}
+
+			try {
+				const verification = await verifyAuthenticationResponse({
+					response: credential,
+					expectedChallenge: (await jwt.verify(expectedChallenge)).challenge,
+					expectedOrigin: origin,
+					expectedRPID: [rpID],
+					credential: {
+						id: isoBase64URL.toBuffer(passkey.cred_id),
+						publicKey: new Uint8Array(passkey.cred_public_key),
+						counter: passkey.counter,
+					},
+				});
+
+				if (!verification.verified || !verification.authenticationInfo) {
+					return { verified: false, error: "Authentication verification failed" };
+				}
+
+				const user = db
+					.query("SELECT * FROM users WHERE id = ?")
+					.get(passkey.internal_user_id);
+
+				if (!user) {
+					return {
+						verified: false,
+						error: "User associated with this passkey no longer exists",
+					};
+				}
+
+				updatePasskeyCounter(credId, verification.authenticationInfo.newCounter);
+
+				const token = await jwt.sign({
+					userId: user.id,
+					username: user.username,
+					iat: Math.floor(Date.now() / 1000),
+					exp: Math.floor(Date.now() / 1000) + 7 * 24 * 60 * 60, // 7 days
+				});
+
+				return {
+					verified: true,
+					user: { id: user.id, username: user.username },
+					token,
+				};
+			} catch (error) {
+				console.error("Authentication verification error:", error);
+				return { error: "Authentication verification failed" };
+			}
+		},
+		{
+			detail: {
+				description: "Verifies WebAuthn authentication response",
+			},
+			body: t.Object({
+				expectedChallenge: t.String(),
+				credential: t.Any(),
+			}),
+			response: t.Any(),
+		},
+	)
 	.get(
 		"/passkeys",
 		async ({ jwt, headers }) => {
