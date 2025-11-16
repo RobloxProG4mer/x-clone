@@ -112,7 +112,7 @@ const getUserCommunities = db.prepare(`
   LIMIT ? OFFSET ?
 `);
 
-export default new Elysia()
+export default new Elysia({ tags: ["Communities"] })
 	.use(jwt({ name: "jwt", secret: JWT_SECRET }))
 	.derive(async ({ jwt, headers }) => {
 		const authorization = headers.authorization;

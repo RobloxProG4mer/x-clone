@@ -132,6 +132,7 @@ new Elysia()
 					{ name: "Blocking", description: "Blocking & unblocking" },
 					{ name: "Bookmarks", description: "Bookmarks endpoints" },
 					{ name: "Communities", description: "Communities endpoints" },
+					{ name: "Communities", description: "Communities endpoints" },
 					{ name: "Delegates", description: "Delegates endpoints" },
 					{ name: "DM", description: "Sending and reading DMs" },
 					{ name: "Extensions", description: "Extensions endpoints" },
