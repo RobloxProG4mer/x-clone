@@ -1,5 +1,5 @@
 import { jwt } from "@elysiajs/jwt";
-import { Elysia } from "elysia";
+import { Elysia, t } from "elysia";
 import { rateLimit } from "elysia-rate-limit";
 import db from "./../db.js";
 import ratelimit from "../helpers/ratelimit.js";
@@ -41,88 +41,112 @@ export default new Elysia({ prefix: "/hashtags" })
 			generator: ratelimit,
 		}),
 	)
-	.get("/trending", async ({ query }) => {
-		const limit = parseInt(query.limit || "10");
-		const hashtags = getTrendingHashtags.all(Math.min(limit, 50));
-		return { success: true, hashtags };
-	})
-	.get("/:name", async ({ jwt, headers, params }) => {
-		const authorization = headers.authorization;
-		if (!authorization) return { error: "Authentication required" };
+	.get(
+		"/trending",
+		async ({ query }) => {
+			const limit = parseInt(query.limit || "10");
+			const hashtags = getTrendingHashtags.all(Math.min(limit, 50));
+			return { success: true, hashtags };
+		},
+		{
+			detail: {
+				description: "Gets trending hashtags",
+			},
+			query: t.Object({
+				limit: t.Optional(t.String()),
+			}),
+			response: t.Any(),
+		},
+	)
+	.get(
+		"/:name",
+		async ({ jwt, headers, params }) => {
+			const authorization = headers.authorization;
+			if (!authorization) return { error: "Authentication required" };
 
-		try {
-			const payload = await jwt.verify(authorization.replace("Bearer ", ""));
-			if (!payload) return { error: "Invalid token" };
+			try {
+				const payload = await jwt.verify(authorization.replace("Bearer ", ""));
+				if (!payload) return { error: "Invalid token" };
 
-			const user = getUserByUsername.get(payload.username);
-			if (!user) return { error: "User not found" };
+				const user = getUserByUsername.get(payload.username);
+				if (!user) return { error: "User not found" };
 
-			const hashtagName = params.name.toLowerCase().replace(/^#/, "");
-			const hashtag = getHashtagByName.get(hashtagName);
+				const hashtagName = params.name.toLowerCase().replace(/^#/, "");
+				const hashtag = getHashtagByName.get(hashtagName);
 
-			if (!hashtag) {
-				return { error: "Hashtag not found" };
+				if (!hashtag) {
+					return { error: "Hashtag not found" };
+				}
+
+				const posts = getPostsByHashtag.all(
+					user.id,
+					hashtagName,
+					user.id,
+					user.admin ? 1 : 0,
+				);
+
+				const userIds = [...new Set(posts.map((post) => post.user_id))];
+				const placeholders = userIds.map(() => "?").join(",");
+				const getUsersQuery = db.query(
+					`SELECT * FROM users WHERE id IN (${placeholders})`,
+				);
+				const users = getUsersQuery.all(...userIds);
+				const userMap = {};
+				users.forEach((u) => {
+					userMap[u.id] = u;
+				});
+
+				const postIds = posts.map((post) => post.id);
+				const likePlaceholders = postIds.map(() => "?").join(",");
+				const getUserLikesQuery = db.query(
+					`SELECT post_id FROM likes WHERE user_id = ? AND post_id IN (${likePlaceholders})`,
+				);
+				const userLikes = getUserLikesQuery.all(user.id, ...postIds);
+				const userLikedPosts = new Set(userLikes.map((like) => like.post_id));
+
+				const getUserRetweetsQuery = db.query(
+					`SELECT post_id FROM retweets WHERE user_id = ? AND post_id IN (${likePlaceholders})`,
+				);
+				const userRetweets = getUserRetweetsQuery.all(user.id, ...postIds);
+				const userRetweetedPosts = new Set(
+					userRetweets.map((retweet) => retweet.post_id),
+				);
+
+				const getUserBookmarksQuery = db.query(
+					`SELECT post_id FROM bookmarks WHERE user_id = ? AND post_id IN (${likePlaceholders})`,
+				);
+				const userBookmarks = getUserBookmarksQuery.all(user.id, ...postIds);
+				const userBookmarkedPosts = new Set(
+					userBookmarks.map((bookmark) => bookmark.post_id),
+				);
+
+				const tweets = posts.map((post) => ({
+					...post,
+					author: userMap[post.user_id],
+					liked_by_user: userLikedPosts.has(post.id),
+					retweeted_by_user: userRetweetedPosts.has(post.id),
+					bookmarked_by_user: userBookmarkedPosts.has(post.id),
+					attachments: db
+						.query("SELECT * FROM attachments WHERE post_id = ?")
+						.all(post.id),
+				}));
+
+				return { success: true, hashtag, tweets };
+			} catch (error) {
+				console.error("Get hashtag posts error:", error);
+				return { error: "Failed to get hashtag posts" };
 			}
-
-			const posts = getPostsByHashtag.all(
-				user.id,
-				hashtagName,
-				user.id,
-				user.admin ? 1 : 0,
-			);
-
-			const userIds = [...new Set(posts.map((post) => post.user_id))];
-			const placeholders = userIds.map(() => "?").join(",");
-			const getUsersQuery = db.query(
-				`SELECT * FROM users WHERE id IN (${placeholders})`,
-			);
-			const users = getUsersQuery.all(...userIds);
-			const userMap = {};
-			users.forEach((u) => {
-				userMap[u.id] = u;
-			});
-
-			const postIds = posts.map((post) => post.id);
-			const likePlaceholders = postIds.map(() => "?").join(",");
-			const getUserLikesQuery = db.query(
-				`SELECT post_id FROM likes WHERE user_id = ? AND post_id IN (${likePlaceholders})`,
-			);
-			const userLikes = getUserLikesQuery.all(user.id, ...postIds);
-			const userLikedPosts = new Set(userLikes.map((like) => like.post_id));
-
-			const getUserRetweetsQuery = db.query(
-				`SELECT post_id FROM retweets WHERE user_id = ? AND post_id IN (${likePlaceholders})`,
-			);
-			const userRetweets = getUserRetweetsQuery.all(user.id, ...postIds);
-			const userRetweetedPosts = new Set(
-				userRetweets.map((retweet) => retweet.post_id),
-			);
-
-			const getUserBookmarksQuery = db.query(
-				`SELECT post_id FROM bookmarks WHERE user_id = ? AND post_id IN (${likePlaceholders})`,
-			);
-			const userBookmarks = getUserBookmarksQuery.all(user.id, ...postIds);
-			const userBookmarkedPosts = new Set(
-				userBookmarks.map((bookmark) => bookmark.post_id),
-			);
-
-			const tweets = posts.map((post) => ({
-				...post,
-				author: userMap[post.user_id],
-				liked_by_user: userLikedPosts.has(post.id),
-				retweeted_by_user: userRetweetedPosts.has(post.id),
-				bookmarked_by_user: userBookmarkedPosts.has(post.id),
-				attachments: db
-					.query("SELECT * FROM attachments WHERE post_id = ?")
-					.all(post.id),
-			}));
-
-			return { success: true, hashtag, tweets };
-		} catch (error) {
-			console.error("Get hashtag posts error:", error);
-			return { error: "Failed to get hashtag posts" };
-		}
-	});
+		},
+		{
+			detail: {
+				description: "Gets posts for a specific hashtag",
+			},
+			params: t.Object({
+				name: t.String(),
+			}),
+			response: t.Any(),
+		},
+	);
 
 export const extractAndSaveHashtags = (content, postId) => {
 	const hashtagRegex = /#(\w+)/g;

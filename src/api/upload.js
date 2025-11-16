@@ -1,7 +1,7 @@
 import { existsSync, promises as fsPromises, mkdirSync } from "node:fs";
 import { join } from "node:path";
 import { jwt } from "@elysiajs/jwt";
-import { Elysia, file } from "elysia";
+import { Elysia, file, t } from "elysia";
 import { rateLimit } from "elysia-rate-limit";
 import db from "../db.js";
 import ratelimit from "../helpers/ratelimit.js";
@@ -222,6 +222,15 @@ export default new Elysia({ prefix: "/upload" })
 			console.error("Upload error:", error);
 			return { error: "Failed to upload file" };
 		}
+	}, {
+		detail: {
+			description: "Uploads a file (image or video) and returns the file hash and URL",
+		},
+		body: t.Object({
+			file: t.Any(),
+			capToken: t.Optional(t.String()),
+		}),
+		response: t.Any(),
 	});
 
 // Secure file serving route
@@ -237,5 +246,13 @@ export const uploadRoutes = new Elysia({ prefix: "/uploads" }).get(
 
 		const filePath = join(process.cwd(), ".data", "uploads", filename);
 		return file(filePath);
+	},
+	{
+		detail: {
+			description: "Serves uploaded files by filename",
+		},
+		params: t.Object({
+			filename: t.String(),
+		}),
 	},
 );

@@ -1,5 +1,5 @@
 import { jwt } from "@elysiajs/jwt";
-import { Elysia } from "elysia";
+import { Elysia, t } from "elysia";
 import { rateLimit } from "elysia-rate-limit";
 import db from "../db.js";
 import ratelimit from "../helpers/ratelimit.js";
@@ -63,4 +63,13 @@ export default new Elysia({ prefix: "/tenor" })
       console.error("Tenor search error:", error);
       return { error: "Failed to search GIFs" };
     }
+  }, {
+    detail: {
+      description: "Searches for GIFs using Tenor API",
+    },
+    query: t.Object({
+      q: t.String(),
+      limit: t.Optional(t.String()),
+    }),
+    response: t.Any(),
   });
