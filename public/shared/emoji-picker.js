@@ -48,7 +48,7 @@ export async function showEmojiPickerPopup(onEmojiSelect, position = {}) {
 
   document
     .querySelectorAll("emoji-picker")
-    .forEach((pickerEl) => pickerEl.remove());
+    .forEach((pickerEl) => { pickerEl.remove() });
   document.body.appendChild(picker);
 
   const rect = picker.getBoundingClientRect();

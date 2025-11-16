@@ -2,6 +2,7 @@
   --toast-width: 380px;
   padding: 1.5rem;
   text-align: initial;
+  /* biome-ignore lint/complexity/noImportantStyles: idgaf */
   overflow: hidden !important;
   gap: 1rem;
 

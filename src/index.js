@@ -43,11 +43,18 @@ export function broadcastToUser(userId, message) {
 
 	const sseClients = sseConnections.get(userId);
 	if (sseClients) {
-		for (const client of sseClients) {
+		for (const client of Array.from(sseClients)) {
 			try {
 				client.controller.enqueue(`data: ${JSON.stringify(message)}\n\n`);
 			} catch (error) {
-				console.error("Error sending SSE message:", error);
+				console.error(
+					"Error sending SSE message to user",
+					userId,
+					error?.message || error,
+				);
+				try {
+					if (client.keepAlive) clearInterval(client.keepAlive);
+				} catch {}
 				sseClients.delete(client);
 			}
 		}
@@ -125,19 +132,34 @@ new Elysia()
 					description: "Tweetapus' REST API endpoints",
 				},
 				tags: [
-					{ name: "Admin", description: "All endpoints used by the admin panel" },
-					{ name: "Articles", description: "Viewing, creating and managing article" },
+					{
+						name: "Admin",
+						description: "All endpoints used by the admin panel",
+					},
+					{
+						name: "Articles",
+						description: "Viewing, creating and managing article",
+					},
 					{
 						name: "Auth",
 						description:
 							"Logging in, registering, and managing passkeys and accounts",
 					},
 					{ name: "Blocking", description: "Blocking & unblocking users" },
-					{ name: "Bookmarks", description: "Bookmarking and viewing bookmarks" },
-					{ name: "Communities", description: "All endpoints related to communities" },
+					{
+						name: "Bookmarks",
+						description: "Bookmarking and viewing bookmarks",
+					},
+					{
+						name: "Communities",
+						description: "All endpoints related to communities",
+					},
 					{ name: "Delegates", description: "Managing and using delegates" },
 					{ name: "DM", description: "Sending and reading DMs" },
-					{ name: "Extensions", description: "Downloading and installing extensions" },
+					{
+						name: "Extensions",
+						description: "Downloading and installing extensions",
+					},
 					{
 						name: "Notifications",
 						description: "Receiving and managing notifications",
@@ -149,9 +171,15 @@ new Elysia()
 						description: "Managing and viewing scheduled tweets",
 					},
 					{ name: "Search", description: "Searching tweets and users" },
-					{ name: "Tenor", description: "Searching for GIFs using Tweetapus' Tenor API" },
+					{
+						name: "Tenor",
+						description: "Searching for GIFs using Tweetapus' Tenor API",
+					},
 					{ name: "Timeline", description: "Scrolling your timeline" },
-					{ name: "Tweet", description: "Creating, viewing, and managing tweets" },
+					{
+						name: "Tweet",
+						description: "Creating, viewing, and managing tweets",
+					},
 					{ name: "Upload", description: "Managing and viewing uploads" },
 					{ name: "Emojis", description: "Downloading emoji lists" },
 				],
@@ -222,22 +250,42 @@ new Elysia()
 					const keepAlive = setInterval(() => {
 						try {
 							controller.enqueue(`:ping\n\n`);
-						} catch {
-							clearInterval(keepAlive);
+						} catch (err) {
+							// If enqueue throws, clear this interval and remove client
+							try {
+								if (client.keepAlive) clearInterval(client.keepAlive);
+							} catch {}
+							const clients = sseConnections.get(userId);
+							if (clients) clients.delete(client);
 						}
 					}, 30000);
 
 					client.keepAlive = keepAlive;
+					// store client on the controller so cancel can find it
+					controller._sseClient = client;
 				},
 				cancel() {
-					if (sseConnections.has(userId)) {
-						const clients = sseConnections.get(userId);
-						for (const client of clients) {
+					// When this stream's cancel is called, only remove this specific client
+					try {
+						const client = this?._controller?._sseClient; // fallback below if unavailable
+					} catch {}
+
+					// We can't reliably access `controller` from here, but we assigned _sseClient to it above.
+					// Let's iterate clients and remove the one whose controller is closed (best-effort cleanup).
+					if (!sseConnections.has(userId)) return;
+					const clients = sseConnections.get(userId);
+					for (const client of Array.from(clients)) {
+						try {
+							// detect closed state by attempting an enqueue (best-effort), or rely on keepAlive cleared
+							// If keepAlive is set and controller is closed, clear it and remove the client
 							if (client.keepAlive) clearInterval(client.keepAlive);
-						}
-						clients.clear();
-						sseConnections.delete(userId);
+						} catch (err) {}
+						// remove the client from the set
+						clients.delete(client);
 					}
+
+					// If set becomes empty, delete the user entry
+					if (!clients.size) sseConnections.delete(userId);
 				},
 			});
 

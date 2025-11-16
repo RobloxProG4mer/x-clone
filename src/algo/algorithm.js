@@ -113,7 +113,7 @@ export const rankTweets = (tweets, seenInput = new Map()) => {
     seenMap = seenInput;
   } else if (seenInput instanceof Set) {
     seenMap = new Map();
-    seenInput.forEach((id) => seenMap.set(id, null));
+    seenInput.forEach((id) => { seenMap.set(id, null) });
   } else {
     seenMap = new Map();
   }

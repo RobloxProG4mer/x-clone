@@ -241,7 +241,7 @@ const loadArticles = async ({ append } = { append: false }) => {
       return;
     }
 
-    items.forEach((article) => renderArticleCard(article));
+    items.forEach((article) => { renderArticleCard(article) });
 
     if (items.length < 10 || !response.next) {
       reachedEnd = true;

@@ -543,12 +543,12 @@ const renderProfile = (data) => {
 				</div>
 			`;
 			const profileCardEl = profileContainerEl.querySelector(".profile-card");
-			if (profileCardEl && profileCardEl.parentNode) {
+			if (profileCardEl?.parentNode) {
 				profileCardEl.insertAdjacentElement("afterend", banner);
 			} else {
 				const profileBannerEl =
 					profileContainerEl.querySelector(".profile-banner");
-				if (profileBannerEl && profileBannerEl.parentNode) {
+				if (profileBannerEl?.parentNode) {
 					profileBannerEl.insertAdjacentElement("afterend", banner);
 				} else {
 					profileContainerEl.insertBefore(
