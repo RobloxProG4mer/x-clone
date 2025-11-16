@@ -24,6 +24,7 @@ export default async (url, options = {}) => {
 				...(options.headers || {}),
 				Authorization: `Bearer ${token}`,
 				"X-Request-Token": hash(token || "public"),
+				"Content-Type": options.body ? "application/json" : undefined,
 			},
 		});
 

@@ -60,227 +60,242 @@ export default new Elysia({ prefix: "/delegates", tags: ["Delegates"] })
 			generator: ratelimit,
 		}),
 	)
-	.post("/invite", async ({ jwt, headers, body }) => {
-		const authorization = headers.authorization;
-		if (!authorization) return { error: "Authentication required" };
+	.post(
+		"/invite",
+		async ({ jwt, headers, body }) => {
+			const authorization = headers.authorization;
+			if (!authorization) return { error: "Authentication required" };
 
-		try {
-			const payload = await jwt.verify(authorization.replace("Bearer ", ""));
-			if (!payload) return { error: "Invalid token" };
+			console.log(body)
 
-			const user = getUserByUsername.get(payload.username);
-			if (!user) return { error: "User not found" };
+			try {
+				const payload = await jwt.verify(authorization.replace("Bearer ", ""));
+				if (!payload) return { error: "Invalid token" };
 
-			if (isUserRestrictedById(user.id))
-				return { error: "Action not allowed: account is restricted" };
+				const user = getUserByUsername.get(payload.username);
+				if (!user) return { error: "User not found" };
 
-			const { username } = body;
-			if (!username) return { error: "Username is required" };
+				if (isUserRestrictedById(user.id))
+					return { error: "Action not allowed: account is restricted" };
 
-			const targetUser = getUserByUsername.get(username);
-			if (!targetUser) return { error: "User not found" };
+				const { username } = body;
+				if (!username) return { error: "Username is required" };
 
-			if (targetUser.id === user.id) {
-				return { error: "You cannot invite yourself as a delegate" };
-			}
+				const targetUser = getUserByUsername.get(username);
+				if (!targetUser) return { error: "User not found" };
 
-			const existing = checkIfAlreadyInvited.get(user.id, targetUser.id);
-			if (existing) {
-				if (existing.status === "accepted") {
-					return { error: "User is already your delegate" };
+				if (targetUser.id === user.id) {
+					return { error: "You cannot invite yourself as a delegate" };
 				}
-				return { error: "Invitation already sent to this user" };
+
+				const existing = checkIfAlreadyInvited.get(user.id, targetUser.id);
+				if (existing) {
+					if (existing.status === "accepted") {
+						return { error: "User is already your delegate" };
+					}
+					return { error: "Invitation already sent to this user" };
+				}
+
+				const delegateId = Bun.randomUUIDv7();
+				inviteDelegate.run(delegateId, user.id, targetUser.id);
+
+				const notificationId = Bun.randomUUIDv7();
+				db.prepare(
+					"INSERT INTO notifications (id, user_id, type, content, related_id, actor_id) VALUES (?, ?, ?, ?, ?, ?)",
+				).run(
+					notificationId,
+					targetUser.id,
+					"delegate_invite",
+					"invited you to be their delegate",
+					delegateId,
+					user.id,
+				);
+
+				return { success: true, id: delegateId };
+			} catch (error) {
+				console.error("Invite delegate error:", error);
+				return { error: "Failed to invite delegate" };
 			}
-
-			const delegateId = Bun.randomUUIDv7();
-			inviteDelegate.run(delegateId, user.id, targetUser.id);
-
-			const notificationId = Bun.randomUUIDv7();
-			db.prepare(
-				"INSERT INTO notifications (id, user_id, type, content, related_id, actor_id) VALUES (?, ?, ?, ?, ?, ?)",
-			).run(
-				notificationId,
-				targetUser.id,
-				"delegate_invite",
-				"invited you to be their delegate",
-				delegateId,
-				user.id,
-			);
-
-			return { success: true, id: delegateId };
-		} catch (error) {
-			console.error("Invite delegate error:", error);
-			return { error: "Failed to invite delegate" };
-		}
-	}, {
-		detail: {
-			description: "Invites a user to be a delegate",
 		},
-		params: t.Object({
-			id: t.String(),
-		}),
-		body: t.Object({
-			username: t.String(),
-		}),
-		response: t.Object({
-			success: t.Boolean(),
-			error: t.Optional(t.String()),
-			id: t.String(),
-		}),
-	})
-	.post("/:id/accept", async ({ jwt, headers, params }) => {
-		const authorization = headers.authorization;
-		if (!authorization) return { error: "Authentication required" };
-
-		try {
-			const payload = await jwt.verify(authorization.replace("Bearer ", ""));
-			if (!payload) return { error: "Invalid token" };
-
-			const user = getUserByUsername.get(payload.username);
-			if (!user) return { error: "User not found" };
-
-			if (isUserRestrictedById(user.id))
-				return { error: "Action not allowed: account is restricted" };
-
-			const { id } = params;
-			const delegation = getDelegationById.get(id);
-
-			if (!delegation) return { error: "Delegation not found" };
-
-			if (delegation.delegate_id !== user.id) {
-				return {
-					error: "You are not authorized to accept this invitation",
-				};
-			}
-
-			if (delegation.status !== "pending") {
-				return { error: "This invitation has already been responded to" };
-			}
-
-			acceptDelegate.run(id, user.id);
-
-			const notificationId = Bun.randomUUIDv7();
-			db.prepare(
-				"INSERT INTO notifications (id, user_id, type, content, related_id, actor_id) VALUES (?, ?, ?, ?, ?, ?)",
-			).run(
-				notificationId,
-				delegation.owner_id,
-				"delegate_accepted",
-				"accepted your delegate invitation",
-				id,
-				user.id,
-			);
-
-			return { success: true };
-		} catch (error) {
-			console.error("Accept delegate error:", error);
-			return { error: "Failed to accept delegate invitation" };
-		}
-	}, {
-		detail: {
-			description: "Accepts a delegate invitation",
+		{
+			detail: {
+				description: "Invites a user to be a delegate",
+			},/*
+			body: t.Object({
+				username: t.String(),
+			}),*/
+			response: t.Object({
+				success: t.Optional(t.Boolean()), // OPTUONAL
+				error: t.Optional(t.String()),
+				id: t.Optional(t.String()),
+			}),
 		},
-		params: t.Object({
-			id: t.String(),
-		}),
-		response: t.Object({
-			success: t.Boolean(),
-			error: t.Optional(t.String()),
-		}),
-	})
-	.post("/:id/decline", async ({ jwt, headers, params }) => {
-		const authorization = headers.authorization;
-		if (!authorization) return { error: "Authentication required" };
+	)
+	.post(
+		"/:id/accept",
+		async ({ jwt, headers, params }) => {
+			const authorization = headers.authorization;
+			if (!authorization) return { error: "Authentication required" };
 
-		try {
-			const payload = await jwt.verify(authorization.replace("Bearer ", ""));
-			if (!payload) return { error: "Invalid token" };
+			try {
+				const payload = await jwt.verify(authorization.replace("Bearer ", ""));
+				if (!payload) return { error: "Invalid token" };
 
-			const user = getUserByUsername.get(payload.username);
-			if (!user) return { error: "User not found" };
+				const user = getUserByUsername.get(payload.username);
+				if (!user) return { error: "User not found" };
 
-			if (isUserRestrictedById(user.id))
-				return { error: "Action not allowed: account is restricted" };
+				if (isUserRestrictedById(user.id))
+					return { error: "Action not allowed: account is restricted" };
 
-			const { id } = params;
-			const delegation = getDelegationById.get(id);
+				const { id } = params;
+				const delegation = getDelegationById.get(id);
 
-			if (!delegation) return { error: "Delegation not found" };
+				if (!delegation) return { error: "Delegation not found" };
 
-			if (delegation.delegate_id !== user.id) {
-				return {
-					error: "You are not authorized to decline this invitation",
-				};
+				if (delegation.delegate_id !== user.id) {
+					return {
+						error: "You are not authorized to accept this invitation",
+					};
+				}
+
+				if (delegation.status !== "pending") {
+					return { error: "This invitation has already been responded to" };
+				}
+
+				acceptDelegate.run(id, user.id);
+
+				const notificationId = Bun.randomUUIDv7();
+				db.prepare(
+					"INSERT INTO notifications (id, user_id, type, content, related_id, actor_id) VALUES (?, ?, ?, ?, ?, ?)",
+				).run(
+					notificationId,
+					delegation.owner_id,
+					"delegate_accepted",
+					"accepted your delegate invitation",
+					id,
+					user.id,
+				);
+
+				return { success: true };
+			} catch (error) {
+				console.error("Accept delegate error:", error);
+				return { error: "Failed to accept delegate invitation" };
 			}
-
-			if (delegation.status !== "pending") {
-				return { error: "This invitation has already been responded to" };
-			}
-
-			declineDelegate.run(id, user.id);
-			return { success: true };
-		} catch (error) {
-			console.error("Decline delegate error:", error);
-			return { error: "Failed to decline delegate invitation" };
-		}
-	}, {
-		detail: {
-			description: "Declines a delegate invitation",
 		},
-		params: t.Object({
-			id: t.String(),
-		}),
-		response: t.Object({
-			success: t.Boolean(),
-			error: t.Optional(t.String()),
-		}),
-	})
-	.delete("/:id", async ({ jwt, headers, params }) => {
-		const authorization = headers.authorization;
-		if (!authorization) return { error: "Authentication required" };
-
-		try {
-			const payload = await jwt.verify(authorization.replace("Bearer ", ""));
-			if (!payload) return { error: "Invalid token" };
-
-			const user = getUserByUsername.get(payload.username);
-			if (!user) return { error: "User not found" };
-
-			if (isUserRestrictedById(user.id))
-				return { error: "Action not allowed: account is restricted" };
-
-			const { id } = params;
-			const delegation = getDelegationById.get(id);
-
-			if (!delegation) return { error: "Delegation not found" };
-
-			if (
-				delegation.owner_id !== user.id &&
-				delegation.delegate_id !== user.id
-			) {
-				return {
-					error: "You are not authorized to remove this delegation",
-				};
-			}
-
-			removeDelegate.run(id, user.id, user.id);
-			return { success: true };
-		} catch (error) {
-			console.error("Remove delegate error:", error);
-			return { error: "Failed to remove delegation" };
-		}
-	}, {
-		detail: {
-			description: "Removes a delegate from a user",
+		{
+			detail: {
+				description: "Accepts a delegate invitation",
+			},
+			params: t.Object({
+				id: t.String(),
+			}),
+			response: t.Object({
+				success: t.Boolean(),
+				error: t.Optional(t.String()),
+			}),
 		},
-		params: t.Object({
-			id: t.String(),
-		}),
-		response: t.Object({
-			success: t.Boolean(),
-			error: t.Optional(t.String()),
-		})
-	})
+	)
+	.post(
+		"/:id/decline",
+		async ({ jwt, headers, params }) => {
+			const authorization = headers.authorization;
+			if (!authorization) return { error: "Authentication required" };
+
+			try {
+				const payload = await jwt.verify(authorization.replace("Bearer ", ""));
+				if (!payload) return { error: "Invalid token" };
+
+				const user = getUserByUsername.get(payload.username);
+				if (!user) return { error: "User not found" };
+
+				if (isUserRestrictedById(user.id))
+					return { error: "Action not allowed: account is restricted" };
+
+				const { id } = params;
+				const delegation = getDelegationById.get(id);
+
+				if (!delegation) return { error: "Delegation not found" };
+
+				if (delegation.delegate_id !== user.id) {
+					return {
+						error: "You are not authorized to decline this invitation",
+					};
+				}
+
+				if (delegation.status !== "pending") {
+					return { error: "This invitation has already been responded to" };
+				}
+
+				declineDelegate.run(id, user.id);
+				return { success: true };
+			} catch (error) {
+				console.error("Decline delegate error:", error);
+				return { error: "Failed to decline delegate invitation" };
+			}
+		},
+		{
+			detail: {
+				description: "Declines a delegate invitation",
+			},
+			params: t.Object({
+				id: t.String(),
+			}),
+			response: t.Object({
+				success: t.Boolean(),
+				error: t.Optional(t.String()),
+			}),
+		},
+	)
+	.delete(
+		"/:id",
+		async ({ jwt, headers, params }) => {
+			const authorization = headers.authorization;
+			if (!authorization) return { error: "Authentication required" };
+
+			try {
+				const payload = await jwt.verify(authorization.replace("Bearer ", ""));
+				if (!payload) return { error: "Invalid token" };
+
+				const user = getUserByUsername.get(payload.username);
+				if (!user) return { error: "User not found" };
+
+				if (isUserRestrictedById(user.id))
+					return { error: "Action not allowed: account is restricted" };
+
+				const { id } = params;
+				const delegation = getDelegationById.get(id);
+
+				if (!delegation) return { error: "Delegation not found" };
+
+				if (
+					delegation.owner_id !== user.id &&
+					delegation.delegate_id !== user.id
+				) {
+					return {
+						error: "You are not authorized to remove this delegation",
+					};
+				}
+
+				removeDelegate.run(id, user.id, user.id);
+				return { success: true };
+			} catch (error) {
+				console.error("Remove delegate error:", error);
+				return { error: "Failed to remove delegation" };
+			}
+		},
+		{
+			detail: {
+				description: "Removes a delegate from a user",
+			},
+			params: t.Object({
+				id: t.String(),
+			}),
+			response: t.Object({
+				success: t.Boolean(),
+				error: t.Optional(t.String()),
+			}),
+		},
+	)
 	.get("/my-delegates", async ({ jwt, headers }) => {
 		const authorization = headers.authorization;
 		if (!authorization) return { error: "Authentication required" };

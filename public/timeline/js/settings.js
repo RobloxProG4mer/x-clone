@@ -750,7 +750,7 @@ const createDelegatesContent = () => {
 		try {
 			const result = await query("/delegates/invite", {
 				method: "POST",
-				body: JSON.stringify({ username }),
+				body: JSON.stringify({ username })
 			});
 
 			if (result.success) {
