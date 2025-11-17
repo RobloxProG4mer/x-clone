@@ -30,7 +30,14 @@ const DOMPURIFY_CONFIG = {
 		"sub",
 		"sup",
 	],
-	ALLOWED_ATTR: ["href", "target", "rel", "class", "data-username", "data-hashtag"],
+	ALLOWED_ATTR: [
+		"href",
+		"target",
+		"rel",
+		"class",
+		"data-username",
+		"data-hashtag",
+	],
 };
 
 (async () => {
@@ -190,7 +197,7 @@ const createSimpleTweetElement = (tweet) => {
 
 	const contentEl = document.createElement("div");
 	contentEl.className = "tweet-content";
-	
+
 	const contentText = tweet.content || "";
 	const contentWithoutLinks = contentText.split(/https?:\/\/[^\s]+/g).join("");
 	const shouldTrim = contentWithoutLinks.length > 300;
@@ -250,7 +257,7 @@ const createSimpleTweetElement = (tweet) => {
 	} else {
 		applyLinkified(contentWithoutLinks);
 	}
-	
+
 	tweetEl.appendChild(contentEl);
 
 	if (Array.isArray(tweet.attachments) && tweet.attachments.length > 0) {
@@ -440,13 +447,13 @@ const loadTweets = async () => {
 			return;
 		}
 
-		const validPosts = data.posts.filter(post => post && post.author);
-		
+		const validPosts = data.posts.filter((post) => post && post.author);
+
 		for (let i = validPosts.length - 1; i > 0; i--) {
 			const j = Math.floor(Math.random() * (i + 1));
 			[validPosts[i], validPosts[j]] = [validPosts[j], validPosts[i]];
 		}
-		
+
 		tweetCache = validPosts;
 	} catch (error) {
 		console.error("Error loading tweets:", error);
@@ -465,7 +472,10 @@ const initRecentTweets = async () => {
 	const populateContainer = () => {
 		if (tweetCache.length === 0) return;
 
-		while (container.children.length < MAX_TWEETS_IN_DOM && currentIndex < tweetCache.length) {
+		while (
+			container.children.length < MAX_TWEETS_IN_DOM &&
+			currentIndex < tweetCache.length
+		) {
 			const tweet = tweetCache[currentIndex];
 			const tweetEl = createSimpleTweetElement(tweet);
 			container.appendChild(tweetEl);
@@ -479,21 +489,24 @@ const initRecentTweets = async () => {
 
 	populateContainer();
 
-	let scrollSpeed = 0.5;
-	let isScrolling = true;
+	const scrollSpeed = 0.5;
+	const isScrolling = true;
 
 	const autoScroll = () => {
 		if (!isScrolling) return;
 
 		container.scrollTop += scrollSpeed;
 
-		if (container.scrollTop >= container.scrollHeight - container.clientHeight) {
+		if (
+			container.scrollTop >=
+			container.scrollHeight - container.clientHeight
+		) {
 			container.scrollTop = 0;
-			
+
 			while (container.children.length > MAX_TWEETS_IN_DOM) {
 				container.removeChild(container.firstChild);
 			}
-			
+
 			populateContainer();
 		}
 
