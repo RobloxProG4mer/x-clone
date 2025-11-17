@@ -69,25 +69,25 @@ document
 			document.getElementById("username").focus();
 			document.getElementById("username").select();
 
-			document.querySelector(".init-form p").innerText =
+			document.querySelector(".init-form label").innerText =
 				"Username taken, try another.";
-			document.querySelector(".init-form p").style.color = "var(--error-color)";
-			document.querySelector(".init-form p").style.transition =
+			document.querySelector(".init-form label").style.color = "var(--error-color)";
+			document.querySelector(".init-form label").style.transition =
 				"opacity .4s, filter .4s, transform .4s";
 
 			setTimeout(() => {
-				document.querySelector(".init-form p").style.opacity = "0";
-				document.querySelector(".init-form p").style.filter = "blur(2px)";
-				document.querySelector(".init-form p").style.transform = "scale(0.9)";
+				document.querySelector(".init-form label").style.opacity = "0";
+				document.querySelector(".init-form label").style.filter = "blur(2px)";
+				document.querySelector(".init-form label").style.transform = "scale(0.9)";
 			}, 1500);
 			setTimeout(() => {
-				document.querySelector(".init-form p").innerText =
+				document.querySelector(".init-form label").innerText =
 					"Choose your username";
 
-				document.querySelector(".init-form p").style.color = "";
-				document.querySelector(".init-form p").style.opacity = "";
-				document.querySelector(".init-form p").style.filter = "";
-				document.querySelector(".init-form p").style.transform = "";
+				document.querySelector(".init-form label").style.color = "";
+				document.querySelector(".init-form label").style.opacity = "";
+				document.querySelector(".init-form label").style.filter = "";
+				document.querySelector(".init-form label").style.transform = "";
 			}, 1700);
 
 			return;
@@ -102,6 +102,8 @@ document
 		cap.solve().then((solution) => {
 			challengeToken = solution.token;
 		});
+
+		await new Promise((r) => { setTimeout(r, 300); });
 
 		setTimeout(() => {
 			document.querySelector(".create-account").classList.remove("loading");

@@ -105,7 +105,7 @@ export default new Elysia({ prefix: "/auth", tags: ["Auth"] })
 			},
 			body: t.Object({
 				token: t.String(),
-				solutions: t.Array(t.String()),
+				solutions: t.Any(),
 			}),
 		},
 	)

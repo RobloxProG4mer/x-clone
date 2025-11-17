@@ -2,20 +2,21 @@
 @import url("/public/shared/base.css");
 
 body {
-  margin-top: 0.5em;
   display: flex;
   flex-direction: column;
+  max-width: 400px;
+  margin: 0px auto;
+  margin-top: 0.5em;
 }
 
 .logo {
-  margin: 0.8rem auto;
   margin-top: 3em;
+  margin-bottom: 1rem;
   fill: currentColor;
 }
 
 h1 {
   font-size: 37px;
-  text-align: center;
   line-height: 1.2;
   margin-top: 0px;
   font-weight: bold;
@@ -26,34 +27,33 @@ h1 {
 }
 
 button {
-  padding: 0.5em 1em;
-  border-radius: 100px;
+  padding: 8px;
+  border-radius: 6px;
+  width: 100%;
   font-size: 16px;
-  font-weight: bold;
+  font-weight: 500;
   font-family: inherit;
-  width: fit-content;
   margin: 0px auto;
   cursor: pointer;
-  transition: transform 0.2s;
   user-select: none;
   background-color: transparent;
-  border: 1.5px solid var(--primary);
+  border: 2px solid transparent;
   color: var(--primary);
   display: flex;
   gap: 12px;
   align-items: center;
   justify-content: center;
+  transition: transform 0.2s, opacity .2s;
 
   &:hover {
-    transform: scale(1.015);
+    opacity: .85;
   }
 
   &:active {
-    transform: scale(0.97);
+    transform: scale(0.985);
   }
 
   &.create-account {
-    font-size: 19.8px;
     background-color: var(--primary);
     color: var(--primary-fg);
     margin-top: 2rem;
@@ -69,9 +69,9 @@ button {
     background-color: var(--border-primary);
     border-color: var(--border-primary);
     pointer-events: none;
-    padding: 0px !important;
+    padding: 0px;
     box-shadow: none;
-    height: 46.8px;
+    height: 39px;
 
     svg {
       animation: spin 1s steps(8, end) infinite;
@@ -82,75 +82,64 @@ button {
 .already {
   margin-top: 1.5rem;
   display: flex;
-  align-items: center;
-  justify-content: center;
+  flex-direction: column;
   gap: 12px;
 
   p {
     font-size: 16px;
-    text-align: center;
     line-height: 1.7;
+    margin-bottom: 0px;
     user-select: none;
     color: var(--text-muted);
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
   }
 
   button {
-    border: none;
-    padding: 0px;
+    background-color: rgba(var(--primary-rgb), .1);
   }
 }
 
 .form {
   display: flex;
   flex-direction: column;
-  align-items: center;
-  justify-content: center;
-}
 
-.form p {
-  font-size: 19.8px;
-  text-align: center;
-  margin-bottom: 6.1px;
-  margin-top: 49.5px;
-  line-height: 1;
+  label {
+    font-size: 16px;
+    margin-bottom: 6.1px;
+    margin-top: 49.5px;
+    line-height: 1;
+    transform-origin: center left;
 
-  &:first-of-type {
-    margin-top: 10px;
-  }
-}
-
-.form input {
-  max-width: 334px;
-  width: 100%;
-  margin: 0px auto;
-  height: 50px;
-  padding: 0.2em 0;
-  border: none;
-  border-bottom: 1px dashed currentColor;
-  font-size: 26.4px;
-  background-color: transparent;
-  text-align: center;
-  font-weight: bold;
-  font-family: inherit;
-
-  &:is(body:has(.create-account.loading) input) {
-    color: var(--border-hover);
-    pointer-events: none;
-    border-color: var(--border-hover);
+    &:first-of-type {
+      margin-top: 10px;
+    }
   }
 
-  &::placeholder {
-    color: transparent;
-  }
+  input {
+    width: 100%;
+    height: 50px;
+    padding: 0.2em 0;
+    border: none;
+    border-bottom: 1px dashed currentColor;
+    font-size: 26.4px;
+    background-color: transparent;
+    font-weight: bold;
+    font-family: inherit;
 
-  &:focus {
-    outline: none;
-    border-color: var(--primary);
-    caret-color: var(--primary);
+    &:is(body:has(.create-account.loading) input) {
+      color: var(--border-hover);
+      pointer-events: none;
+      border-color: var(--border-hover);
+    }
+
+    &::placeholder {
+      color: transparent;
+    }
+
+    &:focus {
+      outline: none;
+      border-color: var(--primary);
+      caret-color: var(--primary);
+    }
   }
 }
 
@@ -403,7 +392,7 @@ button {
   font-size: 1.5rem;
   font-weight: bold;
   text-align: center;
-    margin-bottom: 0px;
+  margin-bottom: 0px;
 }
 
 .login-dropdown {
