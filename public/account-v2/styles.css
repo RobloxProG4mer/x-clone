@@ -1,16 +1,223 @@
 @import url("/public/shared/variables.css");
 @import url("/public/shared/base.css");
 
+html {
+  scrollbar-gutter: initial;
+}
+
 body {
+  margin: 0px;
+  height: 0px;
+  max-height: 100vh;
+  display: flex;
+  gap: 20px;
+}
+
+.right-content {
+  height: 100vh;
+  width: 40%;
   display: flex;
   flex-direction: column;
+  position: relative;
+  overflow: hidden;
+
+  @media (max-width: 900px) {
+    display: none;
+  }
+}
+
+.big-image {
+  height: 100%;
+  width: 100%;
+  pointer-events: none;
+  user-select: none;
+  object-fit: cover;
+}
+
+.recent-tweets-container {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  overflow: hidden;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.recent-tweets-container .tweet {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  height: auto;
+  position: relative;
+  transition: none;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+  background: var(--bg-primary);
+  border: 1px solid var(--border-secondary);
+  border-radius: 12px;
+  padding: 16px;
+
+  .tweet-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 14.95px;
+    position: relative;
+
+    img {
+      width: 40px;
+      border-radius: 50%;
+      cursor: pointer;
+    }
+
+    .tweet-header-info {
+      display: flex;
+      flex-direction: column;
+
+      &:hover .name {
+        text-decoration: underline;
+      }
+
+      p {
+        margin: 0px;
+        display: flex;
+        align-items: center;
+        gap: 2px;
+
+        &.name {
+          font-weight: 500;
+          margin-bottom: -4px;
+          cursor: pointer;
+
+          .tweet-header-username-span {
+            color: var(--text-secondary);
+            font-weight: 400;
+            margin-left: 2px;
+          }
+        }
+
+        &.username {
+          color: var(--text-secondary);
+          cursor: pointer;
+        }
+      }
+    }
+  }
+
+  .tweet-content {
+    font-size: 16px;
+    line-height: 1.6;
+    color: var(--text-primary);
+    overflow: hidden;
+    max-width: 100%;
+    overflow-wrap: break-word;
+
+    p {
+      margin: 0;
+
+      &:not(:last-child) {
+        margin-bottom: 8px;
+      }
+    }
+
+    a,
+    .tweet-ellipsis {
+      color: var(--primary);
+      text-underline-offset: 3px;
+      text-decoration: underline;
+      cursor: pointer;
+
+      &.tweet-ellipsis {
+        text-decoration: none;
+      }
+
+      &:hover {
+        text-decoration: none;
+
+        &.tweet-ellipsis {
+          text-decoration: underline;
+        }
+      }
+    }
+  }
+
+  .tweet-attachments {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 8px;
+
+    img,
+    video {
+      max-width: 100%;
+      max-height: 200px;
+      border-radius: 8px;
+      object-fit: cover;
+    }
+  }
+
+  .tweet-interactions {
+    display: flex;
+    gap: 14px;
+    user-select: none;
+    margin-top: 8px;
+
+    button {
+      padding: 0px;
+      border: none;
+      background-color: transparent;
+      color: var(--text-secondary);
+      cursor: default;
+      font-size: 15px;
+      font-family: inherit;
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      position: relative;
+      pointer-events: none;
+      width: fit-content;
+      margin: 0;
+      font-weight: 400;
+
+      svg {
+        transition: color 0.15s;
+        z-index: 5;
+        position: relative;
+      }
+
+      &.engagement {
+        transition: transform 0.2s;
+      }
+
+      &:last-child {
+        margin-left: auto;
+      }
+    }
+  }
+
+  .tweet-ellipsis {
+    color: var(--primary);
+    cursor: pointer;
+    pointer-events: auto;
+
+    &:hover {
+      text-decoration: underline;
+    }
+  }
+}
+
+main {
   max-width: 395px;
   margin: 0px auto;
   margin-top: 0.5em;
 }
 
 .logo {
-  margin-top: 3em;
+  margin-top: 4em;
   margin-bottom: 1rem;
   fill: currentColor;
 }
@@ -382,7 +589,7 @@ button {
   .login-modal-content {
     position: relative;
     background: var(--bg-primary);
-    border-radius: 9px;
+    border-radius: 16px;
     max-width: 455px;
     padding: 14px;
     width: 100%;
@@ -391,6 +598,8 @@ button {
     justify-content: center;
     flex-direction: column;
     transition: transform .2s;
+    box-shadow: 0 4px 6px -1px #0000001a, 0 2px 4px -2px #0000001a,
+      0 0 0 1px #1e293b, 0 8px 24px rgba(0, 0, 0, 0.2);
 
     @starting-style {
       & {

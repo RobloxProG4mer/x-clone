@@ -13,31 +13,40 @@
 </head>
 
 <body>
-  <svg class="logo" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-    <path
-      d="M22 4s-.7 2.1-2 3.4c1.6 10-9.4 17.3-18 11.6 2.2.1 4.4-.6 6-2C3 15.5.5 9.6 3 5c2.2 2.6 5.6 4.1 9 4-.9-4.2 4-6.6 7-3.8 1.1 0 3-1.2 3-1.2z" />
-  </svg>
+  <main>
+    <svg class="logo" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <path
+        d="M22 4s-.7 2.1-2 3.4c1.6 10-9.4 17.3-18 11.6 2.2.1 4.4-.6 6-2C3 15.5.5 9.6 3 5c2.2 2.6 5.6 4.1 9 4-.9-4.2 4-6.6 7-3.8 1.1 0 3-1.2 3-1.2z" />
+    </svg>
 
-  <h1>
-    Be the first to know
-    <br />
-    what's happening.
-  </h1>
+    <h1>
+      Be the first to know
+      <br />
+      what's happening.
+    </h1>
 
-  <div class="form init-form">
-    <label for="username">Choose your username</label>
-    <input type="text" id="username" placeholder="username" autofocus />
-  </div>
-  <button class="create-account primary">
-    Create your account
-  </button>
-
-  <div class="already">
-    <p>Already have an account?</p>
-
-    <button class="log-in" style="margin: 0px">
-      Sign in
+    <div class="form init-form">
+      <label for="username">Choose your username</label>
+      <input type="text" id="username" placeholder="username" autofocus />
+    </div>
+    <button class="create-account primary">
+      Create your account
     </button>
+
+    <div class="already">
+      <p>Already have an account?</p>
+
+      <button class="log-in" style="margin: 0px">
+        Sign in
+      </button>
+    </div>
+  </main>
+
+  <div class="right-content">
+    <img
+      src="https://cdn.sanity.io/images/2hv88549/production/cc24ca462279ca23250c6953612a9e3fd9838355-6360x4240.jpg?auto=format"
+      class="big-image">
+    <div class="recent-tweets-container" id="recentTweetsContainer"></div>
   </div>
 
   <div class="create-step2 model-wrapper">

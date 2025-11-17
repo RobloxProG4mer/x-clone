@@ -12,6 +12,7 @@ import dm from "./api/dm.js";
 import extensions from "./api/extensions.js";
 import notifications from "./api/notifications.js";
 import profile from "./api/profile.js";
+import publicTweets from "./api/public-tweets.js";
 import reports from "./api/reports.js";
 import scheduled from "./api/scheduled.js";
 import search from "./api/search.js";
@@ -229,6 +230,7 @@ export default new Elysia({
 	.use(articles)
 	.use(profile)
 	.use(timeline)
+	.use(publicTweets)
 	.use(search)
 	.use(upload)
 	.use(extensions)
