@@ -213,7 +213,13 @@ nav {
       background-color: rgba(var(--primary-rgb), 0.08);
     }
 
+    &:active {
+      transform: scale(0.97);
+    }
+
     &.active {
+      font-weight: 500;
+      
       svg {
         display: none;
 
