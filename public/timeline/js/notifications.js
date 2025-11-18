@@ -781,12 +781,12 @@ document
 	?.addEventListener("click", async () => {
 		const indexModule = await import("./index.js");
 		const savedScroll = indexModule.getTimelineScroll?.() || 0;
-		
+
 		switchPage("timeline", {
 			path: "/",
 			noScroll: true,
 		});
-		
+
 		setTimeout(() => window.scrollTo(0, savedScroll), 0);
 	});
 
@@ -794,7 +794,10 @@ document
 	.getElementById("markAllReadBtn")
 	?.addEventListener("click", markAllAsRead);
 
-addRoute((pathname) => pathname === "/notifications", () => openNotifications(false));
+addRoute(
+	(pathname) => pathname === "/notifications",
+	() => openNotifications(false),
+);
 
 export default { displayUnreadCount };
 export { openNotifications, loadNotifications, markAllAsRead };

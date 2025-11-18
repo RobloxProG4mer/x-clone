@@ -132,7 +132,7 @@ let _user;
 
 	document.getElementById("homeBtn").addEventListener("click", async () => {
 		const isAlreadyHome = location.pathname === "/";
-		
+
 		if (isAlreadyHome) {
 			switchPage("timeline", {
 				path: "/",
@@ -142,12 +142,12 @@ let _user;
 		} else {
 			const indexModule = await import("./index.js");
 			const savedScroll = indexModule.getTimelineScroll?.() || 0;
-			
+
 			switchPage("timeline", {
 				path: "/",
 				noScroll: true,
 			});
-			
+
 			setTimeout(() => window.scrollTo(0, savedScroll), 0);
 		}
 	});
