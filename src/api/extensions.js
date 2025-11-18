@@ -32,24 +32,36 @@ const getInstallDirName = (record) => {
 	return null;
 };
 
-const mapExtensionRecord = (record) => ({
-	id: record.id,
-	name: record.name,
-	version: record.version,
-	author: record.author,
-	summary: record.summary,
-	description: record.description,
-	website: record.website,
-	changelogUrl: record.changelog_url,
-	rootFile: record.root_file,
-	entryType: record.entry_type,
-	styles: parseJsonSafely(record.styles, []),
-	capabilities: parseJsonSafely(record.capabilities, []),
-	targets: parseJsonSafely(record.targets, []),
-	bundleHash: record.bundle_hash,
-	fileEndpoint: `/api/extensions/${encodeURIComponent(record.id)}/file`,
-	installDir: getInstallDirName(record),
-});
+const mapExtensionRecord = (record) => {
+	const manifest = parseJsonSafely(record.manifest_json, {}) || {};
+	const schemaCandidate =
+		manifest.settings ??
+		manifest.settings_schema ??
+		manifest.preferences ??
+		manifest.schema ??
+		manifest["settings-schema"];
+	return {
+		id: record.id,
+		name: record.name,
+		version: record.version,
+		author: record.author,
+		summary: record.summary,
+		description: record.description,
+		website: record.website,
+		changelogUrl: record.changelog_url,
+		rootFile: record.root_file,
+		entryType: record.entry_type,
+		styles: parseJsonSafely(record.styles, []),
+		capabilities: parseJsonSafely(record.capabilities, []),
+		targets: parseJsonSafely(record.targets, []),
+		bundleHash: record.bundle_hash,
+		fileEndpoint: `/api/extensions/${encodeURIComponent(record.id)}/file`,
+		installDir: getInstallDirName(record),
+		settingsSchema: parseSettingsSchema(schemaCandidate),
+		managed: true,
+		enabled: !!record.enabled,
+	};
+};
 
 const extensionSettingsSelect = db.prepare(
 	"SELECT settings FROM extension_settings WHERE extension_id = ?",
@@ -96,6 +108,134 @@ const collectStylePaths = (value) => {
 	return list;
 };
 
+const allowedSettingTypes = new Set([
+	"text",
+	"textarea",
+	"number",
+	"select",
+	"toggle",
+]);
+
+const sanitizeSettingKey = (value) => {
+	if (typeof value !== "string") return null;
+	const trimmed = value.trim();
+	if (!trimmed) return null;
+	const normalized = trimmed.replace(/[^A-Za-z0-9._-]/g, "_");
+	return normalized.slice(0, 64);
+};
+
+const sanitizeSettingString = (value, max = 256) => {
+	if (typeof value !== "string") return null;
+	const trimmed = value.trim();
+	if (!trimmed) return null;
+	return trimmed.slice(0, max);
+};
+
+const parseSettingsOptions = (value) => {
+	if (!Array.isArray(value)) return [];
+	const options = [];
+	const seen = new Set();
+	for (const entry of value) {
+		if (typeof entry !== "object" || !entry) continue;
+		const optionValue =
+			sanitizeSettingString(
+				entry.value ?? entry.id ?? entry.key ?? entry.name,
+				120,
+			) ?? null;
+		if (!optionValue || seen.has(optionValue)) continue;
+		const label =
+			sanitizeSettingString(entry.label ?? entry.name ?? entry.title, 120) ||
+			optionValue;
+		options.push({ value: optionValue, label });
+		seen.add(optionValue);
+		if (options.length >= 24) break;
+	}
+	return options;
+};
+
+const parseSettingsSchema = (value) => {
+	if (!Array.isArray(value)) return [];
+	const schema = [];
+	const keys = new Set();
+	for (const entry of value) {
+		if (typeof entry !== "object" || !entry) continue;
+		const key = sanitizeSettingKey(entry.key ?? entry.name ?? entry.id);
+		if (!key || keys.has(key)) continue;
+		let type =
+			typeof entry.type === "string" ? entry.type.trim().toLowerCase() : "text";
+		if (!allowedSettingTypes.has(type)) {
+			type = "text";
+		}
+		const label =
+			sanitizeShortText(entry.label ?? entry.name ?? key, 80) || key;
+		const description = sanitizeShortText(
+			entry.description ?? entry.help ?? entry.subtitle,
+			240,
+		);
+		const placeholder = sanitizeShortText(entry.placeholder, 160);
+		const field = { key, type, label };
+		if (description) field.description = description;
+		if (placeholder && (type === "text" || type === "textarea")) {
+			field.placeholder = placeholder;
+		}
+		if (type === "number") {
+			const min = Number(entry.min ?? entry.minimum);
+			const max = Number(entry.max ?? entry.maximum);
+			const step = Number(entry.step ?? entry.increment ?? 1);
+			if (Number.isFinite(min)) field.min = min;
+			if (Number.isFinite(max)) field.max = max;
+			if (Number.isFinite(step) && step > 0) field.step = step;
+			const defaultValue = Number(
+				entry.default ?? entry.value ?? entry.initial,
+			);
+			if (Number.isFinite(defaultValue)) field.default = defaultValue;
+		} else if (type === "select") {
+			const options = parseSettingsOptions(
+				entry.options ?? entry.choices ?? entry.values,
+			);
+			if (!options.length) continue;
+			field.options = options;
+			const defaultValue = sanitizeSettingString(
+				entry.default ?? entry.value ?? entry.initial ?? options[0]?.value,
+				120,
+			);
+			if (defaultValue) field.default = defaultValue;
+		} else if (type === "toggle") {
+			const rawDefault = entry.default ?? entry.value ?? entry.initial;
+			const boolDefault =
+				rawDefault === true ||
+				rawDefault === 1 ||
+				rawDefault === "1" ||
+				rawDefault === "true";
+			field.default = boolDefault;
+		} else if (type === "textarea") {
+			const maxLength = Number(entry.maxLength ?? entry.max_length);
+			if (Number.isFinite(maxLength) && maxLength > 0) {
+				field.maxLength = Math.min(Math.max(32, maxLength), 2000);
+			}
+			const defaultValue = sanitizeSettingString(
+				entry.default ?? entry.value ?? entry.initial,
+				field.maxLength || 512,
+			);
+			if (defaultValue) field.default = defaultValue;
+		} else {
+			const maxLength = Number(entry.maxLength ?? entry.max_length);
+			if (Number.isFinite(maxLength) && maxLength > 0) {
+				field.maxLength = Math.min(Math.max(16, maxLength), 512);
+			}
+			const defaultValue = sanitizeSettingString(
+				entry.default ?? entry.value ?? entry.initial,
+				field.maxLength || 256,
+			);
+			if (defaultValue) field.default = defaultValue;
+		}
+		schema.push(field);
+		keys.add(key);
+		if (schema.length >= 24) break;
+	}
+	return schema;
+};
+
 const parseManualManifest = (manifest, dirName) => {
 	if (typeof manifest !== "object" || !manifest) return null;
 	const rootCandidate =
@@ -130,6 +270,12 @@ const parseManualManifest = (manifest, dirName) => {
 		typeof entryTypeRaw === "string" && entryTypeRaw.toLowerCase() === "script"
 			? "script"
 			: "module";
+	const schemaCandidate =
+		manifest.settings ??
+		manifest.settings_schema ??
+		manifest.preferences ??
+		manifest.schema ??
+		manifest["settings-schema"];
 	return {
 		id: safeId,
 		name,
@@ -146,6 +292,7 @@ const parseManualManifest = (manifest, dirName) => {
 		),
 		capabilities: collectStringList(manifest.capabilities ?? manifest.scopes),
 		targets: collectStringList(manifest.targets ?? manifest["applies-to"]),
+		settingsSchema: parseSettingsSchema(schemaCandidate),
 	};
 };
 
@@ -176,12 +323,14 @@ const discoverManualExtensions = async (managedInstallDirs = new Set()) => {
 				const stats = await fs.stat(join(extensionsDir, dirName));
 				hasher.update(String(stats.mtimeMs || ""));
 			} catch {}
+			const fileEndpoint = `/api/extensions/${encodeURIComponent(dirName)}/file`;
 			manuals.push({
 				...descriptor,
 				bundleHash: hasher.digest("hex"),
-				fileEndpoint: `/api/extensions/${encodeURIComponent(dirName)}/file`,
+				fileEndpoint,
 				installDir: dirName,
 				managed: false,
+				enabled: false,
 			});
 		}
 		return manuals;

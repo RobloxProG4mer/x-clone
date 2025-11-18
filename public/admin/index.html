@@ -725,6 +725,41 @@
     </div>
   </div>
 
+  <!-- Extension Settings Modal -->
+  <div class="modal fade" id="extensionSettingsModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+      <div class="modal-content">
+        <div class="modal-header">
+          <div>
+            <h5 class="modal-title" id="extensionSettingsTitle">Extension Settings</h5>
+            <p class="mb-0 text-muted small" id="extensionSettingsSubtitle"></p>
+          </div>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <div id="extensionSettingsAlert" class="alert d-none" role="alert"></div>
+          <form id="extensionSettingsForm">
+            <div id="extensionSettingsFields" class="d-grid gap-3"></div>
+          </form>
+          <div id="extensionSettingsEmpty" class="text-muted text-center py-4 d-none">
+            This extension does not expose configurable settings.
+          </div>
+        </div>
+        <div class="modal-footer d-flex justify-content-between">
+          <div class="text-muted small" id="extensionSettingsStatus"></div>
+          <div class="d-flex gap-2">
+            <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">
+              Close
+            </button>
+            <button type="button" class="btn btn-primary" id="extensionSettingsSaveBtn">
+              Save Settings
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <!-- Edit Post Modal -->
   <div class="modal fade" id="editPostModal" tabindex="-1">
     <div class="modal-dialog">

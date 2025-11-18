@@ -81,9 +81,11 @@
 			}
 			const payload = await response.json();
 			state.entries = Array.isArray(payload.extensions)
-				? payload.extensions.filter(
-						(entry) => entry?.id && entry?.rootFile && entry?.managed !== false,
-					)
+				? payload.extensions.filter((entry) => {
+						if (!entry?.id || !entry?.rootFile) return false;
+						if (entry?.managed === false) return false;
+						return entry?.enabled !== false;
+					})
 				: [];
 			state.entries.forEach(injectExtensionAssets);
 			markReady();

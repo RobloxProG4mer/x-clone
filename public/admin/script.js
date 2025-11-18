@@ -171,6 +171,48 @@ class AdminPanel {
 		});
 	}
 
+	getExtensionSettingsModal() {
+		if (this.extensionSettingsModal && this.extensionSettingsModal._ready) {
+			return this.extensionSettingsModal;
+		}
+		const modalEl = document.getElementById("extensionSettingsModal");
+		if (!modalEl) return null;
+		this.extensionSettingsModal = modalEl;
+		this.extensionSettingsModal._ready = true;
+		this.extensionSettingsModalTitle = document.getElementById(
+			"extensionSettingsTitle",
+		);
+		this.extensionSettingsModalSubtitle = document.getElementById(
+			"extensionSettingsSubtitle",
+		);
+		this.extensionSettingsForm = document.getElementById(
+			"extensionSettingsForm",
+		);
+		this.extensionSettingsFields = document.getElementById(
+			"extensionSettingsFields",
+		);
+		this.extensionSettingsEmpty = document.getElementById(
+			"extensionSettingsEmpty",
+		);
+		this.extensionSettingsAlert = document.getElementById(
+			"extensionSettingsAlert",
+		);
+		this.extensionSettingsStatus = document.getElementById(
+			"extensionSettingsStatus",
+		);
+		this.extensionSettingsSaveBtn = document.getElementById(
+			"extensionSettingsSaveBtn",
+		);
+		if (this.extensionSettingsSaveBtn) {
+			this.extensionSettingsSaveBtn.addEventListener("click", () => {
+				if (this.currentExtensionSettingsId) {
+					this.saveExtensionSettings(this.currentExtensionSettingsId);
+				}
+			});
+		}
+		return modalEl;
+	}
+
 	showExtensionDeleteConfirm({ title, message }) {
 		this.ensureExtensionConfirmModal();
 		if (this.extensionConfirmTitle)
@@ -5747,6 +5789,218 @@ class AdminPanel {
 		}
 	}
 
+	buildSettingsField(field, values) {
+		const existing = typeof values === "object" && values ? values : {};
+		const wrapper = document.createElement("div");
+		wrapper.className = "settings-field";
+		const label = document.createElement("label");
+		label.className = "form-label fw-semibold";
+		label.textContent = field.label || field.key;
+		label.htmlFor = `extension-setting-${field.key}`;
+		wrapper.appendChild(label);
+		if (field.description) {
+			const description = document.createElement("div");
+			description.className = "form-text mb-2";
+			description.textContent = field.description;
+			wrapper.appendChild(description);
+		}
+		let control;
+		const currentValue = existing[field.key] ?? field.default;
+		if (field.type === "textarea") {
+			control = document.createElement("textarea");
+			control.rows = 3;
+			if (field.maxLength) control.maxLength = field.maxLength;
+		} else if (field.type === "number") {
+			control = document.createElement("input");
+			control.type = "number";
+			if (Number.isFinite(field.min)) control.min = field.min;
+			if (Number.isFinite(field.max)) control.max = field.max;
+			if (Number.isFinite(field.step)) control.step = field.step;
+		} else if (field.type === "select") {
+			control = document.createElement("select");
+			for (const option of field.options || []) {
+				const opt = document.createElement("option");
+				opt.value = option.value;
+				opt.textContent = option.label;
+				if (option.value === currentValue) {
+					opt.selected = true;
+				}
+				control.appendChild(opt);
+			}
+		} else if (field.type === "toggle") {
+			control = document.createElement("div");
+			control.className = "form-check form-switch";
+			const input = document.createElement("input");
+			input.type = "checkbox";
+			input.className = "form-check-input";
+			input.id = `extension-setting-${field.key}`;
+			input.checked = currentValue === true;
+			control.appendChild(input);
+			wrapper.appendChild(control);
+			return wrapper;
+		} else {
+			control = document.createElement("input");
+			control.type = "text";
+			if (field.maxLength) control.maxLength = field.maxLength;
+		}
+		if (field.placeholder) {
+			control.placeholder = field.placeholder;
+		}
+		control.className = "form-control";
+		control.id = `extension-setting-${field.key}`;
+		if (field.type !== "toggle" && currentValue !== undefined) {
+			control.value = currentValue;
+		}
+		control.dataset.settingKey = field.key;
+		control.dataset.settingType = field.type;
+		wrapper.appendChild(control);
+		return wrapper;
+	}
+
+	readSettingsFormValues() {
+		if (!this.extensionSettingsFields) return {};
+		const values = {};
+		this.extensionSettingsFields
+			.querySelectorAll("[data-setting-key]")
+			.forEach((input) => {
+				const key = input.dataset.settingKey;
+				const type = input.dataset.settingType;
+				if (!key) return;
+				if (type === "toggle") {
+					values[key] = input.checked;
+				} else if (type === "number") {
+					const parsed = Number(input.value);
+					if (Number.isFinite(parsed)) {
+						values[key] = parsed;
+					}
+				} else {
+					values[key] = input.value;
+				}
+			});
+		return values;
+	}
+
+	async showExtensionSettings(extensionId) {
+		const modal = this.getExtensionSettingsModal();
+		if (!modal) return;
+		const extension = (this.extensionsData || []).find((ext) => {
+			return ext.id === extensionId;
+		});
+		if (!extension) {
+			this.showError("Extension not found");
+			return;
+		}
+		const schema = Array.isArray(extension.settings_schema)
+			? extension.settings_schema
+			: Array.isArray(extension.settingsSchema)
+				? extension.settingsSchema
+				: [];
+		if (schema.length === 0) {
+			this.showError("This extension does not expose settings");
+			return;
+		}
+		this.currentExtensionSettingsId = extensionId;
+		if (this.extensionSettingsTitle) {
+			this.extensionSettingsTitle.textContent =
+				extension.name || "Extension Settings";
+		}
+		if (this.extensionSettingsSubtitle) {
+			this.extensionSettingsSubtitle.textContent =
+				`v${extension.version || "0.0.0"}`;
+		}
+		if (this.extensionSettingsStatus) {
+			this.extensionSettingsStatus.textContent = "";
+		}
+		if (this.extensionSettingsAlert) {
+			this.extensionSettingsAlert.classList.add("d-none");
+			this.extensionSettingsAlert.textContent = "";
+		}
+		if (this.extensionSettingsFields) {
+			this.extensionSettingsFields.innerHTML = "";
+		}
+		if (this.extensionSettingsEmpty) {
+			this.extensionSettingsEmpty.classList.add("d-none");
+		}
+		if (this.extensionSettingsSaveBtn) {
+			this.extensionSettingsSaveBtn.disabled = true;
+		}
+		const bootstrapModal = window.bootstrap
+			? window.bootstrap.Modal.getOrCreateInstance(modal)
+			: null;
+		bootstrapModal?.show();
+		try {
+			const response = await this.apiCall(
+				`/api/admin/extensions/${encodeURIComponent(extensionId)}/settings`,
+			);
+			const values = response?.settings || {};
+			if (!this.extensionSettingsFields) return;
+			if (!schema.length) {
+				this.extensionSettingsEmpty?.classList.remove("d-none");
+				return;
+			}
+			schema.forEach((field) => {
+				const fieldNode = this.buildSettingsField(field, values);
+				this.extensionSettingsFields.appendChild(fieldNode);
+			});
+			if (this.extensionSettingsSaveBtn) {
+				this.extensionSettingsSaveBtn.disabled = false;
+			}
+		} catch (error) {
+			console.error("Failed to load extension settings", error);
+			if (this.extensionSettingsAlert) {
+				this.extensionSettingsAlert.textContent =
+					error.message || "Failed to load settings";
+				this.extensionSettingsAlert.classList.remove("d-none", "alert-success");
+				this.extensionSettingsAlert.classList.add("alert-danger");
+			}
+		}
+	}
+
+	async saveExtensionSettings(extensionId) {
+		if (!extensionId) return;
+		const modal = this.getExtensionSettingsModal();
+		if (!modal || !this.extensionSettingsSaveBtn) return;
+		const payload = this.readSettingsFormValues();
+		this.extensionSettingsSaveBtn.disabled = true;
+		this.extensionSettingsSaveBtn.textContent = "Saving...";
+		try {
+			await this.apiCall(
+				`/api/admin/extensions/${encodeURIComponent(extensionId)}/settings`,
+				{
+					method: "PUT",
+					body: JSON.stringify(payload),
+				},
+			);
+			if (this.extensionSettingsAlert) {
+				this.extensionSettingsAlert.textContent = "Settings saved.";
+				this.extensionSettingsAlert.classList.remove("d-none", "alert-danger");
+				this.extensionSettingsAlert.classList.add("alert-success");
+			}
+			if (this.extensionSettingsStatus) {
+				const timestamp = new Date().toLocaleTimeString();
+				this.extensionSettingsStatus.textContent = `Saved at ${timestamp}`;
+			}
+		} catch (error) {
+			console.error("Failed to save extension settings", error);
+			if (this.extensionSettingsAlert) {
+				this.extensionSettingsAlert.textContent =
+					error.message || "Failed to save settings";
+				this.extensionSettingsAlert.classList.remove("d-none", "alert-success");
+				this.extensionSettingsAlert.classList.add("alert-danger");
+			}
+		} finally {
+			this.extensionSettingsSaveBtn.disabled = false;
+			this.extensionSettingsSaveBtn.textContent = "Save Settings";
+			if (typeof window.adminPanel?.currentExtensionSettingsId === "string") {
+				const modal = this.getExtensionSettingsModal();
+				if (modal && window.bootstrap) {
+					const instance = window.bootstrap.Modal.getOrCreateInstance(modal);
+					instance.hide();
+				}
+			}
+		}
+	}
+
 	setupExtensionsForm() {
 		const form = document.getElementById("extensionUploadForm");
 		if (!form || form._extensionsReady) return;
@@ -5865,6 +6119,15 @@ class AdminPanel {
 					? '<span class="badge bg-success">Enabled</span>'
 					: '<span class="badge bg-secondary">Disabled</span>';
 
+				const schema = Array.isArray(ext.settings_schema)
+					? ext.settings_schema
+					: Array.isArray(ext.settingsSchema)
+						? ext.settingsSchema
+						: [];
+				const settingsButton =
+					schema.length && ext.managed !== false
+						? `<button type="button" class="btn btn-sm btn-outline-info" data-extension-action="settings" data-extension-id="${ext.id}">Settings</button>`
+						: "";
 				return `
           <div class="border rounded p-3 mb-3">
             <div class="d-flex align-items-start justify-content-between">
@@ -5893,6 +6156,7 @@ class AdminPanel {
 								 <button type="button" class="btn btn-sm btn-outline-secondary" data-extension-action="export" data-extension-id="${ext.id}">Convert to .tweeta</button>
 								 <button type="button" class="btn btn-sm btn-outline-danger" data-extension-action="delete" data-extension-id="${ext.id}">Delete</button>`
 					}
+					${settingsButton}
 				</div>
           </div>
         `;
@@ -5915,6 +6179,8 @@ class AdminPanel {
 					this.importExtension(extensionId);
 				} else if (action === "export") {
 					this.exportExtension(extensionId);
+				} else if (action === "settings") {
+					this.showExtensionSettings(extensionId);
 				}
 			});
 		});
