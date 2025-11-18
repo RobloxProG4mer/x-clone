@@ -6,10 +6,16 @@
 **OTHER:**
 
 - tweetapus circles like twiter circle
-
-- keyboard shortcuts
-- db indexes for speed
 - switching between accounts
+
+- allow extensions to have their own settings
+
+- somewhat improve the C algo
+
+- nicer animations, such as when navigating between tweets and threads
+- look into all XSS vulnerabitilies
+- optimize client
+- spinners on things that take time to load
 
 **Joke:**
 

@@ -246,13 +246,27 @@ export async function generateAIResponse(tweetId, mentionContent, db) {
 			for (const c of context) {
 				if (c.attachments?.length > 0) {
 					const imageContent = [
-						{ type: "text", text: `Context from ${c.author}: ${c.content}` },
+						{
+							type: "input_text",
+							text: `Context from ${c.author}: ${c.content}`,
+						},
 					];
 					for (const att of c.attachments) {
-						imageContent.push({
-							type: "image_url",
-							image_url: { url: `https://tweetapus.zip${att.file_url}` },
-						});
+						try {
+							const imagePath = att.file_url.replace(
+								"/api/uploads/",
+								".data/uploads/",
+							);
+							const base64Image = await Bun.file(imagePath)
+								.arrayBuffer()
+								.then((buf) => Buffer.from(buf).toString("base64"));
+							imageContent.push({
+								type: "input_image",
+								image_url: `data:${att.file_type};base64,${base64Image}`,
+							});
+						} catch (err) {
+							console.error("Failed to load image:", att.file_url, err);
+						}
 					}
 					messages.push({
 						role: "user",
@@ -316,7 +330,10 @@ export async function generateAIDMResponse(
 					];
 					for (const att of c.attachments) {
 						try {
-							const imagePath = `.data/uploads${att.file_url}`;
+							const imagePath = att.file_url.replace(
+								"/api/uploads/",
+								".data/uploads/",
+							);
 							const base64Image = await Bun.file(imagePath)
 								.arrayBuffer()
 								.then((buf) => Buffer.from(buf).toString("base64"));
@@ -343,7 +360,10 @@ export async function generateAIDMResponse(
 			for (const att of currentAttachments) {
 				if (att.file_type.startsWith("image/")) {
 					try {
-						const imagePath = `.data/uploads${att.file_url}`;
+						const imagePath = att.file_url.replace(
+							"/api/uploads/",
+							".data/uploads/",
+						);
 						const base64Image = await Bun.file(imagePath)
 							.arrayBuffer()
 							.then((buf) => Buffer.from(buf).toString("base64"));

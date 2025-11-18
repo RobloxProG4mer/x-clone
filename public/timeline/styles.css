@@ -219,7 +219,7 @@ nav {
 
     &.active {
       font-weight: 500;
-      
+
       svg {
         display: none;
 
@@ -3371,28 +3371,53 @@ nav {
 
 .notification-item {
   padding: 16px 0px;
+  padding-left: 16px;
   display: flex;
   flex-direction: column;
   gap: 8px;
   cursor: pointer;
-  transition: background-color 0.2s, opacity 0.15s, transform 0.2s;
+  transition: background-color 0.2s, opacity 0.15s;
   position: relative;
 
   &:active {
-    transform: scale(0.99);
+    opacity: .7;
+
+    &::after {
+      opacity: .8;
+    }
+  }
+
+  &::after {
+    content: "";
+    position: absolute;
+    left: 0;
+    right: 0px;
+    bottom: 0;
+    height: 1px;
+    border-radius: 100px;
+    background-color: var(--border-primary);
+    opacity: .5;
+    z-index: 2;
+    transition: opacity .2s;
   }
 
   &.unread {
-    padding-left: 16px;
+    background-color: rgba(var(--primary-rgb), .1);
 
     &::before {
       content: "";
       position: absolute;
+      z-index: 12;
       left: 0;
       top: 0;
       bottom: 0;
-      width: 3px;
+      width: 2.5px;
+      border-radius: 100px;
       background-color: var(--primary);
+    }
+
+    &:hover {
+      background-color: rgba(var(--primary-rgb), .05);
     }
   }
 }
