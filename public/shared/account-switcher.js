@@ -90,7 +90,7 @@ export async function openAccountSwitcher() {
 		const currentAccountItem = createAccountItem(
 			currentUser,
 			true,
-			isDelegate ? "Delegate" : "Current Account"
+			isDelegate ? "Delegate" : "Current Account",
 		);
 		accountsList.appendChild(currentAccountItem);
 
@@ -119,13 +119,20 @@ export async function openAccountSwitcher() {
 			`;
 			switchBackBtn.onclick = async () => {
 				try {
-					const { success, token, user, error } = await query("/auth/switch-to-primary", {
-						method: "POST",
-					});
+					const { success, token, user, error } = await query(
+						"/auth/switch-to-primary",
+						{
+							method: "POST",
+						},
+					);
 
 					if (success && token) {
-						const accounts = JSON.parse(localStorage.getItem("accounts") || "[]");
-						const existingIndex = accounts.findIndex(acc => acc.userId === user.id);
+						const accounts = JSON.parse(
+							localStorage.getItem("accounts") || "[]",
+						);
+						const existingIndex = accounts.findIndex(
+							(acc) => acc.userId === user.id,
+						);
 						const accountData = {
 							userId: user.id,
 							username: user.username,
@@ -136,18 +143,20 @@ export async function openAccountSwitcher() {
 							avatar_radius: user.avatar_radius,
 							token,
 						};
-						
+
 						if (existingIndex >= 0) {
 							accounts[existingIndex] = accountData;
 						} else {
 							accounts.push(accountData);
 						}
-						
+
 						localStorage.setItem("accounts", JSON.stringify(accounts));
 						localStorage.setItem("authToken", token);
 						window.location.reload();
 					} else {
-						toastQueue.add(`<h1>Error</h1><p>${error || "Failed to switch back"}</p>`);
+						toastQueue.add(
+							`<h1>Error</h1><p>${error || "Failed to switch back"}</p>`,
+						);
 					}
 				} catch (error) {
 					console.error("Switch back error:", error);
@@ -158,7 +167,10 @@ export async function openAccountSwitcher() {
 		}
 
 		const delegationsResponse = await query("/delegates/my-delegations");
-		if (delegationsResponse.delegations && delegationsResponse.delegations.length > 0) {
+		if (
+			delegationsResponse.delegations &&
+			delegationsResponse.delegations.length > 0
+		) {
 			const delegatesSection = document.createElement("div");
 			delegatesSection.style.cssText = "margin-top: 20px;";
 
@@ -180,7 +192,6 @@ export async function openAccountSwitcher() {
 
 			accountsList.appendChild(delegatesSection);
 		}
-
 	} catch (error) {
 		console.error("Error loading accounts:", error);
 		toastQueue.add("<h1>Failed to load accounts</h1>");
@@ -352,27 +363,27 @@ function createDelegateItem(delegation) {
 		font-weight: 600;
 	`;
 	nameRow.appendChild(delegateBadge);
-const accounts = JSON.parse(localStorage.getItem("accounts") || "[]");
-				const existingIndex = accounts.findIndex(acc => acc.userId === user.id);
-				const accountData = {
-					userId: user.id,
-					username: user.username,
-					name: user.name,
-					avatar: user.avatar,
-					verified: user.verified,
-					gold: user.gold,
-					avatar_radius: user.avatar_radius,
-					token,
-				};
-				
-				if (existingIndex >= 0) {
-					accounts[existingIndex] = accountData;
-				} else {
-					accounts.push(accountData);
-				}
-				
-				localStorage.setItem("accounts", JSON.stringify(accounts));
-				
+	const accounts = JSON.parse(localStorage.getItem("accounts") || "[]");
+	const existingIndex = accounts.findIndex((acc) => acc.userId === user.id);
+	const accountData = {
+		userId: user.id,
+		username: user.username,
+		name: user.name,
+		avatar: user.avatar,
+		verified: user.verified,
+		gold: user.gold,
+		avatar_radius: user.avatar_radius,
+		token,
+	};
+
+	if (existingIndex >= 0) {
+		accounts[existingIndex] = accountData;
+	} else {
+		accounts.push(accountData);
+	}
+
+	localStorage.setItem("accounts", JSON.stringify(accounts));
+
 	const username = document.createElement("div");
 	username.textContent = `@${delegation.username}`;
 	username.style.cssText = "font-size: 14px; color: var(--text-secondary);";
@@ -386,16 +397,21 @@ const accounts = JSON.parse(localStorage.getItem("accounts") || "[]");
 	item.onclick = async () => {
 		try {
 			const { default: query } = await import("../timeline/js/api.js");
-			const { success, token, user, error } = await query("/auth/switch-to-delegate", {
-				method: "POST",
-				body: JSON.stringify({ ownerId: delegation.owner_id }),
-			});
+			const { success, token, user, error } = await query(
+				"/auth/switch-to-delegate",
+				{
+					method: "POST",
+					body: JSON.stringify({ ownerId: delegation.owner_id }),
+				},
+			);
 
 			if (success && token) {
 				localStorage.setItem("authToken", token);
 				window.location.reload();
 			} else {
-				toastQueue.add(`<h1>Error</h1><p>${error || "Failed to switch to delegate"}</p>`);
+				toastQueue.add(
+					`<h1>Error</h1><p>${error || "Failed to switch to delegate"}</p>`,
+				);
 			}
 		} catch (error) {
 			console.error("Switch to delegate error:", error);
@@ -538,7 +554,9 @@ async function openAddAccountModal() {
 
 			if (success && token) {
 				const accounts = JSON.parse(localStorage.getItem("accounts") || "[]");
-				const existingIndex = accounts.findIndex(acc => acc.userId === user.id);
+				const existingIndex = accounts.findIndex(
+					(acc) => acc.userId === user.id,
+				);
 				const accountData = {
 					userId: user.id,
 					username: user.username,
@@ -549,18 +567,20 @@ async function openAddAccountModal() {
 					avatar_radius: user.avatar_radius,
 					token,
 				};
-				
+
 				if (existingIndex >= 0) {
 					accounts[existingIndex] = accountData;
 				} else {
 					accounts.push(accountData);
 				}
-				
+
 				localStorage.setItem("accounts", JSON.stringify(accounts));
 				localStorage.setItem("authToken", token);
 				window.location.reload();
 			} else {
-				toastQueue.add(`<h1>Error</h1><p>${error || "Failed to add account"}</p>`);
+				toastQueue.add(
+					`<h1>Error</h1><p>${error || "Failed to add account"}</p>`,
+				);
 			}
 		} catch (error) {
 			console.error("Add account error:", error);
@@ -571,10 +591,13 @@ async function openAddAccountModal() {
 	passkeyBtn.onclick = async () => {
 		try {
 			const { default: query } = await import("../timeline/js/api.js");
-			
-			const { options, expectedChallenge } = await query("/auth/generate-authentication-options", {
-				method: "POST",
-			});
+
+			const { options, expectedChallenge } = await query(
+				"/auth/generate-authentication-options",
+				{
+					method: "POST",
+				},
+			);
 
 			if (!options) {
 				toastQueue.add("<h1>Failed to generate authentication options</h1>");
@@ -591,7 +614,9 @@ async function openAddAccountModal() {
 
 			if (success && token) {
 				const accounts = JSON.parse(localStorage.getItem("accounts") || "[]");
-				const existingIndex = accounts.findIndex(acc => acc.userId === user.id);
+				const existingIndex = accounts.findIndex(
+					(acc) => acc.userId === user.id,
+				);
 				const accountData = {
 					userId: user.id,
 					username: user.username,
@@ -602,18 +627,20 @@ async function openAddAccountModal() {
 					avatar_radius: user.avatar_radius,
 					token,
 				};
-				
+
 				if (existingIndex >= 0) {
 					accounts[existingIndex] = accountData;
 				} else {
 					accounts.push(accountData);
 				}
-				
+
 				localStorage.setItem("accounts", JSON.stringify(accounts));
 				localStorage.setItem("authToken", token);
 				window.location.reload();
 			} else {
-				toastQueue.add(`<h1>Error</h1><p>${error || "Failed to add account"}</p>`);
+				toastQueue.add(
+					`<h1>Error</h1><p>${error || "Failed to add account"}</p>`,
+				);
 			}
 		} catch (error) {
 			console.error("Passkey authentication error:", error);

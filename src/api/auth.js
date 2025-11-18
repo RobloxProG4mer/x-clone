@@ -141,7 +141,7 @@ export default new Elysia({ prefix: "/auth", tags: ["Auth"] })
 
 				let isDelegate = false;
 				let delegateOwnerId = null;
-				let primaryUserId = payload.primaryUserId || user.id;
+				const primaryUserId = payload.primaryUserId || user.id;
 
 				if (payload.delegateOwnerId) {
 					const delegation = db
@@ -198,7 +198,7 @@ export default new Elysia({ prefix: "/auth", tags: ["Auth"] })
 		{
 			detail: {
 				description: "Returns current user information",
-			}
+			},
 		},
 	)
 	.post(
@@ -225,7 +225,9 @@ export default new Elysia({ prefix: "/auth", tags: ["Auth"] })
 					.get(ownerId, primaryUser.id);
 
 				if (!delegation) {
-					return { error: "You are not authorized to act as this user's delegate" };
+					return {
+						error: "You are not authorized to act as this user's delegate",
+					};
 				}
 
 				const owner = db.query("SELECT * FROM users WHERE id = ?").get(ownerId);
@@ -282,7 +284,9 @@ export default new Elysia({ prefix: "/auth", tags: ["Auth"] })
 					return { error: "You are not currently in delegate mode" };
 				}
 
-				const primaryUser = db.query("SELECT * FROM users WHERE id = ?").get(payload.primaryUserId);
+				const primaryUser = db
+					.query("SELECT * FROM users WHERE id = ?")
+					.get(payload.primaryUserId);
 				if (!primaryUser) return { error: "Primary account not found" };
 
 				const primaryToken = await jwt.sign({

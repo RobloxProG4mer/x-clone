@@ -10,8 +10,8 @@ let _user;
 
 function saveAccountToStorage(user, token) {
 	const accounts = JSON.parse(localStorage.getItem("accounts") || "[]");
-	
-	const existingIndex = accounts.findIndex(acc => acc.userId === user.id);
+
+	const existingIndex = accounts.findIndex((acc) => acc.userId === user.id);
 	const accountData = {
 		userId: user.id,
 		username: user.username,
@@ -22,13 +22,13 @@ function saveAccountToStorage(user, token) {
 		avatar_radius: user.avatar_radius,
 		token: token,
 	};
-	
+
 	if (existingIndex >= 0) {
 		accounts[existingIndex] = accountData;
 	} else {
 		accounts.push(accountData);
 	}
-	
+
 	localStorage.setItem("accounts", JSON.stringify(accounts));
 }
 
@@ -131,7 +131,9 @@ function saveAccountToStorage(user, token) {
 
 					icon: `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>`,
 					onClick: async () => {
-						const { openAccountSwitcher } = await import("../../shared/account-switcher.js");
+						const { openAccountSwitcher } = await import(
+							"../../shared/account-switcher.js"
+						);
 						openAccountSwitcher();
 					},
 				},

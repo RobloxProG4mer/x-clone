@@ -867,9 +867,9 @@ export const useComposer = (
 										? `<img src="/public/shared/assets/uploads/${c.icon}" style="width: 24px; height: 24px; border-radius: 6px; object-fit: cover;" />`
 										: `<div style="width: 24px; height: 24px; border-radius: 6px; background: var(--primary); color: white; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 700;">${c.name[0].toUpperCase()}</div>`
 								}
-                <span style="font-size: 14px; color: var(--text-primary);">${
-									c.name.replace(/</g, "&lt;").replace(/>/g, "&gt;")
-								}</span>
+                <span style="font-size: 14px; color: var(--text-primary);">${c.name
+									.replace(/</g, "&lt;")
+									.replace(/>/g, "&gt;")}</span>
               </div>
             `,
 							)
