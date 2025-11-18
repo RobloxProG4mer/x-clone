@@ -86,126 +86,114 @@ class AdminPanel {
 			this.setupEventListeners();
 			this.loadDashboard();
 			try {
-				this.setupCloneForm();
-			} catch (_e) {}
-			try {
-				this.setupFakeNotificationForm();
-			} catch (_e) {}
-		} catch {
-			location.href = "/";
-		}
-	}
-
-	setupEventListeners() {
-		document.querySelectorAll(".nav-link[data-section]").forEach((link) => {
-			link.addEventListener("click", (e) => {
-				e.preventDefault();
-				const section = e.target.dataset.section;
-				this.showSection(section);
-				this.updateActiveNav(e.target);
-			});
-		});
-
-		document.getElementById("userSearch").addEventListener("keypress", (e) => {
-			if (e.key === "Enter") {
-				this.searchUsers();
-			}
-		});
-
-		document.getElementById("postSearch").addEventListener("keypress", (e) => {
-			if (e.key === "Enter") {
-				this.searchPosts();
-			}
-		});
-
-		document
-			.getElementById("dmSearchInput")
-			.addEventListener("keypress", (e) => {
-				if (e.key === "Enter") {
-					this.searchDMs();
+				async loadSuspensions(page = 1) {
+					try {
+						const params = new URLSearchParams({ page, limit: 20 });
+						const data = await this.apiCall(`/api/admin/suspensions?${params}`);
+						this.renderSuspensionsTable(data.suspensions);
+						this.renderPagination("suspensions", data.pagination);
+						this.currentPage.suspensions = page;
+					} catch {
+						this.showError("Failed to load suspensions");
+					}
 				}
-			});
-	}
 
-	ensureExtensionConfirmModal() {
-		if (this.extensionConfirmModal) return;
-		const wrapper = document.createElement("div");
-		wrapper.id = "extension-delete-confirm";
-		wrapper.className =
-			"position-fixed top-0 start-0 w-100 h-100 d-none align-items-center justify-content-center";
-		wrapper.style.zIndex = 10500;
-		wrapper.innerHTML = `
-			<div class="modal-backdrop show" style="position:absolute;inset:0;background:rgba(0,0,0,.6);"></div>
-			<div class="card bg-dark text-light shadow" style="z-index:10001;max-width:520px;width:90%;">
-				<div class="card-body">
-					<h5 class="card-title mb-2">Confirm Action</h5>
-					<p class="card-text text-muted mb-3">Are you sure?</p>
-					<div class="d-flex justify-content-end gap-2">
-						<button type="button" data-action="cancel" class="btn btn-outline-secondary">Cancel</button>
-						<button type="button" data-action="deimport" class="btn btn-warning">De-Import</button>
-						<button type="button" data-action="confirm" class="btn btn-danger">Delete</button>
-					</div>
-				</div>
-			</div>
-		`;
-		document.body.appendChild(wrapper);
-		this.extensionConfirmModal = wrapper;
-		this.extensionConfirmTitle = wrapper.querySelector(".card-title");
-		this.extensionConfirmMessage = wrapper.querySelector(".card-text");
-		wrapper.addEventListener("click", (event) => {
-			const action = event.target?.closest("[data-action]");
-			if (!action) {
-				if (event.target === wrapper) {
-					this.hideExtensionConfirmModal("cancel");
+				renderSuspensionsTable(suspensions) {
+					const container = document.getElementById("suspensionsTable");
+					if (!container) return;
+					const list = Array.isArray(suspensions) ? suspensions : [];
+					if (!list.length) {
+						container.innerHTML =
+							'<p class="text-muted text-center">No active suspensions</p>';
+						return;
+					}
+
+					const rows = list
+						.map((suspension) => {
+							const avatar = suspension.avatar
+								? `<img src="${this.escapeHtml(
+											suspension.avatar,
+									)}" alt="@${this.escapeHtml(
+											suspension.username || "user",
+									)}" class="rounded-circle me-2" style="width:40px;height:40px;object-fit:cover;" />`
+								: '<div class="user-avatar me-2 bg-secondary rounded-circle d-flex align-items-center justify-content-center" style="width:40px;height:40px;"><i class="bi bi-person text-white"></i></div>';
+							const username = this.escapeHtml(suspension.username || "unknown");
+							const name = suspension.name
+								? `<br><small class="text-muted">${this.escapeHtml(suspension.name)}</small>`
+								: "";
+							const reason = suspension.reason
+								? this.escapeHtml(suspension.reason)
+								: "No reason provided";
+							const notes = suspension.notes
+								? `<small class="text-muted d-block">Notes: ${this.escapeHtml(
+											suspension.notes,
+									)}</small>`
+								: "";
+							let actionBadge = `<span class="badge bg-secondary">${this.escapeHtml(
+									suspension.action || "unknown",
+								)}</span>`;
+							if (suspension.action === "suspend") {
+								actionBadge = '<span class="badge bg-danger">Suspended</span>';
+							} else if (suspension.action === "restrict") {
+								actionBadge = '<span class="badge bg-warning text-dark">Restricted</span>';
+							}
+							const expires = suspension.expires_at
+								? this.formatDate(suspension.expires_at)
+								: "Permanent";
+							return `
+								<tr>
+									<td>
+										<div class="d-flex align-items-center">
+											${avatar}
+											<div>
+												<strong>@${username}</strong>
+												${name}
+											</div>
+										</div>
+									</td>
+									<td>
+										<div style="max-width:250px;overflow:hidden;text-overflow:ellipsis;">
+											${reason}
+										</div>
+										${notes}
+									</td>
+									<td>${actionBadge}</td>
+									<td><small>@${this.escapeHtml(
+											suspension.suspended_by_username || "system",
+									)}</small></td>
+									<td><small>${this.formatDate(suspension.created_at)}</small></td>
+									<td><small>${expires}</small></td>
+									<td>
+										<button class="btn btn-outline-success btn-sm" onclick="adminPanel.showLiftModal('${this.escapeHtml(
+											suspension.user_id,
+									)}', ['${this.escapeHtml(suspension.action || "suspend")}'])">
+											<i class="bi bi-check-circle"></i> Lift
+										</button>
+									</td>
+								</tr>
+							`;
+						})
+						.join("");
+
+					container.innerHTML = `
+						<div class="table-responsive">
+							<table class="table table-hover">
+								<thead>
+									<tr>
+										<th>User</th>
+										<th>Reason</th>
+										<th>Action</th>
+										<th>By</th>
+										<th>Date</th>
+										<th>Expires</th>
+										<th></th>
+									</tr>
+								</thead>
+								<tbody>${rows}</tbody>
+							</table>
+						</div>
+					`;
 				}
-				return;
-			}
-			const type = action.dataset.action;
-			if (type === "cancel") {
-				this.hideExtensionConfirmModal("cancel");
-			} else if (type === "deimport") {
-				this.hideExtensionConfirmModal("deimport");
-			} else if (type === "confirm") {
-				this.hideExtensionConfirmModal("confirm");
-			}
-		});
-	}
-
-	getExtensionSettingsModal() {
-		if (this.extensionSettingsModal && this.extensionSettingsModal._ready) {
-			return this.extensionSettingsModal;
-		}
-		const modalEl = document.getElementById("extensionSettingsModal");
-		if (!modalEl) return null;
-		this.extensionSettingsModal = modalEl;
-		this.extensionSettingsModal._ready = true;
-		this.extensionSettingsModalTitle = document.getElementById(
-			"extensionSettingsTitle",
-		);
-		this.extensionSettingsModalSubtitle = document.getElementById(
-			"extensionSettingsSubtitle",
-		);
-		this.extensionSettingsForm = document.getElementById(
-			"extensionSettingsForm",
-		);
-		this.extensionSettingsFields = document.getElementById(
-			"extensionSettingsFields",
-		);
-		this.extensionSettingsEmpty = document.getElementById(
-			"extensionSettingsEmpty",
-		);
-		this.extensionSettingsAlert = document.getElementById(
-			"extensionSettingsAlert",
-		);
-		this.extensionSettingsStatus = document.getElementById(
-			"extensionSettingsStatus",
-		);
-		this.extensionSettingsSaveBtn = document.getElementById(
-			"extensionSettingsSaveBtn",
-		);
-		if (this.extensionSettingsSaveBtn) {
-			this.extensionSettingsSaveBtn.addEventListener("click", () => {
-				if (this.currentExtensionSettingsId) {
 					this.saveExtensionSettings(this.currentExtensionSettingsId);
 				}
 			});
@@ -1439,17 +1427,17 @@ class AdminPanel {
                   <div class="d-flex align-items-center">
                     ${
 											suspension.avatar
-												? (
-														() => {
-															const radius =
-																suspension.avatar_radius !== null &&
-																suspension.avatar_radius !== undefined
-																	? `${suspension.avatar_radius}px`
-																	: suspension.gold
-																		? `4px`
-																		: `50px`;
-															return `<img src="${suspension.avatar}" class="user-avatar me-2" alt="Avatar" style="border-radius: ${radius};">`;
-														}
+			if (choice === "cancel") return;
+			const removeFilesFlag = choice === "delete";
+			if (!removeFilesFlag && targetExtension?.install_dir) {
+				const manualRecord = {
+					...targetExtension,
+					id: dir,
+					install_dir: dir,
+					managed: false,
+					enabled: targetExtension.enabled,
+					settings_schema: fallbackSchema,
+				};
 													)()
 												: `<div class="user-avatar me-2 bg-secondary rounded-circle d-flex align-items-center justify-content-center">
                         <i class="bi bi-person text-white"></i>
@@ -5773,13 +5761,12 @@ class AdminPanel {
 					console.error("Fallback public extensions fetch failed", err2);
 				}
 			}
-			// Ensure non-imported (manual) extensions are always treated as disabled
 			list = (list || []).map((e) => {
 				const managed = !!e.managed;
 				return {
 					...e,
 					managed,
-					enabled: managed ? !!e.enabled : false,
+					enabled: !!e.enabled,
 				};
 			});
 			this.extensionsData = list;

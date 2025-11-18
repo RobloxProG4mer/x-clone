@@ -141,8 +141,12 @@ const getUserRetweets = db.prepare(`
 `);
 
 const getFollowStatus = db.prepare(`
-  SELECT id FROM follows WHERE follower_id = ? AND following_id = ?
+	SELECT id, notify_tweets FROM follows WHERE follower_id = ? AND following_id = ?
 `);
+
+const updateFollowNotificationPreference = db.prepare(
+	`UPDATE follows SET notify_tweets = ? WHERE follower_id = ? AND following_id = ?`,
+);
 
 const addFollow = db.prepare(`
   INSERT INTO follows (id, follower_id, following_id) VALUES (?, ?, ?)
@@ -469,6 +473,7 @@ export default new Elysia({ prefix: "/profile", tags: ["Profile"] })
 			let isOwnProfile = false;
 			let currentUserId = null;
 			let followRequestStatus = null;
+			let notifyTweetsSetting = false;
 
 			const authorization = headers.authorization;
 			if (authorization) {
@@ -487,6 +492,7 @@ export default new Elysia({ prefix: "/profile", tags: ["Profile"] })
 									user.id,
 								);
 								isFollowing = !!followStatus;
+								notifyTweetsSetting = !!followStatus?.notify_tweets;
 
 								const followsBackStatus = getFollowStatus.get(
 									user.id,
@@ -522,6 +528,7 @@ export default new Elysia({ prefix: "/profile", tags: ["Profile"] })
 			}
 
 			profile.blockedByProfile = blockedByProfile;
+			profile.notifyTweets = notifyTweetsSetting;
 
 			// If the account is shadowbanned, hide their posts unless the viewer is the owner or an admin
 			if (user.shadowbanned && !isOwnProfile) {
@@ -1126,6 +1133,50 @@ export default new Elysia({ prefix: "/profile", tags: ["Profile"] })
 		} catch (error) {
 			console.error("Unfollow error:", error);
 			return { error: "Failed to unfollow user" };
+		}
+	})
+	.post("/:username/notify-tweets", async ({ params, jwt, headers, body }) => {
+		const authorization = headers.authorization;
+		if (!authorization) return { error: "Authentication required" };
+
+		try {
+			const payload = await jwt.verify(authorization.replace("Bearer ", ""));
+			if (!payload) return { error: "Invalid token" };
+
+			const currentUser = getUserByUsername.get(payload.username);
+			if (!currentUser) return { error: "User not found" };
+
+			const { username } = params;
+			const targetUser = getUserByUsername.get(username);
+			if (!targetUser) return { error: "User not found" };
+
+			if (currentUser.id === targetUser.id) {
+				return { error: "You cannot enable notifications for yourself" };
+			}
+
+			const followStatus = getFollowStatus.get(
+				currentUser.id,
+				targetUser.id,
+			);
+			if (!followStatus) {
+				return { error: "You must follow this user to update notification settings" };
+			}
+
+			const notify = body?.notify;
+			if (typeof notify !== "boolean") {
+				return { error: "Invalid notify setting" };
+			}
+
+			updateFollowNotificationPreference.run(
+				notify ? 1 : 0,
+				currentUser.id,
+				targetUser.id,
+			);
+
+			return { success: true };
+		} catch (error) {
+			console.error("Update notify tweets error:", error);
+			return { error: "Failed to update notification settings" };
 		}
 	})
 	.post("/:username/avatar", async ({ params, jwt, headers, body }) => {

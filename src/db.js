@@ -62,6 +62,7 @@ CREATE TABLE IF NOT EXISTS follows (
   id TEXT PRIMARY KEY,
   follower_id TEXT NOT NULL,
   following_id TEXT NOT NULL,
+  notify_tweets BOOLEAN DEFAULT FALSE,
   created_at TIMESTAMP DEFAULT (datetime('now', 'utc')),
   FOREIGN KEY (follower_id) REFERENCES users(id) ON DELETE CASCADE,
   FOREIGN KEY (following_id) REFERENCES users(id) ON DELETE CASCADE,
