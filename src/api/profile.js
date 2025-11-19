@@ -313,6 +313,46 @@ const getCardOptions = db.prepare(`
   SELECT * FROM interactive_card_options WHERE card_id = ? ORDER BY option_order ASC
 `);
 
+const getBlockStatus = db.prepare(`
+	SELECT 1 FROM blocks WHERE blocker_id = ? AND blocked_id = ?
+`);
+
+const getTweetForPin = db.prepare(`
+	SELECT * FROM posts WHERE id = ? AND user_id = ?
+`);
+
+const getExistingPinnedTweet = db.prepare(`
+	SELECT * FROM posts WHERE user_id = ? AND pinned = 1
+`);
+
+const unpinTweet = db.prepare(`
+	UPDATE posts SET pinned = 0 WHERE id = ?
+`);
+
+const pinTweet = db.prepare(`
+	UPDATE posts SET pinned = 1 WHERE id = ?
+`);
+
+const updateCAlgorithmSetting = db.prepare(`
+	UPDATE users SET use_c_algorithm = ? WHERE id = ?
+`);
+
+const getCommunityMembership = db.prepare(`
+	SELECT * FROM community_members WHERE user_id = ? AND community_id = ? AND banned = FALSE
+`);
+
+const getCommunityById = db.prepare(`
+	SELECT * FROM communities WHERE id = ?
+`);
+
+const clearCommunityTag = db.prepare(`
+	UPDATE users SET selected_community_tag = NULL WHERE id = ?
+`);
+
+const updateCommunityTag = db.prepare(`
+	UPDATE users SET selected_community_tag = ? WHERE id = ?
+`);
+
 const getCardDataForTweet = (tweetId) => {
 	const card = getCardByPostId.get(tweetId);
 	if (!card) return null;
@@ -467,18 +507,9 @@ export default new Elysia({ prefix: "/profile", tags: ["Profile"] })
 				ORDER BY retweets.created_at DESC
 				LIMIT 10
 			`);
-			const repliesQuery = db.query(`
-				SELECT posts.*, users.username, users.name, users.avatar, users.verified, users.gold, users.avatar_radius, users.affiliate, users.affiliate_with
-				FROM posts 
-				JOIN users ON posts.user_id = users.id 
-				WHERE posts.user_id = ? AND posts.reply_to IS NOT NULL
-				ORDER BY posts.created_at DESC 
-				LIMIT 20
-			`);
 
 			const userPosts = userPostsQuery.all(user.id);
 			const userRetweets = userRetweetsQuery.all(user.id);
-			const replies = repliesQuery.all(user.id);
 
 			const profile = {
 				...user,
@@ -549,9 +580,7 @@ export default new Elysia({ prefix: "/profile", tags: ["Profile"] })
 			// to show a banner and disable interactions.
 			let blockedByProfile = false;
 			if (currentUserId && !isOwnProfile) {
-				const blockedRow = db
-					.query("SELECT 1 FROM blocks WHERE blocker_id = ? AND blocked_id = ?")
-					.get(user.id, currentUserId);
+				const blockedRow = getBlockStatus.get(user.id, currentUserId);
 				blockedByProfile = !!blockedRow;
 			}
 
@@ -601,7 +630,7 @@ export default new Elysia({ prefix: "/profile", tags: ["Profile"] })
 				.slice(0, 20);
 
 			// Batch fetch affiliate profiles
-			const allPostsAndReplies = [...allContent, ...replies];
+			const allPostsAndReplies = [...allContent];
 			const affiliateIds = new Set();
 			if (profile.affiliate_with) affiliateIds.add(profile.affiliate_with);
 			for (const item of allPostsAndReplies) {
@@ -611,17 +640,24 @@ export default new Elysia({ prefix: "/profile", tags: ["Profile"] })
 			}
 			const affiliateProfilesMap = new Map();
 			if (affiliateIds.size > 0) {
-				const affiliateProfiles = db.query(`
+				const affiliateProfiles = db
+					.query(`
 					SELECT id, username, name, avatar, verified, gold, avatar_radius 
-					FROM users WHERE id IN (${[...affiliateIds].map(() => '?').join(',')})
-				`).all(...affiliateIds);
+					FROM users WHERE id IN (${[...affiliateIds].map(() => "?").join(",")})
+				`)
+					.all(...affiliateIds);
 				for (const aff of affiliateProfiles) {
 					affiliateProfilesMap.set(aff.id, aff);
 				}
 			}
 
-			if (profile.affiliate_with && affiliateProfilesMap.has(profile.affiliate_with)) {
-				profile.affiliate_with_profile = affiliateProfilesMap.get(profile.affiliate_with);
+			if (
+				profile.affiliate_with &&
+				affiliateProfilesMap.has(profile.affiliate_with)
+			) {
+				profile.affiliate_with_profile = affiliateProfilesMap.get(
+					profile.affiliate_with,
+				);
 			}
 
 			// Build author objects with affiliate data
@@ -636,8 +672,14 @@ export default new Elysia({ prefix: "/profile", tags: ["Profile"] })
 					affiliate: item.affiliate || false,
 					affiliate_with: item.affiliate_with || null,
 				};
-				if (author.affiliate && author.affiliate_with && affiliateProfilesMap.has(author.affiliate_with)) {
-					author.affiliate_with_profile = affiliateProfilesMap.get(author.affiliate_with);
+				if (
+					author.affiliate &&
+					author.affiliate_with &&
+					affiliateProfilesMap.has(author.affiliate_with)
+				) {
+					author.affiliate_with_profile = affiliateProfilesMap.get(
+						author.affiliate_with,
+					);
 				}
 				item.author = author;
 			}
@@ -651,28 +693,32 @@ export default new Elysia({ prefix: "/profile", tags: ["Profile"] })
 				processedReplies = [];
 			} else {
 				// Batch fetch all attachments
-				const allPostIds = allContent.map(p => p.id);
-				const allReplyIds = replies.map(r => r.id);
-				const allIds = [...allPostIds, ...allReplyIds];
-				
+				const allPostIds = allContent.map((p) => p.id);
+				const allIds = [...allPostIds];
+
 				const attachmentsMap = new Map();
 				const factChecksMap = new Map();
-				
+
 				if (allIds.length > 0) {
-					const attachments = db.query(`
-						SELECT * FROM attachments WHERE post_id IN (${allIds.map(() => '?').join(',')})
-					`).all(...allIds);
+					const attachments = db
+						.query(`
+						SELECT * FROM attachments WHERE post_id IN (${allIds.map(() => "?").join(",")})
+					`)
+						.all(...allIds);
 					for (const att of attachments) {
-						if (!attachmentsMap.has(att.post_id)) attachmentsMap.set(att.post_id, []);
+						if (!attachmentsMap.has(att.post_id))
+							attachmentsMap.set(att.post_id, []);
 						attachmentsMap.get(att.post_id).push(att);
 					}
-					
-					const factChecks = db.query(`
+
+					const factChecks = db
+						.query(`
 						SELECT fc.*, u.username as admin_username, u.name as admin_name
 						FROM fact_checks fc
 						JOIN users u ON fc.created_by = u.id
-						WHERE fc.post_id IN (${allIds.map(() => '?').join(',')})
-					`).all(...allIds);
+						WHERE fc.post_id IN (${allIds.map(() => "?").join(",")})
+					`)
+						.all(...allIds);
 					for (const fc of factChecks) {
 						factChecksMap.set(fc.post_id, fc);
 					}
@@ -689,19 +735,7 @@ export default new Elysia({ prefix: "/profile", tags: ["Profile"] })
 					interactive_card: getCardDataForTweet(post.id),
 				}));
 
-				processedReplies = replies.map((reply) => ({
-					...reply,
-					poll: getPollDataForPost(reply.id, currentUserId),
-					quoted_tweet: getQuotedPostData(
-						reply.quote_tweet_id,
-						currentUserId,
-					),
-					attachments: attachmentsMap.get(reply.id) || [],
-					liked_by_user: false,
-					retweeted_by_user: false,
-					fact_check: factChecksMap.get(reply.id) || null,
-					interactive_card: getCardDataForTweet(reply.id),
-				}));
+				processedReplies = [];
 			}
 
 			// Get likes and retweets for current user
@@ -745,7 +779,7 @@ export default new Elysia({ prefix: "/profile", tags: ["Profile"] })
 			return {
 				profile,
 				posts,
-				replies: processedReplies,
+				replies: [],
 				isFollowing,
 				followsMe,
 				isOwnProfile,
@@ -1987,27 +2021,17 @@ export default new Elysia({ prefix: "/profile", tags: ["Profile"] })
 				return { error: "You can only pin your own tweets" };
 			}
 
-			// Check if tweet exists and belongs to user
-			const tweet = db
-				.query("SELECT * FROM posts WHERE id = ? AND user_id = ?")
-				.get(tweetId, currentUser.id);
+			const tweet = getTweetForPin.get(tweetId, currentUser.id);
 			if (!tweet) {
 				return { error: "Tweet not found or doesn't belong to you" };
 			}
 
-			// Check if user already has a pinned tweet
-			const existingPinned = db
-				.query("SELECT * FROM posts WHERE user_id = ? AND pinned = 1")
-				.get(currentUser.id);
+			const existingPinned = getExistingPinnedTweet.get(currentUser.id);
 			if (existingPinned) {
-				// Unpin the existing tweet
-				db.query("UPDATE posts SET pinned = 0 WHERE id = ?").run(
-					existingPinned.id,
-				);
+				unpinTweet.run(existingPinned.id);
 			}
 
-			// Pin the new tweet
-			db.query("UPDATE posts SET pinned = 1 WHERE id = ?").run(tweetId);
+			pinTweet.run(tweetId);
 
 			return { success: true };
 		} catch (error) {
@@ -2031,8 +2055,7 @@ export default new Elysia({ prefix: "/profile", tags: ["Profile"] })
 				return { error: "You can only unpin your own tweets" };
 			}
 
-			// Unpin the tweet
-			db.query("UPDATE posts SET pinned = 0 WHERE id = ?").run(tweetId);
+			unpinTweet.run(tweetId);
 
 			return { success: true };
 		} catch (error) {
@@ -2053,10 +2076,7 @@ export default new Elysia({ prefix: "/profile", tags: ["Profile"] })
 
 			const { enabled } = body;
 
-			db.query("UPDATE users SET use_c_algorithm = ? WHERE id = ?").run(
-				enabled ? 1 : 0,
-				currentUser.id,
-			);
+			updateCAlgorithmSetting.run(enabled ? 1 : 0, currentUser.id);
 
 			return { success: true };
 		} catch (error) {
@@ -2085,60 +2105,45 @@ export default new Elysia({ prefix: "/profile", tags: ["Profile"] })
 			return { error: "Failed to update setting" };
 		}
 	})
-.post("/settings/community-tag", async ({ jwt, headers, body }) => {
-	const authorization = headers.authorization;
-	if (!authorization) return { error: "Authentication required" };
+	.post("/settings/community-tag", async ({ jwt, headers, body }) => {
+		const authorization = headers.authorization;
+		if (!authorization) return { error: "Authentication required" };
 
-	try {
-		const payload = await jwt.verify(authorization.replace("Bearer ", ""));
-		if (!payload) return { error: "Invalid token" };
+		try {
+			const payload = await jwt.verify(authorization.replace("Bearer ", ""));
+			if (!payload) return { error: "Invalid token" };
 
-		const currentUser = getUserByUsername.get(payload.username);
-		if (!currentUser) return { error: "User not found" };
+			const currentUser = getUserByUsername.get(payload.username);
+			if (!currentUser) return { error: "User not found" };
 
-		const { community_id } = body;
+			const { community_id } = body;
 
-		// If community_id is null, clear the tag
-		if (!community_id) {
-			db.query("UPDATE users SET selected_community_tag = NULL WHERE id = ?").run(
-				currentUser.id,
-			);
+			if (!community_id) {
+				clearCommunityTag.run(currentUser.id);
+				return { success: true };
+			}
+
+			const membership = getCommunityMembership.get(currentUser.id, community_id);
+
+			if (!membership) {
+				return { error: "You are not a member of this community" };
+			}
+
+			const community = getCommunityById.get(community_id);
+
+			if (!community) {
+				return { error: "Community not found" };
+			}
+
+			if (!community.tag_enabled) {
+				return { error: "This community does not have tags enabled" };
+			}
+
+			updateCommunityTag.run(community_id, currentUser.id);
+
 			return { success: true };
+		} catch (error) {
+			console.error("Update community tag setting error:", error);
+			return { error: "Failed to update setting" };
 		}
-
-		// Verify user is a member of the community
-		const membership = db
-			.query(
-				"SELECT * FROM community_members WHERE user_id = ? AND community_id = ? AND banned = FALSE",
-			)
-			.get(currentUser.id, community_id);
-
-		if (!membership) {
-			return { error: "You are not a member of this community" };
-		}
-
-		// Verify the community has tags enabled
-		const community = db
-			.query("SELECT * FROM communities WHERE id = ?")
-			.get(community_id);
-
-		if (!community) {
-			return { error: "Community not found" };
-		}
-
-		if (!community.tag_enabled) {
-			return { error: "This community does not have tags enabled" };
-		}
-
-		// Update user's selected community tag
-		db.query("UPDATE users SET selected_community_tag = ? WHERE id = ?").run(
-			community_id,
-			currentUser.id,
-		);
-
-		return { success: true };
-	} catch (error) {
-		console.error("Update community tag setting error:", error);
-		return { error: "Failed to update setting" };
-	}
-});
+	});

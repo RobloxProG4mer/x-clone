@@ -253,7 +253,7 @@ function createNotificationElement(group) {
 		iconEl.className = "notification-icon custom-icon";
 		const img = document.createElement("img");
 		img.alt = "";
-		img.loading = "lazy";
+		img.setAttribute("loading", "lazy");
 		let src = "";
 		if (customIcon.kind === "svg" && customIcon.dataUri) {
 			src = customIcon.dataUri;
@@ -307,7 +307,7 @@ function createNotificationElement(group) {
 				avatar.className = "notification-avatar";
 				avatar.src = notif.actor_avatar;
 				avatar.alt = notif.actor_name || notif.actor_username || "";
-				avatar.loading = "lazy";
+				avatar.setAttribute("loading", "lazy");
 
 				if (
 					notif.actor_avatar_radius !== undefined &&

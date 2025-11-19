@@ -1905,7 +1905,7 @@ const openNewAvatarTweetPrompt = (avatarUrl) => {
 	const preview = document.createElement("img");
 	preview.src = avatarUrl;
 	preview.alt = "New profile picture preview";
-	preview.loading = "lazy";
+	preview.setAttribute("loading", "lazy");
 	content.appendChild(preview);
 
 	const actions = document.createElement("div");

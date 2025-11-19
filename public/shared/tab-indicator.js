@@ -11,40 +11,17 @@ export function updateTabIndicator(container, activeTab) {
 	const activeIndex = tabs.indexOf(activeTab);
 	if (activeIndex === -1) return;
 
-	const tabWidth = activeTab.offsetWidth;
-	const tabLeft = activeTab.offsetLeft;
+	requestAnimationFrame(() => {
+		const tabWidth = activeTab.offsetWidth;
+		const tabLeft = activeTab.offsetLeft;
 
-	indicator.style.setProperty("--indicator-width", `${tabWidth}px`);
-	indicator.style.setProperty("--indicator-left", `${tabLeft}px`);
+		if (tabWidth === 0 || tabLeft === undefined) {
+			setTimeout(() => updateTabIndicator(container, activeTab), 50);
+			return;
+		}
 
-	if (!indicator.style.getPropertyValue("--indicator-width")) {
 		indicator.style.setProperty("--indicator-width", `${tabWidth}px`);
 		indicator.style.setProperty("--indicator-left", `${tabLeft}px`);
-	}
-
-	const afterEl = window.getComputedStyle(indicator, "::after");
-	if (afterEl) {
-		const currentTransform = `translateX(${tabLeft}px)`;
-		indicator.style.setProperty("--indicator-transform", currentTransform);
-
-		if (indicator.getAttribute("data-indicator-init") !== "true") {
-			indicator.style.setProperty("--indicator-width", `${tabWidth}px`);
-			indicator.style.setProperty("--indicator-left", `${tabLeft}px`);
-			indicator.setAttribute("data-indicator-init", "true");
-		}
-	}
-
-	requestAnimationFrame(() => {
-		if (indicator.parentElement?.style) {
-			indicator.parentElement.style.setProperty(
-				"--indicator-width",
-				`${tabWidth}px`,
-			);
-			indicator.parentElement.style.setProperty(
-				"--indicator-left",
-				`${tabLeft}px`,
-			);
-		}
 
 		const style = document.createElement("style");
 		const existingStyle = document.getElementById("tab-indicator-animation");
@@ -59,6 +36,7 @@ export function updateTabIndicator(container, activeTab) {
 			}
 		`;
 		document.head.appendChild(style);
+		indicator.setAttribute("data-indicator-init", "true");
 	});
 }
 

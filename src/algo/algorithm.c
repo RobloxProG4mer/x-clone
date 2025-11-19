@@ -96,6 +96,20 @@ static double calculate_age_diversity_boost(int like_count, int retweet_count, i
     return 1.0;
 }
 
+static inline double content_repeat_penalty(int content_repeats) {
+    if (content_repeats <= 0) return 1.0;
+    double penalty = pow(0.6, (double)content_repeats);
+    if (penalty < 0.02) penalty = 0.02;
+    return penalty;
+}
+
+static inline double author_repeat_penalty(int author_repeats) {
+    if (author_repeats <= 0) return 1.0;
+    double penalty = pow(0.78, (double)author_repeats);
+    if (penalty < 0.08) penalty = 0.08;
+    return penalty;
+}
+
 static double calculate_virality_boost(int like_count, int retweet_count, double age_hours) {
     int total_actions = like_count + retweet_count * 3 + (retweet_count > 0 ? retweet_count : 0);
     
@@ -234,11 +248,9 @@ double calculate_score(
         }
     }
 
-    double author_penalty = 1.0 / (1.0 + (double)author_repeats * 0.85);
-    if (author_penalty < 0.12) author_penalty = 0.12;
+    double author_penalty = author_repeat_penalty(author_repeats);
 
-    double content_penalty = 1.0 / (1.0 + (double)content_repeats * 2.0);
-    if (content_penalty < 0.05) content_penalty = 0.05;
+    double content_penalty = content_repeat_penalty(content_repeats);
 
     double position_penalty = 1.0;
     if (position_in_feed < 5) {
@@ -336,16 +348,10 @@ double calculate_score(
         random_multiplier *= (1.0 + random_factor * 0.5);
     }
     
-    /* stronger content sensitivity to avoid repeating identical tweets */
-    if (content_repeats > 0) {
-        /* additional nonlinear downscale when the same content is repeated */
-        content_penalty *= 1.0 / (1.0 + (double)content_repeats * 0.85);
-        if (content_penalty < 0.03) content_penalty = 0.03;
-    }
+    /* content_repeat_penalty already applied; no further multiplicative adjustments */
 
-    /* Slightly tighten author penalty for better diversity */
-    author_penalty = 1.0 / (1.0 + (double)author_repeats * 1.1);
-    if (author_penalty < 0.10) author_penalty = 0.10;
+    /* author_penalty is computed earlier using exponential penalty; clamp floor value */
+    if (author_penalty < 0.08) author_penalty = 0.08;
 
     /* Age diversity: favor slightly older content that still attracts engagement */
     double age_diversity = calculate_age_diversity_boost(like_count, retweet_count, reply_count, quote_count, age_hours);

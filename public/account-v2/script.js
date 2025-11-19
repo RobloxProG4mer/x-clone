@@ -156,7 +156,7 @@ const createSimpleTweetElement = (tweet) => {
 		tweet.author.avatar || `/public/shared/assets/default-avatar.svg`;
 	avatarEl.alt = tweet.author.name || tweet.author.username;
 	avatarEl.classList.add("tweet-header-avatar");
-	avatarEl.loading = "lazy";
+	avatarEl.setAttribute("loading", "lazy");
 
 	if (
 		tweet.author.avatar_radius !== null &&
@@ -269,7 +269,7 @@ const createSimpleTweetElement = (tweet) => {
 				const img = document.createElement("img");
 				img.src = attachment.file_url;
 				img.alt = attachment.file_name || "Tweet image";
-				img.loading = "lazy";
+				img.setAttribute("loading", "lazy");
 				attachmentsEl.appendChild(img);
 			} else if (attachment.file_type?.startsWith("video/")) {
 				const video = document.createElement("video");

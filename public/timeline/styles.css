@@ -367,6 +367,8 @@ nav {
     bottom: 0;
     left: 0;
     height: 3px;
+    width: var(--indicator-width, 0);
+    transform: translateX(var(--indicator-left, 0));
     background-color: var(--primary);
     transition: transform 0.3s var(--animation-smooth), width 0.3s var(--animation-smooth);
     border-radius: 10px;

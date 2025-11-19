@@ -160,7 +160,7 @@ async function replaceEmojiShortcodesInElement(container) {
 					img.className = "inline-emoji";
 					img.width = 20;
 					img.height = 20;
-					img.loading = "lazy";
+					img.setAttribute("loading", "lazy");
 					img.style.verticalAlign = "middle";
 					img.style.margin = "0 2px";
 					frag.appendChild(img);
@@ -560,7 +560,7 @@ const createPollElement = (poll, tweet) => {
 			avatarEl.src = voter.avatar || `/public/shared/assets/default-avatar.svg`;
 			avatarEl.alt = voter.name || voter.username;
 			avatarEl.title = voter.name || voter.username;
-			avatarEl.loading = "lazy";
+			avatarEl.setAttribute("loading", "lazy");
 			const voterRadius =
 				voter.avatar_radius !== null && voter.avatar_radius !== undefined
 					? avatarPxToPercent(voter.avatar_radius)
@@ -657,7 +657,7 @@ const updatePollDisplay = (pollElement, poll) => {
 			avatarEl.src = voter.avatar || `/public/shared/assets/default-avatar.svg`;
 			avatarEl.alt = voter.name || voter.username;
 			avatarEl.title = voter.name || voter.username;
-			avatarEl.loading = "lazy";
+			avatarEl.setAttribute("loading", "lazy");
 			const voterRadius2 =
 				voter.avatar_radius !== null && voter.avatar_radius !== undefined
 					? avatarPxToPercent(voter.avatar_radius)
@@ -863,7 +863,7 @@ export const createTweetElement = (tweet, config = {}) => {
 		tweet.author.avatar || `/public/shared/assets/default-avatar.svg`;
 	tweetHeaderAvatarEl.alt = tweet.author.name || tweet.author.username;
 	tweetHeaderAvatarEl.classList.add("tweet-header-avatar");
-	tweetHeaderAvatarEl.loading = "lazy";
+	tweetHeaderAvatarEl.setAttribute("loading", "lazy");
 	tweetHeaderAvatarEl.draggable = false;
 
 	if (
@@ -877,7 +877,7 @@ export const createTweetElement = (tweet, config = {}) => {
 	} else {
 		tweetHeaderAvatarEl.style.setProperty("border-radius", "50px", "important");
 	}
-	tweetHeaderAvatarEl.loading = "lazy";
+	tweetHeaderAvatarEl.setAttribute("loading", "lazy");
 	tweetHeaderAvatarEl.addEventListener("click", (e) => {
 		e.stopPropagation();
 
@@ -1033,7 +1033,6 @@ export const createTweetElement = (tweet, config = {}) => {
 
 		tweetHeaderNameEl.appendChild(communityTagEl);
 	}
-
 
 	if (tweet.author.username !== tweet.author.name) {
 		const usernameEl = document.createElement("span");
@@ -1370,13 +1369,13 @@ export const createTweetElement = (tweet, config = {}) => {
 			const img = document.createElement("img");
 			img.src = tweet.interactive_card.media_url;
 			img.alt = "Card media";
-			img.loading = "lazy";
+			img.setAttribute("loading", "lazy");
 			mediaEl.appendChild(img);
 		} else if (tweet.interactive_card.media_type === "video") {
 			const video = document.createElement("video");
 			video.src = tweet.interactive_card.media_url;
 			video.controls = true;
-			video.loading = "lazy";
+			video.setAttribute("loading", "lazy");
 			mediaEl.appendChild(video);
 		}
 
@@ -1437,7 +1436,7 @@ export const createTweetElement = (tweet, config = {}) => {
 				const img = document.createElement("img");
 				img.src = attachment.file_url;
 				img.alt = attachment.file_name;
-				img.loading = "lazy";
+				img.setAttribute("loading", "lazy");
 
 				// Check for Unsplash attribution
 				if (attachment.file_name === "unsplash.jpg" && attachment.file_hash) {
@@ -1938,8 +1937,7 @@ export const createTweetElement = (tweet, config = {}) => {
 					document.body.appendChild(wrapper);
 
 					const script = document.createElement("script");
-					script.src =
-						"/public/shared/assets/js/html2canvas.min.js";
+					script.src = "/public/shared/assets/js/html2canvas.min.js";
 					script.onload = () => {
 						window
 							.html2canvas(wrapper, {
