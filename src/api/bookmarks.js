@@ -286,100 +286,104 @@ export default new Elysia({ prefix: "/bookmarks", tags: ["Bookmarks"] })
 			}),
 		},
 	)
-	.get("/", async ({ jwt, headers, query }) => {
-		const authorization = headers.authorization;
-		if (!authorization) return { error: "Authentication required" };
+	.get(
+		"/",
+		async ({ jwt, headers, query }) => {
+			const authorization = headers.authorization;
+			if (!authorization) return { error: "Authentication required" };
 
-		try {
-			const payload = await jwt.verify(authorization.replace("Bearer ", ""));
-			if (!payload) return { error: "Invalid token" };
+			try {
+				const payload = await jwt.verify(authorization.replace("Bearer ", ""));
+				if (!payload) return { error: "Invalid token" };
 
-			const user = getUserByUsername.get(payload.username);
-			if (!user) return { error: "User not found" };
+				const user = getUserByUsername.get(payload.username);
+				if (!user) return { error: "User not found" };
 
-			const { limit = 20 } = query;
-			const bookmarkedTweets = getBookmarkedTweets.all(
-				user.id,
-				parseInt(limit, 10),
-			);
+				const { limit = 20 } = query;
+				const bookmarkedTweets = getBookmarkedTweets.all(
+					user.id,
+					parseInt(limit, 10),
+				);
 
-			const postIds = bookmarkedTweets.map((tweet) => tweet.id);
-			if (postIds.length === 0) {
-				return { success: true, bookmarks: [] };
-			}
-
-			const likePlaceholders = postIds.map(() => "?").join(",");
-			const getUserLikesQuery = db.query(
-				`SELECT post_id FROM likes WHERE user_id = ? AND post_id IN (${likePlaceholders})`,
-			);
-			const getUserRetweetsQuery = db.query(
-				`SELECT post_id FROM retweets WHERE user_id = ? AND post_id IN (${likePlaceholders})`,
-			);
-			const getUserBookmarksQuery = db.query(
-				`SELECT post_id FROM bookmarks WHERE user_id = ? AND post_id IN (${likePlaceholders})`,
-			);
-
-			const userLikes = getUserLikesQuery.all(user.id, ...postIds);
-			const userRetweets = getUserRetweetsQuery.all(user.id, ...postIds);
-			const userBookmarks = getUserBookmarksQuery.all(user.id, ...postIds);
-
-			const likedPosts = new Set(userLikes.map((like) => like.post_id));
-			const retweetedPosts = new Set(
-				userRetweets.map((retweet) => retweet.post_id),
-			);
-			const bookmarkedPosts = new Set(
-				userBookmarks.map((bookmark) => bookmark.post_id),
-			);
-
-			const processedBookmarks = bookmarkedTweets.map((tweet) => {
-				const author = {
-					username: tweet.username,
-					name: tweet.name,
-					avatar: tweet.avatar,
-					verified: tweet.verified || false,
-					gold: tweet.gold || false,
-					avatar_radius: tweet.avatar_radius || null,
-					affiliate: tweet.affiliate || false,
-					affiliate_with: tweet.affiliate_with || null,
-				};
-
-				if (author.affiliate && author.affiliate_with) {
-					const affiliateProfile = db
-						.query(
-							"SELECT id, username, name, avatar, verified, gold, avatar_radius FROM users WHERE id = ?",
-						)
-						.get(author.affiliate_with);
-					if (affiliateProfile) {
-						author.affiliate_with_profile = affiliateProfile;
-					}
+				const postIds = bookmarkedTweets.map((tweet) => tweet.id);
+				if (postIds.length === 0) {
+					return { success: true, bookmarks: [] };
 				}
 
-				return {
-					...tweet,
-					author,
-					liked_by_user: likedPosts.has(tweet.id),
-					retweeted_by_user: retweetedPosts.has(tweet.id),
-					bookmarked_by_user: bookmarkedPosts.has(tweet.id),
-					poll: getPollDataForTweet(tweet.id, user.id),
-					quoted_tweet: getQuotedTweetData(tweet.quote_tweet_id, user.id),
-					attachments: getTweetAttachments(tweet.id),
-					interactive_card: getCardDataForTweet(tweet.id),
-				};
-			});
+				const likePlaceholders = postIds.map(() => "?").join(",");
+				const getUserLikesQuery = db.query(
+					`SELECT post_id FROM likes WHERE user_id = ? AND post_id IN (${likePlaceholders})`,
+				);
+				const getUserRetweetsQuery = db.query(
+					`SELECT post_id FROM retweets WHERE user_id = ? AND post_id IN (${likePlaceholders})`,
+				);
+				const getUserBookmarksQuery = db.query(
+					`SELECT post_id FROM bookmarks WHERE user_id = ? AND post_id IN (${likePlaceholders})`,
+				);
 
-			return {
-				success: true,
-				bookmarks: processedBookmarks,
-			};
-		} catch (error) {
-			console.error("Get bookmarks error:", error);
-			return { error: "Failed to get bookmarks" };
-		}
-	}, {
-		detail: {
-			description: "Gets a user's bookmarks",
+				const userLikes = getUserLikesQuery.all(user.id, ...postIds);
+				const userRetweets = getUserRetweetsQuery.all(user.id, ...postIds);
+				const userBookmarks = getUserBookmarksQuery.all(user.id, ...postIds);
+
+				const likedPosts = new Set(userLikes.map((like) => like.post_id));
+				const retweetedPosts = new Set(
+					userRetweets.map((retweet) => retweet.post_id),
+				);
+				const bookmarkedPosts = new Set(
+					userBookmarks.map((bookmark) => bookmark.post_id),
+				);
+
+				const processedBookmarks = bookmarkedTweets.map((tweet) => {
+					const author = {
+						username: tweet.username,
+						name: tweet.name,
+						avatar: tweet.avatar,
+						verified: tweet.verified || false,
+						gold: tweet.gold || false,
+						avatar_radius: tweet.avatar_radius || null,
+						affiliate: tweet.affiliate || false,
+						affiliate_with: tweet.affiliate_with || null,
+					};
+
+					if (author.affiliate && author.affiliate_with) {
+						const affiliateProfile = db
+							.query(
+								"SELECT id, username, name, avatar, verified, gold, avatar_radius FROM users WHERE id = ?",
+							)
+							.get(author.affiliate_with);
+						if (affiliateProfile) {
+							author.affiliate_with_profile = affiliateProfile;
+						}
+					}
+
+					return {
+						...tweet,
+						author,
+						liked_by_user: likedPosts.has(tweet.id),
+						retweeted_by_user: retweetedPosts.has(tweet.id),
+						bookmarked_by_user: bookmarkedPosts.has(tweet.id),
+						poll: getPollDataForTweet(tweet.id, user.id),
+						quoted_tweet: getQuotedTweetData(tweet.quote_tweet_id, user.id),
+						attachments: getTweetAttachments(tweet.id),
+						interactive_card: getCardDataForTweet(tweet.id),
+					};
+				});
+
+				return {
+					success: true,
+					bookmarks: processedBookmarks,
+				};
+			} catch (error) {
+				console.error("Get bookmarks error:", error);
+				return { error: "Failed to get bookmarks" };
+			}
 		},
-		query: t.Object({
-			limit: t.Optional(t.String()),
-		}),
-	});
+		{
+			detail: {
+				description: "Gets a user's bookmarks",
+			},
+			query: t.Object({
+				limit: t.Optional(t.String()),
+			}),
+		},
+	);
