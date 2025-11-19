@@ -29,6 +29,26 @@ const enrichUsersWithAffiliateProfiles = (users) => {
 	});
 };
 
+const enrichUsersWithCommunityTags = (users) => {
+	users.forEach((user) => {
+		if (user.selected_community_tag) {
+			const community = db
+				.query(
+					"SELECT id, name, tag_enabled, tag_emoji, tag_text FROM communities WHERE id = ?",
+				)
+				.get(user.selected_community_tag);
+			if (community && community.tag_enabled) {
+				user.community_tag = {
+					community_id: community.id,
+					community_name: community.name,
+					emoji: community.tag_emoji,
+					text: community.tag_text,
+				};
+			}
+		}
+	});
+};
+
 const JWT_SECRET = process.env.JWT_SECRET;
 
 const getTimelinePosts = db.query(`
@@ -439,6 +459,7 @@ export default new Elysia({ prefix: "/timeline", tags: ["Timeline"] })
 		const users = getUsersQuery.all(...userIds);
 
 		enrichUsersWithAffiliateProfiles(users);
+		enrichUsersWithCommunityTags(users);
 
 		const userMap = {};
 		users.forEach((user) => {
@@ -743,6 +764,7 @@ export default new Elysia({ prefix: "/timeline", tags: ["Timeline"] })
 		const users = getUsersQuery.all(...userIds);
 
 		enrichUsersWithAffiliateProfiles(users);
+		enrichUsersWithCommunityTags(users);
 
 		const userMap = {};
 		users.forEach((user) => {

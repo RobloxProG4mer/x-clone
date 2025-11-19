@@ -2049,4 +2049,61 @@ export default new Elysia({ prefix: "/profile", tags: ["Profile"] })
 			console.error("Update privacy setting error:", error);
 			return { error: "Failed to update setting" };
 		}
-	});
+	})
+.post("/settings/community-tag", async ({ jwt, headers, body }) => {
+	const authorization = headers.authorization;
+	if (!authorization) return { error: "Authentication required" };
+
+	try {
+		const payload = await jwt.verify(authorization.replace("Bearer ", ""));
+		if (!payload) return { error: "Invalid token" };
+
+		const currentUser = getUserByUsername.get(payload.username);
+		if (!currentUser) return { error: "User not found" };
+
+		const { community_id } = body;
+
+		// If community_id is null, clear the tag
+		if (!community_id) {
+			db.query("UPDATE users SET selected_community_tag = NULL WHERE id = ?").run(
+				currentUser.id,
+			);
+			return { success: true };
+		}
+
+		// Verify user is a member of the community
+		const membership = db
+			.query(
+				"SELECT * FROM community_members WHERE user_id = ? AND community_id = ? AND banned = FALSE",
+			)
+			.get(currentUser.id, community_id);
+
+		if (!membership) {
+			return { error: "You are not a member of this community" };
+		}
+
+		// Verify the community has tags enabled
+		const community = db
+			.query("SELECT * FROM communities WHERE id = ?")
+			.get(community_id);
+
+		if (!community) {
+			return { error: "Community not found" };
+		}
+
+		if (!community.tag_enabled) {
+			return { error: "This community does not have tags enabled" };
+		}
+
+		// Update user's selected community tag
+		db.query("UPDATE users SET selected_community_tag = ? WHERE id = ?").run(
+			community_id,
+			currentUser.id,
+		);
+
+		return { success: true };
+	} catch (error) {
+		console.error("Update community tag setting error:", error);
+		return { error: "Failed to update setting" };
+	}
+});

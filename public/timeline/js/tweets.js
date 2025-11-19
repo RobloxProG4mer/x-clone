@@ -1015,6 +1015,26 @@ export const createTweetElement = (tweet, config = {}) => {
 		tweetHeaderNameEl.appendChild(labelEl);
 	}
 
+	// Community Tag
+	if (tweet.author.community_tag) {
+		const communityTagEl = document.createElement("a");
+		communityTagEl.href = `/communities/${tweet.author.community_tag.community_id}`;
+		communityTagEl.className = "community-tag";
+		communityTagEl.title = `Member of ${tweet.author.community_tag.community_name}`;
+		communityTagEl.textContent = `${tweet.author.community_tag.emoji || ""}${tweet.author.community_tag.text || ""}`;
+
+		communityTagEl.addEventListener("click", (e) => {
+			e.preventDefault();
+			e.stopPropagation();
+			import("./communities.js").then(({ loadCommunityDetail }) => {
+				loadCommunityDetail(tweet.author.community_tag.community_id);
+			});
+		});
+
+		tweetHeaderNameEl.appendChild(communityTagEl);
+	}
+
+
 	if (tweet.author.username !== tweet.author.name) {
 		const usernameEl = document.createElement("span");
 		usernameEl.textContent = `@${tweet.author.username}`;

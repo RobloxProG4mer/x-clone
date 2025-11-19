@@ -248,6 +248,23 @@ export default new Elysia({ tags: ["Communities"] })
 		},
 	)
 	.get(
+		"/communities/user/me",
+		async ({ user, set }) => {
+			if (!user) {
+				set.status = 401;
+				return { error: "Unauthorized" };
+			}
+
+			const communities = getUserCommunities.all(user.userId, 100, 0);
+			return { communities };
+		},
+		{
+			detail: {
+				description: "Gets the current user's communities",
+			},
+		},
+	)
+	.get(
 		"/communities/:id",
 		async ({ params, user, set }) => {
 			const community = getCommunity.get(params.id);
@@ -1138,4 +1155,75 @@ export default new Elysia({ tags: ["Communities"] })
 				offset: t.Optional(t.String()),
 			})
 		},
+	)
+	.patch(
+		"/communities/:id/tag",
+		async ({ user, params, body, set }) => {
+			if (!user) {
+				set.status = 401;
+				return { error: "Unauthorized" };
+			}
+
+			const community = getCommunity.get(params.id);
+			if (!community) {
+				set.status = 404;
+				return { error: "Community not found" };
+			}
+
+			const member = getMember.get(params.id, user.userId);
+			const canEdit =
+				user.admin ||
+				(member && (member.role === "owner" || member.role === "admin"));
+
+			if (!canEdit) {
+				set.status = 403;
+				return { error: "You don't have permission to edit this community" };
+			}
+
+			const { tag_enabled, tag_emoji, tag_text } = body;
+
+			// Validate tag_text length (max 4 characters)
+			if (tag_text && tag_text.length > 4) {
+				set.status = 400;
+				return { error: "Tag text must be 4 characters or less" };
+			}
+
+			// Validate emoji (basic check - should be a single emoji)
+			if (tag_emoji && tag_emoji.length > 10) {
+				set.status = 400;
+				return { error: "Tag emoji is invalid" };
+			}
+
+			try {
+				db.query(
+					"UPDATE communities SET tag_enabled = ?, tag_emoji = ?, tag_text = ?, updated_at = datetime('now', 'utc') WHERE id = ?",
+				).run(
+					tag_enabled ? 1 : 0,
+					tag_emoji || null,
+					tag_text || null,
+					params.id,
+				);
+
+				const updated = getCommunity.get(params.id);
+				return { success: true, community: updated };
+			} catch (error) {
+				console.error("Failed to update community tag:", error);
+				set.status = 500;
+				return { error: "Failed to update community tag" };
+			}
+		},
+		{
+			detail: {
+				description: "Updates a community's tag settings",
+			},
+			params: t.Object({
+				id: t.String(),
+			}),
+			body: t.Object({
+				tag_enabled: t.Boolean(),
+				tag_emoji: t.Optional(t.String()),
+				tag_text: t.Optional(t.String()),
+			}),
+		},
 	);
+

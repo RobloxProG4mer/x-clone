@@ -914,6 +914,104 @@ function showSettingsTab() {
 	section.appendChild(select);
 	section.appendChild(saveBtn);
 	content.appendChild(section);
+
+	// Community Tag Section
+	const tagSection = document.createElement("div");
+	tagSection.className = "settings-section";
+	tagSection.style.marginTop = "24px";
+
+	const tagTitle = document.createElement("h3");
+	tagTitle.textContent = "Community Tag";
+
+	const tagDesc = document.createElement("p");
+	tagDesc.style.color = "var(--text-secondary)";
+	tagDesc.style.fontSize = "14px";
+	tagDesc.style.marginBottom = "16px";
+	tagDesc.textContent =
+		"Enable a community tag that members can display next to their name";
+
+	const tagEnabledDiv = document.createElement("div");
+	tagEnabledDiv.style.marginBottom = "16px";
+
+	const tagEnabledLabel = document.createElement("label");
+	tagEnabledLabel.style.display = "flex";
+	tagEnabledLabel.style.alignItems = "center";
+	tagEnabledLabel.style.gap = "8px";
+	tagEnabledLabel.style.cursor = "pointer";
+
+	const tagEnabledCheckbox = document.createElement("input");
+	tagEnabledCheckbox.type = "checkbox";
+	tagEnabledCheckbox.id = "tagEnabledCheckbox";
+	tagEnabledCheckbox.checked = currentCommunity.tag_enabled || false;
+
+	const tagEnabledText = document.createElement("span");
+	tagEnabledText.textContent = "Enable Community Tag";
+
+	tagEnabledLabel.appendChild(tagEnabledCheckbox);
+	tagEnabledLabel.appendChild(tagEnabledText);
+	tagEnabledDiv.appendChild(tagEnabledLabel);
+
+	const tagInputsDiv = document.createElement("div");
+	tagInputsDiv.style.display = "flex";
+	tagInputsDiv.style.flexDirection = "column";
+	tagInputsDiv.style.gap = "12px";
+	tagInputsDiv.style.marginBottom = "16px";
+
+	const emojiInputDiv = document.createElement("div");
+	const emojiLabel = document.createElement("label");
+	emojiLabel.textContent = "Emoji";
+	emojiLabel.style.display = "block";
+	emojiLabel.style.marginBottom = "4px";
+	emojiLabel.style.fontSize = "14px";
+	const emojiInput = document.createElement("input");
+	emojiInput.type = "text";
+	emojiInput.id = "tagEmojiInput";
+	emojiInput.placeholder = "🎉";
+	emojiInput.value = currentCommunity.tag_emoji || "";
+	emojiInput.style.width = "100%";
+	emojiInput.style.padding = "8px 12px";
+	emojiInput.style.border = "1px solid var(--border-primary)";
+	emojiInput.style.borderRadius = "8px";
+	emojiInput.style.backgroundColor = "var(--bg-primary)";
+	emojiInput.style.color = "var(--text-primary)";
+	emojiInputDiv.appendChild(emojiLabel);
+	emojiInputDiv.appendChild(emojiInput);
+
+	const textInputDiv = document.createElement("div");
+	const textLabel = document.createElement("label");
+	textLabel.textContent = "Text (max 4 characters)";
+	textLabel.style.display = "block";
+	textLabel.style.marginBottom = "4px";
+	textLabel.style.fontSize = "14px";
+	const textInput = document.createElement("input");
+	textInput.type = "text";
+	textInput.id = "tagTextInput";
+	textInput.placeholder = "COOL";
+	textInput.maxLength = 4;
+	textInput.value = currentCommunity.tag_text || "";
+	textInput.style.width = "100%";
+	textInput.style.padding = "8px 12px";
+	textInput.style.border = "1px solid var(--border-primary)";
+	textInput.style.borderRadius = "8px";
+	textInput.style.backgroundColor = "var(--bg-primary)";
+	textInput.style.color = "var(--text-primary)";
+	textInputDiv.appendChild(textLabel);
+	textInputDiv.appendChild(textInput);
+
+	tagInputsDiv.appendChild(emojiInputDiv);
+	tagInputsDiv.appendChild(textInputDiv);
+
+	const tagSaveBtn = document.createElement("button");
+	tagSaveBtn.className = "profile-btn profile-btn-primary";
+	tagSaveBtn.textContent = "Save Community Tag";
+	tagSaveBtn.addEventListener("click", saveCommunityTag);
+
+	tagSection.appendChild(tagTitle);
+	tagSection.appendChild(tagDesc);
+	tagSection.appendChild(tagEnabledDiv);
+	tagSection.appendChild(tagInputsDiv);
+	tagSection.appendChild(tagSaveBtn);
+	content.appendChild(tagSection);
 }
 
 async function joinCommunity(communityId) {
@@ -1079,6 +1177,38 @@ async function saveAccessMode() {
 	currentCommunity.access_mode = accessMode;
 	showToast("Access mode updated", "success");
 }
+
+async function saveCommunityTag() {
+	const tagEnabled = document.getElementById("tagEnabledCheckbox").checked;
+	const tagEmoji = document.getElementById("tagEmojiInput").value.trim();
+	const tagText = document.getElementById("tagTextInput").value.trim();
+
+	if (tagEnabled && (!tagEmoji || !tagText)) {
+		showToast("Please provide both emoji and text for the tag", "error");
+		return;
+	}
+
+	const result = await api(`/communities/${currentCommunity.id}/tag`, {
+		method: "PATCH",
+		headers: { "Content-Type": "application/json" },
+		body: JSON.stringify({
+			tag_enabled: tagEnabled,
+			tag_emoji: tagEmoji || null,
+			tag_text: tagText || null,
+		}),
+	});
+
+	if (result.error) {
+		showToast(result.error, "error");
+		return;
+	}
+
+	currentCommunity.tag_enabled = tagEnabled;
+	currentCommunity.tag_emoji = tagEmoji;
+	currentCommunity.tag_text = tagText;
+	showToast("Community tag updated", "success");
+}
+
 
 function openEditModal() {
 	document.getElementById("editCommunityName").value = currentCommunity.name;

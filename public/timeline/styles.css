@@ -8542,3 +8542,32 @@ emoji-picker.emoji-picker-popup {
   background-color: var(--bg-primary);
   color: var(--text-primary);
 }
+
+/* Community Tag Styles */
+.community-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  padding: 2px 8px;
+  margin-left: 6px;
+  background-color: rgba(var(--primary-rgb), 0.1);
+  border: 1px solid rgba(var(--primary-rgb), 0.2);
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--primary);
+  text-decoration: none;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  vertical-align: middle;
+}
+
+.community-tag:hover {
+  background-color: rgba(var(--primary-rgb), 0.15);
+  border-color: rgba(var(--primary-rgb), 0.3);
+  transform: translateY(-1px);
+}
+
+.community-tag:active {
+  transform: translateY(0);
+}

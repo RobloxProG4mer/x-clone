@@ -36,7 +36,8 @@ CREATE TABLE IF NOT EXISTS users (
   label_type TEXT DEFAULT NULL,
   label_automated BOOLEAN DEFAULT FALSE,
   character_limit INTEGER DEFAULT NULL,
-  affiliate_with TEXT DEFAULT NULL
+  affiliate_with TEXT DEFAULT NULL,
+  selected_community_tag TEXT DEFAULT NULL
 );
 
 CREATE INDEX IF NOT EXISTS idx_users_username ON users(username);
@@ -426,6 +427,9 @@ CREATE TABLE IF NOT EXISTS communities (
   member_count INTEGER DEFAULT 0,
   created_at TIMESTAMP DEFAULT (datetime('now', 'utc')),
   updated_at TIMESTAMP DEFAULT (datetime('now', 'utc')),
+  tag_enabled BOOLEAN DEFAULT FALSE,
+  tag_emoji TEXT DEFAULT NULL,
+  tag_text TEXT DEFAULT NULL,
   FOREIGN KEY (owner_id) REFERENCES users(id) ON DELETE CASCADE
 );
 

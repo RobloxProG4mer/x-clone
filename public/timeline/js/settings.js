@@ -201,6 +201,67 @@ const createAccountContent = () => {
 
 	section.appendChild(privacyGroup);
 
+	// Community Tag Group
+	const communityTagGroup = document.createElement("div");
+	communityTagGroup.className = "setting-group";
+	const communityTagH2 = document.createElement("h2");
+	communityTagH2.textContent = "Community Tag";
+	communityTagGroup.appendChild(communityTagH2);
+
+	const communityTagItem = document.createElement("div");
+	communityTagItem.className = "setting-item";
+
+	const communityTagLabel = document.createElement("div");
+	communityTagLabel.className = "setting-label";
+	const communityTagTitle = document.createElement("div");
+	communityTagTitle.className = "setting-title";
+	communityTagTitle.textContent = "Display Community Tag";
+	const communityTagDesc = document.createElement("div");
+	communityTagDesc.className = "setting-description";
+	communityTagDesc.textContent =
+		"Choose a community tag to display next to your name";
+	communityTagLabel.appendChild(communityTagTitle);
+	communityTagLabel.appendChild(communityTagDesc);
+
+	const communityTagControl = document.createElement("div");
+	communityTagControl.className = "setting-control";
+
+	const communityTagDropdown = document.createElement("div");
+	communityTagDropdown.className = "custom-dropdown";
+	communityTagDropdown.id = "communityTagDropdown";
+
+	const communityTagButton = document.createElement("button");
+	communityTagButton.className = "custom-dropdown-button";
+	communityTagButton.setAttribute("aria-label", "Community tag");
+	communityTagButton.innerHTML = `
+		<span class="dropdown-text">None</span>
+		<svg class="custom-dropdown-arrow" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+			<polyline points="6,9 12,15 18,9"></polyline>
+		</svg>
+	`;
+
+	const communityTagMenu = document.createElement("div");
+	communityTagMenu.className = "custom-dropdown-menu";
+	communityTagMenu.id = "communityTagMenu";
+
+	// Add "None" option
+	const noneOption = document.createElement("div");
+	noneOption.className = "custom-dropdown-option";
+	noneOption.dataset.value = "";
+	noneOption.textContent = "None";
+	communityTagMenu.appendChild(noneOption);
+
+	communityTagDropdown.appendChild(communityTagButton);
+	communityTagDropdown.appendChild(communityTagMenu);
+	communityTagControl.appendChild(communityTagDropdown);
+
+	communityTagItem.appendChild(communityTagLabel);
+	communityTagItem.appendChild(communityTagControl);
+	communityTagGroup.appendChild(communityTagItem);
+
+	section.appendChild(communityTagGroup);
+
+
 	const group = document.createElement("div");
 	group.className = "setting-group";
 	const h2 = document.createElement("h2");
@@ -350,6 +411,113 @@ const openDeleteAccountModal = async () => {
 	showModal(modal);
 };
 
+const loadCommunityTagOptions = async () => {
+	const user = await ensureCurrentUser();
+	if (!user) return;
+
+	try {
+		// Fetch user's communities
+		const response = await query("/communities/user/me");
+		if (response.error) {
+			console.error("Failed to load communities:", response.error);
+			return;
+		}
+
+		const communities = response.communities || [];
+		const communityTagMenu = document.getElementById("communityTagMenu");
+		const communityTagButton = document.querySelector(
+			"#communityTagDropdown .dropdown-text",
+		);
+
+		if (!communityTagMenu || !communityTagButton) return;
+
+		// Clear existing options except "None"
+		communityTagMenu.innerHTML = "";
+
+		// Add "None" option
+		const noneOption = document.createElement("div");
+		noneOption.className = "custom-dropdown-option";
+		noneOption.dataset.value = "";
+		noneOption.textContent = "None";
+		communityTagMenu.appendChild(noneOption);
+
+		// Add communities with tags enabled
+		const communitiesWithTags = communities.filter((c) => c.tag_enabled);
+		communitiesWithTags.forEach((community) => {
+			const option = document.createElement("div");
+			option.className = "custom-dropdown-option";
+			option.dataset.value = community.id;
+			option.textContent = `${community.tag_emoji || ""} ${community.tag_text || ""} - ${community.name}`.trim();
+			communityTagMenu.appendChild(option);
+		});
+
+		// Set current selection
+		if (user.selected_community_tag) {
+			const selectedCommunity = communities.find(
+				(c) => c.id === user.selected_community_tag,
+			);
+			if (selectedCommunity && selectedCommunity.tag_enabled) {
+				communityTagButton.textContent = `${selectedCommunity.tag_emoji || ""} ${selectedCommunity.tag_text || ""} - ${selectedCommunity.name}`.trim();
+			} else {
+				communityTagButton.textContent = "None";
+			}
+		} else {
+			communityTagButton.textContent = "None";
+		}
+
+		// Handle option selection
+		const options = communityTagMenu.querySelectorAll(
+			".custom-dropdown-option",
+		);
+		options.forEach((option) => {
+			option.addEventListener("click", async () => {
+				const communityId = option.dataset.value;
+
+				try {
+					const result = await query("/profile/settings/community-tag", {
+						method: "POST",
+						headers: {
+							"Content-Type": "application/json",
+						},
+						body: JSON.stringify({
+							community_id: communityId || null,
+						}),
+					});
+
+					if (result.success) {
+						communityTagButton.textContent = option.textContent;
+						toastQueue.add(
+							"<h1>Community Tag Updated</h1><p>Your community tag has been updated</p>",
+						);
+
+						// Update current user cache
+						if (currentUser) {
+							currentUser.selected_community_tag = communityId || null;
+						}
+					} else {
+						toastQueue.add(
+							`<h1>Error</h1><p>${result.error || "Failed to update community tag"}</p>`,
+						);
+					}
+				} catch (error) {
+					console.error("Failed to update community tag:", error);
+					toastQueue.add(
+						"<h1>Error</h1><p>Failed to update community tag</p>",
+					);
+				}
+
+				// Close dropdown
+				const dropdown = document.getElementById("communityTagDropdown");
+				if (dropdown) {
+					dropdown.classList.remove("open");
+				}
+			});
+		});
+	} catch (error) {
+		console.error("Failed to load community tag options:", error);
+	}
+};
+
 const attachAccountSectionHandlers = (root) => {
 	if (!root) return;
 
@@ -379,6 +547,11 @@ const attachAccountSectionHandlers = (root) => {
 			openDeleteAccountModal();
 		});
 	}
+
+	// Load and handle community tag dropdown
+	setTimeout(async () => {
+		await loadCommunityTagOptions();
+	}, 100);
 };
 
 const attachThemeSectionHandlers = (root) => {
