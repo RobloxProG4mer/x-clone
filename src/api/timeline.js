@@ -395,7 +395,7 @@ export default new Elysia({ prefix: "/timeline", tags: ["Timeline"] })
 			p._normalized_content = cKey;
 		});
 
-		if (user.use_c_algorithm && isAlgorithmAvailable()) {
+		if (isAlgorithmAvailable()) {
 			const postIds = posts.map((p) => p.id);
 			if (postIds.length > 0) {
 				const attachmentPlaceholders = postIds.map(() => "?").join(",");
@@ -623,16 +623,6 @@ export default new Elysia({ prefix: "/timeline", tags: ["Timeline"] })
 				};
 			})
 			.filter(Boolean);
-
-		if (!user.use_c_algorithm) {
-			timeline.sort((a, b) => {
-				const timeA = Number(new Date(a.created_at));
-				const timeB = Number(new Date(b.created_at));
-				const diff = timeB - timeA;
-				if (diff !== 0) return diff;
-				return b.id.localeCompare(a.id);
-			});
-		}
 
 		return { timeline };
 	})

@@ -687,7 +687,7 @@ const updatePollDisplay = (pollElement, poll) => {
 	metaContainer.appendChild(pollTimeEl);
 };
 
-async function showInteractionsModal(tweetId) {
+async function showInteractionsModal(tweetId, initialTab = "likes") {
 	const modalContent = document.createElement("div");
 	modalContent.className = "interactions-modal-content";
 
@@ -703,7 +703,7 @@ async function showInteractionsModal(tweetId) {
 	const contentContainer = document.createElement("div");
 	contentContainer.className = "interactions-content";
 
-	let activeTab = "likes";
+	let activeTab = initialTab;
 	let modal = null;
 
 	const loadTabContent = async (tabId) => {
@@ -1785,14 +1785,14 @@ export const createTweetElement = (tweet, config = {}) => {
 
 		if (tweet.quote_count && tweet.quote_count > 0) {
 			menuItems.push({
-				id: "see-quotes-option",
+				id: "view-quotes-option",
 				icon: `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
           <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
           <circle cx="12" cy="12" r="3"></circle>
         </svg>`,
-				title: "See quotes",
+				title: "View quotes",
 				onClick: async () => {
-					showInteractionUsers(tweet.id, "quotes", "Quotes");
+					await showInteractionsModal(tweet.id, "quotes");
 				},
 			});
 		}

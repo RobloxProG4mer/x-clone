@@ -36,7 +36,6 @@ CREATE TABLE IF NOT EXISTS users (
   avatar_radius INTEGER DEFAULT NULL,
   gold BOOLEAN DEFAULT FALSE,
   affiliate BOOLEAN DEFAULT FALSE,
-  use_c_algorithm BOOLEAN DEFAULT FALSE,
   label_type TEXT DEFAULT NULL,
   label_automated BOOLEAN DEFAULT FALSE,
   character_limit INTEGER DEFAULT NULL,

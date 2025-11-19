@@ -281,6 +281,7 @@ const renderMediaGrid = async (posts) => {
 	}
 
 	container.innerHTML = "";
+	let mediaCount = 0;
 
 	for (const post of posts) {
 		const attachments = post.attachments || [];
@@ -337,7 +338,18 @@ const renderMediaGrid = async (posts) => {
 			});
 
 			container.appendChild(mediaItem);
+			mediaCount++;
 		}
+	}
+
+	if (mediaCount === 0) {
+		container.innerHTML = `
+      <div class="profile-empty-state">
+        <h3>No media yet</h3>
+        <p>When they post images or videos, they'll show up here.</p>
+      </div>
+    `;
+		return;
 	}
 
 	if (hasMoreMedia) {
@@ -691,6 +703,7 @@ const switchTab = async (tabName) => {
 		setupPostsInfiniteScroll();
 	} else if (tabName === "replies") {
 		if (postsContainer) postsContainer.classList.remove("hidden");
+		postsContainer.classList.remove("media-grid");
 		if (currentReplies.length === 0 && currentUsername) {
 			document.getElementById("profilePostsContainer").innerHTML = "";
 			hasMoreReplies = true;
