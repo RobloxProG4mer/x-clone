@@ -16,7 +16,7 @@
 - look into all XSS vulnerabitilies
 - optimize client
 - spinners on things that take time to load
-
+NOOOOOOOOOO WHY XRP REVERT
 **Joke:**
 
 - @Bangers account automatically quoting tweets with more than 5 likes with "Certified xeetapus banger👑"
