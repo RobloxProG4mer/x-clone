@@ -612,7 +612,7 @@ export default new Elysia({ prefix: "/profile", tags: ["Profile"] })
 				} catch (_) {}
 			}
 
-			// Combine and sort by creation time
+			// Combine and sort by pinned status first, then creation time
 			const allContent = [
 				...userPosts.map((post) => ({
 					...post,
@@ -626,7 +626,11 @@ export default new Elysia({ prefix: "/profile", tags: ["Profile"] })
 					retweet_created_at: retweet.retweet_created_at,
 				})),
 			]
-				.sort((a, b) => b.sort_date - a.sort_date)
+				.sort((a, b) => {
+					if (a.pinned && !b.pinned) return -1;
+					if (!a.pinned && b.pinned) return 1;
+					return b.sort_date - a.sort_date;
+				})
 				.slice(0, 20);
 
 			// Batch fetch affiliate profiles
@@ -808,18 +812,7 @@ export default new Elysia({ prefix: "/profile", tags: ["Profile"] })
 				if (before) {
 					replies = getUserRepliesPaginated.all(user.id, before, limit);
 				} else {
-					replies = db
-						.query(
-							`
-          SELECT posts.*, users.username, users.name, users.avatar, users.verified, users.gold, users.avatar_radius, users.affiliate, users.affiliate_with
-          FROM posts 
-          JOIN users ON posts.user_id = users.id 
-          WHERE posts.user_id = ? AND posts.reply_to IS NOT NULL
-          ORDER BY posts.created_at DESC 
-          LIMIT ?
-        `,
-						)
-						.all(user.id, limit);
+					replies = getUserReplies.all(user.id);
 				}
 
 				let currentUserId = null;

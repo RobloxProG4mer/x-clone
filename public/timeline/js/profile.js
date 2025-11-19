@@ -250,10 +250,12 @@ const renderPosts = async (posts, isReplies = false) => {
 		container.appendChild(tweetElement);
 	}
 
-	const sentinel = document.createElement("div");
-	sentinel.className = "scroll-sentinel";
-	sentinel.style.height = "1px";
-	container.appendChild(sentinel);
+	if (isReplies && hasMoreReplies) {
+		const sentinel = document.createElement("div");
+		sentinel.className = "scroll-sentinel";
+		sentinel.style.height = "1px";
+		container.appendChild(sentinel);
+	}
 };
 
 const renderMediaPosts = async (posts) => {
@@ -279,10 +281,12 @@ const renderMediaPosts = async (posts) => {
 		container.appendChild(tweetElement);
 	}
 
-	const sentinel = document.createElement("div");
-	sentinel.className = "scroll-sentinel";
-	sentinel.style.height = "1px";
-	container.appendChild(sentinel);
+	if (hasMoreMedia) {
+		const sentinel = document.createElement("div");
+		sentinel.className = "scroll-sentinel";
+		sentinel.style.height = "1px";
+		container.appendChild(sentinel);
+	}
 };
 
 const loadMoreReplies = async () => {
@@ -406,21 +410,23 @@ const setupRepliesInfiniteScroll = () => {
 		repliesObserver.disconnect();
 	}
 
-	const sentinel = document.querySelector(".scroll-sentinel");
-	if (!sentinel || !hasMoreReplies) return;
+	requestAnimationFrame(() => {
+		const sentinel = document.querySelector(".scroll-sentinel");
+		if (!sentinel || !hasMoreReplies) return;
 
-	repliesObserver = new IntersectionObserver(
-		(entries) => {
-			if (entries[0].isIntersecting && !isLoadingReplies && hasMoreReplies) {
-				loadMoreReplies();
-			}
-		},
-		{
-			rootMargin: "200px",
-		},
-	);
+		repliesObserver = new IntersectionObserver(
+			(entries) => {
+				if (entries[0].isIntersecting && !isLoadingReplies && hasMoreReplies) {
+					loadMoreReplies();
+				}
+			},
+			{
+				rootMargin: "200px",
+			},
+		);
 
-	repliesObserver.observe(sentinel);
+		repliesObserver.observe(sentinel);
+	});
 };
 
 const setupMediaInfiniteScroll = () => {
@@ -428,21 +434,23 @@ const setupMediaInfiniteScroll = () => {
 		mediaObserver.disconnect();
 	}
 
-	const sentinel = document.querySelector(".scroll-sentinel");
-	if (!sentinel || !hasMoreMedia) return;
+	requestAnimationFrame(() => {
+		const sentinel = document.querySelector(".scroll-sentinel");
+		if (!sentinel || !hasMoreMedia) return;
 
-	mediaObserver = new IntersectionObserver(
-		(entries) => {
-			if (entries[0].isIntersecting && !isLoadingMedia && hasMoreMedia) {
-				loadMoreMedia();
-			}
-		},
-		{
-			rootMargin: "200px",
-		},
-	);
+		mediaObserver = new IntersectionObserver(
+			(entries) => {
+				if (entries[0].isIntersecting && !isLoadingMedia && hasMoreMedia) {
+					loadMoreMedia();
+				}
+			},
+			{
+				rootMargin: "200px",
+			},
+		);
 
-	mediaObserver.observe(sentinel);
+		mediaObserver.observe(sentinel);
+	});
 };
 
 const switchTab = async (tabName) => {
