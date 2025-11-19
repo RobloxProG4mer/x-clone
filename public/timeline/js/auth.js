@@ -152,6 +152,16 @@ function saveAccountToStorage(user, token) {
 					onClick: () => {
 						localStorage.removeItem("authToken");
 
+						if (window.cookieStore) {
+							window.cookieStore.delete("agree");
+						}
+
+						try {
+							// biome-ignore lint/suspicious/noDocumentCookie: idgaf bro
+							document.cookie =
+								"agree=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/;";
+						} catch {}
+
 						document.querySelector(".loader").style.opacity = "0";
 						document.querySelector(".loader").style.display = "flex";
 						setTimeout(() => {
