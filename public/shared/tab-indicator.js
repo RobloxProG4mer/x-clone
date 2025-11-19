@@ -1,9 +1,11 @@
 export function updateTabIndicator(container, activeTab) {
 	const indicator = container;
 	const tabs = Array.from(
-		container.querySelectorAll(
-			"a, button, .filter-btn, .profile-tab-btn, .communities-tab, .community-detail-tab",
-		).values(),
+		container
+			.querySelectorAll(
+				"a, button, .filter-btn, .profile-tab-btn, .communities-tab, .community-detail-tab",
+			)
+			.values(),
 	).filter((el) => !el.classList.contains("hidden"));
 
 	const activeIndex = tabs.indexOf(activeTab);

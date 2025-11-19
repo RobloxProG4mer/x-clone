@@ -131,7 +131,7 @@ let timelineScrollPosition = 0;
 
 	const feedLinks = document.querySelectorAll("h1 a");
 	const tabContainer = document.querySelector(".timeline h1");
-	
+
 	if (tabContainer) {
 		const activeTab = tabContainer.querySelector(".active");
 		if (activeTab) {
@@ -147,7 +147,7 @@ let timelineScrollPosition = 0;
 				l.classList.remove("active");
 			});
 			link.classList.add("active");
-			
+
 			if (tabContainer) {
 				updateTabIndicator(tabContainer, link);
 			}

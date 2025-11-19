@@ -109,7 +109,7 @@ export function initializeCommunitiesPage() {
 
 	initialized = true;
 	loadCommunities();
-	
+
 	const tabContainer = document.querySelector(".communities-tabs");
 	if (tabContainer) {
 		const activeTab = tabContainer.querySelector(".active");
@@ -128,7 +128,7 @@ export function initializeCommunitiesPage() {
 				b.classList.remove("active");
 			});
 			btn.classList.add("active");
-			
+
 			if (tabContainer) {
 				updateTabIndicator(tabContainer, btn);
 			}
@@ -460,7 +460,7 @@ export async function loadCommunityDetail(communityId) {
 
 	const tabButtons = document.querySelectorAll(".community-detail-tab");
 	const detailTabContainer = document.querySelector(".community-detail-tabs");
-	
+
 	const tabClickHandler = (btn) => () => {
 		const tab = btn.dataset.tab;
 
@@ -468,7 +468,7 @@ export async function loadCommunityDetail(communityId) {
 			b.classList.remove("active");
 		});
 		btn.classList.add("active");
-		
+
 		if (detailTabContainer) {
 			updateTabIndicator(detailTabContainer, btn);
 		}
@@ -1233,7 +1233,6 @@ async function saveCommunityTag() {
 	currentCommunity.tag_text = tagText;
 	showToast("Community tag updated", "success");
 }
-
 
 function openEditModal() {
 	document.getElementById("editCommunityName").value = currentCommunity.name;

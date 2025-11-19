@@ -281,13 +281,15 @@ export default new Elysia({ prefix: "/articles", tags: ["Articles"] })
 				attachmentsMap.get(attachment.post_id).push(attachment);
 			});
 
-			return {
+			const result = {
 				articles: attachArticleExtras(articles, attachmentsMap, userMap),
-				next:
-					articles.length === 10
-						? articles[articles.length - 1].created_at
-						: null,
 			};
+			
+			if (articles.length === 10) {
+				result.next = articles[articles.length - 1].created_at;
+			}
+			
+			return result;
 		},
 		{
 			detail: {

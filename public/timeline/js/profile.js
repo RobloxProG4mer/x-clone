@@ -54,7 +54,8 @@ export default async function openProfile(username) {
 
 			const spinner = document.createElement("div");
 			spinner.className = "spinner";
-			spinner.style.cssText = "width: 40px; height: 40px; border: 4px solid var(--border-primary); border-top-color: var(--primary); border-radius: 50%; animation: spin 0.8s linear infinite;";
+			spinner.style.cssText =
+				"width: 40px; height: 40px; border: 4px solid var(--border-primary); border-top-color: var(--primary); border-radius: 50%; animation: spin 0.8s linear infinite;";
 			profileContainer.innerHTML = "";
 			profileContainer.appendChild(spinner);
 
@@ -1036,7 +1037,7 @@ const renderProfile = (data) => {
 		'.profile-tab-btn[data-tab="posts"]',
 	);
 	if (postTabBtn) postTabBtn.classList.add("active");
-	
+
 	const tabContainer = document.querySelector(".profile-tab-nav");
 	if (tabContainer && postTabBtn) {
 		setTimeout(() => {
@@ -1066,6 +1067,8 @@ function updateFollowButton(isFollowing) {
 	const notificationDropdown = document.getElementById(
 		"profileNotificationDropdown",
 	);
+
+	if (!btn) return;
 
 	if (isFollowing) {
 		btn.textContent = "Following";
@@ -2057,7 +2060,7 @@ document.querySelectorAll(".profile-tab-btn").forEach((btn) => {
 			b.classList.remove("active");
 		});
 		btn.classList.add("active");
-		
+
 		const tabContainer = document.querySelector(".profile-tab-nav");
 		if (tabContainer) {
 			updateTabIndicator(tabContainer, btn);
