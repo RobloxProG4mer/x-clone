@@ -1939,7 +1939,7 @@ export const createTweetElement = (tweet, config = {}) => {
 
 					const script = document.createElement("script");
 					script.src =
-						"/public/shared/assets/js/html2canvas.js";
+						"/public/shared/assets/js/html2canvas.min.js";
 					script.onload = () => {
 						window
 							.html2canvas(wrapper, {

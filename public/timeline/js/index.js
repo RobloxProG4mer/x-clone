@@ -1,22 +1,21 @@
-import toastQueue from "../../shared/toasts.js";
 import {
 	createTweetSkeleton,
-	showSkeletons,
 	removeSkeletons,
+	showSkeletons,
 } from "../../shared/skeleton-utils.js";
+import toastQueue from "../../shared/toasts.js";
 import query from "./api.js";
-import { authToken } from "./auth.js";
-import { createComposer } from "./composer.js";
-import dm from "./dm.js";
-import switchPage, { addRoute, showPage } from "./pages.js";
-import { addTweetToTimeline } from "./tweets.js";
-
 import {
 	activateArticlesTab,
 	deactivateArticlesTab,
 	handleArticlesScroll,
 	initArticles,
 } from "./articles.js";
+import { authToken } from "./auth.js";
+import { createComposer } from "./composer.js";
+import dm from "./dm.js";
+import switchPage, { addRoute, showPage } from "./pages.js";
+import { addTweetToTimeline } from "./tweets.js";
 
 window.onerror = (message, source, lineno, colno) => {
 	toastQueue.add(

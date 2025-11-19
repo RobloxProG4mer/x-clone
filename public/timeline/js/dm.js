@@ -1,11 +1,11 @@
 import { showEmojiPickerPopup } from "../../shared/emoji-picker.js";
 import { openImageFullscreen } from "../../shared/image-viewer.js";
-import toastQueue from "../../shared/toasts.js";
 import {
 	createDMConversationSkeleton,
-	showSkeletons,
 	removeSkeletons,
+	showSkeletons,
 } from "../../shared/skeleton-utils.js";
+import toastQueue from "../../shared/toasts.js";
 import query from "./api.js";
 import { authToken } from "./auth.js";
 import switchPage, { addRoute } from "./pages.js";
@@ -19,8 +19,7 @@ const dmEmojiMap = {};
 		for (const e of data.emojis || []) {
 			if (e?.name && e?.file_url) dmEmojiMap[e.name] = e.file_url;
 		}
-	} catch (_err) {
-	}
+	} catch (_err) {}
 })();
 
 function renderReactionEmojiHtml(emoji) {
@@ -347,11 +346,7 @@ async function loadConversations() {
 	const listElement = document.getElementById("dmConversationsList");
 	if (!listElement) return;
 
-	const skeletons = showSkeletons(
-		listElement,
-		createDMConversationSkeleton,
-		3,
-	);
+	const skeletons = showSkeletons(listElement, createDMConversationSkeleton, 3);
 
 	try {
 		const data = await query("/dm/conversations");
@@ -510,7 +505,7 @@ async function openConversation(conversationId) {
 		messageOffset = currentMessages.length;
 		hasMoreMessages = true;
 		isLoadingMoreMessages = false;
-// Tr, SQLite ASAP!!!!!!!!
+		// Tr, SQLite ASAP!!!!!!!!
 		switchPage("dm-conversation", {
 			path: `/dm/${conversationId}`,
 			recoverState: () => {

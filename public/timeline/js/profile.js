@@ -7,13 +7,13 @@ import {
 	isConvertibleImage,
 } from "../../shared/image-utils.js";
 import { showReportModal } from "../../shared/report-modal.js";
-import toastQueue from "../../shared/toasts.js";
 import {
 	createProfileSkeleton,
 	createTweetSkeleton,
-	showSkeletons,
 	removeSkeletons,
+	showSkeletons,
 } from "../../shared/skeleton-utils.js";
+import toastQueue from "../../shared/toasts.js";
 import { createModal, createPopup } from "../../shared/ui-utils.js";
 import query from "./api.js";
 import getUser, { authToken } from "./auth.js";

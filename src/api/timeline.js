@@ -451,7 +451,7 @@ export default new Elysia({ prefix: "/timeline", tags: ["Timeline"] })
 				affiliate_with: post.affiliate_with || null,
 				selected_community_tag: post.selected_community_tag || null,
 			};
-			
+
 			if (author.affiliate && author.affiliate_with) {
 				const affiliateProfile = db
 					.query(
@@ -769,7 +769,7 @@ export default new Elysia({ prefix: "/timeline", tags: ["Timeline"] })
 				affiliate_with: post.affiliate_with || null,
 				selected_community_tag: post.selected_community_tag || null,
 			};
-			
+
 			if (author.affiliate && author.affiliate_with) {
 				const affiliateProfile = db
 					.query(
