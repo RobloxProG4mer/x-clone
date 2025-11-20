@@ -143,27 +143,6 @@ const getUserRetweetsPaginated = db.prepare(`
   LIMIT ?
 `);
 
-const getUserPosts = db.prepare(`
-  SELECT posts.*, users.username, users.name, users.avatar, users.verified, users.gold, users.avatar_radius, users.affiliate, users.affiliate_with, users.selected_community_tag
-  FROM posts 
-  JOIN users ON posts.user_id = users.id 
-	WHERE posts.user_id = ? AND posts.reply_to IS NULL AND users.suspended = 0
-  ORDER BY posts.pinned DESC, posts.created_at DESC
-`);
-
-const getUserRetweets = db.prepare(`
-  SELECT 
-    original_posts.*,
-    original_users.username, original_users.name, original_users.avatar, original_users.verified, original_users.gold, original_users.avatar_radius, original_users.affiliate, original_users.affiliate_with, original_users.selected_community_tag,
-    retweets.created_at as retweet_created_at,
-    retweets.post_id as original_post_id
-  FROM retweets
-  JOIN posts original_posts ON retweets.post_id = original_posts.id
-  JOIN users original_users ON original_posts.user_id = original_users.id
-  WHERE retweets.user_id = ?
-  ORDER BY retweets.created_at DESC
-`);
-
 const getFollowStatus = db.prepare(`
 	SELECT id, notify_tweets FROM follows WHERE follower_id = ? AND following_id = ?
 `);
@@ -204,7 +183,6 @@ const deleteFollowRequest = db.prepare(`
   DELETE FROM follow_requests WHERE requester_id = ? AND target_id = ?
 `);
 
-// Affiliate request queries
 const getAffiliateRequest = db.prepare(
 	`SELECT * FROM affiliate_requests WHERE requester_id = ? AND target_id = ?`,
 );
@@ -305,12 +283,10 @@ const getAttachmentsByPostId = db.prepare(`
 const isSuspendedQuery = db.prepare(
 	`SELECT * FROM suspensions WHERE user_id = ? AND status = 'active' AND action = 'suspend' AND (expires_at IS NULL OR expires_at > datetime('now'))`,
 );
-// Helper to check the users.suspended flag (legacy or quick lookup)
 const getUserSuspendedFlag = db.prepare(`
   SELECT suspended FROM users WHERE id = ?
 `);
 
-// Helper for restricted flag and active restriction suspensions
 const isRestrictedQuery = db.prepare(`
 	SELECT * FROM suspensions WHERE user_id = ? AND status = 'active' AND action = 'restrict' AND (expires_at IS NULL OR expires_at > datetime('now'))
 `);
@@ -318,7 +294,6 @@ const getUserRestrictedFlag = db.prepare(`
 	SELECT restricted FROM users WHERE id = ?
 `);
 
-// Helper for restricted checks to reuse across profile handlers
 const _isUserRestrictedById = (userId) => {
 	const r = isRestrictedQuery.get(userId);
 	const f = getUserRestrictedFlag.get(userId);
@@ -402,8 +377,6 @@ const getQuotedTweetData = (quoteTweetId, userId) => {
 		};
 	}
 
-	// Reuse the module-level `_isUserRestrictedById` helper if needed
-
 	const author = {
 		username: quotedTweet.username,
 		name: quotedTweet.name,
@@ -428,7 +401,7 @@ const getQuotedTweetData = (quoteTweetId, userId) => {
 				"SELECT id, name, tag_enabled, tag_emoji, tag_text FROM communities WHERE id = ?",
 			)
 			.get(quotedTweet.selected_community_tag);
-		if (community && community.tag_enabled) {
+		if (community?.tag_enabled) {
 			author.community_tag = {
 				community_id: community.id,
 				community_name: community.name,
@@ -521,7 +494,6 @@ export default new Elysia({ prefix: "/profile", tags: ["Profile"] })
 				return { error: "User is suspended", profile: minimalProfile };
 			}
 
-			// Fetch limited initial data (first 20 posts/retweets)
 			const userPostsQuery = db.query(`
 				SELECT posts.*, users.username, users.name, users.avatar, users.verified, users.gold, users.avatar_radius, users.affiliate, users.affiliate_with, users.selected_community_tag
 				FROM posts 
@@ -569,7 +541,7 @@ export default new Elysia({ prefix: "/profile", tags: ["Profile"] })
 						"SELECT id, name, tag_enabled, tag_emoji, tag_text FROM communities WHERE id = ?",
 					)
 					.get(profile.selected_community_tag);
-				if (community && community.tag_enabled) {
+				if (community?.tag_enabled) {
 					profile.community_tag = {
 						community_id: community.id,
 						community_name: community.name,
@@ -611,7 +583,6 @@ export default new Elysia({ prefix: "/profile", tags: ["Profile"] })
 								);
 								followsMe = !!followsBackStatus;
 
-								// Check for pending follow request
 								if (!isFollowing) {
 									const followRequest = getFollowRequest.get(
 										currentUser.id,
@@ -622,14 +593,9 @@ export default new Elysia({ prefix: "/profile", tags: ["Profile"] })
 							}
 						}
 					}
-				} catch {
-					// Invalid token, continue as unauthenticated
-				}
+				} catch {}
 			}
 
-			// If the viewer is authenticated and not the profile owner, check whether
-			// the profile owner has blocked the viewer. This is used by the frontend
-			// to show a banner and disable interactions.
 			let blockedByProfile = false;
 			if (currentUserId && !isOwnProfile) {
 				const blockedRow = getBlockStatus.get(user.id, currentUserId);
@@ -639,7 +605,6 @@ export default new Elysia({ prefix: "/profile", tags: ["Profile"] })
 			profile.blockedByProfile = blockedByProfile;
 			profile.notifyTweets = notifyTweetsSetting;
 
-			// If the account is shadowbanned, hide their posts unless the viewer is the owner or an admin
 			if (user.shadowbanned && !isOwnProfile) {
 				try {
 					const payload = headers.authorization
@@ -664,7 +629,6 @@ export default new Elysia({ prefix: "/profile", tags: ["Profile"] })
 				} catch (_) {}
 			}
 
-			// Combine and sort by pinned status first, then creation time
 			const allContent = [
 				...userPosts.map((post) => ({
 					...post,
@@ -685,7 +649,6 @@ export default new Elysia({ prefix: "/profile", tags: ["Profile"] })
 				})
 				.slice(0, 20);
 
-			// Batch fetch affiliate profiles
 			const allPostsAndReplies = [...allContent];
 			const affiliateIds = new Set();
 			if (profile.affiliate_with) affiliateIds.add(profile.affiliate_with);
@@ -716,7 +679,6 @@ export default new Elysia({ prefix: "/profile", tags: ["Profile"] })
 				);
 			}
 
-			// Build author objects with affiliate data
 			for (const item of allPostsAndReplies) {
 				const author = {
 					username: item.username,
@@ -744,7 +706,7 @@ export default new Elysia({ prefix: "/profile", tags: ["Profile"] })
 							"SELECT id, name, tag_enabled, tag_emoji, tag_text FROM communities WHERE id = ?",
 						)
 						.get(item.selected_community_tag);
-					if (community && community.tag_enabled) {
+					if (community?.tag_enabled) {
 						author.community_tag = {
 							community_id: community.id,
 							community_name: community.name,
@@ -757,15 +719,11 @@ export default new Elysia({ prefix: "/profile", tags: ["Profile"] })
 				item.author = author;
 			}
 
-			// If account is private and viewer is not following and not owner, hide posts
 			let posts = [];
-			let processedReplies = [];
 
 			if (user.private && !isFollowing && !isOwnProfile) {
 				posts = [];
-				processedReplies = [];
 			} else {
-				// Batch fetch all attachments
 				const allPostIds = allContent.map((p) => p.id);
 				const allIds = [...allPostIds];
 
@@ -807,11 +765,8 @@ export default new Elysia({ prefix: "/profile", tags: ["Profile"] })
 					fact_check: factChecksMap.get(post.id) || null,
 					interactive_card: getCardDataForTweet(post.id),
 				}));
-
-				processedReplies = [];
 			}
 
-			// Get likes and retweets for current user
 			if (
 				currentUserId &&
 				allContent.length > 0 &&
@@ -819,7 +774,6 @@ export default new Elysia({ prefix: "/profile", tags: ["Profile"] })
 			) {
 				try {
 					const postIds = allContent.map((p) => p.id);
-					// Use dynamic query based on actual number of posts
 					const likesQuery = db.query(`
 						SELECT post_id FROM likes WHERE user_id = ? AND post_id IN (${postIds
 							.map(() => "?")
@@ -844,7 +798,6 @@ export default new Elysia({ prefix: "/profile", tags: ["Profile"] })
 						post.retweeted_by_user = retweetedPostsSet.has(post.id);
 					});
 				} catch (e) {
-					// If likes/retweets query fails, continue without them
 					console.warn("Failed to fetch likes/retweets:", e);
 				}
 			}
@@ -925,7 +878,7 @@ export default new Elysia({ prefix: "/profile", tags: ["Profile"] })
 								"SELECT id, name, tag_enabled, tag_emoji, tag_text FROM communities WHERE id = ?",
 							)
 							.get(reply.selected_community_tag);
-						if (community && community.tag_enabled) {
+						if (community?.tag_enabled) {
 							author.community_tag = {
 								community_id: community.id,
 								community_name: community.name,
@@ -1040,7 +993,7 @@ export default new Elysia({ prefix: "/profile", tags: ["Profile"] })
 							"SELECT id, name, tag_enabled, tag_emoji, tag_text FROM communities WHERE id = ?",
 						)
 						.get(post.selected_community_tag);
-					if (community && community.tag_enabled) {
+					if (community?.tag_enabled) {
 						author.community_tag = {
 							community_id: community.id,
 							community_name: community.name,
@@ -1165,7 +1118,7 @@ export default new Elysia({ prefix: "/profile", tags: ["Profile"] })
 								"SELECT id, name, tag_enabled, tag_emoji, tag_text FROM communities WHERE id = ?",
 							)
 							.get(item.selected_community_tag);
-						if (community && community.tag_enabled) {
+						if (community?.tag_enabled) {
 							author.community_tag = {
 								community_id: community.id,
 								community_name: community.name,
@@ -1371,7 +1324,6 @@ export default new Elysia({ prefix: "/profile", tags: ["Profile"] })
 			const currentUser = getUserByUsername.get(payload.username);
 			if (!currentUser) return { error: "User not found" };
 
-			// Restrict follow action for restricted accounts
 			if (_isUserRestrictedById(currentUser.id)) {
 				return { error: "Action not allowed: account is restricted" };
 			}
@@ -1407,7 +1359,6 @@ export default new Elysia({ prefix: "/profile", tags: ["Profile"] })
 					return { error: "Follow request already sent" };
 				}
 				if (existingRequest.status === "denied") {
-					// Allow re-requesting after denial
 					deleteFollowRequest.run(currentUser.id, targetUser.id);
 				}
 			}
@@ -1572,10 +1523,8 @@ export default new Elysia({ prefix: "/profile", tags: ["Profile"] })
 
 			const uploadsDir = "./.data/uploads";
 
-			// Calculate secure hash for filename
 			const arrayBuffer = await avatar.arrayBuffer();
 
-			// Detect animated WebP (contains 'ANIM' chunk) and only allow it for gold users
 			if (avatar.type === "image/webp") {
 				try {
 					const bytes = new Uint8Array(arrayBuffer);
@@ -1640,7 +1589,6 @@ export default new Elysia({ prefix: "/profile", tags: ["Profile"] })
 				return { error: "You can only update your own avatar" };
 			}
 
-			// Remove avatar from database
 			updateAvatar.run(null, currentUser.id);
 
 			return { success: true };
@@ -1670,7 +1618,6 @@ export default new Elysia({ prefix: "/profile", tags: ["Profile"] })
 				return { error: "Banner file is required" };
 			}
 
-			// Get file extension based on MIME type first
 			const allowedTypes = {
 				"image/webp": ".webp",
 			};
@@ -1690,7 +1637,6 @@ export default new Elysia({ prefix: "/profile", tags: ["Profile"] })
 
 			const uploadsDir = "./.data/uploads";
 
-			// Calculate secure hash for filename
 			const arrayBuffer = await banner.arrayBuffer();
 			const hasher = new Bun.CryptoHasher("sha256");
 			hasher.update(arrayBuffer);
@@ -1731,7 +1677,6 @@ export default new Elysia({ prefix: "/profile", tags: ["Profile"] })
 				return { error: "You can only update your own banner" };
 			}
 
-			// Remove banner from database
 			updateBanner.run(null, currentUser.id);
 
 			return { success: true };
@@ -1981,12 +1926,10 @@ export default new Elysia({ prefix: "/profile", tags: ["Profile"] })
 				if (request.status !== "pending")
 					return { error: "Request already processed" };
 
-				// Approve request and create follow relationship
 				approveFollowRequest.run(requestId);
 				const followId = Bun.randomUUIDv7();
 				addFollow.run(followId, request.requester_id, currentUser.id);
 
-				// Notify the requester
 				const requester = db
 					.query("SELECT * FROM users WHERE id = ?")
 					.get(request.requester_id);
@@ -2042,7 +1985,6 @@ export default new Elysia({ prefix: "/profile", tags: ["Profile"] })
 			}
 		},
 	)
-	// Affiliate endpoints: send request, list pending, approve, deny
 	.post("/:username/affiliate", async ({ params, jwt, headers }) => {
 		const authorization = headers.authorization;
 		if (!authorization) return { error: "Authentication required" };
@@ -2135,7 +2077,6 @@ export default new Elysia({ prefix: "/profile", tags: ["Profile"] })
 					return { error: "Request already processed" };
 
 				approveAffiliateRequest.run(requestId);
-				// Set affiliate flag and record who they are affiliated with
 				updateUserAffiliateWith.run(1, request.requester_id, currentUser.id);
 
 				const requester = db
@@ -2275,7 +2216,6 @@ export default new Elysia({ prefix: "/profile", tags: ["Profile"] })
 
 			const { tweetId } = params;
 
-			// Unpin the tweet
 			db.query("UPDATE posts SET pinned = 0 WHERE id = ?").run(tweetId);
 
 			return { success: true };
@@ -2343,7 +2283,6 @@ export default new Elysia({ prefix: "/profile", tags: ["Profile"] })
 		}
 	})
 	.post("/settings/private", async ({ jwt, headers, body }) => {
-		// TR THE DB IS LOCKED
 		const authorization = headers.authorization;
 		if (!authorization) return { error: "Authentication required" };
 

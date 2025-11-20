@@ -43,7 +43,7 @@ function initializeNotificationTabs() {
 	buttons.forEach((btn) => {
 		btn.addEventListener("click", () => {
 			currentFilter = btn.dataset.filter || "all";
-			buttons.forEach((b) => b.classList.remove("active"));
+			buttons.forEach((b) => { b.classList.remove("active") });
 			btn.classList.add("active");
 			updateTabIndicator(tabContainer, btn);
 			renderNotifications();

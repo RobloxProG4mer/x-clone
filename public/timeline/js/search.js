@@ -15,6 +15,7 @@ let searchTimeout;
 let isInitialized = false;
 let lastSearchId = 0;
 let currentAbortController = null;
+let trends;
 
 const performSearch = async (q) => {
 	const searchId = ++lastSearchId;
@@ -145,19 +146,117 @@ const displayResults = (users, posts) => {
 	}
 };
 
-const showEmptyState = () => {
+const showEmptyState = async () => {
 	searchEmpty.style.display = "block";
 	usersSection.style.display = "none";
 	tweetsSection.style.display = "none";
 
-	searchEmpty.innerHTML = `
-			<svg class="search-empty-icon" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-				<circle cx="11" cy="11" r="8" />
-				<path d="M21 21l-4.35-4.35" />
-			</svg>
-			<h3>Search for people and tweets</h3>
-			<p>Start typing to find what you're looking for</p>
-		`;
+	searchEmpty.innerHTML = `<svg width="20" height="20" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><style>.spinner_z9k8 {transform-origin: center;animation: spinner_StKS 0.75s infinite linear;}@keyframes spinner_StKS {100% {transform: rotate(360deg);}}</style><path d="M12,1A11,11,0,1,0,23,12,11,11,0,0,0,12,1Zm0,19a8,8,0,1,1,8-8A8,8,0,0,1,12,20Z" opacity=".25" fill="currentColor"></path><path d="M12,4a8,8,0,0,1,7.89,6.7A1.53,1.53,0,0,0,21.38,12h0a1.5,1.5,0,0,0,1.48-1.75,11,11,0,0,0-21.72,0A1.5,1.5,0,0,0,2.62,12h0a1.53,1.53,0,0,0,1.49-1.3A8,8,0,0,1,12,4Z" class="spinner_z9k8" fill="currentColor"></path></svg>`;
+
+	if (!trends) {
+		trends = await query("/trends");
+	}
+
+	function timeAgo(ts) {
+		const now = Date.now();
+		const diff = Math.max(0, now - ts);
+
+		const s = Math.floor(diff / 1000);
+		if (s < 60) return `${s} seconds ago`;
+
+		const m = Math.floor(s / 60);
+		if (m < 60) return `${m} minutes ago`;
+
+		const h = Math.floor(m / 60);
+		if (h < 24) return `${h} hours ago`;
+
+		const d = Math.floor(h / 24);
+		if (d < 30) return `${d} days ago`;
+
+		const mo = Math.floor(d / 30);
+		if (mo < 12) return `${mo} months ago`;
+
+		const y = Math.floor(mo / 12);
+		return `${y} years ago`;
+	}
+
+	if (searchEmpty.innerHTML.includes(`<style>.spinner_z9k8`)) {
+		const eventsParseEl = document.createElement("div");
+		eventsParseEl.innerHTML = trends.eventsHtml;
+
+		const eventsEl = document.createElement("div");
+		eventsEl.innerHTML = trends.eventsHtml.replaceAll(` <i>(pictured)</i>`, "");
+
+		eventsEl.querySelectorAll("a").forEach((a) => {
+			a.setAttribute("target", "_blank");
+			a.setAttribute("rel", "noopener noreferrer");
+
+			a.href = new URL(
+				a.getAttribute("href"),
+				"https://en.wikipedia.org/wiki/Portal:Current_events",
+			).href;
+		});
+
+		const topicsInTheNews = eventsEl.querySelector(
+			`.p-current-events-headlines[aria-labelledby="Topics_in_the_news"] ul`,
+		);
+
+		searchEmpty.innerHTML = `<p class="lup">Last updated ${timeAgo(trends.updated)}</p>
+
+<h2>Major headlines</h2>
+<ul class="lup-topics">${topicsInTheNews.innerHTML || "<p>No current topics</p>"}</ul>
+
+${
+	Array.from(eventsEl.querySelectorAll(".current-events"))
+		.map((event) => {
+			const date = new Date(
+				event
+					.querySelector(".current-events-title .summary")
+					.innerText.split(" (")[0],
+			);
+
+			const isToday = date.toDateString() === new Date().toDateString();
+			const dateString = isToday
+				? "Today"
+				: date
+						.toLocaleDateString("en-US", {
+							weekday: "long",
+							year: "numeric",
+							month: "long",
+							day: "numeric",
+						})
+						.replace(`, ${date.getFullYear()}`, "");
+
+			const body = event.querySelector(
+				".current-events-content.description",
+			).innerHTML;
+
+			return `<div class="current-event${isToday ? " today-event" : ""}">
+<h3>${dateString}</h3>
+<div class="body">${body}</div>
+</div>`;
+		})
+		.join("") || "<p>No current events</p>"
+}
+<p class="credit">Content provided "as-is" by Wikipedia under CC BY-SA 4.0, sourced from "Current events", English Wikipedia. We do not guarantee accuracy and are not responsible for its content.</p>`;
+
+		searchEmpty
+			.querySelectorAll(".current-event:not(.today-event)")
+			.forEach((event) => {
+				const body = event.querySelector(".body");
+				body.style.display = "none";
+
+				event.querySelector("h3").addEventListener("click", () => {
+					if (body.style.display === "none") {
+						body.style.display = "block";
+						event.querySelector("h3").classList.add("active");
+					} else {
+						body.style.display = "none";
+						event.querySelector("h3").classList.remove("active");
+					}
+				});
+			});
+	}
 };
 
 const showNoResultsState = () => {

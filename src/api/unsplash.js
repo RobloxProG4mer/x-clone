@@ -7,7 +7,7 @@ import ratelimit from "../helpers/ratelimit.js";
 
 const JWT_SECRET = process.env.JWT_SECRET;
 const UNSPLASH_ACCESS_KEY = process.env.UNSPLASH_ACCESS_KEY;
-const imageCache = new LRUCache(200, 600000); // 10 minutes cache
+const imageCache = new LRUCache(200, 600000);
 
 const getUserByUsername = db.query(
 	"SELECT id FROM users WHERE LOWER(username) = LOWER(?)",
@@ -53,12 +53,10 @@ export default new Elysia({ prefix: "/unsplash", tags: ["Unsplash"] })
 				url.searchParams.set("query", q);
 				url.searchParams.set("per_page", finalLimit.toString());
 				url.searchParams.set("page", page.toString());
-				
-				// Add client_id header instead of query param for better security practice, 
-				// though Unsplash allows query param too.
+
 				const response = await fetch(url.toString(), {
 					headers: {
-						"Authorization": `Client-ID ${UNSPLASH_ACCESS_KEY}`
+						Authorization: `Client-ID ${UNSPLASH_ACCESS_KEY}`,
 					},
 					signal: AbortSignal.timeout(5000),
 				});
@@ -69,26 +67,26 @@ export default new Elysia({ prefix: "/unsplash", tags: ["Unsplash"] })
 				}
 
 				const data = await response.json();
-				
-				// Transform data to keep only what we need
-				const results = (data.results || []).map(img => ({
+
+				const results = (data.results || []).map((img) => ({
 					id: img.id,
 					url: img.urls.regular,
 					thumb: img.urls.small,
-					description: img.alt_description || img.description || "Unsplash image",
+					description:
+						img.alt_description || img.description || "Unsplash image",
 					download_location: img.links.download_location,
 					user: {
 						name: img.user.name,
 						username: img.user.username,
-						link: img.user.links.html
-					}
+						link: img.user.links.html,
+					},
 				}));
 
 				const result = {
 					success: true,
 					results: results,
 					total: data.total,
-					total_pages: data.total_pages
+					total_pages: data.total_pages,
 				};
 
 				imageCache.set(cacheKey, result);
@@ -109,39 +107,4 @@ export default new Elysia({ prefix: "/unsplash", tags: ["Unsplash"] })
 			}),
 			response: t.Any(),
 		},
-	)
-	.get(
-		"/track",
-		async ({ jwt, headers, query }) => {
-			// Unsplash requires triggering the download endpoint to count views/downloads
-			const authorization = headers.authorization;
-			if (!authorization) return { error: "Authentication required" };
-
-			try {
-				const payload = await jwt.verify(authorization.replace("Bearer ", ""));
-				if (!payload) return { error: "Invalid token" };
-
-				const { url } = query;
-				if (!url) return { error: "URL is required" };
-
-				// Fire and forget
-				fetch(url, {
-					headers: {
-						"Authorization": `Client-ID ${UNSPLASH_ACCESS_KEY}`
-					}
-				}).catch(err => console.error("Failed to track unsplash download:", err));
-
-				return { success: true };
-			} catch (error) {
-				return { error: "Failed to track" };
-			}
-		},
-		{
-			detail: {
-				description: "Tracks Unsplash image download/view",
-			},
-			query: t.Object({
-				url: t.String(),
-			}),
-		}
 	);

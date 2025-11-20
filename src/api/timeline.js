@@ -14,41 +14,6 @@ const normalizeContent = (value) => {
 		.trim();
 };
 
-const enrichUsersWithAffiliateProfiles = (users) => {
-	users.forEach((user) => {
-		if (user.affiliate && user.affiliate_with) {
-			const affiliateProfile = db
-				.query(
-					"SELECT id, username, name, avatar, verified, gold, avatar_radius FROM users WHERE id = ?",
-				)
-				.get(user.affiliate_with);
-			if (affiliateProfile) {
-				user.affiliate_with_profile = affiliateProfile;
-			}
-		}
-	});
-};
-
-const enrichUsersWithCommunityTags = (users) => {
-	users.forEach((user) => {
-		if (user.selected_community_tag) {
-			const community = db
-				.query(
-					"SELECT id, name, tag_enabled, tag_emoji, tag_text FROM communities WHERE id = ?",
-				)
-				.get(user.selected_community_tag);
-			if (community && community.tag_enabled) {
-				user.community_tag = {
-					community_id: community.id,
-					community_name: community.name,
-					emoji: community.tag_emoji,
-					text: community.tag_text,
-				};
-			}
-		}
-	});
-};
-
 const JWT_SECRET = process.env.JWT_SECRET;
 
 const getTimelinePosts = db.query(`
@@ -353,7 +318,7 @@ export default new Elysia({ prefix: "/timeline", tags: ["Timeline"] })
 		}
 
 		const beforeId = query.before;
-		const limit = Math.min(Math.max(parseInt(query.limit) || 10, 1), 50);
+		const limit = Math.min(Math.max(parseInt(query.limit, 10) || 10, 1), 50);
 		let posts = [];
 		if (beforeId) {
 			const cursor = getPostCreatedAt.get(beforeId);
@@ -469,7 +434,7 @@ export default new Elysia({ prefix: "/timeline", tags: ["Timeline"] })
 						"SELECT id, name, tag_enabled, tag_emoji, tag_text FROM communities WHERE id = ?",
 					)
 					.get(author.selected_community_tag);
-				if (community && community.tag_enabled) {
+				if (community?.tag_enabled) {
 					author.community_tag = {
 						community_id: community.id,
 						community_name: community.name,
@@ -643,7 +608,7 @@ export default new Elysia({ prefix: "/timeline", tags: ["Timeline"] })
 		}
 
 		const beforeId = query.before;
-		const limit = Math.min(Math.max(parseInt(query.limit) || 10, 1), 50);
+		const limit = Math.min(Math.max(parseInt(query.limit, 10) || 10, 1), 50);
 		let posts = [];
 		if (beforeId) {
 			const cursor = getPostCreatedAt.get(beforeId);
@@ -777,7 +742,7 @@ export default new Elysia({ prefix: "/timeline", tags: ["Timeline"] })
 						"SELECT id, name, tag_enabled, tag_emoji, tag_text FROM communities WHERE id = ?",
 					)
 					.get(author.selected_community_tag);
-				if (community && community.tag_enabled) {
+				if (community?.tag_enabled) {
 					author.community_tag = {
 						community_id: community.id,
 						community_name: community.name,

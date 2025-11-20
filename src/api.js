@@ -17,9 +17,10 @@ import reports from "./api/reports.js";
 import scheduled from "./api/scheduled.js";
 import search from "./api/search.js";
 import tenor from "./api/tenor.js";
-import unsplash from "./api/unsplash.js";
 import timeline from "./api/timeline.js";
+import trends from "./api/trends.js";
 import tweet from "./api/tweet.js";
+import unsplash from "./api/unsplash.js";
 import upload, { uploadRoutes } from "./api/upload.js";
 import db from "./db.js";
 import { emojiCache } from "./helpers/cache.js";
@@ -241,4 +242,5 @@ export default new Elysia({
 	.use(unsplash)
 	.use(scheduled)
 	.use(reports)
-	.use(uploadRoutes);
+	.use(uploadRoutes)
+	.use(trends);
