@@ -3738,6 +3738,13 @@ nav {
   flex-direction: column;
   width: 100%;
 
+  .tweets-results-page,
+  .users-results-page {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
   .search-header {
     display: flex;
     align-items: center;
@@ -3785,7 +3792,7 @@ nav {
     margin-bottom: 24px;
   }
 
-  &:has(.search-empty) {
+  &:has(.search-empty:not([style="display: none;"])) {
     .search-filters {
       display: none;
     }

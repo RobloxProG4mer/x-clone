@@ -121,7 +121,7 @@ const displayResults = (users, posts) => {
 			return `
 			<a href="/@${escapeHtml(user.username)}" class="search-user">
 				<img src="${escapeHtml(
-					user.avatar || "/default-avatar.svg",
+					user.avatar || "/public/shared/assets/default-avatar.svg",
 				)}" alt="${escapeHtml(user.name)}" style="border-radius: ${radius};">
 				<div class="user-info">
 					<h4>${escapeHtml(user.name)}</h4>
@@ -277,6 +277,7 @@ const showNoResultsState = () => {
 export const searchQuery = async (q) => {
 	const switchPage = (await import("./pages.js")).default;
 	switchPage("search", { path: `/search` });
+	document.getElementById("searchPageInput")?.focus();
 
 	searchPageInput.value = q;
 	performSearch(q);

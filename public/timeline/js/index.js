@@ -200,6 +200,10 @@ let timelineScrollPosition = 0;
 	if (searchBtn) {
 		searchBtn.addEventListener("click", () => {
 			switchPage("search", { path: "/search" });
+
+			requestAnimationFrame(() => {
+				document.getElementById("searchPageInput")?.focus();
+			});
 		});
 	}
 
