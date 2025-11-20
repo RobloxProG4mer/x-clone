@@ -180,32 +180,31 @@ const showEmptyState = async () => {
 		return `${y} years ago`;
 	}
 
-	if (searchEmpty.innerHTML.includes(`<style>.spinner_z9k8`)) {
-		const eventsParseEl = document.createElement("div");
-		eventsParseEl.innerHTML = trends.eventsHtml;
+	if (!searchEmpty.innerHTML.includes(`<style>.spinner_z9k8`)) return;
 
-		const eventsEl = document.createElement("div");
-		eventsEl.innerHTML = trends.eventsHtml.replaceAll(` <i>(pictured)</i>`, "");
+	const eventsParseEl = document.createElement("div");
+	eventsParseEl.innerHTML = trends.eventsHtml;
 
-		eventsEl.querySelectorAll("a").forEach((a) => {
-			a.setAttribute("target", "_blank");
-			a.setAttribute("rel", "noopener noreferrer");
+	const eventsEl = document.createElement("div");
+	eventsEl.innerHTML = trends.eventsHtml.replaceAll(` <i>(pictured)</i>`, "");
 
-			a.href = new URL(
-				a.getAttribute("href"),
-				"https://en.wikipedia.org/wiki/Portal:Current_events",
-			).href;
-		});
+	eventsEl.querySelectorAll("a").forEach((a) => {
+		a.setAttribute("target", "_blank");
+		a.setAttribute("rel", "noopener noreferrer");
 
-		const topicsInTheNews = eventsEl.querySelector(
-			`.p-current-events-headlines[aria-labelledby="Topics_in_the_news"] ul`,
-		);
+		a.href = new URL(
+			a.getAttribute("href"),
+			"https://en.wikipedia.org/wiki/Portal:Current_events",
+		).href;
+	});
 
-		searchEmpty.innerHTML = `<p class="lup">Last updated ${timeAgo(trends.updated)}</p>
+	const topicsInTheNews = eventsEl.querySelector(
+		`.p-current-events-headlines[aria-labelledby="Topics_in_the_news"] ul`,
+	);
 
+	searchEmpty.innerHTML = `<p class="lup">Last updated ${timeAgo(trends.updated)}</p>
 <h2>Major headlines</h2>
 <ul class="lup-topics">${topicsInTheNews.innerHTML || "<p>No current topics</p>"}</ul>
-
 ${
 	Array.from(eventsEl.querySelectorAll(".current-events"))
 		.map((event) => {
@@ -240,23 +239,22 @@ ${
 }
 <p class="credit">Content provided "as-is" by Wikipedia under CC BY-SA 4.0, sourced from "Current events", English Wikipedia. We do not guarantee accuracy and are not responsible for its content.</p>`;
 
-		searchEmpty
-			.querySelectorAll(".current-event:not(.today-event)")
-			.forEach((event) => {
-				const body = event.querySelector(".body");
-				body.style.display = "none";
+	searchEmpty
+		.querySelectorAll(".current-event:not(.today-event)")
+		.forEach((event) => {
+			const body = event.querySelector(".body");
+			body.style.display = "none";
 
-				event.querySelector("h3").addEventListener("click", () => {
-					if (body.style.display === "none") {
-						body.style.display = "block";
-						event.querySelector("h3").classList.add("active");
-					} else {
-						body.style.display = "none";
-						event.querySelector("h3").classList.remove("active");
-					}
-				});
+			event.querySelector("h3").addEventListener("click", () => {
+				if (body.style.display === "none") {
+					body.style.display = "block";
+					event.querySelector("h3").classList.add("active");
+				} else {
+					body.style.display = "none";
+					event.querySelector("h3").classList.remove("active");
+				}
 			});
-	}
+		});
 };
 
 const showNoResultsState = () => {

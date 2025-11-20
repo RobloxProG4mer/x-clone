@@ -6,9 +6,6 @@
   box-sizing: border-box;
   -webkit-tap-highlight-color: rgba(255, 255, 255, 0);
   text-underline-offset: 2px;
-  /* biome-ignore lint/correctness/noUnknownFunction: it does */
-  /* biome-ignore lint/correctness/noUnknownProperty: it does */
-  corner-shape: superellipse(1.2);
 }
 
 html,
