@@ -42,7 +42,7 @@ export function updateTabIndicator(container, activeTab) {
 
 export function initTabIndicators() {
 	const tabContainers = [
-		document.querySelector(".timeline h1"),
+		document.querySelector(".timeline .tab-nav"),
 		document.querySelector(".search-filters"),
 		document.querySelector(".profile-tab-nav"),
 		document.querySelector(".communities-tabs"),

@@ -129,8 +129,8 @@ let timelineScrollPosition = 0;
 		}
 	};
 
-	const feedLinks = document.querySelectorAll("h1 a");
-	const tabContainer = document.querySelector(".timeline h1");
+	const feedLinks = document.querySelectorAll(".tab-nav a");
+	const tabContainer = document.querySelector(".timeline .tab-nav");
 
 	if (tabContainer) {
 		const activeTab = tabContainer.querySelector(".active");
@@ -282,7 +282,7 @@ addRoute(
 	(pathname) => pathname === "/articles",
 	() => {
 		showPage("timeline");
-		const articleLink = document.querySelector('h1 a[data-tab="articles"]');
+		const articleLink = document.querySelector('.tab-nav a[data-tab="articles"]');
 		articleLink?.click();
 	},
 );
