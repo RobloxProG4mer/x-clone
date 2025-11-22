@@ -141,6 +141,7 @@ CREATE TABLE IF NOT EXISTS posts (
   is_article BOOLEAN DEFAULT FALSE,
   article_title TEXT DEFAULT NULL,
   article_body_markdown TEXT DEFAULT NULL,
+  super_tweet BOOLEAN DEFAULT FALSE,
   FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
   FOREIGN KEY (poll_id) REFERENCES polls(id) ON DELETE CASCADE,
   FOREIGN KEY (quote_tweet_id) REFERENCES posts(id) ON DELETE CASCADE,
@@ -149,6 +150,7 @@ CREATE TABLE IF NOT EXISTS posts (
 
 CREATE INDEX IF NOT EXISTS idx_posts_article_id ON posts(article_id);
 CREATE INDEX IF NOT EXISTS idx_posts_community_id ON posts(community_id);
+CREATE INDEX IF NOT EXISTS idx_posts_super_tweet ON posts(super_tweet) WHERE super_tweet = TRUE;
 
 CREATE INDEX IF NOT EXISTS idx_posts_user_id ON posts(user_id);
 CREATE INDEX IF NOT EXISTS idx_posts_created_at ON posts(created_at);

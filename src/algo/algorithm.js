@@ -28,6 +28,7 @@ if (existsSync(libPath)) {
 					FFIType.i32,
 					FFIType.i32,
 					FFIType.i32,
+					FFIType.i32,
 				],
 				returns: FFIType.double,
 			},
@@ -63,6 +64,7 @@ export const calculateScore = (
 	user_gold = 0,
 	follower_count = 0,
 	has_community_note = 0,
+	is_super_tweet = 0,
 ) => {
 	if (!lib) {
 		return 0;
@@ -91,6 +93,7 @@ export const calculateScore = (
 		user_gold,
 		follower_count,
 		has_community_note,
+		is_super_tweet,
 	);
 };
 
@@ -205,6 +208,7 @@ export const rankTweets = (
 			tweet.follower_count || tweet.author?.follower_count || 0;
 		const hasCommunityNote =
 			tweet.has_community_note || tweet.fact_check ? 1 : 0;
+		const isSuperTweet = tweet.super_tweet ? 1 : 0;
 
 		const score = calculateScore(
 			timestamp,
@@ -224,6 +228,7 @@ export const rankTweets = (
 			userGold,
 			followerCount,
 			hasCommunityNote,
+			isSuperTweet,
 		);
 
 		return { ...tweet, _score: score };

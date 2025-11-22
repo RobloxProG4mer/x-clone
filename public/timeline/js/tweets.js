@@ -1260,6 +1260,33 @@ export const createTweetElement = (tweet, config = {}) => {
 					console.error("Failed to load embedded tweet:", err);
 				});
 		}
+
+		tweetContentEl.querySelectorAll("a").forEach((a) => {
+			const url = new URL(a.href, location.origin);
+
+			if (url.host === "youtube.com" || url.host === "www.youtube.com") {
+				const videoId = url.searchParams.get("v");
+				if (videoId) {
+					const videoFrame = document.createElement("iframe");
+
+					videoFrame.src = `https://www.youtube-nocookie.com/embed/${videoId}`;
+					videoFrame.width = "200";
+					videoFrame.height = "113";
+					videoFrame.classList.add("tweet-youtube-iframe");
+					videoFrame.setAttribute("frameborder", "0");
+					videoFrame.setAttribute(
+						"allow",
+						"accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share",
+					);
+					videoFrame.setAttribute("referrerpolicy", "strict-origin-when-cross-origin");
+					videoFrame.setAttribute("allowfullscreen", "true");
+					videoFrame.title = "YouTube video player";
+					videoFrame.setAttribute("loading", "lazy");
+
+					tweetContentEl.appendChild(videoFrame);
+				}
+			}
+		});
 	}
 
 	if (tweet.poll) {

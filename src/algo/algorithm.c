@@ -598,7 +598,8 @@ double calculate_score(
     int user_verified,
     int user_gold,
     int follower_count,
-    int has_community_note
+    int has_community_note,
+    int is_super_tweet
 ) {
     if (created_at < 0) created_at = 0;
     if (like_count < 0) like_count = 0;
@@ -619,6 +620,7 @@ double calculate_score(
     if (user_gold < 0) user_gold = 0;
     if (follower_count < 0) follower_count = 0;
     if (has_community_note < 0) has_community_note = 0;
+    if (is_super_tweet < 0) is_super_tweet = 0;
     
     time_t now = time(NULL);
     double age_hours = compute_age_hours(now, created_at);
@@ -634,6 +636,14 @@ double calculate_score(
             return 0.001;
         }
         return 0.0;
+    }
+    
+    double super_tweet_boost = 1.0;
+    if (is_super_tweet) {
+        super_tweet_boost = 50.0;
+        if (age_hours < 24.0) {
+            super_tweet_boost *= 2.0;
+        }
     }
     
     double time_decay = calculate_time_decay(age_hours);
@@ -816,7 +826,8 @@ double calculate_score(
                         novelty_boost *
                         diversity_penalty *
                         verified_boost *
-                        random_multiplier;
+                        random_multiplier *
+                        super_tweet_boost;
 
     if (all_seen_flag) {
         final_score += random_component * 2.5;
@@ -921,7 +932,8 @@ void rank_tweets(Tweet *tweets, size_t count) {
             tweets[i].user_verified,
             tweets[i].user_gold,
             tweets[i].follower_count,
-            tweets[i].has_community_note
+            tweets[i].has_community_note,
+            tweets[i].is_super_tweet
         );
 
         tweets[i].score = base_score;
@@ -1100,7 +1112,8 @@ void rank_tweets(Tweet *tweets, size_t count) {
             tweets[i].user_verified,
             tweets[i].user_gold,
             tweets[i].follower_count,
-            tweets[i].has_community_note
+            tweets[i].has_community_note,
+            tweets[i].is_super_tweet
         );
 
         double penalty2 = 1.0;

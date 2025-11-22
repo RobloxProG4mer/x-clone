@@ -4305,6 +4305,41 @@ export default new Elysia({ prefix: "/admin", tags: ["Admin"] })
 		return { success: true };
 	})
 
+	.patch(
+		"/posts/:id/super-tweet",
+		async ({ params, body, user }) => {
+			const post = adminQueries.getPostById.get(params.id);
+			if (!post) {
+				return { error: "Post not found" };
+			}
+
+			const superTweet = body.super_tweet ? 1 : 0;
+
+			db.query("UPDATE posts SET super_tweet = ? WHERE id = ?").run(
+				superTweet,
+				params.id,
+			);
+
+			logModerationAction(user.id, "toggle_super_tweet", "post", params.id, {
+				super_tweet: superTweet,
+			});
+
+			return { success: true, super_tweet: !!superTweet };
+		},
+		{
+			detail: {
+				description: "Toggles the SuperTweeta status for a post",
+			},
+			params: t.Object({
+				id: t.String(),
+			}),
+			body: t.Object({
+				super_tweet: t.Boolean(),
+			}),
+			response: t.Any(),
+		},
+	)
+
 	.get(
 		"/fact-check/:postId",
 		async ({ params }) => {

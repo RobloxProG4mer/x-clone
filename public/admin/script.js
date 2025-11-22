@@ -1371,6 +1371,11 @@ class AdminPanel {
 										}">
                       <i class="bi bi-pencil"></i> Edit
                     </button>
+                    <button class="btn ${post.super_tweet ? 'btn-warning' : 'btn-outline-secondary'} btn-sm toggle-super-tweet-btn" data-post-id="${
+											post.id
+										}" data-super-tweet="${!!post.super_tweet}">
+                      <i class="bi bi-star-fill"></i> ${post.super_tweet ? 'Remove SuperTweeta' : 'Make SuperTweeta'}
+                    </button>
                     <button class="btn btn-outline-warning btn-sm add-factcheck-btn" data-post-id="${
 											post.id
 										}">
@@ -1401,7 +1406,7 @@ class AdminPanel {
 		if (!container) return;
 		container.addEventListener("click", (event) => {
 			const button = event.target.closest(
-				".edit-post-btn, .delete-post-btn, .add-factcheck-btn",
+				".edit-post-btn, .delete-post-btn, .add-factcheck-btn, .toggle-super-tweet-btn",
 			);
 			if (!button) return;
 			const postId = button.dataset.postId;
@@ -1416,6 +1421,10 @@ class AdminPanel {
 			}
 			if (button.classList.contains("add-factcheck-btn")) {
 				this.addFactCheck(postId);
+				return;
+			}
+			if (button.classList.contains("toggle-super-tweet-btn")) {
+				this.toggleSuperTweet(postId, button.dataset.superTweet === 'true');
 			}
 		});
 		this.postsTableListenerAttached = true;
@@ -3067,6 +3076,29 @@ class AdminPanel {
 
 			this.showSuccess("Post deleted successfully");
 			this.loadPosts(this.currentPage.posts);
+		} catch (error) {
+			this.showError(error.message);
+		}
+	}
+
+	async toggleSuperTweet(postId, currentStatus) {
+		const newStatus = !currentStatus;
+		const action = newStatus ? 'enable' : 'disable';
+		
+		if (!confirm(`Are you sure you want to ${action} SuperTweeta status for this post?`)) return;
+
+		try {
+			const response = await this.apiCall(`/api/admin/posts/${postId}/super-tweet`, {
+				method: "PATCH",
+				body: JSON.stringify({ super_tweet: newStatus }),
+			});
+
+			if (response.success) {
+				this.showSuccess(`SuperTweeta status ${newStatus ? 'enabled' : 'disabled'} successfully`);
+				this.loadPosts(this.currentPage.posts);
+			} else {
+				this.showError(response.error || "Failed to update SuperTweeta status");
+			}
 		} catch (error) {
 			this.showError(error.message);
 		}
