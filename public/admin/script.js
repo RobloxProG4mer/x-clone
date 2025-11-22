@@ -51,6 +51,8 @@ class AdminPanel {
 		this.extensionConfirmModal = null;
 		this.extensionConfirmResolver = null;
 		// extension-specific settings modal removed — extensions should implement their own UI
+		this.editPostSaveListenerAttached = false;
+		this.postsTableListenerAttached = false;
 
 		this.init();
 	}
@@ -1364,19 +1366,19 @@ class AdminPanel {
                 </td>
                 <td>
                   <div class="btn-group-vertical btn-group-sm">
-                    <button class="btn btn-outline-primary btn-sm" onclick="adminPanel.editPost('${
+                    <button class="btn btn-outline-primary btn-sm edit-post-btn" data-post-id="${
 											post.id
-										}')">
+										}">
                       <i class="bi bi-pencil"></i> Edit
                     </button>
-                    <button class="btn btn-outline-warning btn-sm" onclick="adminPanel.addFactCheck('${
+                    <button class="btn btn-outline-warning btn-sm add-factcheck-btn" data-post-id="${
 											post.id
-										}')">
+										}">
                       <i class="bi bi-exclamation-triangle"></i> Fact-Check
                     </button>
-                    <button class="btn btn-outline-danger btn-sm" onclick="adminPanel.deletePost('${
+                    <button class="btn btn-outline-danger btn-sm delete-post-btn" data-post-id="${
 											post.id
-										}')">
+										}">
                       <i class="bi bi-trash"></i> Delete
                     </button>
                   </div>
@@ -1389,6 +1391,34 @@ class AdminPanel {
         </table>
       </div>
     `;
+
+		this.ensurePostsTableListener();
+	}
+
+	ensurePostsTableListener() {
+		if (this.postsTableListenerAttached) return;
+		const container = document.getElementById("postsTable");
+		if (!container) return;
+		container.addEventListener("click", (event) => {
+			const button = event.target.closest(
+				".edit-post-btn, .delete-post-btn, .add-factcheck-btn",
+			);
+			if (!button) return;
+			const postId = button.dataset.postId;
+			if (!postId) return;
+			if (button.classList.contains("edit-post-btn")) {
+				this.editPost(postId);
+				return;
+			}
+			if (button.classList.contains("delete-post-btn")) {
+				this.deletePost(postId);
+				return;
+			}
+			if (button.classList.contains("add-factcheck-btn")) {
+				this.addFactCheck(postId);
+			}
+		});
+		this.postsTableListenerAttached = true;
 	}
 
 	async searchPosts() {
@@ -3223,6 +3253,8 @@ class AdminPanel {
 			const post = await this.apiCall(`/api/admin/posts/${postId}`);
 
 			document.getElementById("editPostId").value = post.id;
+			const newIdInput = document.getElementById("editPostNewId");
+			if (newIdInput) newIdInput.value = post.id;
 			document.getElementById("editPostContent").value = post.content;
 			document.getElementById("editPostLikes").value = post.like_count || 0;
 			document.getElementById("editPostRetweets").value =
@@ -3246,8 +3278,16 @@ class AdminPanel {
 				document.getElementById("editPostModal"),
 			);
 			modal.show();
-		} catch {
-			this.showError("Failed to load post details");
+			if (!this.editPostSaveListenerAttached) {
+				const saveBtn = document.getElementById("editPostSaveBtn");
+				if (saveBtn) {
+					saveBtn.addEventListener("click", () => this.savePostEdit());
+					this.editPostSaveListenerAttached = true;
+				}
+			}
+		} catch (err) {
+			console.error("Failed to load post details", err);
+			this.showError(err?.message || "Failed to load post details");
 		}
 	}
 
@@ -3260,6 +3300,7 @@ class AdminPanel {
 		const replies =
 			parseInt(document.getElementById("editPostReplies").value) || 0;
 		const views = parseInt(document.getElementById("editPostViews").value) || 0;
+		const newIdRaw = document.getElementById("editPostNewId")?.value?.trim();
 
 		if (!content.trim()) {
 			this.showError("Post content cannot be empty");
@@ -3284,6 +3325,13 @@ class AdminPanel {
 				method: "PATCH",
 				body: JSON.stringify(payload),
 			});
+
+			if (newIdRaw && newIdRaw !== postId) {
+				await this.apiCall(`/api/admin/posts/${postId}/id`, {
+					method: "PATCH",
+					body: JSON.stringify({ new_id: newIdRaw }),
+				});
+			}
 
 			bootstrap.Modal.getInstance(
 				document.getElementById("editPostModal"),

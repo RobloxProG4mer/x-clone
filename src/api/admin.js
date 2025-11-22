@@ -205,6 +205,7 @@ WHERE u.id = ?
 	updatePost: db.prepare(
 		"UPDATE posts SET content = ?, like_count = ?, retweet_count = ?, reply_count = ?, view_count = ?, created_at = ? WHERE id = ?",
 	),
+	updatePostId: db.prepare("UPDATE posts SET id = ? WHERE id = ?"),
 	createPostAsUser: db.prepare(
 		"INSERT INTO posts (id, user_id, content, reply_to, created_at) VALUES (?, ?, ?, ?, ?)",
 	),

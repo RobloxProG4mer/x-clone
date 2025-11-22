@@ -351,7 +351,7 @@ export default new Elysia({ prefix: "/auth", tags: ["Auth"] })
 					}
 
 					const loginTransparency = JSON.stringify({
-						city: headers["cf-ipcity"] || null,
+						city: headers["cf-region"] || headers["cf-ipcity"] || null,
 						country: headers["cf-ipcountry"] || null,
 						continent: headers["cf-ipcontinent"] || null,
 						latitude: headers["cf-iplatitude"] || null,
@@ -435,7 +435,7 @@ export default new Elysia({ prefix: "/auth", tags: ["Auth"] })
 					);
 
 					const loginTransparency = JSON.stringify({
-						city: headers["cf-ipcity"] || null,
+						city: headers["cf-region"] || headers["cf-ipcity"] || null,
 						country: headers["cf-ipcountry"] || null,
 						continent: headers["cf-ipcontinent"] || null,
 						latitude: headers["cf-iplatitude"] || null,
@@ -676,7 +676,7 @@ export default new Elysia({ prefix: "/auth", tags: ["Auth"] })
 					}
 
 					const loginTransparency = JSON.stringify({
-						city: headers["cf-ipcity"] || null,
+						city: headers["cf-region"] || headers["cf-ipcity"] || null,
 						country: headers["cf-ipcountry"] || null,
 						continent: headers["cf-ipcontinent"] || null,
 						latitude: headers["cf-iplatitude"] || null,
@@ -706,7 +706,7 @@ export default new Elysia({ prefix: "/auth", tags: ["Auth"] })
 
 				if (!user) {
 					const creationTransparency = JSON.stringify({
-						city: headers["cf-ipcity"] || null,
+						city: headers["cf-region"] || headers["cf-ipcity"] || null,
 						country: headers["cf-ipcountry"] || null,
 						continent: headers["cf-ipcontinent"] || null,
 						latitude: headers["cf-iplatitude"] || null,
@@ -739,7 +739,7 @@ export default new Elysia({ prefix: "/auth", tags: ["Auth"] })
 				});
 
 				const loginTransparency = JSON.stringify({
-					city: headers["cf-ipcity"] || null,
+					city: headers["cf-region"] || headers["cf-ipcity"] || null,
 					country: headers["cf-ipcountry"] || null,
 					continent: headers["cf-ipcontinent"] || null,
 					latitude: headers["cf-iplatitude"] || null,
@@ -865,7 +865,7 @@ export default new Elysia({ prefix: "/auth", tags: ["Auth"] })
 				);
 
 				const loginTransparency = JSON.stringify({
-					city: headers["cf-ipcity"] || null,
+					city: headers["cf-region"] || headers["cf-ipcity"] || null,
 					country: headers["cf-ipcountry"] || null,
 					continent: headers["cf-ipcontinent"] || null,
 					latitude: headers["cf-iplatitude"] || null,
@@ -1159,7 +1159,7 @@ export default new Elysia({ prefix: "/auth", tags: ["Auth"] })
 				const userId = Bun.randomUUIDv7();
 
 				const creationTransparency = JSON.stringify({
-					city: headers["cf-ipcity"] || null,
+					city: headers["cf-region"] || headers["cf-ipcity"] || null,
 					country: headers["cf-ipcountry"] || null,
 					continent: headers["cf-ipcontinent"] || null,
 					latitude: headers["cf-iplatitude"] || null,
@@ -1237,7 +1237,7 @@ export default new Elysia({ prefix: "/auth", tags: ["Auth"] })
 				);
 
 				const loginTransparency = JSON.stringify({
-					city: headers["cf-ipcity"] || null,
+					city: headers["cf-region"] || headers["cf-ipcity"] || null,
 					country: headers["cf-ipcountry"] || null,
 					continent: headers["cf-ipcontinent"] || null,
 					latitude: headers["cf-iplatitude"] || null,

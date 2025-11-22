@@ -8,22 +8,43 @@
 #include <ctype.h>
 
 #define MAX_AGE_HOURS 168
+#define MAX_TOKENS 12
+#define MIN_TOKEN_LEN 3
+#define URL_PREFIX_HTTP "http://"
+#define URL_PREFIX_HTTPS "https://"
+#define RECENT_TOP_LIMIT 64
+#define TOP_SEEN_CACHE_LIMIT 256
 #define FRESH_TWEET_HOURS 6
 #define VIRAL_THRESHOLD 100
 #define MIN_ENGAGEMENT_RATIO 0.01
 #define SUPER_FRESH_HOURS 2
+#define ENGAGEMENT_FLOOR_DENOM 25
 
 static inline double safe_log(double x) {
     return (x > 0.0) ? log(x + 1.0) : 0.0;
+}
+
+static inline double safe_div(double num, double den, double fallback) {
+    if (!isfinite(num) || !isfinite(den) || den == 0.0) return fallback;
+    return num / den;
 }
 
 static inline int safe_max(int a, int b) {
     return (a > b) ? a : b;
 }
 
+// safe_min_int removed (unused) - prefer using explicit logic in-place
+
+static inline double clampd(double v, double lo, double hi) {
+    if (v < lo) return lo;
+    if (v > hi) return hi;
+    return v;
+}
+
 static inline double compute_age_hours(time_t now_ts, long long created_at) {
     double age = (double)(now_ts - (time_t)created_at) / 3600.0;
     if (age < 0.0) age = 0.0;
+    if (age > MAX_AGE_HOURS * 2) age = MAX_AGE_HOURS * 2;
     return age;
 }
 
@@ -66,10 +87,10 @@ static double calculate_engagement_quality(
     double total_for_ratio = (double)(like_count + retweet_count + reply_count + quote_count);
     if (total_for_ratio < 1.0) total_for_ratio = 1.0;
 
-    double retweet_ratio = (double)retweet_count / total_for_ratio;
-    double reply_ratio = (double)reply_count / total_for_ratio;
-    double quote_ratio = (double)quote_count / total_for_ratio;
-    double like_ratio = (double)like_count / total_for_ratio;
+    double retweet_ratio = safe_div((double)retweet_count, total_for_ratio, 0.0);
+    double reply_ratio = safe_div((double)reply_count, total_for_ratio, 0.0);
+    double quote_ratio = safe_div((double)quote_count, total_for_ratio, 0.0);
+    double like_ratio = safe_div((double)like_count, total_for_ratio, 0.0);
     
     double quality_score = 1.0;
     
@@ -89,7 +110,7 @@ static double calculate_engagement_quality(
     
     quality_score *= (0.7 + engagement_types * 0.15);
     
-    double reply_like_ratio = (double)reply_count / safe_max(like_count, 1);
+    double reply_like_ratio = safe_div((double)reply_count, (double)safe_max(like_count, 1), 0.0);
     if (reply_like_ratio > 1.5 && like_count < 10) {
         quality_score *= 0.5;
     }
@@ -128,6 +149,10 @@ static double calculate_age_diversity_boost(int like_count, int retweet_count, i
         boost += fmin(0.2, (engagement_density - 0.6) * 0.08);
     }
 
+    if (total_engagement < 3 && age_hours > 72.0) {
+        boost *= 0.92;
+    }
+
     if (boost > 1.35) boost = 1.35;
     if (boost < 0.85) boost = 0.85;
     return boost;
@@ -147,13 +172,13 @@ static inline double author_repeat_penalty(int author_repeats) {
     return penalty;
 }
 
-static double calculate_virality_boost(int like_count, int retweet_count, double age_hours) {
-    int total_actions = like_count + retweet_count * 3 + (retweet_count > 0 ? retweet_count : 0);
+static double calculate_virality_boost(int like_count, int retweet_count, int reply_count, int quote_count, int follower_count, double age_hours) {
+    int total_actions = like_count + retweet_count * 3 + reply_count * 2 + quote_count;
     
     if (age_hours < 0.05) age_hours = 0.05;
     
-    double velocity = (double)total_actions / age_hours;
-    double momentum = (double)(retweet_count * 2 + like_count) / (age_hours + 1.0);
+    double velocity = safe_div((double)total_actions, age_hours, 0.0);
+    double momentum = safe_div((double)(retweet_count * 2 + like_count + reply_count), (age_hours + 1.0), 0.0);
     
     double boost = 1.0;
     
@@ -179,7 +204,12 @@ static double calculate_virality_boost(int like_count, int retweet_count, double
         boost *= 1.3;
     }
     
-    return boost;
+    // small follower scaling for accounts with large audiences
+    if (follower_count > 10000) {
+        boost *= 1.0 + clampd(safe_log(follower_count) * 0.02, 0.0, 0.35);
+    }
+
+    return clampd(boost, 0.01, 20.0);
 }
 
 // djb2 hash for content fingerprinting
@@ -191,19 +221,37 @@ static unsigned long djb2_hash(const char *str) {
 }
 
 // Simple content normalization: lower-case, strip URLs and excessive whitespace
+static inline int has_url_prefix(const char *src, size_t idx, size_t len) {
+    size_t max_check = len - idx;
+    if (max_check < 4) return 0;
+    const char *segment = &src[idx];
+    for (size_t i = 0; i < strlen(URL_PREFIX_HTTP) && i < max_check; i++) {
+        char ch = (char)tolower((unsigned char)segment[i]);
+        if (ch != URL_PREFIX_HTTP[i]) {
+            goto https_check;
+        }
+    }
+    return 1;
+https_check:
+    if (max_check < strlen(URL_PREFIX_HTTPS)) return 0;
+    for (size_t i = 0; i < strlen(URL_PREFIX_HTTPS); i++) {
+        char ch = (char)tolower((unsigned char)segment[i]);
+        if (ch != URL_PREFIX_HTTPS[i]) return 0;
+    }
+    return 1;
+}
+
 static char *normalize_content_c(const char *src) {
     if (!src) return NULL;
     size_t len = strlen(src);
-    char *out = (char *)calloc(len + 1, 1);
+    char *out = (char *)calloc(len + 1, sizeof(char));
     if (!out) return NULL;
     size_t oi = 0;
     int in_url = 0;
     for (size_t i = 0; i < len; i++) {
         char ch = src[i];
-        if (ch == 'h' || ch == 'H') {
-            if (i + 4 < len && (src[i+1] == 't' || src[i+1] == 'T') && (src[i+2] == 't' || src[i+2] == 'T')) {
-                in_url = 1;
-            }
+        if (!in_url && i + 7 < len && has_url_prefix(src, i, len)) {
+            in_url = 1;
         }
         if (in_url) {
             if (ch == ' ' || ch == '\n' || ch == '\r' || ch == '\t') in_url = 0;
@@ -219,9 +267,21 @@ static char *normalize_content_c(const char *src) {
 }
 
 // naive token extractor, returns a malloc'ed array of tokens (null terminated). caller must free.
+static int is_stopword(const char *s) {
+    if (!s) return 0;
+    // a small list of common short stopwords
+    if (strcmp(s, "the") == 0) return 1;
+    if (strcmp(s, "and") == 0) return 1;
+    if (strcmp(s, "for") == 0) return 1;
+    if (strcmp(s, "with") == 0) return 1;
+    if (strcmp(s, "from") == 0) return 1;
+    if (strcmp(s, "that") == 0) return 1;
+    return 0;
+}
+
 static char **extract_tokens(const char *normalized, size_t *out_count) {
     if (!normalized) { *out_count = 0; return NULL; }
-    size_t cap = 8; // limit tokens to 8 for speed
+    size_t cap = MAX_TOKENS; // limit tokens for speed
     char **tokens = (char **)calloc(cap, sizeof(char *));
     if (!tokens) { *out_count = 0; return NULL; }
     size_t tcount = 0;
@@ -236,7 +296,18 @@ static char **extract_tokens(const char *normalized, size_t *out_count) {
             char *tok = (char *)calloc(toklen + 1, 1);
             if (!tok) break;
             memcpy(tok, start, toklen);
-            tokens[tcount++] = tok;
+            // strip punctuation start/end
+            size_t s = 0; size_t e = toklen;
+            while (s < e && ispunct((unsigned char)tok[s])) s++;
+            while (e > s && ispunct((unsigned char)tok[e-1])) e--;
+            size_t outlen = e - s;
+            if (outlen >= MIN_TOKEN_LEN && !is_stopword(tok)) {
+                if (s > 0) memmove(tok, tok + s, outlen);
+                tok[outlen] = '\0';
+                tokens[tcount++] = tok;
+            } else {
+                free(tok);
+            }
         }
     }
     *out_count = tcount;
@@ -267,39 +338,18 @@ static double token_similarity(char **a, size_t ac, char **b, size_t bc) {
 }
 
 // Weighted sample without replacement based on adjusted weights. Fills `out` with indices of selected items.
-static void weighted_sample_indices(size_t *out, size_t pick, const double *weights, size_t n, unsigned int *seedptr) {
-    if (!out || !weights || n == 0 || pick == 0) return;
-    // make a local copy of weights
-    double *w = (double *)calloc(n, sizeof(double));
-    if (!w) return;
-    for (size_t i = 0; i < n; i++) w[i] = weights[i];
-    for (size_t k = 0; k < pick; k++) {
-        double total = 0.0;
-        for (size_t i = 0; i < n; i++) total += w[i];
-        if (total <= 0.0) {
-            // fill remaining greedily
-            for (size_t i = 0; i < n && k < pick; i++) {
-                if (w[i] > 0.0) { out[k++] = i; w[i] = 0.0; }
-            }
-            break;
-        }
-        double r = (double)rand() / (double)RAND_MAX * total;
-        double cum = 0.0;
-        size_t chosen = SIZE_MAX;
-        for (size_t i = 0; i < n; i++) {
-            if (w[i] <= 0.0) continue;
-            cum += w[i];
-            if (cum >= r) { chosen = i; break; }
-        }
-        if (chosen == SIZE_MAX) {
-            for (size_t i = 0; i < n; i++) if (w[i] > 0.0) { chosen = i; break; }
-        }
-        if (chosen == SIZE_MAX) break;
-        out[k] = chosen;
-        w[chosen] = 0.0; // remove
-    }
-    free(w);
+// portable random double with optional seed (rand_r)
+static double rand_double(unsigned int *seedptr) {
+#ifdef __GNUC__
+    if (seedptr) return (double)rand_r(seedptr) / (double)RAND_MAX;
+    return (double)rand() / (double)RAND_MAX;
+#else
+    if (seedptr) { unsigned int s = *seedptr; s = s * 1103515245 + 12345; *seedptr = s; return (double)(s & 0x7fffffff) / (double)0x7fffffff; }
+    return (double)rand() / (double)RAND_MAX;
+#endif
 }
+
+// weighted_sample_indices removed (unused), randomization now uses rand_double logic inline
 
 static size_t compute_adaptive_window(size_t total) {
     if (total <= 10) return total;
@@ -356,7 +406,8 @@ static void randomize_front_window(
         weights[i] = weight;
     }
 
-    for (size_t picked_count = 0; picked_count < window; picked_count++) {
+    size_t actual_window = (window < count) ? window : count;
+    for (size_t picked_count = 0; picked_count < actual_window; picked_count++) {
         double total = 0.0;
         for (size_t i = 0; i < count; i++) {
             if (!picked[i]) total += weights[i];
@@ -365,7 +416,7 @@ static void randomize_front_window(
             window = picked_count;
             break;
         }
-        double target = ((double)rand() / (double)RAND_MAX) * total;
+        double target = rand_double(NULL) * total;
         double cumulative = 0.0;
         size_t choice = 0;
         for (size_t i = 0; i < count; i++) {
@@ -380,8 +431,8 @@ static void randomize_front_window(
         selected[picked_count] = choice;
     }
 
-    for (size_t i = 0; i + 1 < window; i++) {
-        for (size_t j = i + 1; j < window; j++) {
+    for (size_t i = 0; i + 1 < actual_window; i++) {
+        for (size_t j = i + 1; j < actual_window; j++) {
             if (tweets[selected[j]].score > tweets[selected[i]].score) {
                 size_t tmp = selected[i];
                 selected[i] = selected[j];
@@ -399,7 +450,7 @@ static void randomize_front_window(
     }
 
     size_t write_idx = 0;
-    for (size_t i = 0; i < window; i++) {
+    for (size_t i = 0; i < actual_window; i++) {
         buffer[write_idx++] = tweets[selected[i]];
     }
     for (size_t i = 0; i < count; i++) {
@@ -430,6 +481,7 @@ void set_recent_top_ids(const char **ids, size_t count) {
         recent_top_count = 0;
     }
     if (!ids || count == 0) return;
+    if (count > RECENT_TOP_LIMIT) count = RECENT_TOP_LIMIT;
     recent_top_ids = (char **)calloc(count, sizeof(char *));
     if (!recent_top_ids) { recent_top_count = 0; return; }
     for (size_t i = 0; i < count; i++) {
@@ -477,6 +529,21 @@ void record_top_shown(const char *id) {
         top_seen_cache_counts[idx]++;
         return;
     }
+    if (top_seen_cache_len >= TOP_SEEN_CACHE_LIMIT) {
+        size_t drop = TOP_SEEN_CACHE_LIMIT / 4;
+        if (drop == 0) drop = 1;
+        if (drop > top_seen_cache_len) drop = top_seen_cache_len;
+        for (size_t i = 0; i < drop; i++) {
+            if (top_seen_cache_ids[i]) free(top_seen_cache_ids[i]);
+        }
+        memmove(top_seen_cache_ids, top_seen_cache_ids + drop, sizeof(char *) * (top_seen_cache_len - drop));
+        memmove(top_seen_cache_counts, top_seen_cache_counts + drop, sizeof(int) * (top_seen_cache_len - drop));
+        top_seen_cache_len -= drop;
+        for (size_t i = top_seen_cache_len; i < TOP_SEEN_CACHE_LIMIT; i++) {
+            top_seen_cache_ids[i] = NULL;
+            top_seen_cache_counts[i] = 0;
+        }
+    }
     if (top_seen_cache_len >= top_seen_cache_cap) {
         size_t newcap = (top_seen_cache_cap == 0) ? 16 : top_seen_cache_cap * 2;
         char **new_ids = (char **)realloc(top_seen_cache_ids, sizeof(char *) * newcap);
@@ -488,9 +555,11 @@ void record_top_shown(const char *id) {
         for (size_t i = top_seen_cache_cap; i < newcap; i++) top_seen_cache_counts[i] = 0;
         top_seen_cache_cap = newcap;
     }
-    top_seen_cache_ids[top_seen_cache_len] = strdup(id);
-    top_seen_cache_counts[top_seen_cache_len] = 1;
-    top_seen_cache_len++;
+    if (top_seen_cache_len < TOP_SEEN_CACHE_LIMIT) {
+        top_seen_cache_ids[top_seen_cache_len] = strdup(id);
+        top_seen_cache_counts[top_seen_cache_len] = 1;
+        top_seen_cache_len++;
+    }
 }
 
 void clear_top_seen_cache(void) {
@@ -552,7 +621,7 @@ double calculate_score(
     if (has_community_note < 0) has_community_note = 0;
     
     time_t now = time(NULL);
-    double age_hours = (double)(now - created_at) / 3600.0;
+    double age_hours = compute_age_hours(now, created_at);
     
     int total_engagement = like_count + retweet_count + reply_count + quote_count;
     
@@ -573,7 +642,14 @@ double calculate_score(
         like_count, retweet_count, reply_count, quote_count
     );
     
-    double virality_boost = calculate_virality_boost(like_count, retweet_count, age_hours);
+    double virality_boost = calculate_virality_boost(
+        like_count,
+        retweet_count,
+        reply_count,
+        quote_count,
+        follower_count,
+        age_hours
+    );
     
     double base_score = safe_log(like_count + 1) * 2.5 +
                        safe_log(retweet_count + 1) * 2.0 +
@@ -660,8 +736,10 @@ double calculate_score(
     if (hours_since_seen < 0.0) {
         novelty_boost += 0.12;
     }
-    if (novelty_boost < 0.75) novelty_boost = 0.75;
-    if (novelty_boost > 1.5) novelty_boost = 1.5;
+    if (hours_since_seen > 72.0) {
+        novelty_boost *= 0.95;
+    }
+    novelty_boost = clampd(novelty_boost, 0.7, 1.5);
 
     double diversity_penalty = 1.0;
     if (author_repeats > 2 || content_repeats > 1) {
@@ -717,6 +795,13 @@ double calculate_score(
     
     double age_diversity = calculate_age_diversity_boost(like_count, retweet_count, reply_count, quote_count, age_hours);
 
+    double engagement_ratio = safe_div((double)total_engagement, (double)safe_max(follower_count, ENGAGEMENT_FLOOR_DENOM), 0.0);
+    if (engagement_ratio < MIN_ENGAGEMENT_RATIO && follower_count > 0) {
+        double deficit = clampd((MIN_ENGAGEMENT_RATIO - engagement_ratio) * 20.0, 0.0, 0.6);
+        age_diversity *= (1.0 - deficit * 0.25);
+        media_boost *= (1.0 - deficit * 0.5);
+    }
+
     double final_score = base_score * 
                         time_decay * 
                         engagement_quality * 
@@ -751,6 +836,7 @@ double calculate_score(
     }
 
     if (final_score < 0.0) final_score = 0.0;
+    if (!isfinite(final_score)) final_score = 0.0;
     
     return final_score;
 }
@@ -1473,7 +1559,7 @@ void rank_tweets(Tweet *tweets, size_t count) {
         }
     }
 
-finish:
+/* finish label removed: unused. */
     if (count > 1 && display_window > 0) {
         randomize_front_window(tweets, count, display_window, now_ts, age_hours_cache, cluster_counts, cluster_ids, author_prevalence);
     }

@@ -4,8 +4,9 @@ import { staticPlugin } from "@elysiajs/static";
 import { Elysia, file } from "elysia";
 
 import api from "./api.js";
-import { compression } from "./compress.js";
 import db from "./db.js";
+import { compression } from "./helpers/compress.js";
+import { embeds } from "./helpers/embeds.js";
 
 const connectedUsers = new Map();
 const sseConnections = new Map();
@@ -116,13 +117,10 @@ setInterval(cleanupExpiredMessages, 60000);
 cleanupExpiredMessages();
 
 new Elysia()
+	.use(embeds)
 	.use(compression)
 	.use(
-		staticPlugin({
-			headers: {
-				"Cache-Control": "public, max-age=86400",
-			},
-		}),
+		staticPlugin(),
 	)
 	.use(
 		openapi({
@@ -309,9 +307,6 @@ new Elysia()
 		return cookie.agree?.value === "yes"
 			? file("./public/timeline/index.html")
 			: file("./public/account-v2/index.html");
-	})
-	.get("/test", ({ headers }) => {
-		return headers;
 	})
 	.use(api)
 	.head(

@@ -61,7 +61,7 @@ export const isVPN = async (ip) => {
 		}
 	}
 
-	const ipNum = ipToNum(ip); // Tr, add a cloudflare cache rule ASAP!!!!!!!!!!! and don't let the cursor be stuck
+	const ipNum = ipToNum(ip);
 	return vpnRanges.some(
 		(range) => (ipNum & range.mask) === (range.ipNum & range.mask),
 	);

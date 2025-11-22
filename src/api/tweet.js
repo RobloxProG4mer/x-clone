@@ -295,9 +295,6 @@ const getQuotedTweetData = (quoteTweetId, userId) => {
 	const quotedTweet = getQuotedTweet.get(quoteTweetId);
 	if (!quotedTweet) return null;
 
-	// If the quoted tweet's author is suspended, return a placeholder so the
-	// frontend can show an appropriate 'suspended' message instead of the full
-	// quoted tweet content.
 	const authorSuspended = isUserSuspendedById(quotedTweet.user_id);
 	const authorShadowbanned = isUserShadowbannedById(quotedTweet.user_id);
 	if (authorSuspended) {
@@ -308,7 +305,6 @@ const getQuotedTweetData = (quoteTweetId, userId) => {
 		};
 	}
 	if (authorShadowbanned) {
-		// allow author view if userId is the author or if current user is admin
 		const viewer = userId ? getUserById.get(userId) : null;
 		if (!(viewer && (viewer.id === quotedTweet.user_id || viewer.admin))) {
 			return {

@@ -264,6 +264,19 @@ export default new Elysia({
 			},
 		},
 	)
+	.get("/owoembed", async ({ query }) => {
+		const { i, a} = query;
+
+		return {
+			author_name: a,
+			author_url: `${process.env.BASE_URL}/tweet/${encodeURIComponent(i)}`,
+			provider_name: "Tweetapus",
+			provider_url: process.env.BASE_URL,
+			title: "Embed",
+			type: "rich",
+			version: "1.0",
+		};
+	})
 	.use(auth)
 	.use(admin)
 	.use(blocking)
