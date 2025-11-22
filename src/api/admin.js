@@ -2125,6 +2125,85 @@ export default new Elysia({ prefix: "/admin", tags: ["Admin"] })
 		},
 	)
 
+	.patch(
+		"/posts/:id/id",
+		async ({ params, body, user }) => {
+			const rawNewId = typeof body?.new_id === "string" ? body.new_id.trim() : "";
+			if (!rawNewId) {
+				return { error: "New tweet ID is required" };
+			}
+
+			const post = adminQueries.getPostById.get(params.id);
+			if (!post) {
+				return { error: "Post not found" };
+			}
+
+			if (rawNewId === post.id) {
+				return { success: true, id: post.id };
+			}
+
+			const existing = adminQueries.getPostById.get(rawNewId);
+			if (existing) {
+				return { error: "A post with that ID already exists" };
+			}
+
+			try {
+				const updates = [
+					{ table: "likes", column: "post_id" },
+					{ table: "retweets", column: "post_id" },
+					{ table: "attachments", column: "post_id" },
+					{ table: "bookmarks", column: "post_id" },
+					{ table: "post_hashtags", column: "post_id" },
+					{ table: "post_reactions", column: "post_id" },
+					{ table: "interactive_cards", column: "post_id" },
+					{ table: "fact_checks", column: "post_id" },
+					{ table: "polls", column: "post_id" },
+					{ table: "seen_tweets", column: "tweet_id" },
+				];
+
+				db.transaction(() => {
+					adminQueries.updatePostId.run(rawNewId, post.id);
+					for (const { table, column } of updates) {
+						db.query(
+							`UPDATE ${table} SET ${column} = ? WHERE ${column} = ?`,
+						).run(rawNewId, post.id);
+					}
+					db.query("UPDATE posts SET reply_to = ? WHERE reply_to = ?").run(
+						rawNewId,
+						post.id,
+					);
+					db.query(
+						"UPDATE posts SET quote_tweet_id = ? WHERE quote_tweet_id = ?",
+					).run(rawNewId, post.id);
+					db.query(
+						"UPDATE notifications SET related_id = ? WHERE related_id = ?",
+					).run(rawNewId, post.id);
+					db.query(
+						"UPDATE moderation_logs SET target_id = ? WHERE target_type = 'post' AND target_id = ?",
+					).run(rawNewId, post.id);
+					db.query(
+						"UPDATE reports SET reported_id = ? WHERE reported_type = 'post' AND reported_id = ?",
+					).run(rawNewId, post.id);
+				})();
+
+				logModerationAction(user.id, "change_tweet_id", "post", rawNewId, {
+					old_id: post.id,
+					new_id: rawNewId,
+				});
+
+				return { success: true, id: rawNewId };
+			} catch (error) {
+				console.error("Failed to update tweet ID", error);
+				return { error: "Failed to update tweet ID" };
+			}
+		},
+		{
+			body: t.Object({
+				new_id: t.String(),
+			}),
+		},
+	)
+
 	.post(
 		"/tweets",
 		async ({ body, user }) => {

@@ -6,6 +6,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>tweetapus</title>
 
+  <script>if (document.cookie.includes("; agree=yes") && localStorage.getItem("authToken")) { window.location.reload() }</script>
   <link rel="stylesheet" href="/public/shared/base.css" />
   <link rel="stylesheet" href="/public/account-v2/styles.css" />
 </head>
@@ -41,9 +42,7 @@
   </main>
 
   <div class="right-content">
-    <img
-      src="/public/shared/assets/hero.avif"
-      class="big-image">
+    <img src="/public/shared/assets/hero.avif" class="big-image">
     <div class="recent-tweets-container" id="recentTweetsContainer"></div>
   </div>
 

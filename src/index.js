@@ -199,7 +199,7 @@ new Elysia()
 				},
 			},
 			exclude: {
-				paths: ["/*", "/public/*", "/legal", "/admin"],
+				paths: ["/*", "/public/*", "/legal", "/admin", "/api/owoembed"],
 			},
 		}),
 	)
