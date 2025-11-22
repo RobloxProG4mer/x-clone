@@ -1256,8 +1256,9 @@ const renderProfile = (data) => {
 								: ""
 						}
 
-            ${
-							transparencyReport.creation?.vpn
+			${
+					transparencyReport.creation?.vpn &&
+					!transparencyReport.creation?.suppress_vpn_warning
 								? `<div class="transparency-item"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-shield-alert-icon lucide-shield-alert"><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"/><path d="M12 8v4"/><path d="M12 16h.01"/></svg>
 						<div class="transparency-data"><strong>Created from a datacenter IP</strong></div></div>`
 								: ""
@@ -1279,8 +1280,9 @@ const renderProfile = (data) => {
 
 						${transparencyReport.login.latitude ? `<img draggable="false" alt="Apple Map" class="map" src="https://external-content.duckduckgo.com/ssv2/?scale=3&lang=en-US&colorScheme=dark&format=png&size=360x157&spn=36,36&center=${encodeURIComponent(`${transparencyReport.login.latitude},${transparencyReport.login.longitude}`)}&annotations=${encodeURIComponent(JSON.stringify([{ point: `${transparencyReport.login.latitude},${transparencyReport.login.longitude}`, color: "AC97FF" }]))}"}>` : ""}</div></div>
 
-            ${
-							transparencyReport.login?.vpn
+			${
+					transparencyReport.login?.vpn &&
+					!transparencyReport.login?.suppress_vpn_warning
 								? `<div class="transparency-item"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-shield-alert-icon lucide-shield-alert"><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"/><path d="M12 8v4"/><path d="M12 16h.01"/></svg>
 						<div class="transparency-data"><strong>Last login from a datacenter IP</strong></div></div>`
 								: ""

@@ -1949,6 +1949,18 @@ class AdminPanel {
 						}>
 						<label class="form-check-label">Last login via Tor</label>
 					  </div>
+					  <div class="form-check form-switch mb-1">
+						<input class="form-check-input" type="checkbox" id="editProfileLoginHideDatacenterWarning" ${
+							loginHideDatacenterWarning ? "checked" : ""
+						}>
+						<label class="form-check-label">Hide datacenter warning</label>
+					  </div>
+					  <div class="form-check form-switch mb-1">
+						<input class="form-check-input" type="checkbox" id="editProfileLoginPreserveOverride" ${
+							loginPreserveOverride ? "checked" : ""
+						}>
+						<label class="form-check-label">Preserve overrides across logins</label>
+					  </div>
 					  <small class="text-muted">Update login transparency data that appears on the user's profile.</small>
 					</div>
 					<div class="col-md-6">
@@ -1990,6 +2002,12 @@ class AdminPanel {
 							creationTorFlag ? "checked" : ""
 						}>
 						<label class="form-check-label">Created via Tor</label>
+					  </div>
+					  <div class="form-check form-switch mb-1">
+						<input class="form-check-input" type="checkbox" id="editProfileCreationHideDatacenterWarning" ${
+							creationHideDatacenterWarning ? "checked" : ""
+						}>
+						<label class="form-check-label">Hide datacenter warning</label>
 					  </div>
 					  <small class="text-muted">Control the origin data shown in transparency modals.</small>
 					</div>
@@ -2407,6 +2425,18 @@ class AdminPanel {
 		if (loginTorInput) {
 			payload.login_tor = !!loginTorInput.checked;
 		}
+		const loginHideWarningInput = document.getElementById(
+			"editProfileLoginHideDatacenterWarning",
+		);
+		if (loginHideWarningInput) {
+			payload.login_hide_datacenter_warning = !!loginHideWarningInput.checked;
+		}
+		const loginPreserveOverrideInput = document.getElementById(
+			"editProfileLoginPreserveOverride",
+		);
+		if (loginPreserveOverrideInput) {
+			payload.login_preserve_override = !!loginPreserveOverrideInput.checked;
+		}
 
 		const creationCityInput = document.getElementById(
 			"editProfileCreationCity",
@@ -2451,6 +2481,13 @@ class AdminPanel {
 		const creationTorInput = document.getElementById("editProfileCreationTor");
 		if (creationTorInput) {
 			payload.creation_tor = !!creationTorInput.checked;
+		}
+		const creationHideWarningInput = document.getElementById(
+			"editProfileCreationHideDatacenterWarning",
+		);
+		if (creationHideWarningInput) {
+			payload.creation_hide_datacenter_warning =
+				!!creationHideWarningInput.checked;
 		}
 
 		try {
@@ -3370,7 +3407,6 @@ class AdminPanel {
 
 	async toggleSuperTweet(postId, currentStatus) {
 		const newStatus = !currentStatus;
-		const action = newStatus ? "enable" : "disable";
 
 		let boost = 50.0;
 		if (newStatus) {
@@ -3380,7 +3416,7 @@ class AdminPanel {
 			);
 			if (boostInput === null) return;
 			const parsedBoost = parseFloat(boostInput);
-			if (isNaN(parsedBoost) || parsedBoost < 1 || parsedBoost > 1000) {
+			if (Number.isNaN(parsedBoost) || parsedBoost < 1 || parsedBoost > 1000) {
 				this.showError("Invalid boost value. Must be between 1 and 1000.");
 				return;
 			}

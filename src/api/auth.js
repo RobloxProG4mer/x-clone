@@ -26,6 +26,38 @@ const userExistsByUsername = db.prepare(
 	"SELECT count(*) FROM users WHERE LOWER(username) = LOWER(?)",
 );
 
+const parseTransparencyRecord = (raw) => {
+	if (!raw) return null;
+	try {
+		return JSON.parse(raw);
+	} catch (_err) {
+		return null;
+	}
+};
+
+async function buildLoginTransparency(headers, existing) {
+	const loginTransparency = {
+		city: headers["cf-region"] || headers["cf-ipcity"] || null,
+		country: headers["cf-ipcountry"] || null,
+		continent: headers["cf-ipcontinent"] || null,
+		latitude: headers["cf-iplatitude"] || null,
+		longitude: headers["cf-iplongitude"] || null,
+		timezone: headers["cf-timezone"] || null,
+		vpn:
+			(await isVPN(
+				headers["cf-ip"] ||
+					headers["cf-connecting-ip"] ||
+					headers["x-forwarded-for"],
+			)) || null,
+	};
+
+	if (existing?.suppress_vpn_warning) {
+		loginTransparency.suppress_vpn_warning = true;
+	}
+
+	return JSON.stringify(loginTransparency);
+}
+
 function savePasskey(credentialData) {
 	const {
 		credId,
@@ -348,22 +380,16 @@ export default new Elysia({ prefix: "/auth", tags: ["Auth"] })
 						return { error: "Invalid username or password" };
 					}
 
-					const loginTransparency = JSON.stringify({
-						city: headers["cf-region"] || headers["cf-ipcity"] || null,
-						country: headers["cf-ipcountry"] || null,
-						continent: headers["cf-ipcontinent"] || null,
-						latitude: headers["cf-iplatitude"] || null,
-						longitude: headers["cf-iplongitude"] || null,
-						timezone: headers["cf-timezone"] || null,
-						vpn:
-							(await isVPN(
-								headers["cf-ip"] ||
-									headers["cf-connecting-ip"] ||
-									headers["x-forwarded-for"],
-							)) || null,
-					});
-
-					updateUserLoginTransparency.run(loginTransparency, targetUser.id);
+					const existingLoginTransparency = parseTransparencyRecord(
+						targetUser.account_login_transparency,
+					);
+					if (!existingLoginTransparency?.preserve_override) {
+						const loginTransparency = await buildLoginTransparency(
+							headers,
+							existingLoginTransparency,
+						);
+						updateUserLoginTransparency.run(loginTransparency, targetUser.id);
+					}
 
 					const newToken = await jwt.sign({
 						userId: targetUser.id,
@@ -432,22 +458,16 @@ export default new Elysia({ prefix: "/auth", tags: ["Auth"] })
 						verification.authenticationInfo.newCounter,
 					);
 
-					const loginTransparency = JSON.stringify({
-						city: headers["cf-region"] || headers["cf-ipcity"] || null,
-						country: headers["cf-ipcountry"] || null,
-						continent: headers["cf-ipcontinent"] || null,
-						latitude: headers["cf-iplatitude"] || null,
-						longitude: headers["cf-iplongitude"] || null,
-						timezone: headers["cf-timezone"] || null,
-						vpn:
-							(await isVPN(
-								headers["cf-ip"] ||
-									headers["cf-connecting-ip"] ||
-									headers["x-forwarded-for"],
-							)) || null,
-					});
-
-					updateUserLoginTransparency.run(loginTransparency, targetUser.id);
+					const existingLoginTransparency = parseTransparencyRecord(
+						targetUser.account_login_transparency,
+					);
+					if (!existingLoginTransparency?.preserve_override) {
+						const loginTransparency = await buildLoginTransparency(
+							headers,
+							existingLoginTransparency,
+						);
+						updateUserLoginTransparency.run(loginTransparency, targetUser.id);
+					}
 
 					const newToken = await jwt.sign({
 						userId: targetUser.id,
@@ -673,22 +693,16 @@ export default new Elysia({ prefix: "/auth", tags: ["Auth"] })
 						};
 					}
 
-					const loginTransparency = JSON.stringify({
-						city: headers["cf-region"] || headers["cf-ipcity"] || null,
-						country: headers["cf-ipcountry"] || null,
-						continent: headers["cf-ipcontinent"] || null,
-						latitude: headers["cf-iplatitude"] || null,
-						longitude: headers["cf-iplongitude"] || null,
-						timezone: headers["cf-timezone"] || null,
-						vpn:
-							(await isVPN(
-								headers["cf-ip"] ||
-									headers["cf-connecting-ip"] ||
-									headers["x-forwarded-for"],
-							)) || null,
-					});
-
-					updateUserLoginTransparency.run(loginTransparency, user.id);
+					const existingLoginTransparency = parseTransparencyRecord(
+						user.account_login_transparency,
+					);
+					if (!existingLoginTransparency?.preserve_override) {
+						const loginTransparency = await buildLoginTransparency(
+							headers,
+							existingLoginTransparency,
+						);
+						updateUserLoginTransparency.run(loginTransparency, user.id);
+					}
 
 					return {
 						verified: true,
@@ -736,22 +750,16 @@ export default new Elysia({ prefix: "/auth", tags: ["Auth"] })
 					transports: credential.response.transports || [],
 				});
 
-				const loginTransparency = JSON.stringify({
-					city: headers["cf-region"] || headers["cf-ipcity"] || null,
-					country: headers["cf-ipcountry"] || null,
-					continent: headers["cf-ipcontinent"] || null,
-					latitude: headers["cf-iplatitude"] || null,
-					longitude: headers["cf-iplongitude"] || null,
-					timezone: headers["cf-timezone"] || null,
-					vpn:
-						(await isVPN(
-							headers["cf-ip"] ||
-								headers["cf-connecting-ip"] ||
-								headers["x-forwarded-for"],
-						)) || null,
-				});
-
-				updateUserLoginTransparency.run(loginTransparency, user.id);
+				const existingLoginTransparency = parseTransparencyRecord(
+					user.account_login_transparency,
+				);
+				if (!existingLoginTransparency?.preserve_override) {
+					const loginTransparency = await buildLoginTransparency(
+						headers,
+						existingLoginTransparency,
+					);
+					updateUserLoginTransparency.run(loginTransparency, user.id);
+				}
 
 				const token = await jwt.sign({
 					userId: user.id,
@@ -862,22 +870,16 @@ export default new Elysia({ prefix: "/auth", tags: ["Auth"] })
 					verification.authenticationInfo.newCounter,
 				);
 
-				const loginTransparency = JSON.stringify({
-					city: headers["cf-region"] || headers["cf-ipcity"] || null,
-					country: headers["cf-ipcountry"] || null,
-					continent: headers["cf-ipcontinent"] || null,
-					latitude: headers["cf-iplatitude"] || null,
-					longitude: headers["cf-iplongitude"] || null,
-					timezone: headers["cf-timezone"] || null,
-					vpn:
-						(await isVPN(
-							headers["cf-ip"] ||
-								headers["cf-connecting-ip"] ||
-								headers["x-forwarded-for"],
-						)) || null,
-				});
-
-				updateUserLoginTransparency.run(loginTransparency, user.id);
+				const existingLoginTransparency = parseTransparencyRecord(
+					user.account_login_transparency,
+				);
+				if (!existingLoginTransparency?.preserve_override) {
+					const loginTransparency = await buildLoginTransparency(
+						headers,
+						existingLoginTransparency,
+					);
+					updateUserLoginTransparency.run(loginTransparency, user.id);
+				}
 
 				const token = await jwt.sign({
 					userId: user.id,
@@ -1234,22 +1236,16 @@ export default new Elysia({ prefix: "/auth", tags: ["Auth"] })
 						headers["x-forwarded-for"],
 				);
 
-				const loginTransparency = JSON.stringify({
-					city: headers["cf-region"] || headers["cf-ipcity"] || null,
-					country: headers["cf-ipcountry"] || null,
-					continent: headers["cf-ipcontinent"] || null,
-					latitude: headers["cf-iplatitude"] || null,
-					longitude: headers["cf-iplongitude"] || null,
-					timezone: headers["cf-timezone"] || null,
-					vpn:
-						(await isVPN(
-							headers["cf-ip"] ||
-								headers["cf-connecting-ip"] ||
-								headers["x-forwarded-for"],
-						)) || null,
-				});
-
-				updateUserLoginTransparency.run(loginTransparency, user.id);
+				const existingLoginTransparency = parseTransparencyRecord(
+					user.account_login_transparency,
+				);
+				if (!existingLoginTransparency?.preserve_override) {
+					const loginTransparency = await buildLoginTransparency(
+						headers,
+						existingLoginTransparency,
+					);
+					updateUserLoginTransparency.run(loginTransparency, user.id);
+				}
 
 				const token = await jwt.sign({
 					userId: user.id,

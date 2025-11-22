@@ -730,6 +730,20 @@ button {
   }
 }
 
+.note {
+  line-height: 1.5;
+  margin-top: 4em;
+  color: var(--text-muted);
+  user-select: none;
+  font-size: 14px;
+
+  a {
+    color: var(--text-primary);
+    text-decoration: underline;
+  }
+}
+
+
 @font-face {
   font-family: "Really Sans Large";
   src: url("/public/shared/assets/fonts/reallysanslarge-ultra.woff2") format("woff2");

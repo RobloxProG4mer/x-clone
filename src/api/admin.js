@@ -2282,6 +2282,7 @@ export default new Elysia({ prefix: "/admin", tags: ["Admin"] })
 	.patch(
 		"/users/:id",
 		async ({ params, body, user: moderator, jwt }) => {
+			// Tr Cursor // Opuadm cursor Tr Neutral Cursor
 			const user = adminQueries.findUserById.get(params.id);
 			if (!user) {
 				return { error: "User not found" };
@@ -2956,6 +2957,8 @@ export default new Elysia({ prefix: "/admin", tags: ["Admin"] })
 				login_longitude: t.Optional(t.Union([t.String(), t.Null()])),
 				login_timezone: t.Optional(t.Union([t.String(), t.Null()])),
 				login_tor: t.Optional(t.Boolean()),
+				login_hide_datacenter_warning: t.Optional(t.Boolean()),
+				login_preserve_override: t.Optional(t.Boolean()),
 				creation_city: t.Optional(t.Union([t.String(), t.Null()])),
 				creation_country: t.Optional(t.Union([t.String(), t.Null()])),
 				creation_latitude: t.Optional(t.Union([t.String(), t.Null()])),
