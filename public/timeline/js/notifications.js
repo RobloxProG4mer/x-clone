@@ -615,15 +615,10 @@ function createNotificationElement(group) {
 			if (relatedId.startsWith("meta:") || relatedId.startsWith("subtitle:"))
 				return;
 			try {
-				const response = await query(`/tweets/${relatedId}`);
-				if (response.tweet) {
-					const tweetModule = await import(`./tweet.js`);
-					const openTweet = tweetModule.default;
+				const tweetModule = await import(`./tweet.js`);
+				const openTweet = tweetModule.default;
 
-					openTweet({ id: relatedId });
-				} else {
-					toastQueue.add(`<h1>Tweet not found</h1>`);
-				}
+				openTweet({ id: relatedId });
 			} catch (error) {
 				console.error("Failed to load tweet:", error);
 				toastQueue.add(`<h1>Failed to load tweet</h1>`);
