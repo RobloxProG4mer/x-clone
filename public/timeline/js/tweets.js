@@ -1001,7 +1001,7 @@ export const createTweetElement = (tweet, config = {}) => {
 			e.stopPropagation();
 			try {
 				const history = await query(`/tweets/${tweet.id}/edit-history`);
-				
+
 				if (history.error) {
 					toastQueue.add(`<h1>${history.error}</h1>`);
 					return;
@@ -1010,7 +1010,7 @@ export const createTweetElement = (tweet, config = {}) => {
 				const modal = createModal({
 					title: "Edit History",
 					content: "",
-					className: "edit-history-modal"
+					className: "edit-history-modal",
 				});
 
 				const historyContainer = document.createElement("div");
@@ -1047,7 +1047,7 @@ export const createTweetElement = (tweet, config = {}) => {
 							color: var(--text-secondary);
 							font-weight: 600;
 						`;
-						timeEl.textContent = version.is_current 
+						timeEl.textContent = version.is_current
 							? `Current version (${timeAgo(version.edited_at)})`
 							: timeAgo(version.edited_at);
 
@@ -1378,7 +1378,10 @@ export const createTweetElement = (tweet, config = {}) => {
 						"allow",
 						"accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share",
 					);
-					videoFrame.setAttribute("referrerpolicy", "strict-origin-when-cross-origin");
+					videoFrame.setAttribute(
+						"referrerpolicy",
+						"strict-origin-when-cross-origin",
+					);
 					videoFrame.setAttribute("allowfullscreen", "true");
 					videoFrame.title = "YouTube video player";
 					videoFrame.setAttribute("loading", "lazy");

@@ -40,4 +40,7 @@ an independent, fully-featured Twitter/X clone built with Bun.
 - captcha for registration
 - and more.
 - news in the search tab, provided by wikipedia
+- editing tweets
+- replying to dms
+- reacting to dms
 - user account creation location transparency report, powered by a VPN detection list and cloudflare headers
