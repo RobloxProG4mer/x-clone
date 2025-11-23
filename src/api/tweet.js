@@ -1866,6 +1866,11 @@ export default new Elysia({ prefix: "/tweets", tags: ["Tweets"] })
 				};
 			}
 
+			const historyId = Bun.randomUUIDv7();
+			db.query(
+				"INSERT INTO tweet_edit_history (id, post_id, content, edited_at) VALUES (?, ?, ?, datetime('now', 'utc'))",
+			).run(historyId, id, tweet.content);
+
 			db.query(
 				"UPDATE posts SET content = ?, edited_at = datetime('now', 'utc') WHERE id = ?",
 			).run(trimmedContent, id);
@@ -1890,5 +1895,45 @@ export default new Elysia({ prefix: "/tweets", tags: ["Tweets"] })
 		} catch (error) {
 			console.error("Edit tweet error:", error);
 			return { error: "Failed to edit tweet" };
+		}
+	})
+	.get("/:id/edit-history", async ({ jwt, headers, params }) => {
+		const authorization = headers.authorization;
+		if (!authorization) return { error: "Authentication required" };
+
+		try {
+			const payload = await jwt.verify(authorization.replace("Bearer ", ""));
+			if (!payload) return { error: "Invalid token" };
+
+			const user = getUserByUsername.get(payload.username);
+			if (!user) return { error: "User not found" };
+
+			const { id } = params;
+
+			const tweet = getTweetById.get(id);
+			if (!tweet) return { error: "Tweet not found" };
+
+			const history = db
+				.query(
+					"SELECT content, edited_at FROM tweet_edit_history WHERE post_id = ? ORDER BY edited_at DESC",
+				)
+				.all(id);
+
+			const currentVersion = {
+				content: tweet.content,
+				edited_at: tweet.edited_at || tweet.created_at,
+				is_current: true,
+			};
+
+			return {
+				success: true,
+				history: [
+					currentVersion,
+					...history.map((h) => ({ ...h, is_current: false })),
+				],
+			};
+		} catch (error) {
+			console.error("Get edit history error:", error);
+			return { error: "Failed to get edit history" };
 		}
 	});

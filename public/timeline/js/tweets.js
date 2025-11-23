@@ -993,7 +993,107 @@ export const createTweetElement = (tweet, config = {}) => {
 			color: var(--text-secondary);
 			font-size: 12px;
 			font-style: italic;
+			cursor: pointer;
+			text-decoration: underline;
 		`;
+		editedIndicator.title = "Click to view edit history";
+		editedIndicator.addEventListener("click", async (e) => {
+			e.stopPropagation();
+			try {
+				const history = await query(`/tweets/${tweet.id}/edit-history`);
+				
+				if (history.error) {
+					toastQueue.add(`<h1>${history.error}</h1>`);
+					return;
+				}
+
+				const modal = createModal({
+					title: "Edit History",
+					content: "",
+					className: "edit-history-modal"
+				});
+
+				const historyContainer = document.createElement("div");
+				historyContainer.className = "edit-history-list";
+				historyContainer.style.cssText = `
+					max-height: 500px;
+					overflow-y: auto;
+					padding: 16px;
+				`;
+
+				if (history.history && history.history.length > 0) {
+					history.history.forEach((version) => {
+						const versionEl = document.createElement("div");
+						versionEl.className = "edit-history-item";
+						versionEl.style.cssText = `
+							padding: 16px;
+							border-radius: 8px;
+							background: ${version.is_current ? "var(--secondary-bg)" : "var(--primary-bg)"};
+							margin-bottom: 12px;
+							border: ${version.is_current ? "2px solid var(--primary)" : "1px solid var(--border)"};
+						`;
+
+						const headerEl = document.createElement("div");
+						headerEl.style.cssText = `
+							display: flex;
+							justify-content: space-between;
+							align-items: center;
+							margin-bottom: 8px;
+						`;
+
+						const timeEl = document.createElement("span");
+						timeEl.style.cssText = `
+							font-size: 13px;
+							color: var(--text-secondary);
+							font-weight: 600;
+						`;
+						timeEl.textContent = version.is_current 
+							? `Current version (${timeAgo(version.edited_at)})`
+							: timeAgo(version.edited_at);
+
+						headerEl.appendChild(timeEl);
+
+						if (version.is_current) {
+							const badge = document.createElement("span");
+							badge.textContent = "Current";
+							badge.style.cssText = `
+								background: var(--primary);
+								color: var(--primary-fg);
+								padding: 4px 8px;
+								border-radius: 4px;
+								font-size: 11px;
+								font-weight: 600;
+							`;
+							headerEl.appendChild(badge);
+						}
+
+						const contentEl = document.createElement("div");
+						contentEl.style.cssText = `
+							color: var(--text-primary);
+							line-height: 1.5;
+							word-wrap: break-word;
+						`;
+						contentEl.textContent = version.content;
+
+						versionEl.appendChild(headerEl);
+						versionEl.appendChild(contentEl);
+						historyContainer.appendChild(versionEl);
+					});
+				} else {
+					historyContainer.innerHTML = `<p style="text-align: center; color: var(--text-secondary);">No edit history available</p>`;
+				}
+
+				const modalContent = modal.querySelector(".modal-content");
+				if (modalContent) {
+					modalContent.appendChild(historyContainer);
+				}
+
+				document.body.appendChild(modal);
+			} catch (error) {
+				console.error("Error fetching edit history:", error);
+				toastQueue.add(`<h1>Failed to load edit history</h1>`);
+			}
+		});
 		tweetHeaderUsernameEl.appendChild(editedIndicator);
 	}
 

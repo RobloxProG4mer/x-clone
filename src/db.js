@@ -660,6 +660,17 @@ CREATE TABLE IF NOT EXISTS extension_settings (
 );
 
 CREATE INDEX IF NOT EXISTS idx_extension_settings_updated_at ON extension_settings(updated_at);
+
+CREATE TABLE IF NOT EXISTS tweet_edit_history (
+  id TEXT PRIMARY KEY,
+  post_id TEXT NOT NULL,
+  content TEXT NOT NULL,
+  edited_at TIMESTAMP DEFAULT (datetime('now', 'utc')),
+  FOREIGN KEY (post_id) REFERENCES posts(id) ON DELETE CASCADE
+);
+
+CREATE INDEX IF NOT EXISTS idx_tweet_edit_history_post_id ON tweet_edit_history(post_id);
+CREATE INDEX IF NOT EXISTS idx_tweet_edit_history_edited_at ON tweet_edit_history(edited_at);
 `,
 ).run();
 
