@@ -79,10 +79,16 @@ let timelineScrollPosition = 0;
 
 		const endpoint =
 			type === "following" ? "/timeline/following" : "/timeline/";
-		const url =
-			oldestTweetId && append
-				? `${endpoint}?before=${oldestTweetId}&limit=${BATCH_SIZE}`
-				: `${endpoint}?limit=${BATCH_SIZE}`;
+		
+		let queryParams = `limit=${BATCH_SIZE}`;
+		if (oldestTweetId && append) {
+			queryParams += `&before=${oldestTweetId}`;
+		}
+		if (type === "latest") {
+			queryParams += "&latest=true";
+		}
+
+		const url = `${endpoint}?${queryParams}`;
 
 		let skeletons = [];
 		if (!append) {
@@ -167,7 +173,7 @@ let timelineScrollPosition = 0;
 			document.querySelector(".tweets").style.display = "flex";
 			oldestTweetId = null;
 			hasMoreTweets = true;
-			currentTimeline = tab === "following" ? "following" : "home";
+			currentTimeline = tab;
 			await loadTimeline(currentTimeline);
 		});
 	});
@@ -235,7 +241,7 @@ let timelineScrollPosition = 0;
 
 	const composer = await createComposer({
 		callback: (tweet) => {
-			if (currentTimeline === "home") {
+			if (currentTimeline === "home" || currentTimeline === "latest") {
 				addTweetToTimeline(tweet, true).classList.add("created");
 			}
 		},

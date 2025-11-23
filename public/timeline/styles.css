@@ -7253,10 +7253,10 @@ label[for*="radio"] {
   align-items: center;
   justify-content: center;
   z-index: 10000;
-  animation: fadeIn 0.3s ease;
+  animation: fadeIn 0.1s ease;
 
   &.closing {
-    animation: fadeOut 0.3s ease forwards;
+    animation: fadeOut 0.1s ease forwards;
   }
 }
 
@@ -7272,7 +7272,7 @@ label[for*="radio"] {
     max-width: 100%;
     max-height: 100%;
     object-fit: contain;
-    animation: zoomIn 0.3s ease;
+    animation: zoomIn 0.1s ease;
   }
 }
 
@@ -7325,7 +7325,7 @@ label[for*="radio"] {
 
 @keyframes zoomIn {
   from {
-    transform: scale(0.9);
+    transform: scale(0.96);
     opacity: 0;
   }
 

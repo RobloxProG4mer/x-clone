@@ -472,6 +472,10 @@ const initRecentTweets = async () => {
 	const populateContainer = () => {
 		if (tweetCache.length === 0) return;
 
+		if (container.querySelector(".tweet-stream")) {
+			container.innerHTML = "";
+		}
+
 		while (
 			container.children.length < MAX_TWEETS_IN_DOM &&
 			currentIndex < tweetCache.length
@@ -527,78 +531,6 @@ document
 	.addEventListener("click", async (e) => {
 		e.preventDefault();
 		e.stopPropagation();
-		const initialHtml = document.querySelector(".create-account").innerHTML;
-
-		const username = document.getElementById("username").value.trim();
-		if (!username) {
-			document.getElementById("username").focus();
-			document.querySelector(".init-form").style.transition = "all .2s";
-
-			setTimeout(() => {
-				document.querySelector(".init-form").style.transform = "scale(1.04)";
-			}, 5);
-
-			setTimeout(() => {
-				document.querySelector(".init-form").style.transform = "scale(1)";
-			}, 200);
-			return;
-		}
-
-		document.querySelector(".create-account").style.width = `${
-			document.querySelector(".create-account").offsetWidth
-		}px`;
-
-		document.querySelector(".create-account").classList.add("loading");
-		document.querySelector(".create-account").disabled = true;
-		document.querySelector(".create-account").innerHTML =
-			`<svg width="20" height="20" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><style>.spinner_z9k8 {transform-origin: center;animation: spinner_StKS 0.75s infinite linear;}@keyframes spinner_StKS {100% {transform: rotate(360deg);}}</style><path d="M12,1A11,11,0,1,0,23,12,11,11,0,0,0,12,1Zm0,19a8,8,0,1,1,8-8A8,8,0,0,1,12,20Z" opacity=".25" fill="white"></path><path d="M12,4a8,8,0,0,1,7.89,6.7A1.53,1.53,0,0,0,21.38,12h0a1.5,1.5,0,0,0,1.48-1.75,11,11,0,0,0-21.72,0A1.5,1.5,0,0,0,2.62,12h0a1.53,1.53,0,0,0,1.49-1.3A8,8,0,0,1,12,4Z" class="spinner_z9k8" fill="white"></path></svg>`;
-
-		document.getElementById("username").blur();
-		document.getElementById("username").disabled = true;
-
-		const { available } = await (
-			await fetch(
-				`/api/auth/username-availability?username=${encodeURIComponent(
-					username,
-				)}`,
-			)
-		).json();
-
-		if (!available) {
-			document.querySelector(".create-account").classList.remove("loading");
-			document.querySelector(".create-account").disabled = false;
-			document.querySelector(".create-account").innerHTML = initialHtml;
-			document.querySelector(".create-account").style.width = "";
-			document.getElementById("username").disabled = false;
-
-			document.getElementById("username").focus();
-			document.getElementById("username").select();
-
-			document.querySelector(".init-form label").innerText =
-				"Username taken, try another.";
-			document.querySelector(".init-form label").style.color =
-				"var(--error-color)";
-			document.querySelector(".init-form label").style.transition =
-				"opacity .4s, filter .4s, transform .4s";
-
-			setTimeout(() => {
-				document.querySelector(".init-form label").style.opacity = "0";
-				document.querySelector(".init-form label").style.filter = "blur(2px)";
-				document.querySelector(".init-form label").style.transform =
-					"scale(0.9)";
-			}, 1500);
-			setTimeout(() => {
-				document.querySelector(".init-form label").innerText =
-					"Choose your username";
-
-				document.querySelector(".init-form label").style.color = "";
-				document.querySelector(".init-form label").style.opacity = "";
-				document.querySelector(".init-form label").style.filter = "";
-				document.querySelector(".init-form label").style.transform = "";
-			}, 1700);
-
-			return;
-		}
 
 		const cap = new window.Cap({
 			apiEndpoint: "/api/auth/cap/",
@@ -610,25 +542,13 @@ document
 			challengeToken = solution.token;
 		});
 
-		await new Promise((r) => {
-			setTimeout(r, 300);
-		});
-
-		setTimeout(() => {
-			document.querySelector(".create-account").classList.remove("loading");
-			document.querySelector(".create-account").disabled = false;
-			document.querySelector(".create-account").innerHTML = initialHtml;
-			document.querySelector(".create-account").style.width = "";
-			document.getElementById("username").disabled = false;
-		}, 300);
-
 		const modal = document.querySelector(".model-wrapper.create-step2");
 
 		modal.style.display = "flex";
 
-		modal.querySelector("#create-username").value = username;
+		modal.querySelector("#create-username").value = "";
 		modal.querySelector("#create-password").value = "";
-		modal.querySelector("#create-password").focus();
+		modal.querySelector("#create-username").focus();
 
 		modal.querySelector(".finish").onclick = async () => {
 			if (modal.querySelector("#create-username").value.trim() === "") {
@@ -703,27 +623,6 @@ document
 			}
 		};
 	});
-
-document.getElementById("username").addEventListener("input", (e) => {
-	if (e.target.value.length > 20) {
-		e.target.value = e.target.value.slice(0, 20);
-	}
-
-	if (e.target.value.trim() === "") {
-		e.target.value = "";
-	}
-
-	e.target.value = e.target.value
-		.replaceAll(" ", "-")
-		.replace(/[^a-zA-Z0-9._-]/g, "");
-});
-
-document.getElementById("username").addEventListener("keydown", (e) => {
-	if (e.key === "Enter") {
-		e.preventDefault();
-		document.querySelector(".create-account").click();
-	}
-});
 
 document.querySelector(".log-in").addEventListener("click", async (e) => {
 	e.preventDefault();
