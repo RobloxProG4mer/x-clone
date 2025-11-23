@@ -63,7 +63,111 @@ const settingsPages = [
 		title: "Others",
 		content: () => createOthersContent(),
 	},
+	{
+		key: "blocked-causes",
+		title: "Blocked Causes",
+		content: () => createBlockedCausesContent(),
+	},
 ];
+
+const createBlockedCausesContent = () => {
+	const section = document.createElement("div");
+	section.className = "settings-section";
+
+	const h1 = document.createElement("h1");
+	h1.textContent = "Blocked Causes";
+	section.appendChild(h1);
+
+	const description = document.createElement("p");
+	description.style.color = "var(--text-secondary)";
+	description.style.marginBottom = "20px";
+	description.textContent =
+		"These are the tweets that have most frequently led to you being blocked.";
+	section.appendChild(description);
+
+	const container = document.createElement("div");
+	container.id = "blockedCausesContainer";
+	container.style.display = "flex";
+	container.style.flexDirection = "column";
+	container.style.gap = "16px";
+	section.appendChild(container);
+
+	(async () => {
+		try {
+			const data = await query("/blocking/causes");
+			if (data.causes && data.causes.length > 0) {
+				data.causes.forEach((cause) => {
+					const item = document.createElement("div");
+					item.style.cssText = `
+						padding: 16px;
+						background: var(--bg-secondary);
+						border: 1px solid var(--border-primary);
+						border-radius: 12px;
+						cursor: pointer;
+						transition: background 0.2s;
+					`;
+					item.onmouseenter = () => {
+						item.style.background = "var(--bg-hover)";
+					};
+					item.onmouseleave = () => {
+						item.style.background = "var(--bg-secondary)";
+					};
+					item.onclick = async () => {
+						const { default: openTweet } = await import("./tweet.js");
+						openTweet({ id: cause.source_tweet_id });
+					};
+
+					const header = document.createElement("div");
+					header.style.cssText = `
+						display: flex;
+						justify-content: space-between;
+						margin-bottom: 8px;
+						font-size: 13px;
+						color: var(--text-secondary);
+					`;
+					
+					const countSpan = document.createElement("span");
+					countSpan.style.color = "var(--error)";
+					countSpan.style.fontWeight = "600";
+					countSpan.textContent = `${cause.count} block${cause.count !== 1 ? "s" : ""}`;
+					
+					const dateSpan = document.createElement("span");
+					if (cause.created_at) {
+						dateSpan.textContent = new Date(cause.created_at).toLocaleDateString();
+					}
+
+					header.appendChild(countSpan);
+					header.appendChild(dateSpan);
+
+					const content = document.createElement("div");
+					content.style.fontSize = "15px";
+					content.style.lineHeight = "1.5";
+					content.textContent = cause.content || "Tweet unavailable";
+
+					item.appendChild(header);
+					item.appendChild(content);
+					container.appendChild(item);
+				});
+			} else {
+				container.innerHTML = `
+					<div style="padding: 32px; text-align: center; color: var(--text-secondary);">
+						<p>No data available yet.</p>
+						<p style="font-size: 13px; margin-top: 8px;">Tweets that lead to blocks will appear here.</p>
+					</div>
+				`;
+			}
+		} catch (err) {
+			console.error(err);
+			container.innerHTML = `
+				<div style="padding: 16px; color: var(--error); text-align: center;">
+					Failed to load data.
+				</div>
+			`;
+		}
+	})();
+
+	return section;
+};
 
 const createThemesContent = () => {
 	const section = document.createElement("div");
@@ -402,16 +506,24 @@ const createAccountContent = () => {
 		const user = await ensureCurrentUser();
 		if (user) {
 			try {
-				const algoData = await query(`/profile/${user.username}/algorithm-stats`);
+				const algoData = await query(
+					`/profile/${user.username}/algorithm-stats`,
+				);
 				if (!algoData.error) {
 					const impact = algoData.algorithm_impact;
-					const ratingColor = 
-						impact.rating === "Excellent" ? "#4caf50" :
-						impact.rating === "Good" ? "#8bc34a" :
-						impact.rating === "Average" ? "#ffeb3b" :
-						impact.rating === "Below Average" ? "#ff9800" :
-						impact.rating === "Poor" ? "#ff5722" : "#f44336";
-					
+					const ratingColor =
+						impact.rating === "Excellent"
+							? "#4caf50"
+							: impact.rating === "Good"
+								? "#8bc34a"
+								: impact.rating === "Average"
+									? "#ffeb3b"
+									: impact.rating === "Below Average"
+										? "#ff9800"
+										: impact.rating === "Poor"
+											? "#ff5722"
+											: "#f44336";
+
 					algoStatsContainer.innerHTML = `
 						<div style="background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: 12px;">
 							<div style="display: flex; align-items: center; gap: 8px; margin-bottom: 12px; color: var(--text-primary); font-size: 15px;">
@@ -422,11 +534,11 @@ const createAccountContent = () => {
 							<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
 								<div style="display: flex; flex-direction: column; gap: 4px;">
 									<span style="font-size: 13px; color: var(--text-secondary);">Blocked by</span>
-									<span style="font-size: 16px; font-weight: 600; color: var(--text-primary);">${algoData.blocked_by_count} account${algoData.blocked_by_count !== 1 ? 's' : ''}</span>
+									<span style="font-size: 16px; font-weight: 600; color: var(--text-primary);">${algoData.blocked_by_count} account${algoData.blocked_by_count !== 1 ? "s" : ""}</span>
 								</div>
 								<div style="display: flex; flex-direction: column; gap: 4px;">
 									<span style="font-size: 13px; color: var(--text-secondary);">Muted by</span>
-									<span style="font-size: 16px; font-weight: 600; color: var(--text-primary);">${algoData.muted_by_count} account${algoData.muted_by_count !== 1 ? 's' : ''}</span>
+									<span style="font-size: 16px; font-weight: 600; color: var(--text-primary);">${algoData.muted_by_count} account${algoData.muted_by_count !== 1 ? "s" : ""}</span>
 								</div>
 								<div style="display: flex; flex-direction: column; gap: 4px;">
 									<span style="font-size: 13px; color: var(--text-secondary);">Spam score</span>

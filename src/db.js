@@ -338,6 +338,7 @@ CREATE TABLE IF NOT EXISTS blocks (
   id TEXT PRIMARY KEY,
   blocker_id TEXT NOT NULL,
   blocked_id TEXT NOT NULL,
+  source_tweet_id TEXT DEFAULT NULL,
   created_at TIMESTAMP DEFAULT (datetime('now', 'utc')),
   FOREIGN KEY (blocker_id) REFERENCES users(id) ON DELETE CASCADE,
   FOREIGN KEY (blocked_id) REFERENCES users(id) ON DELETE CASCADE,

@@ -226,16 +226,19 @@ export const rankTweets = (
 		const postBoost = tweet.super_tweet ? tweet.super_tweet_boost || 50.0 : 0.0;
 		const userSuperTweeterBoost = Math.max(userBoost, postBoost);
 
-		const blockedByCount = tweet.blocked_by_count || tweet.author?.blocked_by_count || 0;
-		const mutedByCount = tweet.muted_by_count || tweet.author?.muted_by_count || 0;
+		const blockedByCount =
+			tweet.blocked_by_count || tweet.author?.blocked_by_count || 0;
+		const mutedByCount =
+			tweet.muted_by_count || tweet.author?.muted_by_count || 0;
 		const spamScore = tweet.spam_score || tweet.author?.spam_score || 0.0;
-		
+
 		const accountCreatedAt = tweet.author?.created_at || tweet.user_created_at;
 		let accountAgeDays = 0.0;
 		if (accountCreatedAt) {
-			const createdMs = typeof accountCreatedAt === "string"
-				? new Date(accountCreatedAt).getTime()
-				: accountCreatedAt;
+			const createdMs =
+				typeof accountCreatedAt === "string"
+					? new Date(accountCreatedAt).getTime()
+					: accountCreatedAt;
 			accountAgeDays = Math.max(0, (nowMillis - createdMs) / 86400000);
 		}
 
@@ -264,7 +267,22 @@ export const rankTweets = (
 			accountAgeDays,
 		);
 
-		return { ...tweet, _score: score };
+		let adjustedScore = score;
+
+		// Penalty for high reply/low like ratio
+		const replies = tweet.reply_count || 0;
+		const likes = tweet.like_count || 0;
+		if (replies > 5 && replies > likes * 2) {
+			adjustedScore *= 0.5;
+		}
+
+		// Boost depending on followers
+		if (followerCount > 0) {
+			const boost = 1.0 + Math.log10(followerCount + 1) * 0.02;
+			adjustedScore *= boost;
+		}
+
+		return { ...tweet, _score: adjustedScore };
 	});
 
 	scored.sort((a, b) => b._score - a._score);

@@ -1377,7 +1377,7 @@ ${
 		if (notificationDropdown) {
 			notificationDropdown.style.display = isFollowing ? "block" : "none";
 		}
-		updateFollowButton(isFollowing);
+		updateFollowButton(isFollowing, profile.blockedProfile);
 		setupNotificationButton(profile.username, profile.notifyTweets || false);
 		setupDmButton(profile.username);
 		try {
@@ -1467,13 +1467,56 @@ ${
 	if (profileContainerEl) profileContainerEl.style.display = "block";
 };
 
-function updateFollowButton(isFollowing) {
+function updateFollowButton(isFollowing, isBlocked) {
 	const btn = document.getElementById("followBtn");
 	const notificationDropdown = document.getElementById(
 		"profileNotificationDropdown",
 	);
 
 	if (!btn) return;
+	
+	// Reset styles
+	btn.style.backgroundColor = "";
+	btn.style.color = "";
+	btn.style.border = "";
+	btn.onmouseenter = null;
+	btn.onmouseleave = null;
+
+	if (isBlocked) {
+		btn.textContent = "Blocked";
+		btn.className = "profile-btn profile-btn-blocked";
+		btn.style.backgroundColor = "var(--error, #f4212e)";
+		btn.style.color = "white";
+		btn.style.border = "1px solid var(--error, #f4212e)";
+		
+		btn.onmouseenter = () => {
+			btn.textContent = "Unblock";
+		};
+		btn.onmouseleave = () => {
+			btn.textContent = "Blocked";
+		};
+
+		btn.onclick = async () => {
+			if (!authToken) return;
+
+			const result = await query("/blocking/unblock", {
+				method: "POST",
+				headers: { "Content-Type": "application/json" },
+				body: JSON.stringify({ userId: currentProfile.profile.id }),
+			});
+
+			if (result.success) {
+				toastQueue.add("<h1>Unblocked user</h1>");
+				if (currentProfile && currentProfile.profile) {
+					currentProfile.profile.blockedProfile = false;
+				}
+				updateFollowButton(false, false);
+			} else {
+				toastQueue.add(`<h1>${result.error || "Failed to unblock"}</h1>`);
+			}
+		};
+		return;
+	}
 
 	if (isFollowing) {
 		btn.textContent = "Following";

@@ -603,12 +603,17 @@ export default new Elysia({ prefix: "/profile", tags: ["Profile"] })
 			}
 
 			let blockedByProfile = false;
+			let blockedProfile = false;
 			if (currentUserId && !isOwnProfile) {
 				const blockedRow = getBlockStatus.get(user.id, currentUserId);
 				blockedByProfile = !!blockedRow;
+				
+				const myBlockRow = getBlockStatus.get(currentUserId, user.id);
+				blockedProfile = !!myBlockRow;
 			}
 
 			profile.blockedByProfile = blockedByProfile;
+			profile.blockedProfile = blockedProfile;
 			profile.notifyTweets = notifyTweetsSetting;
 
 			if (user.shadowbanned && !isOwnProfile) {
@@ -2383,7 +2388,7 @@ export default new Elysia({ prefix: "/profile", tags: ["Profile"] })
 		try {
 			const { username } = params;
 			const user = getUserByUsername.get(username);
-			
+
 			if (!user) {
 				return { error: "User not found" };
 			}
@@ -2405,12 +2410,12 @@ export default new Elysia({ prefix: "/profile", tags: ["Profile"] })
 				algorithm_impact: {
 					reputation_multiplier: 1.0,
 					account_age_multiplier: 1.0,
-					description: "How the algorithm views this account"
-				}
+					description: "How the algorithm views this account",
+				},
 			};
 
 			let reputationMultiplier = 1.0;
-			
+
 			if (stats.blocked_by_count > 0) {
 				const blockPenalty = 1.0 / (1.0 + stats.blocked_by_count * 0.08);
 				reputationMultiplier *= blockPenalty;
@@ -2435,17 +2440,21 @@ export default new Elysia({ prefix: "/profile", tags: ["Profile"] })
 
 			let accountAgeMultiplier = 1.0;
 			if (accountAgeDays > 30) {
-				accountAgeMultiplier = 1.0 + Math.log((accountAgeDays / 30.0) + 1.0) * 0.08;
+				accountAgeMultiplier =
+					1.0 + Math.log(accountAgeDays / 30.0 + 1.0) * 0.08;
 				if (accountAgeMultiplier > 1.35) accountAgeMultiplier = 1.35;
 			} else if (accountAgeDays < 7) {
 				accountAgeMultiplier = 0.85 + (accountAgeDays / 7.0) * 0.15;
 			}
 
-			stats.algorithm_impact.reputation_multiplier = Math.round(reputationMultiplier * 1000) / 1000;
-			stats.algorithm_impact.account_age_multiplier = Math.round(accountAgeMultiplier * 1000) / 1000;
+			stats.algorithm_impact.reputation_multiplier =
+				Math.round(reputationMultiplier * 1000) / 1000;
+			stats.algorithm_impact.account_age_multiplier =
+				Math.round(accountAgeMultiplier * 1000) / 1000;
 
 			const overallMultiplier = reputationMultiplier * accountAgeMultiplier;
-			stats.algorithm_impact.overall_multiplier = Math.round(overallMultiplier * 1000) / 1000;
+			stats.algorithm_impact.overall_multiplier =
+				Math.round(overallMultiplier * 1000) / 1000;
 
 			let rating = "Excellent";
 			if (overallMultiplier < 0.3) rating = "Very Poor";

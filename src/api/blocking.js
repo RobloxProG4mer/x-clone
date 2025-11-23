@@ -14,7 +14,7 @@ const checkBlockExists = db.prepare(
 	"SELECT 1 FROM blocks WHERE blocker_id = ? AND blocked_id = ?",
 );
 const addBlock = db.prepare(
-	"INSERT INTO blocks (id, blocker_id, blocked_id) VALUES (?, ?, ?)",
+	"INSERT INTO blocks (id, blocker_id, blocked_id, source_tweet_id) VALUES (?, ?, ?, ?)",
 );
 const removeBlock = db.prepare(
 	"DELETE FROM blocks WHERE blocker_id = ? AND blocked_id = ?",
@@ -85,7 +85,7 @@ export default new Elysia({ prefix: "/blocking", tags: ["Blocking"] })
 					return { error: "User is already blocked" };
 				}
 
-				addBlock.run(Bun.randomUUIDv7(), user.id, userId);
+				addBlock.run(Bun.randomUUIDv7(), user.id, userId, body.sourceTweetId || null);
 				removeFollows.run(user.id, userId, userId, user.id);
 				removeFollowRequests.run(user.id, userId, userId, user.id);
 				incrementBlockedByCount.run(userId);
@@ -102,6 +102,7 @@ export default new Elysia({ prefix: "/blocking", tags: ["Blocking"] })
 			},
 			body: t.Object({
 				userId: t.String(),
+				sourceTweetId: t.Optional(t.String()),
 			}),
 			response: t.Object({
 				success: t.Optional(t.Boolean()),
@@ -322,6 +323,57 @@ export default new Elysia({ prefix: "/blocking", tags: ["Blocking"] })
 				success: t.Optional(t.Boolean()),
 				error: t.Optional(t.String()),
 				muted: t.Optional(t.Boolean()),
+			}),
+		},
+	)
+	.get(
+		"/causes",
+		async ({ jwt, headers }) => {
+			const authorization = headers.authorization;
+			if (!authorization) return { error: "Authentication required" };
+
+			try {
+				const payload = await jwt.verify(authorization.replace("Bearer ", ""));
+				if (!payload) return { error: "Invalid token" };
+
+				const user = getUserByUsername.get(payload.username);
+				if (!user) return { error: "User not found" };
+
+				const blocks = db
+					.query(
+						`
+					SELECT 
+						b.source_tweet_id, 
+						COUNT(*) as count,
+						p.content,
+						p.created_at
+					FROM blocks b
+					LEFT JOIN posts p ON b.source_tweet_id = p.id
+					WHERE b.blocked_id = ? AND b.source_tweet_id IS NOT NULL
+					GROUP BY b.source_tweet_id
+					ORDER BY count DESC
+					LIMIT 50
+				`,
+					)
+					.all(user.id);
+
+				return {
+					success: true,
+					causes: blocks,
+				};
+			} catch (error) {
+				console.error("Get block causes error:", error);
+				return { error: "Failed to get block causes" };
+			}
+		},
+		{
+			detail: {
+				description: "Gets tweets that caused the user to be blocked",
+			},
+			response: t.Object({
+				success: t.Optional(t.Boolean()),
+				error: t.Optional(t.String()),
+				causes: t.Optional(t.Any()),
 			}),
 		},
 	);

@@ -763,6 +763,46 @@ export const createTweetElement = (tweet, config = {}) => {
 		size = "normal",
 	} = config;
 
+	if (tweet.author.blocked_by_user) {
+		const blockedEl = document.createElement("div");
+		blockedEl.className = "tweet blocked-tweet";
+		blockedEl.style.cssText =
+			"display: flex; align-items: center; justify-content: space-between; padding: 16px; color: var(--text-secondary); background: var(--bg-secondary); border-radius: 12px; margin-bottom: 1px;";
+		blockedEl.innerHTML = `
+            <div style="display: flex; align-items: center; gap: 8px;">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/></svg>
+                <span>You blocked this user.</span>
+            </div>
+            <button class="unblock-btn" style="background: transparent; border: 1px solid var(--border); color: var(--text-primary); padding: 4px 12px; border-radius: 999px; cursor: pointer; font-size: 13px; font-weight: 600;">Unblock</button>
+        `;
+
+		blockedEl
+			.querySelector(".unblock-btn")
+			.addEventListener("click", async (e) => {
+				e.stopPropagation();
+				e.preventDefault();
+				try {
+					const result = await query("/blocking/unblock", {
+						method: "POST",
+						headers: { "Content-Type": "application/json" },
+						body: JSON.stringify({ userId: tweet.author.id }),
+					});
+					if (result.success) {
+						toastQueue.add("<h1>Unblocked user</h1>");
+						tweet.author.blocked_by_user = false;
+						const newEl = createTweetElement(tweet, config);
+						blockedEl.replaceWith(newEl);
+					} else {
+						toastQueue.add(`<h1>${result.error || "Failed to unblock"}</h1>`);
+					}
+				} catch (err) {
+					console.error(err);
+					toastQueue.add("<h1>Error unblocking user</h1>");
+				}
+			});
+		return blockedEl;
+	}
+
 	if (!tweet.reaction_count) {
 		if (typeof tweet.total_reactions === "number") {
 			tweet.reaction_count = tweet.total_reactions;
@@ -2501,7 +2541,10 @@ export const createTweetElement = (tweet, config = {}) => {
 							const result = await query(endpoint, {
 								method: "POST",
 								headers: { "Content-Type": "application/json" },
-								body: JSON.stringify({ userId: tweet.author.id }),
+								body: JSON.stringify({
+									userId: tweet.author.id,
+									sourceTweetId: isBlocked ? undefined : tweet.id,
+								}),
 							});
 
 							if (result.success) {

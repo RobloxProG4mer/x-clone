@@ -404,6 +404,9 @@ export default new Elysia({ prefix: "/timeline", tags: ["Timeline"] })
 			posts = posts.slice(0, limit);
 		}
 
+		const userBlocks = db.query("SELECT blocked_id FROM blocks WHERE blocker_id = ?").all(user.id);
+		const blockedUserIds = new Set(userBlocks.map(b => b.blocked_id));
+
 		const userMap = {};
 		posts.forEach((post) => {
 			const author = {
@@ -417,6 +420,7 @@ export default new Elysia({ prefix: "/timeline", tags: ["Timeline"] })
 				affiliate: post.affiliate || false,
 				affiliate_with: post.affiliate_with || null,
 				selected_community_tag: post.selected_community_tag || null,
+				blocked_by_user: blockedUserIds.has(post.user_id),
 			};
 
 			if (author.affiliate && author.affiliate_with) {
@@ -708,6 +712,9 @@ export default new Elysia({ prefix: "/timeline", tags: ["Timeline"] })
 			posts = posts.slice(0, limit);
 		}
 
+		const userBlocks = db.query("SELECT blocked_id FROM blocks WHERE blocker_id = ?").all(user.id);
+		const blockedUserIds = new Set(userBlocks.map(b => b.blocked_id));
+
 		const userMap = {};
 		posts.forEach((post) => {
 			const author = {
@@ -721,6 +728,7 @@ export default new Elysia({ prefix: "/timeline", tags: ["Timeline"] })
 				affiliate: post.affiliate || false,
 				affiliate_with: post.affiliate_with || null,
 				selected_community_tag: post.selected_community_tag || null,
+				blocked_by_user: blockedUserIds.has(post.user_id),
 			};
 
 			if (author.affiliate && author.affiliate_with) {
