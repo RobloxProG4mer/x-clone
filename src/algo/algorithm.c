@@ -603,7 +603,18 @@ double calculate_score(
     int blocked_by_count,
     int muted_by_count,
     double spam_score,
-    double account_age_days
+    double account_age_days,
+    int url_count,
+    int suspicious_url_count,
+    int hashtag_count,
+    int mention_count,
+    double emoji_density,
+    double author_timing_score,
+    int cluster_size,
+    double spam_keyword_score,
+    double retweet_like_ratio,
+    double engagement_velocity,
+    int is_video
 ) {
     if (created_at < 0) created_at = 0;
     if (like_count < 0) like_count = 0;
@@ -629,6 +640,17 @@ double calculate_score(
     if (muted_by_count < 0) muted_by_count = 0;
     if (!isfinite(spam_score) || spam_score < 0.0) spam_score = 0.0;
     if (!isfinite(account_age_days) || account_age_days < 0.0) account_age_days = 0.0;
+    if (url_count < 0) url_count = 0;
+    if (suspicious_url_count < 0) suspicious_url_count = 0;
+    if (hashtag_count < 0) hashtag_count = 0;
+    if (mention_count < 0) mention_count = 0;
+    if (!isfinite(emoji_density) || emoji_density < 0.0) emoji_density = 0.0;
+    if (!isfinite(author_timing_score) || author_timing_score < 0.0) author_timing_score = 0.0;
+    if (!isfinite(spam_keyword_score) || spam_keyword_score < 0.0) spam_keyword_score = 0.0;
+    if (!isfinite(retweet_like_ratio) || !isfinite(retweet_like_ratio)) retweet_like_ratio = 0.0;
+    if (!isfinite(engagement_velocity) || engagement_velocity < 0.0) engagement_velocity = 0.0;
+    if (is_video < 0) is_video = 0;
+    if (cluster_size < 0) cluster_size = 0;
     
     time_t now = time(NULL);
     double age_hours = compute_age_hours(now, created_at);
@@ -853,6 +875,80 @@ double calculate_score(
         media_boost *= (1.0 - deficit * 0.5);
     }
 
+    double url_penalty = 1.0;
+    if (url_count > 3) {
+        url_penalty = 1.0 / (1.0 + (double)(url_count - 3) * 0.15);
+    }
+    if (suspicious_url_count > 0) {
+        url_penalty *= 1.0 / (1.0 + (double)suspicious_url_count * 0.35);
+        if (suspicious_url_count > 2) url_penalty *= 0.6;
+    }
+
+    double hashtag_penalty = 1.0;
+    if (hashtag_count > 5) {
+        hashtag_penalty = 1.0 / (1.0 + (double)(hashtag_count - 5) * 0.12);
+        if (hashtag_count > 10) hashtag_penalty *= 0.7;
+    }
+
+    double mention_penalty = 1.0;
+    if (mention_count > 4) {
+        mention_penalty = 1.0 / (1.0 + (double)(mention_count - 4) * 0.1);
+        if (mention_count > 8) mention_penalty *= 0.65;
+    }
+
+    double emoji_penalty = 1.0;
+    if (emoji_density > 0.3) {
+        emoji_penalty = 1.0 / (1.0 + (emoji_density - 0.3) * 2.0);
+        if (emoji_density > 0.6) emoji_penalty *= 0.5;
+    }
+
+    double timing_penalty = 1.0;
+    if (author_timing_score > 0.5) {
+        timing_penalty = 1.0 / (1.0 + (author_timing_score - 0.5) * 1.2);
+        if (author_timing_score > 0.85) timing_penalty *= 0.4;
+    }
+
+    double cluster_penalty = 1.0;
+    if (cluster_size > 1) {
+        cluster_penalty = 1.0 / (1.0 + (double)(cluster_size - 1) * 0.25);
+        if (cluster_size > 5) cluster_penalty *= 0.6;
+    }
+
+    // Spam keyword penalty: strong keywords indicate likely spam; less penalty for verified/gold accounts
+    double keyword_penalty = 1.0;
+    if (spam_keyword_score > 0.25) {
+        keyword_penalty = 1.0 / (1.0 + (spam_keyword_score - 0.25) * 1.8);
+    }
+    if (spam_keyword_score > 0.6) {
+        keyword_penalty *= 0.6;
+    }
+    if (user_verified || user_gold) {
+        // reduce effect of keyword penalty for high-trust users
+        keyword_penalty = clampd(1.0 - (1.0 - keyword_penalty) * 0.45, 0.5, 1.0);
+    }
+
+    // Retweet/Like ratio: unusually high retweets relative to likes is a signal
+    double rt_like_penalty = 1.0;
+    if (retweet_like_ratio > 1.2) {
+        rt_like_penalty = 1.0 / (1.0 + (retweet_like_ratio - 1.2) * 0.5);
+        if (retweet_like_ratio > 2.5) rt_like_penalty *= 0.6;
+    }
+
+    // Engagement velocity: extremely high for short age indicates virality, but may be suspicious
+    double velocity_penalty = 1.0;
+    if (engagement_velocity > 200.0 && age_hours < 1.0) {
+        velocity_penalty = 1.0 / (1.0 + safe_log(engagement_velocity / 200.0) * 0.6);
+    } else if (engagement_velocity > 1000.0) {
+        velocity_penalty = 0.6;
+    }
+
+    // Video posts tend to have higher engagement - apply a small boost
+    double media_type_boost = 1.0;
+    if (is_video) {
+        media_type_boost = 1.18;
+        if (age_hours < FRESH_TWEET_HOURS) media_type_boost *= 1.08;
+    }
+
     double final_score = base_score * 
                         time_decay * 
                         engagement_quality * 
@@ -870,7 +966,15 @@ double calculate_score(
                         random_multiplier *
                         super_tweet_boost *
                         reputation_penalty *
-                        account_age_boost;
+                        account_age_boost *
+                        url_penalty *
+                        hashtag_penalty *
+                        mention_penalty *
+                        emoji_penalty *
+                        timing_penalty *
+                        cluster_penalty;
+    // Apply keyword/retweet/velocity penalties and media boost
+    final_score *= keyword_penalty * rt_like_penalty * velocity_penalty * media_type_boost;
 
     if (all_seen_flag) {
         final_score += random_component * 2.5;
@@ -891,7 +995,11 @@ double calculate_score(
 
     if (final_score < 0.0) final_score = 0.0;
     if (!isfinite(final_score)) final_score = 0.0;
-    
+    // Logistic mapping: amplify high-confidence values, compress weak scores
+    double norm = clampd(safe_log(final_score + 1.0) / safe_log(200.0), 0.0, 1.0);
+    double logistic_scale = 1.0 / (1.0 + exp(-8.0 * (norm - 0.55)));
+    final_score = final_score * (0.85 + logistic_scale * 1.25);
+    if (!isfinite(final_score) || final_score < 0.0) final_score = 0.0;
     return final_score;
 }
 
@@ -980,7 +1088,18 @@ void rank_tweets(Tweet *tweets, size_t count) {
             tweets[i].blocked_by_count,
             tweets[i].muted_by_count,
             tweets[i].spam_score,
-            tweets[i].account_age_days
+            tweets[i].account_age_days,
+            0,
+            0,
+            0,
+            0,
+            0.0,
+            0.0,
+            0,
+            0.0,
+            0.0,
+            0.0,
+            0
         );
 
         tweets[i].score = base_score;
@@ -1164,7 +1283,18 @@ void rank_tweets(Tweet *tweets, size_t count) {
             tweets[i].blocked_by_count,
             tweets[i].muted_by_count,
             tweets[i].spam_score,
-            tweets[i].account_age_days
+            tweets[i].account_age_days,
+            0,
+            0,
+            0,
+            0,
+            0.0,
+            0.0,
+            0,
+            0.0,
+            0.0,
+            0.0,
+            0
         );
 
         double penalty2 = 1.0;

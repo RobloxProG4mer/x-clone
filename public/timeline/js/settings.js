@@ -3261,23 +3261,202 @@ window.showSpamScoreDetails = async (username) => {
 					: "#4caf50";
 		};
 
+		const getIndicatorIcon = (name) => {
+			const icons = {
+				duplicate_content: `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>`,
+				near_duplicate: `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 4h2a2 2 0 012 2v14a2 2 0 01-2 2H6a2 2 0 01-2-2V6a2 2 0 012-2h2"/><rect x="8" y="2" width="8" height="4" rx="1"/></svg>`,
+				posting_frequency: `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>`,
+				timing_regularity: `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2a10 10 0 100 20 10 10 0 000-20z"/><path d="M12 6v6l4 2"/></svg>`,
+				url_spam: `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 13a5 5 0 007.54.54l3-3a5 5 0 00-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 00-7.54-.54l-3 3a5 5 0 007.07 7.07l1.71-1.71"/></svg>`,
+				hashtag_spam: `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="4" y1="9" x2="20" y2="9"/><line x1="4" y1="15" x2="20" y2="15"/><line x1="10" y1="3" x2="8" y2="21"/><line x1="16" y1="3" x2="14" y2="21"/></svg>`,
+				mention_spam: `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="4"/><path d="M16 8v5a3 3 0 006 0v-1a10 10 0 10-3.92 7.94"/></svg>`,
+				content_quality: `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>`,
+				reply_spam: `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>`,
+				engagement_manipulation: `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/></svg>`,
+				account_behavior: `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>`,
+				composite_bot_signal: `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><circle cx="12" cy="5" r="4"/></svg>`,
+			};
+			return (
+				icons[name] ||
+				`<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/></svg>`
+			);
+		};
+
+		const getSpecificAdvice = (indicator) => {
+			const adviceMap = {
+				duplicate_content: {
+					warning:
+						"You're posting identical content repeatedly. Each post should be unique.",
+					caution:
+						"Some duplicate posts detected. Try to vary your content more.",
+					good: "Good variety in your post content.",
+				},
+				near_duplicate: {
+					warning:
+						"Many posts are very similar (rephrased). Avoid posting the same idea repeatedly.",
+					caution: "Some posts are too similar. Diversify your topics.",
+					good: "Posts have good variety.",
+				},
+				posting_frequency: {
+					warning:
+						"Posting original tweets too fast. Slow down to under 10 posts per hour (replies don't count).",
+					caution:
+						"Original post pace is elevated. Consider spacing posts out more (replies are fine).",
+					good: "Healthy posting frequency.",
+				},
+				timing_regularity: {
+					warning:
+						"Posts appear automated (suspiciously regular timing between posts).",
+					caution: "Posting pattern looks mechanical. Vary your timing.",
+					good: "Natural posting timing.",
+				},
+				url_spam: {
+					warning:
+						"Too many links, especially shortened/suspicious URLs. Reduce link posting.",
+					caution: "Frequent link sharing detected. Use links sparingly.",
+					good: "Link usage is appropriate.",
+				},
+				hashtag_spam: {
+					warning:
+						"Excessive hashtags detected. Use 1-3 relevant hashtags max.",
+					caution: "Using many hashtags. Keep it to 2-3 per post.",
+					good: "Hashtag usage is appropriate.",
+				},
+				mention_spam: {
+					warning: "Mentioning too many users. This looks like spam tagging.",
+					caution: "High mention count. Only @mention when necessary.",
+					good: "Mention usage is appropriate.",
+				},
+				content_quality: {
+					warning:
+						"Posts contain spam keywords, excessive caps, or repeated characters.",
+					caution:
+						"Some low-quality content detected. Write more thoughtfully.",
+					good: "Content quality is good.",
+				},
+				reply_spam: {
+					warning:
+						"Sending identical/similar replies to many users. Personalize responses.",
+					caution: "Reply patterns look repetitive. Add more variety.",
+					good: "Reply behavior is normal.",
+				},
+				engagement_manipulation: {
+					warning:
+						"High post volume with zero engagement suggests inauthentic activity.",
+					caution: "Many posts aren't getting engagement. Focus on quality.",
+					good: "Engagement patterns are normal.",
+				},
+				account_behavior: {
+					warning:
+						"New account with high activity and few followers raises flags.",
+					caution:
+						"Account activity pattern is unusual for your follower count.",
+					good: "Account behavior is normal.",
+				},
+				composite_bot_signal: {
+					warning:
+						"Multiple bot-like signals detected. Account may be flagged.",
+					caution: "Some automated behavior patterns detected.",
+					good: "No bot-like behavior detected.",
+				},
+			};
+			const advice = adviceMap[indicator.name];
+			if (!advice) return indicator.details;
+			return advice[indicator.status] || indicator.details;
+		};
+
+		const showImpactingTweets = (indicator) => {
+			const tweets = indicator.impactingTweets || [];
+			if (tweets.length === 0) return;
+
+			const escapeHtml = (str) => {
+				if (!str) return "";
+				return str
+					.replace(/&/g, "&amp;")
+					.replace(/</g, "&lt;")
+					.replace(/>/g, "&gt;")
+					.replace(/"/g, "&quot;")
+					.replace(/'/g, "&#039;");
+			};
+
+			const tweetsModal = document.createElement("div");
+			tweetsModal.className = "modal";
+			tweetsModal.style.cssText =
+				"display: flex; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 10001; align-items: center; justify-content: center; animation: fadeIn 0.2s;";
+
+			const statusColor = getStatusColor(indicator.status);
+			const tweetsHTML = tweets
+				.map(
+					(t) => `
+				<div style="background: var(--bg-secondary); padding: 12px; border-left: 3px solid ${statusColor};">
+					<div style="font-size: 13px; color: var(--text-primary); margin-bottom: 6px; word-break: break-word;">${escapeHtml(t.content || "No content")}${(t.content?.length || 0) >= 80 ? "..." : ""}</div>
+					<div style="display: flex; justify-content: space-between; align-items: center;">
+						<span style="font-size: 11px; color: ${statusColor}; font-weight: 500;">${escapeHtml(t.reason)}</span>
+						<a href="/${username}/status/${t.id}" target="_blank" style="font-size: 11px; color: var(--accent-color); text-decoration: none;">View →</a>
+					</div>
+				</div>
+			`,
+				)
+				.join("");
+
+			tweetsModal.innerHTML = `
+				<div style="background: var(--bg-primary); border-radius: 12px; max-width: 500px; width: 90%; max-height: 80vh; overflow-y: auto; box-shadow: 0 8px 32px rgba(0,0,0,0.3);">
+					<div style="padding: 20px; border-bottom: 1px solid var(--border-color); position: sticky; top: 0; background: var(--bg-primary); z-index: 1;">
+						<div style="display: flex; justify-content: space-between; align-items: center;">
+							<h3 style="margin: 0; font-size: 16px; color: var(--text-primary);">
+								${indicator.displayName}
+							</h3>
+							<button style="background: none; border: none; color: var(--text-secondary); font-size: 20px; cursor: pointer; padding: 4px 8px;">&times;</button>
+						</div>
+					</div>
+					<div style="padding: 16px; display: flex; flex-direction: column; gap: 10px;">
+						${tweetsHTML}
+					</div>
+				</div>
+			`;
+
+			document.body.appendChild(tweetsModal);
+			tweetsModal
+				.querySelector("button")
+				.addEventListener("click", () => tweetsModal.remove());
+			tweetsModal.addEventListener("click", (e) => {
+				if (e.target === tweetsModal) tweetsModal.remove();
+			});
+		};
+
+		window._spamIndicators = data.indicators;
+		window._spamUsername = username;
+
 		const indicatorsHTML = data.indicators
-			.slice(0, 9)
-			.map((ind) => {
+			.slice(0, 12)
+			.map((ind, idx) => {
 				const statusColor = getStatusColor(ind.status);
 				const scorePercent = (ind.score * 100).toFixed(0);
+				const icon = getIndicatorIcon(ind.name);
+				const specificAdvice = getSpecificAdvice(ind);
+				const hasTweets = ind.impactingTweets && ind.impactingTweets.length > 0;
 
 				return `
-				<div style="background: var(--bg-primary); padding: 16px; border-left: 1px solid ${statusColor};">
-					<div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 8px;">
+				<div style="background: var(--bg-primary); padding: 16px; border-left: 3px solid ${statusColor}; border-radius: 0 8px 8px 0;">
+					<div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 10px;">
 						<div style="flex: 1;">
-							<div style="display: flex; align-items: center; gap: 8px; margin-bottom: 4px;">
+							<div style="display: flex; align-items: center; gap: 8px; margin-bottom: 6px; flex-wrap: wrap;">
+								<span style="color: ${statusColor}; display: flex; align-items: center;">${icon}</span>
 								<span style="font-weight: 600; color: var(--text-primary); font-size: 14px;">${ind.displayName}</span>
-								<span style="padding: 2px 8px; background: ${statusColor}22; color: ${statusColor}; border-radius: 4px; font-size: 11px; font-weight: 600;">${scorePercent}%</span>
+								<span style="padding: 2px 8px; background: ${statusColor}22; color: ${statusColor}; border-radius: 12px; font-size: 11px; font-weight: 600;">${scorePercent}%</span>
+								${
+									hasTweets
+										? `<button data-indicator-idx="${idx}" style="padding: 2px 8px; background: var(--bg-secondary); border: 1px solid var(--border-color); color: var(--text-secondary); border-radius: 12px; font-size: 10px; cursor: pointer; display: flex; align-items: center; gap: 4px;">
+									<svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+									${ind.impactingTweets.length} tweets
+								</button>`
+										: ""
+								}
 							</div>
-							<div style="font-size: 12px; color: var(--text-secondary);">${ind.details}</div>
+							<div style="font-size: 12px; color: var(--text-secondary); margin-bottom: 4px;">${ind.details}</div>
+							<div style="font-size: 12px; color: ${statusColor};">${specificAdvice}</div>
 						</div>
-						<div style="text-align: right; min-width: 80px;">
+						<div style="text-align: right; min-width: 70px;">
 							<div style="font-size: 11px; color: var(--text-secondary);">Weight: ${(ind.weight * 100).toFixed(0)}%</div>
 							<div style="font-size: 11px; color: ${statusColor}; font-weight: 600;">Impact: ${ind.contribution}</div>
 						</div>
@@ -3290,6 +3469,42 @@ window.showSpamScoreDetails = async (username) => {
 			})
 			.join("");
 
+		const getOverallAdvice = () => {
+			const topIssues = data.indicators
+				.filter((i) => i.status === "warning")
+				.slice(0, 3);
+			if (topIssues.length === 0) {
+				return data.spamPercentage > 10
+					? `<li><strong>Minor issues:</strong> Address the caution indicators above to lower your score.</li>`
+					: `<li>Your spam score is excellent! Keep maintaining good posting habits.</li><li>Continue engaging authentically with the community.</li>`;
+			}
+			return topIssues
+				.map((issue) => {
+					const adviceMap = {
+						duplicate_content:
+							"Stop posting identical content. Make each post unique.",
+						near_duplicate:
+							"Avoid rephrasing the same message. Post diverse content.",
+						posting_frequency:
+							"Reduce original posts to under 10 per hour. Replies don't count toward this.",
+						timing_regularity: "Add natural variation to when you post.",
+						url_spam: "Reduce link sharing, avoid URL shorteners.",
+						hashtag_spam: "Use fewer hashtags (1-3 per post max).",
+						mention_spam: "Reduce @mentions. Don't mass-tag users.",
+						content_quality:
+							"Write more thoughtful, varied content. Avoid spam keywords.",
+						reply_spam: "Personalize your replies. Don't copy-paste responses.",
+						engagement_manipulation: "Focus on quality over quantity.",
+						account_behavior:
+							"Build followers naturally before posting frequently.",
+						composite_bot_signal:
+							"Multiple issues detected - address individual warnings above.",
+					};
+					return `<li><strong>${issue.displayName}:</strong> ${adviceMap[issue.name] || "Address this issue to improve your score."}</li>`;
+				})
+				.join("");
+		};
+
 		const modal = document.createElement("div");
 		modal.className = "modal";
 		modal.style.cssText =
@@ -3300,86 +3515,71 @@ window.showSpamScoreDetails = async (username) => {
 				<div style="padding: 24px; border-bottom: 1px solid var(--border-color); position: sticky; top: 0; background: var(--bg-primary); z-index: 1;">
 					<div style="display: flex; justify-content: space-between; align-items: center;">
 						<h2 style="margin: 0; font-size: 20px; color: var(--text-primary); display: flex; align-items: center; gap: 10px;">
-							Spam score analysis
+							Spam Score Analysis
 						</h2>
 						<button onclick="this.closest('.modal').remove()" style="background: var(--bg-secondary); border: 1px solid var(--border-color); color: var(--text-secondary); font-size: 20px; cursor: pointer; padding: 4px 12px; border-radius: 6px; transition: all 0.2s;" onmouseover="this.style.background='var(--bg-hover)'" onmouseout="this.style.background='var(--bg-secondary)'">&times;</button>
 					</div>
 				</div>
 				
 				<div style="padding: 24px;">
-					<div style="text-align: center; margin-bottom: 28px; padding: 20px; background: var(--bg-secondary); border-radius: 12px;">
+					<div style="text-align: center; margin-bottom: 28px; padding: 20px; background: var(--bg-secondary); border-radius: 12px; border: 2px solid ${scoreColor}33;">
 						<div style="font-size: 64px; font-weight: bold; color: ${scoreColor}; line-height: 1; margin-bottom: 12px;">${data.spamPercentage.toFixed(1)}%</div>
 						<div style="font-size: 16px; color: var(--text-primary); font-weight: 600; margin-bottom: 6px;">
 							${data.message}
 						</div>
 						<div style="font-size: 13px; color: var(--text-secondary);">
-							Based on analysis of ${metrics.totalPosts} posts
+							Based on analysis of ${metrics.totalPosts} posts (excludes replies)
 						</div>
 					</div>
 
-					<!-- Quick Stats -->
 					<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 12px; margin-bottom: 28px;">
-						<div style="padding: 16px; text-align: center;">
+						<div style="padding: 16px; text-align: center; background: var(--bg-secondary); border-radius: 8px;">
 							<div style="font-size: 24px; font-weight: bold; color: var(--text-primary);">${metrics.followerCount}</div>
 							<div style="font-size: 12px; color: var(--text-secondary); margin-top: 4px;">Followers</div>
 						</div>
-						<div style="padding: 16px; text-align: center;">
+						<div style="padding: 16px; text-align: center; background: var(--bg-secondary); border-radius: 8px;">
 							<div style="font-size: 24px; font-weight: bold; color: var(--text-primary);">${metrics.followingCount}</div>
 							<div style="font-size: 12px; color: var(--text-secondary); margin-top: 4px;">Following</div>
 						</div>
-						<div style="padding: 16px; text-align: center;">
+						<div style="padding: 16px; text-align: center; background: var(--bg-secondary); border-radius: 8px;">
 							<div style="font-size: 24px; font-weight: bold; color: var(--text-primary);">${metrics.accountAgeDays}</div>
 							<div style="font-size: 12px; color: var(--text-secondary); margin-top: 4px;">Days Old</div>
 						</div>
-						<div style="padding: 16px; text-align: center;">
-							<div style="font-size: 24px; font-weight: bold; color: var(--text-primary);">${metrics.postsLastDay}</div>
-							<div style="font-size: 12px; color: var(--text-secondary); margin-top: 4px;">Posts Today</div>
+						<div style="padding: 16px; text-align: center; background: var(--bg-secondary); border-radius: 8px;">
+							<div style="font-size: 24px; font-weight: bold; color: ${metrics.postsLastHour > 10 ? "#f44336" : metrics.postsLastHour > 5 ? "#ff9800" : "var(--text-primary)"};">${metrics.postsLastHour}</div>
+							<div style="font-size: 12px; color: var(--text-secondary); margin-top: 4px;">Posts/Hour</div>
 						</div>
 					</div>
 
-					<!-- Indicator Breakdown -->
 					<div style="margin-bottom: 24px;">
 						<h3 style="margin: 0 0 16px 0; font-size: 17px; color: var(--text-primary); display: flex; align-items: center; gap: 8px;">
 							<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="m19 9-5 5-4-4-3 3"/></svg>
-							Spam Indicators Breakdown
+							Detailed Indicator Breakdown
 						</h3>
-						<div style="display: flex; flex-direction: column; gap: 12px;">
+						<div style="display: flex; flex-direction: column; gap: 12px;" id="spam-indicators-container">
 							${indicatorsHTML}
 						</div>
 					</div>
 
-					<!--How to Improve -->
 					<div style="background: linear-gradient(135deg, ${scoreColor}15 0%, ${scoreColor}05 100%); border-radius: 12px; padding: 20px; border: 1px solid ${scoreColor}30;">
 						<h3 style="margin: 0 0 12px 0; font-size: 16px; color: var(--text-primary); display: flex; align-items: center; gap: 8px;">
-							<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg>
-							How to improve your score
+							<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10z"/><path d="m9 12 2 2 4-4"/></svg>
+							Action Items to Improve Your Score
 						</h3>
 						<ul style="margin: 0; padding-left: 20px; color: var(--text-secondary); font-size: 14px; line-height: 1.8;">
-							${
-								data.spamPercentage > 10
-									? `
-								<li><strong>Reduce posting frequency:</strong> Space out your posts to under 10 per hour</li>
-								<li><strong>Avoid duplicates:</strong> Post unique, varied content</li>
-								${metrics.followerCount < 20 ? "<li><strong>Grow your audience:</strong> Engage authentically to gain followers</li>" : ""}
-							`
-									: `
-								<li>Your spam score is excellent! Keep maintaining good posting habits.</li>
-								<li>Continue building your follower base naturally and tweeting high-quality content</li> 
-							`
-							}
+							${getOverallAdvice()}
 						</ul>
 					</div>
 
-					<!-- Technical Details -->
 					<details style="margin-top: 20px;">
 						<summary style="cursor: pointer; padding: 12px; border-radius: 8px; color: var(--text-primary); font-size: 14px; user-select: none; text-decoration: underline;">
-							Learn more
+							Technical Details
 						</summary>
 						<div style="padding: 16px; font-size: 13px; color: var(--text-secondary); line-height: 1.6; border-radius: 0 0 8px 8px; margin-top: -8px;">
-							<p style="margin: 0 0 8px 0;"><strong>Score Calculation:</strong> Each indicator has a weight representing its importance. Your score is the weighted sum of all indicators.</p>
-							<p style="margin: 0 0 8px 0;"><strong>Total Posts Analyzed:</strong> ${metrics.totalPosts}</p>
-							<p style="margin: 0 0 8px 0;"><strong>Recent Activity:</strong> ${metrics.postsLastHour} posts in last hour, ${metrics.postsLast6Hours} in last 6 hours, ${metrics.postsLastDay} in last 24 hours</p>
-							<p style="margin: 0;"><strong>Follow Ratio:</strong> ${metrics.followRatio} (following/followers)</p>
+							<p style="margin: 0 0 8px 0;"><strong>Score Calculation:</strong> Each indicator has a weight representing its importance. Your final score is a logistic-transformed weighted sum.</p>
+							<p style="margin: 0 0 8px 0;"><strong>Posts Analyzed:</strong> Up to 200 recent original posts (${metrics.totalPosts} total, replies analyzed separately)</p>
+							<p style="margin: 0 0 8px 0;"><strong>Recent Activity:</strong> ${metrics.postsLastHour} posts/hour • ${metrics.postsLast6Hours} posts/6hrs • ${metrics.postsLastDay} posts/24hrs</p>
+							<p style="margin: 0;"><strong>Follow Ratio:</strong> ${metrics.followRatio} (following÷followers)</p>
 						</div>
 					</details>
 				</div>
@@ -3387,6 +3587,16 @@ window.showSpamScoreDetails = async (username) => {
 		`;
 
 		document.body.appendChild(modal);
+
+		modal.querySelectorAll("[data-indicator-idx]").forEach((btn) => {
+			btn.addEventListener("click", (e) => {
+				e.stopPropagation();
+				const idx = parseInt(btn.dataset.indicatorIdx);
+				const ind = window._spamIndicators[idx];
+				if (ind) showImpactingTweets(ind);
+			});
+		});
+
 		modal.addEventListener("click", (e) => {
 			if (e.target === modal) modal.remove();
 		});

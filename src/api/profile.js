@@ -3,8 +3,8 @@ import { Elysia } from "elysia";
 import { rateLimit } from "elysia-rate-limit";
 import db from "./../db.js";
 import ratelimit from "../helpers/ratelimit.js";
+import { calculateSpamScoreWithDetails } from "../helpers/spam-detection.js";
 import { addNotification } from "./notifications.js";
-import { calculateSpamScore } from "../helpers/spam-detection.js";
 
 const JWT_SECRET = process.env.JWT_SECRET;
 
@@ -608,7 +608,7 @@ export default new Elysia({ prefix: "/profile", tags: ["Profile"] })
 			if (currentUserId && !isOwnProfile) {
 				const blockedRow = getBlockStatus.get(user.id, currentUserId);
 				blockedByProfile = !!blockedRow;
-				
+
 				const myBlockRow = getBlockStatus.get(currentUserId, user.id);
 				blockedProfile = !!myBlockRow;
 			}
@@ -2398,25 +2398,26 @@ export default new Elysia({ prefix: "/profile", tags: ["Profile"] })
 			const accountAgeDays = accountAgeMs / (1000 * 60 * 60 * 24);
 
 			// Ensure spam_score is a number, defaulting to 0.0 if null/undefined
-		const spamScore = typeof user.spam_score === 'number' ? user.spam_score : 0.0;
-		
-		const stats = {
-			blocked_by_count: user.blocked_by_count || 0,
-			muted_by_count: user.muted_by_count || 0,
-			spam_score: spamScore,
-			account_age_days: Math.floor(accountAgeDays),
-			follower_count: user.follower_count || 0,
-			following_count: user.following_count || 0,
-			post_count: user.post_count || 0,
-			verified: user.verified || false,
-			gold: user.gold || false,
-			super_tweeter: user.super_tweeter || false,
-			algorithm_impact: {
-				reputation_multiplier: 1.0,
-				account_age_multiplier: 1.0,
-				description: "How the algorithm views this account",
-			},
-		};
+			const spamScore =
+				typeof user.spam_score === "number" ? user.spam_score : 0.0;
+
+			const stats = {
+				blocked_by_count: user.blocked_by_count || 0,
+				muted_by_count: user.muted_by_count || 0,
+				spam_score: spamScore,
+				account_age_days: Math.floor(accountAgeDays),
+				follower_count: user.follower_count || 0,
+				following_count: user.following_count || 0,
+				post_count: user.post_count || 0,
+				verified: user.verified || false,
+				gold: user.gold || false,
+				super_tweeter: user.super_tweeter || false,
+				algorithm_impact: {
+					reputation_multiplier: 1.0,
+					account_age_multiplier: 1.0,
+					description: "How the algorithm views this account",
+				},
+			};
 
 			let reputationMultiplier = 1.0;
 
@@ -2485,153 +2486,111 @@ export default new Elysia({ prefix: "/profile", tags: ["Profile"] })
 				return { error: "User not found" };
 			}
 
-			// Recalculate spam score
-			const newScore = calculateSpamScore(user.id);
+			const analysis = calculateSpamScoreWithDetails(user.id);
 
-			// Get account metrics
 			const accountAgeMs = Date.now() - new Date(user.created_at).getTime();
 			const accountAgeDays = accountAgeMs / (1000 * 60 * 60 * 24);
 
-			// Get actual follower/following counts
-			const followerCount = db.prepare("SELECT COUNT(*) as count FROM follows WHERE following_id = ?").get(user.id)?.count || 0;
-			const followingCount = db.prepare("SELECT COUNT(*) as count FROM follows WHERE follower_id = ?").get(user.id)?.count || 0;
-			const totalPosts = db.prepare("SELECT COUNT(*) as count FROM posts WHERE user_id = ?").get(user.id)?.count || 0;
+			const followerCount =
+				db
+					.prepare(
+						"SELECT COUNT(*) as count FROM follows WHERE following_id = ?",
+					)
+					.get(user.id)?.count || 0;
+			const followingCount =
+				db
+					.prepare(
+						"SELECT COUNT(*) as count FROM follows WHERE follower_id = ?",
+					)
+					.get(user.id)?.count || 0;
+			const totalPosts =
+				db
+					.prepare(
+						"SELECT COUNT(*) as count FROM posts WHERE user_id = ? AND reply_to IS NULL",
+					)
+					.get(user.id)?.count || 0;
+			const totalReplies =
+				db
+					.prepare(
+						"SELECT COUNT(*) as count FROM posts WHERE user_id = ? AND reply_to IS NOT NULL",
+					)
+					.get(user.id)?.count || 0;
 
-			// Get recent posting activity
 			const now = Date.now();
 			const oneHourAgo = new Date(now - 3600000).toISOString();
 			const sixHoursAgo = new Date(now - 6 * 3600000).toISOString();
 			const oneDayAgo = new Date(now - 24 * 3600000).toISOString();
 
-			const postsLastHour = db.prepare(
-				"SELECT COUNT(*) as count FROM posts WHERE user_id = ? AND created_at > ?"
-			).get(user.id, oneHourAgo)?.count || 0;
+			const postsLastHour =
+				db
+					.prepare(
+						"SELECT COUNT(*) as count FROM posts WHERE user_id = ? AND reply_to IS NULL AND created_at > ?",
+					)
+					.get(user.id, oneHourAgo)?.count || 0;
 
-			const postsLast6Hours = db.prepare(
-				"SELECT COUNT(*) as count FROM posts WHERE user_id = ? AND created_at > ?"
-			).get(user.id, sixHoursAgo)?.count || 0;
+			const postsLast6Hours =
+				db
+					.prepare(
+						"SELECT COUNT(*) as count FROM posts WHERE user_id = ? AND reply_to IS NULL AND created_at > ?",
+					)
+					.get(user.id, sixHoursAgo)?.count || 0;
 
-			const postsLastDay = db.prepare(
-				"SELECT COUNT(*) as count FROM posts WHERE user_id = ? AND created_at > ?"
-			).get(user.id, oneDayAgo)?.count || 0;
+			const postsLastDay =
+				db
+					.prepare(
+						"SELECT COUNT(*) as count FROM posts WHERE user_id = ? AND reply_to IS NULL AND created_at > ?",
+					)
+					.get(user.id, oneDayAgo)?.count || 0;
 
-			// Calculate indicator scores (simplified versions for API)
-			const indicators = [];
+			const repliesLastHour =
+				db
+					.prepare(
+						"SELECT COUNT(*) as count FROM posts WHERE user_id = ? AND reply_to IS NOT NULL AND created_at > ?",
+					)
+					.get(user.id, oneHourAgo)?.count || 0;
 
-			// 1. Posting Frequency
-			let freqScore = 0;
-			let freqDetails = "";
-			if (postsLastHour > 20) { freqScore = 1.0; freqDetails = "Very high (>20/hour)"; }
-			else if (postsLastHour > 15) { freqScore = 0.7; freqDetails = "High (15-20/hour)"; }
-			else if (postsLastHour > 10) { freqScore = 0.4; freqDetails = "Moderate (10-15/hour)"; }
-			else if (postsLast6Hours > 60) { freqScore = 0.8; freqDetails = "High over 6 hours"; }
-			else if (postsLast6Hours > 40) { freqScore = 0.5; freqDetails = "Moderate over 6 hours"; }
-			else if (postsLastDay > 150) { freqScore = 0.9; freqDetails = "Very high daily (>150)"; }
-			else if (postsLastDay > 100) { freqScore = 0.6; freqDetails = "High daily (>100)"; }
-			else { freqDetails = "Normal"; }
+			const repliesLastDay =
+				db
+					.prepare(
+						"SELECT COUNT(*) as count FROM posts WHERE user_id = ? AND reply_to IS NOT NULL AND created_at > ?",
+					)
+					.get(user.id, oneDayAgo)?.count || 0;
 
-			indicators.push({
-				name: "posting_frequency",
-				displayName: "Posting Frequency",
-				score: freqScore,
-				weight: 0.12,
-				contribution: (freqScore * 0.12 * 100).toFixed(1) + "%",
-				details: freqDetails,
-				status: freqScore > 0.5 ? "warning" : freqScore > 0 ? "caution" : "good"
-			});
-
-			// 2. Account Behavior
-			let acctScore = 0;
-			let acctDetails = "";
-			let followerBonus = 0;
-			if (followerCount >= 100) followerBonus = 1.0;
-			else if (followerCount >= 50) followerBonus = 0.8;
-			else if (followerCount >= 20) followerBonus = 0.6;
-			else if (followerCount >= 10) followerBonus = 0.4;
-			else if (followerCount >= 5) followerBonus = 0.2;
-
-			if (followerCount < 10) {
-				if (accountAgeDays < 7 && totalPosts > 100) {
-					acctScore = 0.6 * (1.0 - followerBonus);
-					acctDetails = "New account, high activity";
-				} else if (accountAgeDays < 3 && totalPosts > 50) {
-					acctScore = 0.7 * (1.0 - followerBonus);
-					acctDetails = "Very new, moderate activity";
-				} else if (accountAgeDays < 1 && totalPosts > 20) {
-					acctScore = 0.9 * (1.0 - followerBonus);
-					acctDetails = "Brand new, high activity";
-				}
-			}
-
-			if (followerCount === 0 && totalPosts > 50) {
-				acctScore = Math.max(acctScore, 0.7 * (1.0 - followerBonus));
-				acctDetails = "Zero followers, many posts";
-			}
-
-			if (acctScore === 0 && followerBonus > 0) {
-				acctDetails = `Good follower base (${followerCount})`;
-			} else if (acctScore === 0) {
-				acctDetails = "Normal account behavior";
-			}
-
-			indicators.push({
-				name: "account_behavior",
-				displayName: "Account Behavior",
-				score: acctScore,
-				weight: 0.12,
-				contribution: (acctScore * 0.12 * 100).toFixed(1) + "%",
-				details: acctDetails,
-				status: acctScore > 0.5 ? "warning" : acctScore > 0 ? "caution" : "good"
-			});
-
-			// 3-9. Placeholder indicators (would need full calculation logic)
-			const otherIndicators = [
-				{ name: "duplicate_content", displayName: "Duplicate Content", weight: 0.15 },
-				{ name: "url_spam", displayName: "URL Spam", weight: 0.14 },
-				{ name: "hashtag_spam", displayName: "Hashtag Spam", weight: 0.10 },
-				{ name: "mention_spam", displayName: "Mention Spam", weight: 0.09 },
-				{ name: "content_quality", displayName: "Content Quality", weight: 0.11 },
-				{ name: "reply_spam", displayName: "Reply Spam", weight: 0.08 },
-				{ name: "engagement_manipulation", displayName: "Engagement Manipulation", weight: 0.09 },
-			];
-
-			// For these, we'll estimate based on current score
-			const accountedScore = (freqScore * 0.12) + (acctScore * 0.12);
-			const remainingScore = Math.max(0, newScore - accountedScore);
-			const remainingWeight = otherIndicators.reduce((sum, i) => sum + i.weight, 0);
-
-			otherIndicators.forEach(ind => {
-				const estimatedScore = remainingWeight > 0 ? (remainingScore / remainingWeight) * (ind.weight / remainingWeight) : 0;
-				indicators.push({
-					...ind,
-					score: estimatedScore,
-					contribution: (estimatedScore * ind.weight * 100).toFixed(1) + "%",
-					details: estimatedScore > 0.5 ? "Some issues detected" : estimatedScore > 0.2 ? "Minor issues" : "No issues detected",
-					status: estimatedScore > 0.5 ? "warning" : estimatedScore > 0.2 ? "caution" : "good"
-				});
-			});
+			const indicators = (analysis.indicators || []).map((ind) => ({
+				name: ind.name,
+				displayName: ind.displayName,
+				score: ind.score,
+				weight: ind.weight,
+				contribution: `${(ind.score * ind.weight * 100).toFixed(1)}%`,
+				details: ind.details,
+				status:
+					ind.score > 0.5 ? "warning" : ind.score > 0.2 ? "caution" : "good",
+				impactingTweets: ind.impactingTweets || [],
+			}));
 
 			return {
-				spamScore: newScore,
-				spamPercentage: Math.round(newScore * 1000) / 10,
+				spamScore: analysis.spamScore,
+				spamPercentage: Math.round(analysis.spamScore * 1000) / 10,
 				accountMetrics: {
 					accountAgeDays: Math.floor(accountAgeDays),
 					followerCount,
 					followingCount,
 					totalPosts,
+					totalReplies,
 					postsLastHour,
 					postsLast6Hours,
 					postsLastDay,
-					followRatio: followingCount > 0 ? (followingCount / Math.max(followerCount, 1)).toFixed(2) : 0,
+					repliesLastHour,
+					repliesLastDay,
+					followRatio:
+						followingCount > 0
+							? (followingCount / Math.max(followerCount, 1)).toFixed(2)
+							: 0,
 				},
-				indicators: indicators.sort((a, b) => (b.score * b.weight) - (a.score * a.weight)),
-				message: newScore > 0.5
-					? "High spam score - account behavior is suspicious"
-					: newScore > 0.3
-					? "Moderate spam score - some concerning patterns detected"
-					: newScore > 0.1
-					? "Low spam score - normal account behavior"
-					: "Excellent - no spam indicators detected"
+				indicators: indicators.sort(
+					(a, b) => b.score * b.weight - a.score * a.weight,
+				),
+				message: analysis.message,
 			};
 		} catch (error) {
 			console.error("Spam score error:", error);

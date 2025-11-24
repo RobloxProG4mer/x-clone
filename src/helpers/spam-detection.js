@@ -5,11 +5,19 @@ const updateSpamScore = db.prepare(
 );
 
 const getUserPosts = db.prepare(`
-  SELECT id, content, created_at, like_count, retweet_count, reply_count
+  SELECT id, content, created_at, like_count, retweet_count, reply_count, reply_to
   FROM posts 
   WHERE user_id = ? 
   ORDER BY created_at DESC 
-  LIMIT 100
+  LIMIT 200
+`);
+
+const getUserOriginalPosts = db.prepare(`
+  SELECT id, content, created_at, like_count, retweet_count, reply_count
+  FROM posts 
+  WHERE user_id = ? AND reply_to IS NULL
+  ORDER BY created_at DESC 
+  LIMIT 200
 `);
 
 const getUserInfo = db.prepare(`
@@ -17,17 +25,18 @@ const getUserInfo = db.prepare(`
     created_at,
     (SELECT COUNT(*) FROM follows WHERE following_id = users.id) as follower_count,
     (SELECT COUNT(*) FROM follows WHERE follower_id = users.id) as following_count,
-    (SELECT COUNT(*) FROM posts WHERE user_id = users.id) as total_posts
+    (SELECT COUNT(*) FROM posts WHERE user_id = users.id AND reply_to IS NULL) as total_posts,
+    (SELECT COUNT(*) FROM posts WHERE user_id = users.id AND reply_to IS NOT NULL) as total_replies
   FROM users 
   WHERE id = ?
 `);
 
 const getUserReplies = db.prepare(`
-  SELECT reply_to, content
+  SELECT id, reply_to, content, created_at
   FROM posts 
   WHERE user_id = ? AND reply_to IS NOT NULL
   ORDER BY created_at DESC
-  LIMIT 30
+  LIMIT 60
 `);
 
 const SUSPICIOUS_DOMAINS = [
@@ -65,6 +74,15 @@ const SUSPICIOUS_DOMAINS = [
 	"AltURL.com",
 	"linktr.ee",
 	"cutt.ly",
+	"rb.gy",
+	"shorturl.at",
+	"v.gd",
+	"clck.ru",
+	"shorte.st",
+	"adf.ly",
+	"bc.vc",
+	"ouo.io",
+	"za.gl",
 ];
 
 const SPAM_KEYWORDS = [
@@ -93,14 +111,42 @@ const SPAM_KEYWORDS = [
 	"passive income",
 	"nft",
 	"airdrop",
+	"free money",
+	"make money",
+	"earn money",
+	"limited time",
+	"act now",
+	"urgent",
+	"verify your account",
+	"account suspended",
+	"confirm identity",
+	"onlyfans",
+	"leaked",
+	"s3x",
+	"xxx",
+	"18+",
+	"double your",
+	"100% guaranteed",
+	"risk free",
+	"no risk",
+	"mlm",
+	"pyramid",
+	"get rich",
+	"millionaire",
+	"binary options",
+	"trading signals",
 ];
 
 const normalizeContent = (text) => {
 	if (!text) return "";
+	// Remove URLs, normalize whitespace, remove punctuation, collapse accents stuck cursor
 	return text
 		.toLowerCase()
 		.replace(/https?:\/\/\S+/g, "")
+		.replace(/[\p{P}\p{S}]/gu, " ")
 		.replace(/\s+/g, " ")
+		.normalize("NFKD")
+		.replace(/\p{M}/gu, "") // strip diacritics
 		.trim();
 };
 
@@ -172,21 +218,61 @@ const calculateEmojiDensity = (text) => {
 
 const calculateKeywordSpamScore = (text) => {
 	if (!text) return 0;
-	const lower = text.toLowerCase();
+	const lower = ` ${text.toLowerCase()} `;
 	let matches = 0;
 	for (const keyword of SPAM_KEYWORDS) {
-		if (lower.includes(keyword)) matches++;
+		const re = new RegExp(
+			`\\b${keyword.replace(/[-/\\^$*+?.()|[\]{}]/g, "\\$&")}\\b`,
+			"i",
+		);
+		if (re.test(lower)) matches++;
 	}
-	return Math.min(1.0, matches * 0.3);
+	return Math.min(1.0, matches * 0.24);
+};
+
+// --- New helpers ---
+const ngramSet = (text, n = 3) => {
+	const normalized = normalizeContent(text);
+	if (!normalized) return new Set();
+	const padded = ` ${normalized} `;
+	const s = new Set();
+	for (let i = 0; i < padded.length - n + 1; i++) {
+		s.add(padded.slice(i, i + n));
+	}
+	return s;
+};
+
+const jaccardSetSimilarity = (a, b) => {
+	const inter = [...a].filter((v) => b.has(v)).length;
+	const uni = new Set([...a, ...b]).size;
+	return uni === 0 ? 0 : inter / uni;
+};
+
+const exponentialRecencyWeight = (
+	createdAtMs,
+	now = Date.now(),
+	decayHours = 48,
+) => {
+	const ageMs = now - new Date(createdAtMs).getTime();
+	const decayMs = decayHours * 60 * 60 * 1000;
+	return Math.exp(-ageMs / decayMs);
+};
+
+const logistic = (x, k = 8, x0 = 0.5) => {
+	// Map x in [0,1] into logistic value in (0,1)
+	const xx = Math.min(1, Math.max(0, x));
+	const val = 1 / (1 + Math.exp(-k * (xx - x0)));
+	return val;
 };
 
 const getSpamAnalysis = (userId) => {
 	try {
-		const posts = getUserPosts.all(userId);
+		const allPosts = getUserPosts.all(userId);
+		const originalPosts = getUserOriginalPosts.all(userId);
 		const userInfo = getUserInfo.get(userId);
 		const replies = getUserReplies.all(userId);
 
-		if (posts.length < 5) {
+		if (allPosts.length < 5) {
 			return {
 				score: 0.0,
 				indicators: [],
@@ -196,14 +282,24 @@ const getSpamAnalysis = (userId) => {
 
 		const indicators = [];
 
-		const recentPosts = posts.slice(0, 30);
+		const recentPosts = originalPosts.slice(0, 60);
 		const contentMap = new Map();
+		const contentTexts = [];
+		const duplicateTweets = [];
 
 		for (const post of recentPosts) {
 			const normalized = normalizeContent(post.content);
 			if (!normalized) continue;
 			const count = contentMap.get(normalized) || 0;
 			contentMap.set(normalized, count + 1);
+			contentTexts.push(normalized);
+			if (count > 0) {
+				duplicateTweets.push({
+					id: post.id,
+					content: post.content?.slice(0, 100),
+					reason: "Exact duplicate",
+				});
+			}
 		}
 
 		let duplicateCount = 0;
@@ -215,7 +311,7 @@ const getSpamAnalysis = (userId) => {
 			}
 		}
 
-		const duplicateRatio = duplicateCount / recentPosts.length;
+		const duplicateRatio = duplicateCount / Math.max(recentPosts.length, 1);
 		let duplicateScore = 0;
 		if (duplicateRatio > 0.4) duplicateScore = 0.3;
 		if (duplicateRatio > 0.6) duplicateScore = 0.6;
@@ -226,8 +322,49 @@ const getSpamAnalysis = (userId) => {
 			name: "duplicate_content",
 			displayName: "Duplicate Content",
 			score: duplicateScore,
-			weight: 0.15,
+			weight: 0.12,
 			details: `${(duplicateRatio * 100).toFixed(1)}% duplicate posts, max ${maxDuplicates} repeats`,
+			impactingTweets: duplicateTweets.slice(0, 10),
+		});
+
+		const nearDupPairs = [];
+		const sets = contentTexts
+			.slice(0, 40)
+			.map((t, i) => ({ set: ngramSet(t, 3), idx: i }));
+		let pairCount = 0;
+		let nearDupCount = 0;
+		for (let i = 0; i < sets.length; i++) {
+			for (let j = i + 1; j < sets.length; j++) {
+				pairCount++;
+				const sim = jaccardSetSimilarity(sets[i].set, sets[j].set);
+				if (sim >= 0.7) {
+					nearDupCount++;
+					if (nearDupPairs.length < 10 && recentPosts[i] && recentPosts[j]) {
+						nearDupPairs.push({
+							id: recentPosts[i].id,
+							content: recentPosts[i].content?.slice(0, 80),
+							reason: `${(sim * 100).toFixed(0)}% similar to another post`,
+						});
+					}
+				}
+			}
+		}
+		const nearDupRatio =
+			pairCount === 0 ? 0 : Math.min(1.0, nearDupCount / pairCount);
+
+		let nearDupScore = 0;
+		if (nearDupRatio > 0.08) nearDupScore = 0.2;
+		if (nearDupRatio > 0.2) nearDupScore = 0.5;
+		if (nearDupRatio > 0.4) nearDupScore = 0.85;
+		if (nearDupRatio > 0.6) nearDupScore = 1.0;
+
+		indicators.push({
+			name: "near_duplicate",
+			displayName: "Near-Duplicate Content",
+			score: nearDupScore,
+			weight: 0.1,
+			details: `${(nearDupRatio * 100).toFixed(1)}% post-pairs are near-duplicates`,
+			impactingTweets: nearDupPairs,
 		});
 
 		const now = Date.now();
@@ -235,40 +372,110 @@ const getSpamAnalysis = (userId) => {
 		const sixHoursAgo = now - 6 * 3600000;
 		const oneDayAgo = now - 24 * 3600000;
 
-		const postsInLastHour = posts.filter(
+		const postsInLastHour = originalPosts.filter(
+			(p) => new Date(p.created_at).getTime() > oneHourAgo,
+		);
+		const postsInLast6Hours = originalPosts.filter(
+			(p) => new Date(p.created_at).getTime() > sixHoursAgo,
+		);
+		const postsInLastDay = originalPosts.filter(
+			(p) => new Date(p.created_at).getTime() > oneDayAgo,
+		);
+
+		const repliesInLastHour = replies.filter(
 			(p) => new Date(p.created_at).getTime() > oneHourAgo,
 		).length;
-		const postsInLast6Hours = posts.filter(
-			(p) => new Date(p.created_at).getTime() > sixHoursAgo,
-		).length;
-		const postsInLastDay = posts.filter(
+		const repliesInLastDay = replies.filter(
 			(p) => new Date(p.created_at).getTime() > oneDayAgo,
 		).length;
 
+		const recencySum = originalPosts
+			.slice(0, 100)
+			.reduce(
+				(sum, p) => sum + exponentialRecencyWeight(p.created_at, now, 24),
+				0,
+			);
+		const recencyNormalized = Math.min(1.0, recencySum / 12);
+
 		let frequencyScore = 0;
-		if (postsInLastHour > 20) frequencyScore = 1.0;
-		else if (postsInLastHour > 15) frequencyScore = 0.7;
-		else if (postsInLastHour > 10) frequencyScore = 0.4;
-		else if (postsInLast6Hours > 60)
+		if (postsInLastHour.length > 20) frequencyScore = 1.0;
+		else if (postsInLastHour.length > 15) frequencyScore = 0.7;
+		else if (postsInLastHour.length > 10) frequencyScore = 0.4;
+		else if (postsInLast6Hours.length > 60)
 			frequencyScore = Math.max(frequencyScore, 0.8);
-		else if (postsInLast6Hours > 40)
+		else if (postsInLast6Hours.length > 40)
 			frequencyScore = Math.max(frequencyScore, 0.5);
-		else if (postsInLastDay > 150)
+		else if (postsInLastDay.length > 150)
 			frequencyScore = Math.max(frequencyScore, 0.9);
-		else if (postsInLastDay > 100)
+		else if (postsInLastDay.length > 100)
+			frequencyScore = Math.max(frequencyScore, 0.6);
+
+		if (recencyNormalized > 0.85)
+			frequencyScore = Math.max(frequencyScore, 0.9);
+		else if (recencyNormalized > 0.6)
 			frequencyScore = Math.max(frequencyScore, 0.6);
 
 		indicators.push({
 			name: "posting_frequency",
 			displayName: "Posting Frequency",
 			score: frequencyScore,
-			weight: 0.12,
-			details: `${postsInLastHour} posts/hour, ${postsInLastDay} posts/day`,
+			weight: 0.11,
+			details: `${postsInLastHour.length} posts/hour (${repliesInLastHour} replies), ${postsInLastDay.length} posts/day (${repliesInLastDay} replies)`,
+			impactingTweets: postsInLastHour
+				.slice(0, 10)
+				.map((p) => ({
+					id: p.id,
+					content: p.content?.slice(0, 80),
+					reason: "Posted in last hour",
+				})),
 		});
 
-		const urlAnalysis = posts.slice(0, 30).map((p) => {
+		const timestamps = originalPosts
+			.slice(0, 50)
+			.map((p) => new Date(p.created_at).getTime());
+		const intervals = [];
+		for (let i = 1; i < timestamps.length; i++) {
+			intervals.push(timestamps[i - 1] - timestamps[i]);
+		}
+		let timingScore = 0;
+		if (intervals.length > 5) {
+			const meanInterval =
+				intervals.reduce((a, b) => a + b, 0) / intervals.length;
+			const variance =
+				intervals.reduce((sum, v) => sum + (v - meanInterval) ** 2, 0) /
+				intervals.length;
+			const stdDev = Math.sqrt(variance);
+			const coeffOfVariation = meanInterval > 0 ? stdDev / meanInterval : 0;
+			if (coeffOfVariation < 0.15 && meanInterval < 120000) timingScore = 0.95;
+			else if (coeffOfVariation < 0.25 && meanInterval < 180000)
+				timingScore = 0.7;
+			else if (coeffOfVariation < 0.35 && meanInterval < 300000)
+				timingScore = 0.4;
+		}
+
+		indicators.push({
+			name: "timing_regularity",
+			displayName: "Bot-Like Timing",
+			score: timingScore,
+			weight: 0.09,
+			details: `Timing regularity analysis (${intervals.length} intervals between posts)`,
+			impactingTweets: [],
+		});
+
+		const urlTweets = [];
+		const urlAnalysis = recentPosts.map((p) => {
 			const urls = extractUrls(p.content);
 			const suspiciousUrls = urls.filter(hasSuspiciousDomain);
+			if (urls.length > 0) {
+				urlTweets.push({
+					id: p.id,
+					content: p.content?.slice(0, 80),
+					reason:
+						suspiciousUrls.length > 0
+							? `${suspiciousUrls.length} suspicious URL(s)`
+							: `${urls.length} URL(s)`,
+				});
+			}
 			return {
 				urlCount: urls.length,
 				suspiciousCount: suspiciousUrls.length,
@@ -299,10 +506,19 @@ const getSpamAnalysis = (userId) => {
 			score: urlScore,
 			weight: 0.14,
 			details: `${(urlRatio * 100).toFixed(1)}% posts with URLs, ${suspiciousUrlCount} suspicious`,
+			impactingTweets: urlTweets.slice(0, 10),
 		});
 
-		const hashtagAnalysis = posts.slice(0, 30).map((p) => {
+		const hashtagTweets = [];
+		const hashtagAnalysis = recentPosts.map((p) => {
 			const hashtags = extractHashtags(p.content);
+			if (hashtags.length > 3) {
+				hashtagTweets.push({
+					id: p.id,
+					content: p.content?.slice(0, 80),
+					reason: `${hashtags.length} hashtags`,
+				});
+			}
 			return {
 				count: hashtags.length,
 				unique: new Set(hashtags.map((h) => h.toLowerCase())).size,
@@ -331,11 +547,20 @@ const getSpamAnalysis = (userId) => {
 			score: hashtagScore,
 			weight: 0.1,
 			details: `Avg ${avgHashtags.toFixed(1)} hashtags/post, max ${maxHashtags}`,
+			impactingTweets: hashtagTweets.slice(0, 10),
 		});
 
-		const mentionAnalysis = posts.slice(0, 30).map((p) => {
+		const mentionTweets = [];
+		const mentionAnalysis = recentPosts.map((p) => {
 			const mentions = extractMentions(p.content);
 			const uniqueMentions = new Set(mentions.map((m) => m.toLowerCase()));
+			if (mentions.length > 3) {
+				mentionTweets.push({
+					id: p.id,
+					content: p.content?.slice(0, 80),
+					reason: `${mentions.length} mentions`,
+				});
+			}
 			return {
 				count: mentions.length,
 				unique: uniqueMentions.size,
@@ -364,27 +589,49 @@ const getSpamAnalysis = (userId) => {
 			score: mentionScore,
 			weight: 0.09,
 			details: `Avg ${avgMentions.toFixed(1)} mentions/post, max ${maxMentions}`,
+			impactingTweets: mentionTweets.slice(0, 10),
 		});
 
-		const qualityAnalysis = posts.slice(0, 30).map((p) => {
+		const qualityTweets = [];
+		const qualityAnalysis = recentPosts.map((p) => {
 			const content = p.content || "";
+			const repeatedChars = calculateRepeatedCharScore(content);
+			const capitalization = calculateCapitalizationScore(content);
+			const emojiDensity = calculateEmojiDensity(content);
+			const keywordScore = calculateKeywordSpamScore(content);
+			const isLowQuality =
+				repeatedChars > 0.3 ||
+				capitalization > 0.5 ||
+				emojiDensity > 0.5 ||
+				keywordScore > 0.5;
+
+			if (isLowQuality) {
+				const reasons = [];
+				if (repeatedChars > 0.3) reasons.push("repeated chars");
+				if (capitalization > 0.5) reasons.push("excessive caps");
+				if (emojiDensity > 0.5) reasons.push("too many emojis");
+				if (keywordScore > 0.5) reasons.push("spam keywords");
+				qualityTweets.push({
+					id: p.id,
+					content: content.slice(0, 80),
+					reason: reasons.join(", "),
+				});
+			}
+
 			return {
 				length: content.length,
-				repeatedChars: calculateRepeatedCharScore(content),
-				capitalization: calculateCapitalizationScore(content),
-				emojiDensity: calculateEmojiDensity(content),
-				keywordScore: calculateKeywordSpamScore(content),
+				repeatedChars,
+				capitalization,
+				emojiDensity,
+				keywordScore,
 				wordsCount: content.split(/\s+/).filter((w) => w.length > 0).length,
+				isLowQuality,
 			};
 		});
 
 		const veryShortPosts = qualityAnalysis.filter((a) => a.length < 10).length;
 		const lowQualityPosts = qualityAnalysis.filter(
-			(a) =>
-				a.repeatedChars > 0.3 ||
-				a.capitalization > 0.5 ||
-				a.emojiDensity > 0.5 ||
-				a.keywordScore > 0.5,
+			(a) => a.isLowQuality,
 		).length;
 		const avgWords =
 			qualityAnalysis.reduce((sum, a) => sum + a.wordsCount, 0) /
@@ -407,8 +654,10 @@ const getSpamAnalysis = (userId) => {
 			score: qualityScore,
 			weight: 0.11,
 			details: `${lowQualityPosts} low quality posts, avg keyword score ${(avgKeywordScore * 100).toFixed(1)}%`,
+			impactingTweets: qualityTweets.slice(0, 10),
 		});
 
+		const replySpamTweets = [];
 		if (replies.length > 0) {
 			const replyTargets = replies.map((r) => r.reply_to);
 			const uniqueTargets = new Set(replyTargets);
@@ -421,6 +670,13 @@ const getSpamAnalysis = (userId) => {
 				if (!normalized) continue;
 				const count = replyContentMap.get(normalized) || 0;
 				replyContentMap.set(normalized, count + 1);
+				if (count > 0) {
+					replySpamTweets.push({
+						id: reply.id,
+						content: reply.content?.slice(0, 80),
+						reason: "Duplicate reply",
+					});
+				}
 			}
 
 			let replyDuplicates = 0;
@@ -442,6 +698,7 @@ const getSpamAnalysis = (userId) => {
 				score: replyScore,
 				weight: 0.08,
 				details: `${(replyDuplicateRatio * 100).toFixed(1)}% duplicate replies, diversity ${(replyDiversity * 100).toFixed(1)}%`,
+				impactingTweets: replySpamTweets.slice(0, 10),
 			});
 		} else {
 			indicators.push({
@@ -449,38 +706,51 @@ const getSpamAnalysis = (userId) => {
 				displayName: "Reply Spam",
 				score: 0,
 				weight: 0.08,
-				details: "No replies",
+				details: "No replies analyzed",
+				impactingTweets: [],
 			});
 		}
 
-		const engagementAnalysis = posts.slice(0, 30).map((p) => {
+		const noEngagementTweets = [];
+		const engagementAnalysis = recentPosts.map((p) => {
 			const totalEngagement =
 				(p.like_count || 0) + (p.retweet_count || 0) + (p.reply_count || 0);
+			if (totalEngagement === 0) {
+				noEngagementTweets.push({
+					id: p.id,
+					content: p.content?.slice(0, 80),
+					reason: "0 engagement",
+				});
+			}
 			return {
 				engagement: totalEngagement,
-				length: p.content.length,
+				length: p.content?.length || 0,
 			};
 		});
 
-		const noEngagementPosts = engagementAnalysis.filter(
+		const noEngagementCount = engagementAnalysis.filter(
 			(a) => a.engagement === 0,
 		).length;
 		const noEngagementRatio =
-			noEngagementPosts / Math.max(engagementAnalysis.length, 1);
+			noEngagementCount / Math.max(engagementAnalysis.length, 1);
 
 		let engagementScore = 0;
-		if (postsInLastDay > 30 && noEngagementRatio > 0.9 && posts.length > 20) {
+		if (
+			postsInLastDay.length > 30 &&
+			noEngagementRatio > 0.9 &&
+			originalPosts.length > 20
+		) {
 			engagementScore = 0.8;
 		} else if (
-			postsInLastDay > 50 &&
+			postsInLastDay.length > 50 &&
 			noEngagementRatio > 0.85 &&
-			posts.length > 30
+			originalPosts.length > 30
 		) {
 			engagementScore = 0.9;
 		} else if (
-			postsInLast6Hours > 20 &&
+			postsInLast6Hours.length > 20 &&
 			noEngagementRatio > 0.95 &&
-			posts.length > 15
+			originalPosts.length > 15
 		) {
 			engagementScore = 0.7;
 		}
@@ -491,6 +761,7 @@ const getSpamAnalysis = (userId) => {
 			score: engagementScore,
 			weight: 0.09,
 			details: `${(noEngagementRatio * 100).toFixed(1)}% posts with 0 engagement`,
+			impactingTweets: noEngagementTweets.slice(0, 10),
 		});
 
 		let accountScore = 0;
@@ -544,10 +815,38 @@ const getSpamAnalysis = (userId) => {
 			name: "account_behavior",
 			displayName: "Account Behavior",
 			score: accountScore,
-			weight: 0.12,
+			weight: 0.1,
 			details: userInfo
-				? `${userInfo.follower_count} followers, ${userInfo.following_count} following`
+				? `${userInfo.follower_count} followers, ${userInfo.following_count} following, ${userInfo.total_posts} posts, ${userInfo.total_replies} replies`
 				: "No info",
+			impactingTweets: [],
+		});
+
+		const highSignals = [
+			duplicateScore > 0.5,
+			nearDupScore > 0.4,
+			frequencyScore > 0.6,
+			timingScore > 0.5,
+			urlScore > 0.6,
+			mentionScore > 0.6,
+			engagementScore > 0.6,
+			accountScore > 0.5,
+			qualityScore > 0.5,
+		].filter(Boolean).length;
+
+		let compositeBotScore = 0;
+		if (highSignals >= 5) compositeBotScore = 1.0;
+		else if (highSignals >= 4) compositeBotScore = 0.85;
+		else if (highSignals >= 3) compositeBotScore = 0.6;
+		else if (highSignals >= 2) compositeBotScore = 0.3;
+
+		indicators.push({
+			name: "composite_bot_signal",
+			displayName: "Bot Composite Signal",
+			score: compositeBotScore,
+			weight: 0.15,
+			details: `${highSignals} strong indicators detected`,
+			impactingTweets: [],
 		});
 
 		let spamScore = 0.0;
@@ -557,11 +856,9 @@ const getSpamAnalysis = (userId) => {
 			totalWeight += indicator.weight;
 		}
 
-		spamScore = spamScore / totalWeight;
-
-		spamScore = Math.min(1.0, spamScore);
-		spamScore = Math.max(0.0, spamScore);
-
+		spamScore = spamScore / Math.max(totalWeight, 0.001);
+		spamScore = logistic(spamScore, 10, 0.45);
+		spamScore = Math.min(1.0, Math.max(0.0, spamScore));
 		spamScore = Math.round(spamScore * 1000) / 1000;
 
 		return {

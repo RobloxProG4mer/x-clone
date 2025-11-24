@@ -33,6 +33,17 @@ if (existsSync(libPath)) {
 					FFIType.i32,
 					FFIType.double,
 					FFIType.double,
+					FFIType.i32,
+					FFIType.i32,
+					FFIType.i32,
+					FFIType.i32,
+					FFIType.double,
+					FFIType.double,
+					FFIType.i32,
+					FFIType.double,
+					FFIType.double,
+					FFIType.double,
+					FFIType.i32,
 				],
 				returns: FFIType.double,
 			},
@@ -73,6 +84,17 @@ export const calculateScore = (
 	muted_by_count = 0,
 	spam_score = 0.0,
 	account_age_days = 0.0,
+	url_count = 0,
+	suspicious_url_count = 0,
+	hashtag_count = 0,
+	mention_count = 0,
+	emoji_density = 0.0,
+	author_timing_score = 0.0,
+	cluster_size = 0,
+	spam_keyword_score = 0.0,
+	retweet_like_ratio = 0.0,
+	engagement_velocity = 0.0,
+	is_video = 0,
 ) => {
 	if (!lib) {
 		return 0;
@@ -106,6 +128,17 @@ export const calculateScore = (
 		muted_by_count,
 		spam_score,
 		account_age_days,
+		url_count,
+		suspicious_url_count,
+		hashtag_count,
+		mention_count,
+		emoji_density,
+		author_timing_score,
+		cluster_size,
+		spam_keyword_score,
+		retweet_like_ratio,
+		engagement_velocity,
+		is_video,
 	);
 };
 
@@ -116,6 +149,150 @@ const normalizeContent = (value) => {
 		.replace(/https?:\/\/\S+/g, "")
 		.replace(/\s+/g, " ")
 		.trim();
+};
+
+const SUSPICIOUS_DOMAINS = new Set([
+	"bit.ly",
+	"tinyurl.com",
+	"goo.gl",
+	"ow.ly",
+	"t.co",
+	"is.gd",
+	"cli.gs",
+	"tiny.cc",
+	"cutt.ly",
+	"rb.gy",
+	"shorturl.at",
+	"adf.ly",
+	"ouo.io",
+	"linktr.ee",
+]);
+
+const extractUrlMetrics = (content) => {
+	if (!content) return { urlCount: 0, suspiciousCount: 0 };
+	const urls = content.match(/https?:\/\/[^\s]+/gi) || [];
+	let suspiciousCount = 0;
+	urls.forEach((url) => {
+		try {
+			const hostname = new URL(url).hostname.toLowerCase();
+			if (
+				SUSPICIOUS_DOMAINS.has(hostname) ||
+				[...SUSPICIOUS_DOMAINS].some((d) => hostname.endsWith(`.${d}`))
+			) {
+				suspiciousCount++;
+			}
+		} catch {}
+	});
+	return { urlCount: urls.length, suspiciousCount };
+};
+
+const countHashtags = (content) => {
+	if (!content) return 0;
+	return (content.match(/#[a-zA-Z0-9_]+/g) || []).length;
+};
+
+const countMentions = (content) => {
+	if (!content) return 0;
+	return (content.match(/@[a-zA-Z0-9_]+/g) || []).length;
+};
+
+const calculateEmojiDensity = (content) => {
+	if (!content) return 0;
+	const emojiPattern =
+		/[\u{1F600}-\u{1F64F}\u{1F300}-\u{1F5FF}\u{1F680}-\u{1F6FF}\u{1F900}-\u{1F9FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}]/gu;
+	const emojis = content.match(emojiPattern) || [];
+	const nonWhitespace = content.replace(/\s/g, "").length;
+	if (nonWhitespace === 0) return 0;
+	return Math.min(1.0, emojis.length / Math.max(15, nonWhitespace / 4));
+};
+
+const SPAM_KEYWORDS = new Set([
+	"free money",
+	"click here",
+	"limited time",
+	"act now",
+	"buy now",
+	"make money fast",
+	"earn cash",
+	"100% free",
+	"no credit card",
+	"winner",
+	"you won",
+	"congratulations",
+	"exclusive offer",
+	"special promotion",
+	"dm for",
+	"dm me",
+	"check bio",
+	"link in bio",
+	"crypto giveaway",
+	"airdrop",
+	"nft drop",
+	"whitelist",
+	"presale",
+	"pump",
+	"moon",
+	"lambo",
+	"10x",
+	"100x",
+	"1000x",
+	"guaranteed profit",
+	"passive income",
+	"work from home",
+	"be your own boss",
+	"financial freedom",
+	"get rich",
+	"s3x",
+	"xxx",
+	"onlyfans",
+	"subscribe to my",
+	"follow for follow",
+	"f4f",
+	"like4like",
+	"retweet to win",
+	"rt to win",
+	"cashapp",
+	"paypal me",
+	"venmo me",
+	"send btc",
+	"send eth",
+]);
+
+const calculateSpamKeywordScore = (content) => {
+	if (!content) return 0;
+	const lower = content.toLowerCase();
+	let score = 0;
+	for (const keyword of SPAM_KEYWORDS) {
+		if (lower.includes(keyword)) {
+			score += 0.15;
+		}
+	}
+	return Math.min(1.0, score);
+};
+
+const calculateRetweetLikeRatio = (retweetCount, likeCount) => {
+	if (likeCount === 0 && retweetCount === 0) return 0;
+	if (likeCount === 0) return Math.min(1.0, retweetCount * 0.1);
+	return Math.min(1.0, retweetCount / (likeCount + 1));
+};
+
+const calculateEngagementVelocity = (likes, retweets, replies, ageSeconds) => {
+	if (ageSeconds <= 0) return 0;
+	const total = likes + retweets + replies;
+	const hoursAge = Math.max(ageSeconds / 3600, 0.1);
+	return Math.min(10.0, total / hoursAge);
+};
+
+const hasVideoAttachment = (attachments) => {
+	if (!Array.isArray(attachments)) return 0;
+	return attachments.some(
+		(a) =>
+			a.type === "video" ||
+			a.mime_type?.startsWith("video/") ||
+			a.url?.match(/\.(mp4|webm|mov|avi)$/i),
+	)
+		? 1
+		: 0;
 };
 
 export const rankTweets = (
@@ -242,11 +419,34 @@ export const rankTweets = (
 			accountAgeDays = Math.max(0, (nowMillis - createdMs) / 86400000);
 		}
 
+		const tweetContent = tweet.content || "";
+		const { urlCount, suspiciousCount } = extractUrlMetrics(tweetContent);
+		const hashtagCount = countHashtags(tweetContent);
+		const mentionCount = countMentions(tweetContent);
+		const emojiDensity = calculateEmojiDensity(tweetContent);
+		const authorTimingScore =
+			tweet.author_timing_score || tweet.author?.timing_score || 0.0;
+		const clusterSize = tweet.cluster_size || 0;
+
+		const spamKeywordScore = calculateSpamKeywordScore(tweetContent);
+		const likes = tweet.like_count || 0;
+		const retweets = tweet.retweet_count || 0;
+		const replies = tweet.reply_count || 0;
+		const rtLikeRatio = calculateRetweetLikeRatio(retweets, likes);
+		const tweetAgeSeconds = nowSeconds - timestamp;
+		const engagementVelocity = calculateEngagementVelocity(
+			likes,
+			retweets,
+			replies,
+			tweetAgeSeconds,
+		);
+		const isVideo = hasVideoAttachment(attachments);
+
 		const score = calculateScore(
 			timestamp,
-			tweet.like_count || 0,
-			tweet.retweet_count || 0,
-			tweet.reply_count || 0,
+			likes,
+			retweets,
+			replies,
 			tweet.quote_count || 0,
 			hasMedia,
 			hoursSinceSeen,
@@ -265,18 +465,25 @@ export const rankTweets = (
 			mutedByCount,
 			spamScore,
 			accountAgeDays,
+			urlCount,
+			suspiciousCount,
+			hashtagCount,
+			mentionCount,
+			emojiDensity,
+			authorTimingScore,
+			clusterSize,
+			spamKeywordScore,
+			rtLikeRatio,
+			engagementVelocity,
+			isVideo,
 		);
 
 		let adjustedScore = score;
 
-		// Penalty for high reply/low like ratio
-		const replies = tweet.reply_count || 0;
-		const likes = tweet.like_count || 0;
 		if (replies > 5 && replies > likes * 2) {
 			adjustedScore *= 0.5;
 		}
 
-		// Boost depending on followers
 		if (followerCount > 0) {
 			const boost = 1.0 + Math.log10(followerCount + 1) * 0.02;
 			adjustedScore *= boost;

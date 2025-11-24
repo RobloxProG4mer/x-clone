@@ -58,7 +58,18 @@ double calculate_score(
     int blocked_by_count,
     int muted_by_count,
     double spam_score,
-    double account_age_days
+    double account_age_days,
+    int url_count,
+    int suspicious_url_count,
+    int hashtag_count,
+    int mention_count,
+    double emoji_density,
+    double author_timing_score,
+    int cluster_size
+    , double spam_keyword_score
+    , double retweet_like_ratio
+    , double engagement_velocity
+    , int is_video
 );
 
 void rank_tweets(Tweet *tweets, size_t count);
