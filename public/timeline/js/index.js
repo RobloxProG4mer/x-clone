@@ -325,6 +325,28 @@ addRoute(
 );
 
 addRoute(
+	(pathname) => pathname === "/pastes",
+	() => {
+		import("./pastes.js").then(({ openPastesPage }) => {
+			openPastesPage();
+		});
+	},
+);
+
+addRoute(
+	(pathname) => pathname.startsWith("/pastes/p/"),
+	(pathname) => {
+		const parts = pathname.split("/");
+		const slug = decodeURIComponent(parts[3]);
+		const params = new URLSearchParams(window.location.search);
+		const secret = params.get("secret") || "";
+		import("./pastes.js").then(({ openPasteView }) => {
+			openPasteView(slug, secret);
+		});
+	},
+);
+
+addRoute(
 	(pathname) => pathname.startsWith("/@"),
 	(pathname) => {
 		const username = pathname.slice(2);

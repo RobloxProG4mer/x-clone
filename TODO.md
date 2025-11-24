@@ -9,8 +9,6 @@
 
 - tweetapus circles like twiter circle
 
-- somewhat improve the C algo
-
 - nicer animations, such as when navigating between tweets and threads
 - look into all XSS vulnerabitilies
 - optimize client and server

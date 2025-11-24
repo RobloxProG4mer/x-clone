@@ -6879,6 +6879,124 @@ nav {
   }
 }
 
+.bulk-delete-card {
+  margin-top: 16px;
+  padding: 20px;
+  border: 1px solid var(--border-primary);
+  border-radius: 16px;
+  background-color: var(--bg-primary);
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.bulk-delete-description {
+  margin: 0;
+  color: var(--text-secondary);
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.bulk-delete-controls {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 16px;
+}
+
+.bulk-delete-control {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 14px;
+  color: var(--text-secondary);
+
+  input,
+  select {
+    width: 100%;
+    padding: 10px 12px;
+    border: 1px solid var(--border-primary);
+    border-radius: 10px;
+    background-color: var(--bg-secondary);
+    color: var(--text-primary);
+    font-size: 14px;
+  }
+}
+
+.bulk-delete-control-title {
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.bulk-delete-toggle {
+  border: 1px solid var(--border-primary);
+  border-radius: 12px;
+  padding: 12px;
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  background-color: var(--bg-secondary);
+
+  input {
+    margin-top: 4px;
+  }
+
+  strong {
+    display: block;
+    font-size: 14px;
+    margin-bottom: 4px;
+  }
+
+  span {
+    font-size: 13px;
+    color: var(--text-secondary);
+  }
+}
+
+.bulk-delete-status {
+  border: 1px solid var(--border-primary);
+  border-radius: 12px;
+  padding: 16px;
+  background-color: var(--bg-secondary);
+  transition: border-color 0.2s ease;
+
+  &[data-variant="success"] {
+    border-color: var(--primary);
+  }
+
+  &[data-variant="warning"] {
+    border-color: var(--error-color);
+  }
+
+  strong {
+    display: block;
+    margin-bottom: 4px;
+  }
+
+  p {
+    margin: 0;
+    color: var(--text-secondary);
+    font-size: 14px;
+    line-height: 1.5;
+  }
+}
+
+.bulk-delete-actions {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+
+  .btn {
+    flex: 1;
+    min-width: 180px;
+  }
+}
+
+.bulk-delete-warning {
+  margin: 0;
+  font-size: 13px;
+  color: var(--error-color);
+}
+
 .settings-select,
 .community-detail-page input[type="text"],
 .community-detail-page input[type="file"],

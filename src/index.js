@@ -119,9 +119,7 @@ cleanupExpiredMessages();
 new Elysia()
 	.use(embeds)
 	.use(compression)
-	.use(
-		staticPlugin(),
-	)
+	.use(staticPlugin())
 	.use(
 		openapi({
 			path: "/api",
@@ -303,6 +301,13 @@ new Elysia()
 	)
 	.get("/admin", () => file("./public/admin/index.html"))
 	.get("/legal", () => file("./public/legal.html"))
+	.get("/pastes", () => file("./public/timeline/index.html"))
+	.get("/pastes/p/:slug", () => file("./public/timeline/index.html"))
+	/* Explicit module fallbacks where static plugin may be unreliable behind proxies */
+	.get("/public/timeline/js/pastes.js", () =>
+		file("./public/timeline/js/pastes.js"),
+	)
+	.get("/public/paste/script.js", () => file("./public/paste/script.js"))
 	.get("*", ({ cookie }) => {
 		return cookie.agree?.value === "yes"
 			? file("./public/timeline/index.html")

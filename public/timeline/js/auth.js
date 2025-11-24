@@ -127,6 +127,45 @@ function saveAccountToStorage(user, token) {
 					},
 				},
 				{
+					title: "Pastes",
+
+					icon: `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5h16"/><path d="M4 12h16"/><path d="M4 19h16"/><path d="M9 9h6"/><path d="M9 16h6"/></svg>`,
+					onClick: async () => {
+						try {
+							// Try to prefetch the module first to surface errors early
+							const prefetchResp = await fetch(
+								"/public/timeline/js/pastes.js",
+								{ method: "HEAD" },
+							);
+							if (!prefetchResp.ok) throw new Error("prefetch failed");
+							const { openPastesPage } = await import(
+								"/public/timeline/js/pastes.js"
+							);
+							openPastesPage();
+						} catch (error) {
+							console.error("Failed to load pastes UI module:", error);
+							// Try alternate import path before falling back
+							try {
+								const { openPastesPage } = await import(
+									"/timeline/js/pastes.js"
+								);
+								openPastesPage();
+							} catch (_) {
+								// Final fallback: navigate to paste route directly, but avoid loops
+								if (window.location.pathname.startsWith("/pastes")) {
+									const container = document.querySelector(".pastes-page");
+									if (container) {
+										container.innerHTML =
+											"<div class='error-text'>Failed to load Pastes UI. Please try again later.</div>";
+									}
+								} else {
+									window.location.href = "/pastes";
+								}
+							}
+						}
+					},
+				},
+				{
 					title: "Change user",
 
 					icon: `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>`,

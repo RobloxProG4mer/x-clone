@@ -1474,7 +1474,7 @@ function updateFollowButton(isFollowing, isBlocked) {
 	);
 
 	if (!btn) return;
-	
+
 	// Reset styles
 	btn.style.backgroundColor = "";
 	btn.style.color = "";
@@ -1488,7 +1488,7 @@ function updateFollowButton(isFollowing, isBlocked) {
 		btn.style.backgroundColor = "var(--error, #f4212e)";
 		btn.style.color = "white";
 		btn.style.border = "1px solid var(--error, #f4212e)";
-		
+
 		btn.onmouseenter = () => {
 			btn.textContent = "Unblock";
 		};
@@ -2638,10 +2638,19 @@ export const handleProfileDropdown = (e) => {
 			try {
 				const baseItems = [
 					{
+						id: "open-pastes",
+						icon: `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5h16"></path><path d="M4 12h16"></path><path d="M4 19h16"></path><path d="M9 9h6"></path><path d="M9 16h6"></path></svg>`,
+						title: "Pastes",
+						description: "Create and browse snippets",
+						onClick: async () => {
+							const { openPastesPage } = await import("./pastes.js");
+							openPastesPage();
+						},
+					},
+					{
 						title: "Copy link",
 						icon: `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-link"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg>`,
-
-						action: () => {
+						onClick: () => {
 							const profileUrl = `${location.origin}/@${currentUsername}`;
 
 							navigator.clipboard.writeText(profileUrl);
@@ -2942,7 +2951,7 @@ export const handleProfileDropdown = (e) => {
 							title: "Copy link",
 							icon: `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-link"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg>`,
 
-							action: () => {
+							onClick: () => {
 								const profileUrl = `${location.origin}/@${currentUsername}`;
 
 								navigator.clipboard.writeText(profileUrl);
@@ -2961,7 +2970,7 @@ export const handleProfileDropdown = (e) => {
 						title: "Copy link",
 						icon: `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-link"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg>`,
 
-						action: () => {
+						onClick: () => {
 							const profileUrl = `${location.origin}/@${currentUsername}`;
 
 							navigator.clipboard.writeText(profileUrl);

@@ -11,6 +11,7 @@ import delegates from "./api/delegates.js";
 import dm from "./api/dm.js";
 import extensions from "./api/extensions.js";
 import notifications from "./api/notifications.js";
+import pastes from "./api/pastes.js";
 import profile from "./api/profile.js";
 import publicTweets from "./api/public-tweets.js";
 import reports from "./api/reports.js";
@@ -316,6 +317,7 @@ export default new Elysia({
 	.use(search)
 	.use(upload)
 	.use(extensions)
+	.use(pastes)
 	.use(notifications)
 	.use(dm)
 	.use(tenor)

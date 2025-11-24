@@ -2,6 +2,7 @@ class AdminPanel {
 	constructor() {
 		this.token = localStorage.getItem("authToken");
 		this.currentUser = null;
+		this.isSuperAdmin = false;
 		this.isImpersonating = false;
 		this.userCache = new Map();
 		this.currentPage = {
@@ -85,7 +86,12 @@ class AdminPanel {
 			}
 
 			this.currentUser = user;
+			this.isSuperAdmin = !!user.superadmin;
+			if (!this.isSuperAdmin) {
+				document.getElementById("bulkTweetBtn")?.classList.add("d-none");
+			}
 			this.setupEventListeners();
+			this.updateBulkEditControls();
 			this.loadDashboard();
 			try {
 				this.setupCloneForm();
@@ -1160,7 +1166,8 @@ class AdminPanel {
 		}
 		const tweetBtn = document.getElementById("bulkTweetBtn");
 		if (tweetBtn) {
-			tweetBtn.disabled = count === 0;
+			tweetBtn.disabled = count === 0 || !this.isSuperAdmin;
+			tweetBtn.title = this.isSuperAdmin ? "" : "SuperAdmin access required";
 		}
 		if (countBadge) {
 			countBadge.textContent = String(count);
@@ -1168,6 +1175,10 @@ class AdminPanel {
 	}
 
 	async showBulkTweetModal() {
+		if (!this.isSuperAdmin) {
+			this.showError("SuperAdmin access required");
+			return;
+		}
 		if (!this.selectedUsers.size) {
 			this.showError("Select at least one user to mass tweet as");
 			return;
@@ -1197,6 +1208,10 @@ class AdminPanel {
 	}
 
 	async postBulkTweets() {
+		if (!this.isSuperAdmin) {
+			this.showError("SuperAdmin access required");
+			return;
+		}
 		const content = document.getElementById("bulkTweetContent")?.value || "";
 		const trimmedContent = content.trim();
 		if (!trimmedContent) {
@@ -1234,6 +1249,7 @@ class AdminPanel {
 					userId: id,
 					content: trimmedContent,
 					noCharLimit: true,
+					massTweet: true,
 				};
 				if (replyTo) payload.replyTo = replyTo;
 				if (createdAt) payload.created_at = createdAt;

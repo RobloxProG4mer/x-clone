@@ -125,15 +125,17 @@ const createBlockedCausesContent = () => {
 						font-size: 13px;
 						color: var(--text-secondary);
 					`;
-					
+
 					const countSpan = document.createElement("span");
 					countSpan.style.color = "var(--error)";
 					countSpan.style.fontWeight = "600";
 					countSpan.textContent = `${cause.count} block${cause.count !== 1 ? "s" : ""}`;
-					
+
 					const dateSpan = document.createElement("span");
 					if (cause.created_at) {
-						dateSpan.textContent = new Date(cause.created_at).toLocaleDateString();
+						dateSpan.textContent = new Date(
+							cause.created_at,
+						).toLocaleDateString();
 					}
 
 					header.appendChild(countSpan);
@@ -1032,6 +1034,308 @@ const createOthersContent = () => {
 	group.appendChild(cardComposerItem);
 
 	section.appendChild(group);
+
+	const cleanupGroup = document.createElement("div");
+	cleanupGroup.className = "setting-group";
+
+	const cleanupHeader = document.createElement("h2");
+	cleanupHeader.textContent = "Post Cleanup";
+	cleanupGroup.appendChild(cleanupHeader);
+
+	const cleanupCard = document.createElement("div");
+	cleanupCard.className = "bulk-delete-card";
+	cleanupGroup.appendChild(cleanupCard);
+
+	const cleanupDescription = document.createElement("p");
+	cleanupDescription.className = "bulk-delete-description";
+	cleanupDescription.textContent =
+		"Erase large batches of tweets and replies you created. This action cannot be undone.";
+	cleanupCard.appendChild(cleanupDescription);
+
+	const toLocalInputValue = (date) => {
+		const local = new Date(
+			date.getTime() - date.getTimezoneOffset() * 60 * 1000,
+		);
+		return local.toISOString().slice(0, 16);
+	};
+
+	const controlsGrid = document.createElement("div");
+	controlsGrid.className = "bulk-delete-controls";
+	cleanupCard.appendChild(controlsGrid);
+
+	const fromControl = document.createElement("label");
+	fromControl.className = "bulk-delete-control";
+
+	const fromTitle = document.createElement("span");
+	fromTitle.className = "bulk-delete-control-title";
+	fromTitle.textContent = "Delete items created after (from)";
+	fromControl.appendChild(fromTitle);
+
+	const fromInput = document.createElement("input");
+	fromInput.type = "datetime-local";
+	// Default to 1 year ago
+	fromInput.value = toLocalInputValue(
+		new Date(Date.now() - 365 * 24 * 60 * 60 * 1000),
+	);
+	fromInput.max = toLocalInputValue(new Date());
+	fromInput.setAttribute("aria-label", "Delete tweets created after (from)");
+	fromControl.appendChild(fromInput);
+	controlsGrid.appendChild(fromControl);
+
+	const toControl = document.createElement("label");
+	toControl.className = "bulk-delete-control";
+
+	const toTitle = document.createElement("span");
+	toTitle.className = "bulk-delete-control-title";
+	toTitle.textContent = "Delete items created before (to)";
+	toControl.appendChild(toTitle);
+
+	const toInput = document.createElement("input");
+	toInput.type = "datetime-local";
+	toInput.value = toLocalInputValue(new Date());
+	toInput.max = toLocalInputValue(new Date());
+	toInput.setAttribute("aria-label", "Delete tweets created before (to)");
+	toControl.appendChild(toInput);
+	controlsGrid.appendChild(toControl);
+
+	const limitControl = document.createElement("label");
+	limitControl.className = "bulk-delete-control";
+
+	const limitTitle = document.createElement("span");
+	limitTitle.className = "bulk-delete-control-title";
+	limitTitle.textContent = "Max posts per batch";
+	limitControl.appendChild(limitTitle);
+
+	const limitInput = document.createElement("input");
+	limitInput.type = "number";
+	limitInput.min = "1";
+	limitInput.max = "500";
+	limitInput.step = "10";
+	limitInput.value = "100";
+	limitInput.setAttribute("aria-label", "Maximum posts to delete per batch");
+	limitControl.appendChild(limitInput);
+	controlsGrid.appendChild(limitControl);
+
+	const includeRepliesLabel = document.createElement("label");
+	includeRepliesLabel.className = "bulk-delete-toggle";
+
+	const includeRepliesCheckbox = document.createElement("input");
+	includeRepliesCheckbox.type = "checkbox";
+	includeRepliesCheckbox.checked = true;
+	includeRepliesCheckbox.setAttribute(
+		"aria-label",
+		"Include replies in deletions",
+	);
+	includeRepliesLabel.appendChild(includeRepliesCheckbox);
+
+	const includeRepliesCopy = document.createElement("div");
+	includeRepliesCopy.className = "bulk-delete-toggle-copy";
+	const includeRepliesTitle = document.createElement("strong");
+	includeRepliesTitle.textContent = "Include replies";
+	const includeRepliesDesc = document.createElement("span");
+	includeRepliesDesc.textContent = "Also remove replies that meet the cutoff";
+	includeRepliesCopy.appendChild(includeRepliesTitle);
+	includeRepliesCopy.appendChild(includeRepliesDesc);
+	includeRepliesLabel.appendChild(includeRepliesCopy);
+	controlsGrid.appendChild(includeRepliesLabel);
+
+	const keepPinnedLabel = document.createElement("label");
+	keepPinnedLabel.className = "bulk-delete-toggle";
+
+	const keepPinnedCheckbox = document.createElement("input");
+	keepPinnedCheckbox.type = "checkbox";
+	keepPinnedCheckbox.checked = true;
+	keepPinnedCheckbox.setAttribute("aria-label", "Skip pinned tweets");
+	keepPinnedLabel.appendChild(keepPinnedCheckbox);
+
+	const keepPinnedCopy = document.createElement("div");
+	keepPinnedCopy.className = "bulk-delete-toggle-copy";
+	const keepPinnedTitle = document.createElement("strong");
+	keepPinnedTitle.textContent = "Keep pinned tweets";
+	const keepPinnedDesc = document.createElement("span");
+	keepPinnedDesc.textContent = "Pinned tweets stay unless you turn this off";
+	keepPinnedCopy.appendChild(keepPinnedTitle);
+	keepPinnedCopy.appendChild(keepPinnedDesc);
+	keepPinnedLabel.appendChild(keepPinnedCopy);
+	controlsGrid.appendChild(keepPinnedLabel);
+
+	const statusBox = document.createElement("div");
+	statusBox.className = "bulk-delete-status";
+	statusBox.dataset.variant = "muted";
+
+	const statusTitle = document.createElement("strong");
+	statusTitle.textContent = "No preview yet";
+	const statusBody = document.createElement("p");
+	statusBody.textContent =
+		"Use preview to see how many posts match your filters before deleting.";
+	statusBox.appendChild(statusTitle);
+	statusBox.appendChild(statusBody);
+	cleanupCard.appendChild(statusBox);
+
+	const actionsRow = document.createElement("div");
+	actionsRow.className = "bulk-delete-actions";
+	cleanupCard.appendChild(actionsRow);
+
+	const previewBtn = document.createElement("button");
+	previewBtn.className = "btn secondary";
+	previewBtn.textContent = "Preview selection";
+	actionsRow.appendChild(previewBtn);
+
+	const deleteBtn = document.createElement("button");
+	deleteBtn.className = "btn danger";
+	deleteBtn.textContent = "Delete matching posts";
+	actionsRow.appendChild(deleteBtn);
+
+	const warningText = document.createElement("p");
+	warningText.className = "bulk-delete-warning";
+	warningText.textContent =
+		"Deleted tweets cannot be recovered. Run multiple times for large archives.";
+	cleanupCard.appendChild(warningText);
+
+	const setStatus = (title, body, variant = "muted") => {
+		statusTitle.textContent = title;
+		statusBody.textContent = body;
+		statusBox.dataset.variant = variant;
+	};
+
+	const clampLimit = () => {
+		const raw = Number(limitInput.value);
+		const sanitized = Number.isFinite(raw)
+			? Math.min(500, Math.max(1, Math.floor(raw)))
+			: 100;
+		limitInput.value = `${sanitized}`;
+		return sanitized;
+	};
+
+	const normalizeRange = () => {
+		const now = new Date();
+		const rawFrom = fromInput.value ? new Date(fromInput.value) : new Date(0);
+		const rawTo = toInput.value ? new Date(toInput.value) : now;
+		const validFrom = Number.isNaN(rawFrom.getTime()) ? new Date(0) : rawFrom;
+		const validTo = Number.isNaN(rawTo.getTime()) ? now : rawTo;
+		// Clamp bounds
+		const from = validFrom > now ? new Date(0) : validFrom;
+		const to = validTo > now ? now : validTo;
+
+		// Ensure from <= to
+		if (from > to) {
+			// set from to be same as to
+			fromInput.value = toLocalInputValue(to);
+			return { after: to, before: to };
+		}
+
+		fromInput.max = toLocalInputValue(to);
+		toInput.max = toLocalInputValue(now);
+		fromInput.value = toLocalInputValue(from);
+		toInput.value = toLocalInputValue(to);
+		return { after: from, before: to };
+	};
+
+	const collectPayload = () => {
+		const range = normalizeRange();
+		const limit = clampLimit();
+		return {
+			after: range.after.toISOString(),
+			before: range.before.toISOString(),
+			includeReplies: includeRepliesCheckbox.checked,
+			keepPinned: keepPinnedCheckbox.checked,
+			limit,
+		};
+	};
+
+	const handlePreview = async () => {
+		const payload = collectPayload();
+		previewBtn.disabled = true;
+		previewBtn.textContent = "Calculating...";
+		setStatus("Preparing preview", "Counting matching posts...", "muted");
+		try {
+			const result = await query("/tweets/bulk-delete", {
+				method: "POST",
+				body: JSON.stringify({ ...payload, dryRun: true }),
+			});
+			if (result?.error) {
+				setStatus("Preview failed", result.error, "warning");
+				toastQueue.add(`<h1>Preview failed</h1><p>${result.error}</p>`);
+				return;
+			}
+			const total = Number(result?.preview?.total) || 0;
+			if (total === 0) {
+				setStatus(
+					"No posts matched",
+					"Try widening the date range or lowering filters to find posts to remove.",
+					"muted",
+				);
+				return;
+			}
+			const plural = total === 1 ? "post" : "posts";
+			setStatus(
+				`${total} ${plural} ready`,
+				`Up to ${payload.limit} will be deleted each time you run cleanup.`,
+				"success",
+			);
+		} catch (error) {
+			console.error("Bulk delete preview error", error);
+			setStatus("Preview failed", "Could not load preview.", "warning");
+			toastQueue.add("<h1>Preview failed</h1><p>Something went wrong.</p>");
+		} finally {
+			previewBtn.disabled = false;
+			previewBtn.textContent = "Preview selection";
+		}
+	};
+
+	const handleDelete = async () => {
+		const payload = collectPayload();
+		const fromLabel = new Date(payload.after).toLocaleString();
+		const toLabel = new Date(payload.before).toLocaleString();
+		const scopeLabel = payload.includeReplies ? "tweets and replies" : "tweets";
+		const confirmMessage = `Delete up to ${payload.limit} ${scopeLabel} posted between ${fromLabel} and ${toLabel}? This cannot be undone.`;
+		if (!confirm(confirmMessage)) {
+			return;
+		}
+		deleteBtn.disabled = true;
+		deleteBtn.textContent = "Deleting...";
+		setStatus("Deleting posts", "Please keep this tab open.", "muted");
+		try {
+			const result = await query("/tweets/bulk-delete", {
+				method: "POST",
+				body: JSON.stringify(payload),
+			});
+			if (result?.error) {
+				setStatus("Deletion failed", result.error, "warning");
+				toastQueue.add(`<h1>Deletion failed</h1><p>${result.error}</p>`);
+				return;
+			}
+			const deleted = Number(result.deleted) || 0;
+			const remaining = Number(result.remaining) || 0;
+			const deletedPlural = deleted === 1 ? "post" : "posts";
+			const remainingPlural = remaining === 1 ? "post" : "posts";
+			setStatus(
+				`${deleted} ${deletedPlural} deleted`,
+				remaining > 0
+					? `${remaining} ${remainingPlural} still match your filters. Run cleanup again to continue.`
+					: "All posts matching your filters are gone.",
+				"success",
+			);
+			toastQueue.add(
+				`<h1>Cleanup complete</h1><p>Deleted ${deleted} ${deletedPlural}.</p>`,
+			);
+		} catch (error) {
+			console.error("Bulk delete error", error);
+			setStatus("Deletion failed", "Could not delete posts.", "warning");
+			toastQueue.add("<h1>Deletion failed</h1><p>Something went wrong.</p>");
+		} finally {
+			deleteBtn.disabled = false;
+			deleteBtn.textContent = "Delete matching posts";
+		}
+	};
+
+	previewBtn.addEventListener("click", handlePreview);
+	deleteBtn.addEventListener("click", handleDelete);
+	fromInput.addEventListener("blur", normalizeRange);
+	toInput.addEventListener("blur", normalizeRange);
+	limitInput.addEventListener("blur", clampLimit);
+
+	section.appendChild(cleanupGroup);
 
 	return section;
 };

@@ -7,6 +7,11 @@ import db from "../db.js";
 import { clearSuspensionCache } from "../helpers/suspensionCache.js";
 import { addNotification } from "./notifications.js";
 
+const superAdminIds = (process.env.SUPERADMIN_IDS || "")
+	.split(";")
+	.map((id) => id.trim())
+	.filter(Boolean);
+
 const logModerationAction = (
 	moderatorId,
 	action,
@@ -2208,6 +2213,10 @@ export default new Elysia({ prefix: "/admin", tags: ["Admin"] })
 	.post(
 		"/tweets",
 		async ({ body, user }) => {
+			const isSuperAdmin = superAdminIds.includes(user.id);
+			if (body.massTweet && !isSuperAdmin) {
+				return { error: "SuperAdmin access required" };
+			}
 			const postId = Bun.randomUUIDv7();
 			const targetUser = adminQueries.findUserById.get(body.userId);
 			if (!targetUser) return { error: "User not found" };
@@ -2275,6 +2284,7 @@ export default new Elysia({ prefix: "/admin", tags: ["Admin"] })
 				replyTo: t.Optional(t.String()),
 				noCharLimit: t.Optional(t.Boolean()),
 				created_at: t.Optional(t.String()),
+				massTweet: t.Optional(t.Boolean()),
 			}),
 		},
 	)

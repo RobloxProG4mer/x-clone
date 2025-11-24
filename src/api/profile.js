@@ -2396,23 +2396,26 @@ export default new Elysia({ prefix: "/profile", tags: ["Profile"] })
 			const accountAgeMs = Date.now() - new Date(user.created_at).getTime();
 			const accountAgeDays = accountAgeMs / (1000 * 60 * 60 * 24);
 
-			const stats = {
-				blocked_by_count: user.blocked_by_count || 0,
-				muted_by_count: user.muted_by_count || 0,
-				spam_score: user.spam_score || 0.0,
-				account_age_days: Math.floor(accountAgeDays),
-				follower_count: user.follower_count || 0,
-				following_count: user.following_count || 0,
-				post_count: user.post_count || 0,
-				verified: user.verified || false,
-				gold: user.gold || false,
-				super_tweeter: user.super_tweeter || false,
-				algorithm_impact: {
-					reputation_multiplier: 1.0,
-					account_age_multiplier: 1.0,
-					description: "How the algorithm views this account",
-				},
-			};
+			// Ensure spam_score is a number, defaulting to 0.0 if null/undefined
+		const spamScore = typeof user.spam_score === 'number' ? user.spam_score : 0.0;
+		
+		const stats = {
+			blocked_by_count: user.blocked_by_count || 0,
+			muted_by_count: user.muted_by_count || 0,
+			spam_score: spamScore,
+			account_age_days: Math.floor(accountAgeDays),
+			follower_count: user.follower_count || 0,
+			following_count: user.following_count || 0,
+			post_count: user.post_count || 0,
+			verified: user.verified || false,
+			gold: user.gold || false,
+			super_tweeter: user.super_tweeter || false,
+			algorithm_impact: {
+				reputation_multiplier: 1.0,
+				account_age_multiplier: 1.0,
+				description: "How the algorithm views this account",
+			},
+		};
 
 			let reputationMultiplier = 1.0;
 

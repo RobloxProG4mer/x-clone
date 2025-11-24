@@ -78,7 +78,7 @@ export const calculateSpamScore = (userId) => {
 
 		const shortPostCount = posts
 			.slice(0, 20)
-			.filter((p) => p.content.length < 20).length;
+			.filter((p) => p.content.length < 10).length;
 		const shortPostRatio = shortPostCount / Math.min(posts.length, 20);
 
 		if (shortPostRatio > 0.7) spamIndicators++;

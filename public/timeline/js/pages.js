@@ -9,6 +9,7 @@ const pages = {
 	"dm-conversation": document.querySelector(".dm-conversation"),
 	communities: document.querySelector(".communities-page"),
 	"community-detail": document.querySelector(".community-detail-page"),
+	pastes: document.querySelector(".pastes-page"),
 	settings: null,
 };
 const states = {};
@@ -16,6 +17,7 @@ const cleanups = {};
 const lazyInitializers = {
 	search: false,
 	communities: false,
+	pastes: false,
 };
 
 const updateNavbar = () => {
@@ -103,6 +105,23 @@ function showPage(page, options = {}) {
 					console.error("Failed to initialize communities page:", error),
 				);
 		}
+
+		if (page === "pastes" && !lazyInitializers.pastes) {
+			lazyInitializers.pastes = true;
+			import("/public/timeline/js/pastes.js")
+				.then(({ initializePastesPage }) => {
+					const container = document.querySelector(".pastes-page");
+					initializePastesPage(container);
+				})
+				.catch((error) => {
+					console.error("Failed to initialize pastes page:", error);
+					const container = document.querySelector(".pastes-page");
+					if (container) {
+						container.innerHTML =
+							"<div class='error-text'>Failed to load Pastes UI. Please try again later.</div>";
+					}
+				});
+		}
 	} else if (page === "settings") {
 		requestAnimationFrame(() => {
 			try {
@@ -163,12 +182,15 @@ export function addRoute(pathMatcher, onMatch) {
 }
 
 window.addEventListener("popstate", (event) => {
-	const { page, stateId, scroll, noScroll } = event.state || {
-		page: "timeline",
-		stateId: null,
-		scroll: 0,
-		noScroll: false,
-	};
+	const { state } = event;
+	const path = window.location.pathname || "";
+	const pageFromPath = path.split("/")[1] || "timeline";
+	const {
+		page = pageFromPath,
+		stateId = null,
+		scroll = 0,
+		noScroll = false,
+	} = state || {};
 
 	if (history.state?.stateId && cleanups[history.state.stateId]) {
 		try {
@@ -183,6 +205,18 @@ window.addEventListener("popstate", (event) => {
 
 	showPage(page, { recoverState });
 	updateNavbar();
+
+	// Re-initialize pastes page if needed (handle back/forward navigation)
+	if (page === "pastes" && lazyInitializers.pastes) {
+		import("/public/timeline/js/pastes.js")
+			.then(({ initializePastesPage }) => {
+				const container = document.querySelector(".pastes-page");
+				initializePastesPage(container);
+			})
+			.catch((error) =>
+				console.error("Failed to re-initialize pastes on popstate:", error),
+			);
+	}
 
 	setTimeout(() => {
 		if (noScroll) return;

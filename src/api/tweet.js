@@ -50,6 +50,28 @@ const getTweetById = db.query(`
   WHERE posts.id = ?
 `);
 
+const countBulkDeletableTweets = db.query(`
+	SELECT COUNT(*) as total
+	FROM posts
+	WHERE user_id = ?
+		AND datetime(created_at) >= datetime(?)
+		AND datetime(created_at) <= datetime(?)
+		AND (? = 1 OR reply_to IS NULL)
+		AND (? = 0 OR pinned = 0)
+`);
+
+const getBulkDeletableTweetIds = db.query(`
+	SELECT id
+	FROM posts
+	WHERE user_id = ?
+		AND datetime(created_at) >= datetime(?)
+		AND datetime(created_at) <= datetime(?)
+		AND (? = 1 OR reply_to IS NULL)
+		AND (? = 0 OR pinned = 0)
+	ORDER BY created_at ASC
+	LIMIT ?
+`);
+
 const isSuspendedQuery = db.query(`
   SELECT * FROM suspensions WHERE user_id = ? AND status = 'active' AND action = 'suspend' AND (expires_at IS NULL OR expires_at > datetime('now'))
 `);
@@ -1759,6 +1781,128 @@ export default new Elysia({ prefix: "/tweets", tags: ["Tweets"] })
 		} catch (error) {
 			console.error("Check reply permission error:", error);
 			return { canReply: false, error: "Failed to check reply permission" };
+		}
+	})
+	.post("/bulk-delete", async ({ jwt, headers, body }) => {
+		const authorization = headers.authorization;
+		if (!authorization) return { error: "Authentication required" };
+
+		try {
+			const payload = await jwt.verify(authorization.replace("Bearer ", ""));
+			if (!payload) return { error: "Invalid token" };
+
+			const user = getUserByUsername.get(payload.username);
+			if (!user) return { error: "User not found" };
+
+			const options = body && typeof body === "object" ? body : {};
+			const includeReplies =
+				options.includeReplies === undefined ? true : !!options.includeReplies;
+			const keepPinned =
+				options.keepPinned === undefined ? true : !!options.keepPinned;
+			const dryRun = !!options.dryRun;
+			const MAX_LIMIT = 500;
+			const DEFAULT_LIMIT = 100;
+			const parsedLimit = Number(options.limit);
+			const deleteLimit = Number.isFinite(parsedLimit)
+				? Math.min(MAX_LIMIT, Math.max(1, Math.floor(parsedLimit)))
+				: DEFAULT_LIMIT;
+			const now = new Date();
+			const afterDateRaw = options.after;
+			const beforeDateRaw = options.before;
+			// If both missing, we don't allow an unbounded range for safety
+			if (!afterDateRaw && !beforeDateRaw) {
+				return { error: "At least one bound (after or before) is required" };
+			}
+
+			let afterDate = new Date("1970-01-01T00:00:00Z");
+			if (afterDateRaw) {
+				afterDate = new Date(afterDateRaw);
+				if (Number.isNaN(afterDate.getTime())) {
+					return { error: "Invalid start date" };
+				}
+			}
+			let beforeDate = new Date();
+			if (beforeDateRaw) {
+				beforeDate = new Date(beforeDateRaw);
+				if (Number.isNaN(beforeDate.getTime())) {
+					return { error: "Invalid end date" };
+				}
+			}
+
+			// Enforce sensible bounds
+			if (afterDate > beforeDate) {
+				return { error: "Start date must be before end date" };
+			}
+
+			// Ensure beforeDate is not in the future
+			if (beforeDate > now) beforeDate = now;
+
+			const afterIso = afterDate.toISOString();
+			const beforeIso = beforeDate.toISOString();
+			const includeRepliesFlag = includeReplies ? 1 : 0;
+			const keepPinnedFlag = keepPinned ? 1 : 0;
+
+			const totalRow = countBulkDeletableTweets.get(
+				user.id,
+				afterIso,
+				beforeIso,
+				includeRepliesFlag,
+				keepPinnedFlag,
+			);
+			const totalMatching = Number(totalRow?.total) || 0;
+
+			if (dryRun) {
+				return {
+					success: true,
+					preview: {
+						total: totalMatching,
+						before: beforeIso,
+						includeReplies,
+						keepPinned,
+						limit: deleteLimit,
+					},
+				};
+			}
+
+			if (totalMatching === 0) {
+				return { success: true, deleted: 0, remaining: 0 };
+			}
+
+			const batchRows = getBulkDeletableTweetIds.all(
+				user.id,
+				afterIso,
+				beforeIso,
+				includeRepliesFlag,
+				keepPinnedFlag,
+				deleteLimit,
+			);
+			if (!batchRows.length) {
+				return {
+					success: true,
+					deleted: 0,
+					remaining: totalMatching,
+				};
+			}
+
+			const ids = batchRows.map((row) => row.id);
+			const placeholders = ids.map(() => "?").join(",");
+			const deleteStatement = db.query(
+				`DELETE FROM posts WHERE id IN (${placeholders})`,
+			);
+			deleteStatement.run(...ids);
+
+			const deletedCount = ids.length;
+			const remaining = Math.max(totalMatching - deletedCount, 0);
+
+			return {
+				success: true,
+				deleted: deletedCount,
+				remaining,
+				nextBatchAvailable: remaining > 0,
+			};
+		} catch (error) {
+			console.error("Bulk delete tweets error:", error);
+			return { error: "Failed to bulk delete tweets" };
 		}
 	})
 	.delete("/:id", async ({ jwt, headers, params }) => {

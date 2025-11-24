@@ -15,6 +15,10 @@ import cap from "./cap.js";
 const rpID = process.env.AUTH_RPID;
 const rpName = process.env.AUTH_RPNAME;
 const origin = process.env.AUTH_ORIGIN;
+const superAdminIds = (process.env.SUPERADMIN_IDS || "")
+	.split(";")
+	.map((id) => id.trim())
+	.filter(Boolean);
 
 const getUserByUsername = db.prepare(
 	"SELECT * FROM users WHERE LOWER(username) = LOWER(?)",
@@ -175,6 +179,8 @@ export default new Elysia({ prefix: "/auth", tags: ["Auth"] })
 							.all(user.id)
 					: [];
 
+				const isSuperAdmin = superAdminIds.includes(user.id);
+
 				let isDelegate = false;
 				let delegateOwnerId = null;
 				const primaryUserId = payload.primaryUserId || user.id;
@@ -203,6 +209,7 @@ export default new Elysia({ prefix: "/auth", tags: ["Auth"] })
 						verified: user.verified || false,
 						gold: user.gold || false,
 						admin: user.admin || false,
+						superadmin: isSuperAdmin,
 						theme: user.theme || null,
 						accent_color: user.accent_color || null,
 						avatar_radius: user.avatar_radius ?? null,
