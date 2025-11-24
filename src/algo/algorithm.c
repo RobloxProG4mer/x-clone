@@ -269,13 +269,26 @@ static char *normalize_content_c(const char *src) {
 // naive token extractor, returns a malloc'ed array of tokens (null terminated). caller must free.
 static int is_stopword(const char *s) {
     if (!s) return 0;
-    // a small list of common short stopwords
     if (strcmp(s, "the") == 0) return 1;
     if (strcmp(s, "and") == 0) return 1;
     if (strcmp(s, "for") == 0) return 1;
     if (strcmp(s, "with") == 0) return 1;
     if (strcmp(s, "from") == 0) return 1;
     if (strcmp(s, "that") == 0) return 1;
+    return 0;
+}
+
+static int token_is_noise(const char *tok, size_t len) {
+    if (!tok || len == 0) return 1;
+    if (len > 32) return 1;
+    int has_alpha = 0;
+    int has_digit = 0;
+    for (size_t i = 0; i < len; i++) {
+        unsigned char c = (unsigned char)tok[i];
+        if (isalpha(c)) has_alpha = 1;
+        else if (isdigit(c)) has_digit = 1;
+    }
+    if (has_digit && !has_alpha) return 1;
     return 0;
 }
 
@@ -301,7 +314,8 @@ static char **extract_tokens(const char *normalized, size_t *out_count) {
             while (s < e && ispunct((unsigned char)tok[s])) s++;
             while (e > s && ispunct((unsigned char)tok[e-1])) e--;
             size_t outlen = e - s;
-            if (outlen >= MIN_TOKEN_LEN && !is_stopword(tok)) {
+            const char *candidate = tok + s;
+            if (outlen >= MIN_TOKEN_LEN && !is_stopword(candidate) && !token_is_noise(candidate, outlen)) {
                 if (s > 0) memmove(tok, tok + s, outlen);
                 tok[outlen] = '\0';
                 tokens[tcount++] = tok;
@@ -1150,7 +1164,11 @@ void rank_tweets(Tweet *tweets, size_t count) {
                     continue;
                 }
                 double sim = token_similarity(token_sets[i], token_counts[i], token_sets[j], token_counts[j]);
-                if (sim > 0.45) {
+                size_t tc_sum = token_counts[i] + token_counts[j];
+                double sim_thresh = 0.45;
+                if (tc_sum < 8) sim_thresh -= 0.06;
+                else if (tc_sum > 20) sim_thresh += 0.05;
+                if (sim > sim_thresh) {
                     cluster_ids[j] = next_cluster;
                 }
             }
@@ -1173,13 +1191,12 @@ void rank_tweets(Tweet *tweets, size_t count) {
         if (cluster_counts && cluster_ids[i] >= 0 && cluster_counts[cluster_ids[i]] > 1) {
             double cc = (double)cluster_counts[cluster_ids[i]];
             penalty *= 1.0 / (1.0 + (cc - 1) * 0.45);
+            if (cc > 4) penalty *= 1.0 / (1.0 + (cc - 4) * 0.12);
         }
         if (author_prevalence[i] > 2) {
-            // penalize authors that appear many times in the candidate set
             double ap = (double)author_prevalence[i];
             penalty *= 1.0 / (1.0 + (ap - 1) * 0.2);
         }
-        // top_seens (recorded recently) make a stronger penalty
         int tsc = get_top_seen_count(tweets[i].id);
         if (tsc > 0) {
             double tpen = pow(0.82, (double)tsc);
@@ -1239,7 +1256,11 @@ void rank_tweets(Tweet *tweets, size_t count) {
                     continue;
                 }
                 double sim = token_similarity(token_sets[i], token_counts[i], token_sets[j], token_counts[j]);
-                if (sim > 0.45) {
+                size_t tc_sum = token_counts[i] + token_counts[j];
+                double sim_thresh = 0.45;
+                if (tc_sum < 8) sim_thresh -= 0.06;
+                else if (tc_sum > 20) sim_thresh += 0.05;
+                if (sim > sim_thresh) {
                     cluster_ids[j] = next_cluster;
                 }
             }
@@ -1622,8 +1643,9 @@ void rank_tweets(Tweet *tweets, size_t count) {
     }
 
     if (top_limit_adj > 2) {
-        for (size_t i = 0; i < top_limit_adj; i++) {
-            size_t j = i + (rand() % (top_limit_adj - i));
+        for (size_t i = 0; i < top_limit_adj - 1; i++) {
+            size_t range = top_limit_adj - i;
+            size_t j = i + ((size_t)rand() % range);
             if (j != i) {
                 Tweet tmp = tweets[i];
                 tweets[i] = tweets[j];

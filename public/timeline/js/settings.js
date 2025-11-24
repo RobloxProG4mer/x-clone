@@ -548,9 +548,7 @@ const createAccountContent = () => {
 										<span style="font-size: 16px; font-weight: 600; color: var(--text-primary);">${(algoData.spam_score * 100).toFixed(1)}%</span>
 										<button 
 											onclick="window.showSpamScoreDetails('${user.username}')" 
-											style="padding: 4px 8px; background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: 6px; color: var(--text-secondary); font-size: 11px; cursor: pointer; transition: all 0.2s;"
-											onmouseover="this.style.background='var(--bg-primary)'; this.style.borderColor='var(--border-primary)'"
-											onmouseout="this.style.background='var(--bg-secondary)'; this.style.borderColor='var(--border-color)'"
+											style="padding: 4px 8px; background: var(--bg-secondary); border: 1px solid var(--border-secondary); border-radius: 6px; color: var(--text-secondary); font-size: 11px; cursor: pointer; transition: all 0.2s;font-family: inherit;"
 										>
 											<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: middle; margin-right: 2px;"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
 											Details
@@ -3459,9 +3457,8 @@ window.showSpamScoreDetails = async (username) => {
 								<span style="padding: 2px 8px; background: ${statusColor}22; color: ${statusColor}; border-radius: 12px; font-size: 11px; font-weight: 600;">${scorePercent}%</span>
 								${
 									hasTweets
-										? `<button data-indicator-idx="${idx}" style="padding: 2px 8px; background: var(--bg-secondary); border: 1px solid var(--border-color); color: var(--text-secondary); border-radius: 12px; font-size: 10px; cursor: pointer; display: flex; align-items: center; gap: 4px;">
-									<svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
-									${ind.impactingTweets.length} tweets
+										? `<button data-indicator-idx="${idx}" style="padding: 2px 8px; background: var(--bg-secondary); border: 1px solid var(--border-hover); color: var(--text-secondary); border-radius: 12px; font-size: 10px; cursor: pointer; font-family: inherit;">
+									See ${ind.impactingTweets.length} tweets
 								</button>`
 										: ""
 								}
@@ -3567,7 +3564,7 @@ window.showSpamScoreDetails = async (username) => {
 					<div style="margin-bottom: 24px;">
 						<h3 style="margin: 0 0 16px 0; font-size: 17px; color: var(--text-primary); display: flex; align-items: center; gap: 8px;">
 							<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="m19 9-5 5-4-4-3 3"/></svg>
-							Detailed Indicator Breakdown
+							Breakdown
 						</h3>
 						<div style="display: flex; flex-direction: column; gap: 12px;" id="spam-indicators-container">
 							${indicatorsHTML}

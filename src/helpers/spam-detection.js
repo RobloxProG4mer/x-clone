@@ -609,22 +609,29 @@ const getSpamAnalysis = (userId) => {
 		});
 
 		const qualityTweets = [];
+		const oneDayAgoTs = now - 24 * 60 * 60 * 1000;
+		const allCapsPostsInLastDay = postsInLastDay.filter((p) => {
+			return calculateCapitalizationScore(p.content || "") > 0.5;
+		}).length;
+		const excessiveCapsThreshold = allCapsPostsInLastDay >= 20;
+
 		const qualityAnalysis = recentPosts.map((p) => {
 			const content = p.content || "";
 			const repeatedChars = calculateRepeatedCharScore(content);
 			const capitalization = calculateCapitalizationScore(content);
 			const emojiDensity = calculateEmojiDensity(content);
 			const keywordScore = calculateKeywordSpamScore(content);
+			const capsIssue = excessiveCapsThreshold && capitalization > 0.5;
 			const isLowQuality =
 				repeatedChars > 0.3 ||
-				capitalization > 0.5 ||
+				capsIssue ||
 				emojiDensity > 0.5 ||
 				keywordScore > 0.5;
 
 			if (isLowQuality) {
 				const reasons = [];
 				if (repeatedChars > 0.3) reasons.push("repeated chars");
-				if (capitalization > 0.5) reasons.push("excessive caps");
+				if (capsIssue) reasons.push("excessive caps");
 				if (emojiDensity > 0.5) reasons.push("too many emojis");
 				if (keywordScore > 0.5) reasons.push("spam keywords");
 				qualityTweets.push({
