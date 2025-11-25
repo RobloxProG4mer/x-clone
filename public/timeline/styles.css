@@ -4057,7 +4057,7 @@ nav {
         margin: 0px;
         margin-bottom: -5px;
         opacity: .5;
-        margin-top: 12px;
+        margin-top: 18px;
       }
 
       p {
@@ -4086,32 +4086,6 @@ nav {
 
           &:hover {
             opacity: .7;
-          }
-        }
-      }
-
-      .lup-topics {
-        padding: 0px;
-        display: flex;
-        flex-direction: column;
-        margin-bottom: 35px;
-
-        li {
-          list-style: none;
-          border: 1px solid var(--border-primary);
-          padding: 9px 12px;
-          border-radius: 7px;
-          margin-bottom: 0px;
-
-          &:not(:last-child) {
-            border-bottom: none;
-            border-bottom-left-radius: 0px;
-            border-bottom-right-radius: 0px;
-          }
-
-          &:not(:first-child) {
-            border-top-left-radius: 0px;
-            border-top-right-radius: 0px;
           }
         }
       }

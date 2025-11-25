@@ -198,13 +198,7 @@ const showEmptyState = async () => {
 		).href;
 	});
 
-	const topicsInTheNews = eventsEl.querySelector(
-		`.p-current-events-headlines[aria-labelledby="Topics_in_the_news"] ul`,
-	);
-
 	searchEmpty.innerHTML = `<p class="lup">Last updated ${timeAgo(trends.updated)}</p>
-<h2>Major headlines</h2>
-<ul class="lup-topics">${topicsInTheNews.innerHTML || "<p>No current topics</p>"}</ul>
 ${
 	Array.from(eventsEl.querySelectorAll(".current-events"))
 		.map((event) => {
