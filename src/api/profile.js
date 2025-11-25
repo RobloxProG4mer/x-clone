@@ -2469,7 +2469,6 @@ export default new Elysia({ prefix: "/profile", tags: ["Profile"] })
 			else if (overallMultiplier < 1.1) rating = "Good";
 
 			stats.algorithm_impact.rating = rating;
-			stats.algorithm_impact.description = `Posts from this account have their algorithm score multiplied by ${stats.algorithm_impact.overall_multiplier}x`;
 
 			return stats;
 		} catch (error) {

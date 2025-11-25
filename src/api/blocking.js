@@ -3,16 +3,42 @@ import { Elysia, t } from "elysia";
 import { rateLimit } from "elysia-rate-limit";
 import db from "./../db.js";
 import ratelimit from "../helpers/ratelimit.js";
+import { getSubnetPrefix } from "../helpers/ip.js";
 
 const JWT_SECRET = process.env.JWT_SECRET;
 
 const getUserByUsername = db.prepare(
-	"SELECT id FROM users WHERE LOWER(username) = LOWER(?)",
+	"SELECT id, ip_address FROM users WHERE LOWER(username) = LOWER(?)",
 );
 const getUserById = db.prepare("SELECT id FROM users WHERE id = ?");
 const checkBlockExists = db.prepare(
 	"SELECT 1 FROM blocks WHERE blocker_id = ? AND blocked_id = ?",
 );
+const checkIpBlockExists = db.prepare(`
+	SELECT 1 
+	FROM blocks b 
+	JOIN users u ON b.blocker_id = u.id 
+	WHERE u.ip_address = ? AND b.blocked_id = ? AND b.blocker_id != ?
+`);
+
+const getBlockerIps = db.prepare(`
+    SELECT DISTINCT u.ip_address 
+    FROM blocks b 
+    JOIN users u ON b.blocker_id = u.id 
+    WHERE b.blocked_id = ? AND b.blocker_id != ? AND u.ip_address IS NOT NULL
+`);
+
+const getBlockerUserIps = db.prepare(`
+    SELECT DISTINCT ui.ip_address
+    FROM blocks b
+    JOIN user_ips ui ON b.blocker_id = ui.user_id
+    WHERE b.blocked_id = ? AND b.blocker_id != ?
+`);
+
+const getMyUserIps = db.prepare(
+	"SELECT ip_address FROM user_ips WHERE user_id = ?",
+);
+
 const addBlock = db.prepare(
 	"INSERT INTO blocks (id, blocker_id, blocked_id, source_tweet_id) VALUES (?, ?, ?, ?)",
 );
@@ -45,6 +71,10 @@ const incrementMutedByCount = db.prepare(
 );
 const decrementMutedByCount = db.prepare(
 	"UPDATE users SET muted_by_count = MAX(0, muted_by_count - 1) WHERE id = ?",
+);
+
+const deleteNotificationsFromUser = db.prepare(
+	"DELETE FROM notifications WHERE user_id = ? AND actor_id = ?",
 );
 
 export default new Elysia({ prefix: "/blocking", tags: ["Blocking"] })
@@ -85,10 +115,46 @@ export default new Elysia({ prefix: "/blocking", tags: ["Blocking"] })
 					return { error: "User is already blocked" };
 				}
 
-				addBlock.run(Bun.randomUUIDv7(), user.id, userId, body.sourceTweetId || null);
+				addBlock.run(
+					Bun.randomUUIDv7(),
+					user.id,
+					userId,
+					body.sourceTweetId || null,
+				);
 				removeFollows.run(user.id, userId, userId, user.id);
 				removeFollowRequests.run(user.id, userId, userId, user.id);
-				incrementBlockedByCount.run(userId);
+				deleteNotificationsFromUser.run(user.id, userId);
+
+				let shouldIncrement = true;
+
+				// Collect all subnets associated with the current user
+				const currentSubnets = new Set();
+				const requestIp = headers["cf-connecting-ip"];
+
+				if (requestIp) currentSubnets.add(getSubnetPrefix(requestIp));
+				if (user.ip_address)
+					currentSubnets.add(getSubnetPrefix(user.ip_address));
+
+				const myUserIps = getMyUserIps.all(user.id);
+				for (const { ip_address } of myUserIps) {
+					if (ip_address) currentSubnets.add(getSubnetPrefix(ip_address));
+				}
+
+				// Check against IPs of other blockers
+				const otherBlockerIps = getBlockerIps.all(userId, user.id);
+				const otherBlockerUserIps = getBlockerUserIps.all(userId, user.id);
+				const allOtherIps = [...otherBlockerIps, ...otherBlockerUserIps];
+
+				for (const { ip_address } of allOtherIps) {
+					if (ip_address && currentSubnets.has(getSubnetPrefix(ip_address))) {
+						shouldIncrement = false;
+						break;
+					}
+				}
+
+				if (shouldIncrement) {
+					incrementBlockedByCount.run(userId);
+				}
 
 				return { success: true, blocked: true };
 			} catch (error) {
@@ -133,7 +199,39 @@ export default new Elysia({ prefix: "/blocking", tags: ["Blocking"] })
 				}
 
 				removeBlock.run(user.id, userId);
-				decrementBlockedByCount.run(userId);
+
+				let shouldDecrement = true;
+
+				// Same logic as block: if we are part of a mass block, we shouldn't decrement
+				// because we likely didn't increment (or shouldn't have).
+				// AND if there are other blockers from our subnet, the "slot" is still full.
+
+				const currentSubnets = new Set();
+				const requestIp = headers["cf-connecting-ip"];
+
+				if (requestIp) currentSubnets.add(getSubnetPrefix(requestIp));
+				if (user.ip_address)
+					currentSubnets.add(getSubnetPrefix(user.ip_address));
+
+				const myUserIps = getMyUserIps.all(user.id);
+				for (const { ip_address } of myUserIps) {
+					if (ip_address) currentSubnets.add(getSubnetPrefix(ip_address));
+				}
+
+				const otherBlockerIps = getBlockerIps.all(userId, user.id);
+				const otherBlockerUserIps = getBlockerUserIps.all(userId, user.id);
+				const allOtherIps = [...otherBlockerIps, ...otherBlockerUserIps];
+
+				for (const { ip_address } of allOtherIps) {
+					if (ip_address && currentSubnets.has(getSubnetPrefix(ip_address))) {
+						shouldDecrement = false;
+						break;
+					}
+				}
+
+				if (shouldDecrement) {
+					decrementBlockedByCount.run(userId);
+				}
 
 				return { success: true, blocked: false };
 			} catch (error) {
@@ -223,6 +321,7 @@ export default new Elysia({ prefix: "/blocking", tags: ["Blocking"] })
 
 				addMute.run(Bun.randomUUIDv7(), user.id, userId);
 				incrementMutedByCount.run(userId);
+				deleteNotificationsFromUser.run(user.id, userId);
 
 				return { success: true, muted: true };
 			} catch (error) {

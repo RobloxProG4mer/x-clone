@@ -360,6 +360,14 @@ WHERE u.id = ?
 	getEmojiById: db.prepare("SELECT * FROM emojis WHERE id = ?"),
 	getEmojiByName: db.prepare("SELECT * FROM emojis WHERE name = ?"),
 	deleteEmoji: db.prepare("DELETE FROM emojis WHERE id = ?"),
+	getUserIp: db.prepare("SELECT ip_address FROM users WHERE id = ?"),
+	getUsersByIp: db.prepare("SELECT * FROM users WHERE ip_address = ?"),
+	banIp: db.prepare(
+		"INSERT INTO ip_bans (ip_address, banned_by, reason) VALUES (?, ?, ?)",
+	),
+	unbanIp: db.prepare("DELETE FROM ip_bans WHERE ip_address = ?"),
+	getIpBans: db.prepare("SELECT * FROM ip_bans ORDER BY created_at DESC"),
+	checkIpBan: db.prepare("SELECT 1 FROM ip_bans WHERE ip_address = ?"),
 };
 
 const extensionsInstallDir = join(process.cwd(), "ext");
@@ -4738,5 +4746,188 @@ export default new Elysia({ prefix: "/admin", tags: ["Admin"] })
 				postId: t.String(),
 			}),
 			response: t.Any(),
+		},
+	)
+
+	.get(
+		"/pastes",
+		async ({ query }) => {
+			const page = parseInt(query.page, 10) || 1;
+			const limit = parseInt(query.limit, 10) || 20;
+			const search = query.search || "";
+			const offset = (page - 1) * limit;
+
+			const searchPattern = `%${search}%`;
+			const pastes = db
+				.query(
+					`SELECT p.*, u.username
+					 FROM pastes p
+					 LEFT JOIN users u ON p.user_id = u.id
+					 WHERE p.title LIKE ? OR p.slug LIKE ? OR p.content LIKE ? OR u.username LIKE ?
+					 ORDER BY p.created_at DESC
+					 LIMIT ? OFFSET ?`,
+				)
+				.all(
+					searchPattern,
+					searchPattern,
+					searchPattern,
+					searchPattern,
+					limit,
+					offset,
+				);
+			const totalCount = db
+				.query(
+					`SELECT COUNT(*) as count
+					 FROM pastes p
+					 LEFT JOIN users u ON p.user_id = u.id
+					 WHERE p.title LIKE ? OR p.slug LIKE ? OR p.content LIKE ? OR u.username LIKE ?`,
+				)
+				.get(searchPattern, searchPattern, searchPattern, searchPattern);
+
+			return {
+				pastes,
+				pagination: {
+					page,
+					limit,
+					total: totalCount.count,
+					pages: Math.ceil(totalCount.count / limit),
+				},
+			};
+		},
+		{
+			detail: {
+				description: "Lists pastes with pagination and search",
+			},
+			query: t.Object({
+				page: t.Optional(t.String()),
+				limit: t.Optional(t.String()),
+				search: t.Optional(t.String()),
+			}),
+			response: t.Object({
+				pastes: t.Array(t.Any()),
+				pagination: t.Any(),
+			}),
+		},
+	)
+
+	.get(
+		"/pastes/:id",
+		async ({ params, set }) => {
+			const paste = db
+				.query(
+					`SELECT p.*, u.username
+					 FROM pastes p
+					 LEFT JOIN users u ON p.user_id = u.id
+					 WHERE p.id = ? OR p.slug = ?`,
+				)
+				.get(params.id, params.id);
+			if (!paste) {
+				set.status = 404;
+				return { error: "Paste not found" };
+			}
+			return { paste };
+		},
+		{
+			detail: {
+				description: "Gets a specific paste by id or slug",
+			},
+			params: t.Object({
+				id: t.String(),
+			}),
+			response: t.Any(),
+		},
+	)
+
+	.delete(
+		"/pastes/:id",
+		async ({ params, user, set }) => {
+			const paste = db
+				.query("SELECT * FROM pastes WHERE id = ? OR slug = ?")
+				.get(params.id, params.id);
+			if (!paste) {
+				set.status = 404;
+				return { error: "Paste not found" };
+			}
+			db.query("DELETE FROM pastes WHERE id = ?").run(paste.id);
+			logModerationAction(user.id, "delete_paste", "paste", paste.id, {
+				slug: paste.slug,
+				title: paste.title,
+			});
+			return { success: true };
+		},
+		{
+			detail: {
+				description: "Deletes a paste",
+			},
+			params: t.Object({
+				id: t.String(),
+			}),
+			response: t.Any(),
+		},
+	)
+	.get(
+		"/users/:id/ip",
+		async ({ params, user, set }) => {
+			const targetUser = adminQueries.getUserIp.get(params.id);
+			if (!targetUser) {
+				set.status = 404;
+				return { error: "User not found" };
+			}
+			return { ip: targetUser.ip_address };
+		},
+		{
+			detail: { description: "Get user IP address" },
+			params: t.Object({ id: t.String() }),
+		},
+	)
+	.get(
+		"/ip/:ip/users",
+		async ({ params }) => {
+			const users = adminQueries.getUsersByIp.all(params.ip);
+			return { users };
+		},
+		{
+			detail: { description: "Get users by IP address" },
+			params: t.Object({ ip: t.String() }),
+		},
+	)
+	.post(
+		"/ip/ban",
+		async ({ body, user }) => {
+			const { ip, reason } = body;
+			try {
+				adminQueries.banIp.run(ip, user.id, reason);
+				logModerationAction(user.id, "ban_ip", "ip", ip, { reason });
+				return { success: true };
+			} catch (error) {
+				return { error: "Failed to ban IP" };
+			}
+		},
+		{
+			detail: { description: "Ban an IP address" },
+			body: t.Object({ ip: t.String(), reason: t.String() }),
+		},
+	)
+	.post(
+		"/ip/unban",
+		async ({ body, user }) => {
+			const { ip } = body;
+			adminQueries.unbanIp.run(ip);
+			logModerationAction(user.id, "unban_ip", "ip", ip);
+			return { success: true };
+		},
+		{
+			detail: { description: "Unban an IP address" },
+			body: t.Object({ ip: t.String() }),
+		},
+	)
+	.get(
+		"/ip/bans",
+		async () => {
+			const bans = adminQueries.getIpBans.all();
+			return { bans };
+		},
+		{
+			detail: { description: "Get all IP bans" },
 		},
 	);

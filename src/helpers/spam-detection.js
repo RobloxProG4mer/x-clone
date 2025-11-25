@@ -673,12 +673,27 @@ const getSpamAnalysis = (userId) => {
 		if (avgWords < 3) qualityScore = Math.max(qualityScore, 0.6);
 		if (avgKeywordScore > 0.3) qualityScore = Math.max(qualityScore, 0.8);
 
+		const qualityDetails = [];
+		if (lowQualityPosts > 0)
+			qualityDetails.push(`${lowQualityPosts} flagged posts`);
+		if (veryShortPosts > 10)
+			qualityDetails.push(`${veryShortPosts} very short posts`);
+		if (avgWords < 3)
+			qualityDetails.push(`avg ${avgWords.toFixed(1)} words/post`);
+		if (avgKeywordScore > 0.05)
+			qualityDetails.push(
+				`avg keyword score ${(avgKeywordScore * 100).toFixed(1)}%`,
+			);
+
 		indicators.push({
 			name: "content_quality",
 			displayName: "Content Quality",
 			score: qualityScore,
 			weight: 0.11,
-			details: `${lowQualityPosts} low quality posts, avg keyword score ${(avgKeywordScore * 100).toFixed(1)}%`,
+			details:
+				qualityDetails.length > 0
+					? qualityDetails.join(", ")
+					: "Content quality analysis",
 			impactingTweets: qualityTweets.slice(0, 10),
 		});
 

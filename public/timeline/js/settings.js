@@ -5,6 +5,7 @@ import { authToken } from "./auth.js";
 
 let currentUser = null;
 let currentUserPromise = null;
+let _spamIndicators = [];
 
 const ensureCurrentUser = async (forceReload = false) => {
 	if (!authToken) return null;
@@ -65,7 +66,7 @@ const settingsPages = [
 	},
 	{
 		key: "blocked-causes",
-		title: "Blocked Causes",
+		title: "Blocked causes",
 		content: () => createBlockedCausesContent(),
 	},
 ];
@@ -75,21 +76,18 @@ const createBlockedCausesContent = () => {
 	section.className = "settings-section";
 
 	const h1 = document.createElement("h1");
-	h1.textContent = "Blocked Causes";
+	h1.textContent = "Blocked causes";
 	section.appendChild(h1);
 
 	const description = document.createElement("p");
-	description.style.color = "var(--text-secondary)";
-	description.style.marginBottom = "20px";
+	description.className = "settings-description";
 	description.textContent =
 		"These are the tweets that have most frequently led to you being blocked.";
 	section.appendChild(description);
 
 	const container = document.createElement("div");
 	container.id = "blockedCausesContainer";
-	container.style.display = "flex";
-	container.style.flexDirection = "column";
-	container.style.gap = "16px";
+	container.className = "blocked-causes-container";
 	section.appendChild(container);
 
 	(async () => {
@@ -98,37 +96,17 @@ const createBlockedCausesContent = () => {
 			if (data.causes && data.causes.length > 0) {
 				data.causes.forEach((cause) => {
 					const item = document.createElement("div");
-					item.style.cssText = `
-						padding: 16px;
-						background: var(--bg-secondary);
-						border: 1px solid var(--border-primary);
-						border-radius: 12px;
-						cursor: pointer;
-						transition: background 0.2s;
-					`;
-					item.onmouseenter = () => {
-						item.style.background = "var(--bg-hover)";
-					};
-					item.onmouseleave = () => {
-						item.style.background = "var(--bg-secondary)";
-					};
+					item.className = "blocked-cause-item";
 					item.onclick = async () => {
 						const { default: openTweet } = await import("./tweet.js");
 						openTweet({ id: cause.source_tweet_id });
 					};
 
 					const header = document.createElement("div");
-					header.style.cssText = `
-						display: flex;
-						justify-content: space-between;
-						margin-bottom: 8px;
-						font-size: 13px;
-						color: var(--text-secondary);
-					`;
+					header.className = "blocked-cause-header";
 
 					const countSpan = document.createElement("span");
-					countSpan.style.color = "var(--error)";
-					countSpan.style.fontWeight = "600";
+					countSpan.className = "blocked-cause-count";
 					countSpan.textContent = `${cause.count} block${cause.count !== 1 ? "s" : ""}`;
 
 					const dateSpan = document.createElement("span");
@@ -142,8 +120,7 @@ const createBlockedCausesContent = () => {
 					header.appendChild(dateSpan);
 
 					const content = document.createElement("div");
-					content.style.fontSize = "15px";
-					content.style.lineHeight = "1.5";
+					content.className = "blocked-cause-content";
 					content.textContent = cause.content || "Tweet unavailable";
 
 					item.appendChild(header);
@@ -151,20 +128,23 @@ const createBlockedCausesContent = () => {
 					container.appendChild(item);
 				});
 			} else {
-				container.innerHTML = `
-					<div style="padding: 32px; text-align: center; color: var(--text-secondary);">
-						<p>No data available yet.</p>
-						<p style="font-size: 13px; margin-top: 8px;">Tweets that lead to blocks will appear here.</p>
-					</div>
-				`;
+				const empty = document.createElement("div");
+				empty.className = "blocked-causes-empty";
+				const emptyP1 = document.createElement("p");
+				emptyP1.textContent = "No data available yet.";
+				const emptyP2 = document.createElement("p");
+				emptyP2.className = "blocked-causes-empty-hint";
+				emptyP2.textContent = "Tweets that lead to blocks will appear here.";
+				empty.appendChild(emptyP1);
+				empty.appendChild(emptyP2);
+				container.appendChild(empty);
 			}
 		} catch (err) {
 			console.error(err);
-			container.innerHTML = `
-				<div style="padding: 16px; color: var(--error); text-align: center;">
-					Failed to load data.
-				</div>
-			`;
+			const errorDiv = document.createElement("div");
+			errorDiv.className = "blocked-causes-error";
+			errorDiv.textContent = "Failed to load data.";
+			container.appendChild(errorDiv);
 		}
 	})();
 
@@ -193,7 +173,7 @@ const createThemesContent = () => {
 	themeLabel.className = "setting-label";
 	const themeTitle = document.createElement("div");
 	themeTitle.className = "setting-title";
-	themeTitle.textContent = "Theme Mode";
+	themeTitle.textContent = "Theme mode";
 	const themeDesc = document.createElement("div");
 	themeDesc.className = "setting-description";
 	themeDesc.textContent = "Choose light or dark mode";
@@ -205,25 +185,12 @@ const createThemesContent = () => {
 
 	const select = document.createElement("select");
 	select.id = "themeDropdown";
-	select.className = "theme-mode-select";
-	select.style.cssText = `
-		padding: 8px 12px;
-		border: 1px solid var(--border-primary);
-		border-radius: 8px;
-		background: var(--bg-primary);
-		color: var(--text-primary);
-		font-size: 14px;
-		cursor: pointer;
-	`;
+	select.className = "settings-select";
 
-	[
-		{ v: "light", t: "Light" },
-		{ v: "dark", t: "Dark" },
-		{ v: "auto", t: "Auto" },
-	].forEach(({ v, t }) => {
+	["light", "dark", "auto"].forEach((v) => {
 		const option = document.createElement("option");
 		option.value = v;
-		option.textContent = t;
+		option.textContent = v.charAt(0).toUpperCase() + v.slice(1);
 		select.appendChild(option);
 	});
 
@@ -246,7 +213,7 @@ const createThemesContent = () => {
 	const saveBtn = document.createElement("button");
 	saveBtn.className = "btn primary";
 	saveBtn.id = "saveThemeBtn";
-	saveBtn.textContent = "Save to Account";
+	saveBtn.textContent = "Save to account";
 	saveControl.appendChild(saveBtn);
 	saveItem.appendChild(saveLabel);
 	saveItem.appendChild(saveControl);
@@ -263,7 +230,7 @@ const createAccountContent = () => {
 	section.className = "settings-section";
 
 	const h1 = document.createElement("h1");
-	h1.textContent = "Account Settings";
+	h1.textContent = "Account settings";
 	section.appendChild(h1);
 
 	const privacyGroup = document.createElement("div");
@@ -279,7 +246,7 @@ const createAccountContent = () => {
 	privateLabel.className = "setting-label";
 	const privateTitle = document.createElement("div");
 	privateTitle.className = "setting-title";
-	privateTitle.textContent = "Private Account";
+	privateTitle.textContent = "Private account";
 	const privateDesc = document.createElement("div");
 	privateDesc.className = "setting-description";
 	privateDesc.textContent =
@@ -309,7 +276,7 @@ const createAccountContent = () => {
 	transparencyLabel.className = "setting-label";
 	const transparencyTitle = document.createElement("div");
 	transparencyTitle.className = "setting-title";
-	transparencyTitle.textContent = "Transparency Location Display";
+	transparencyTitle.textContent = "Transparency location display";
 	const transparencyDesc = document.createElement("div");
 	transparencyDesc.className = "setting-description";
 	transparencyDesc.textContent =
@@ -322,17 +289,7 @@ const createAccountContent = () => {
 
 	const transparencySelect = document.createElement("select");
 	transparencySelect.id = "transparency-location-select";
-	transparencySelect.className = "transparency-location-select";
-	transparencySelect.style.cssText = `
-		padding: 8px 12px;
-		border: 1px solid var(--border-primary);
-		border-radius: 8px;
-		background: var(--bg-primary);
-		color: var(--text-primary);
-		font-size: 14px;
-		cursor: pointer;
-		min-width: 200px;
-	`;
+	transparencySelect.className = "settings-select";
 
 	[
 		{ v: "full", t: "Full Location (City, Country)" },
@@ -354,7 +311,7 @@ const createAccountContent = () => {
 
 	transparencySelect.addEventListener("change", async (e) => {
 		const display = e.target.value;
-		console.log("Transparency location changed to:", display);
+
 		try {
 			const result = await query("/profile/settings/transparency-location", {
 				method: "POST",
@@ -363,8 +320,6 @@ const createAccountContent = () => {
 				},
 				body: JSON.stringify({ display }),
 			});
-
-			console.log("API response:", result);
 
 			if (result.success) {
 				if (currentUser) {
@@ -392,7 +347,7 @@ const createAccountContent = () => {
 	const communityTagGroup = document.createElement("div");
 	communityTagGroup.className = "setting-group";
 	const communityTagH2 = document.createElement("h2");
-	communityTagH2.textContent = "Community Tag";
+	communityTagH2.textContent = "Community tag";
 	communityTagGroup.appendChild(communityTagH2);
 
 	const communityTagItem = document.createElement("div");
@@ -402,7 +357,7 @@ const createAccountContent = () => {
 	communityTagLabel.className = "setting-label";
 	const communityTagTitle = document.createElement("div");
 	communityTagTitle.className = "setting-title";
-	communityTagTitle.textContent = "Display Community Tag";
+	communityTagTitle.textContent = "Display community tag";
 	const communityTagDesc = document.createElement("div");
 	communityTagDesc.className = "setting-description";
 	communityTagDesc.textContent =
@@ -415,17 +370,7 @@ const createAccountContent = () => {
 
 	const select = document.createElement("select");
 	select.id = "communityTagDropdown";
-	select.className = "community-tag-select";
-	select.style.cssText = `
-		padding: 8px 12px;
-		border: 1px solid var(--border-primary);
-		border-radius: 8px;
-		background: var(--bg-primary);
-		color: var(--text-primary);
-		font-size: 14px;
-		cursor: pointer;
-		min-width: 200px;
-	`;
+	select.className = "settings-select";
 
 	const noneOption = document.createElement("option");
 	noneOption.value = "";
@@ -454,7 +399,7 @@ const createAccountContent = () => {
 	const btnUser = document.createElement("button");
 	btnUser.className = "btn secondary";
 	btnUser.id = "changeUsernameBtn";
-	btnUser.textContent = "Change Username";
+	btnUser.textContent = "Change username";
 	control1.appendChild(btnUser);
 	item1.appendChild(label1);
 	item1.appendChild(control1);
@@ -469,7 +414,7 @@ const createAccountContent = () => {
 	const btnPass = document.createElement("button");
 	btnPass.className = "btn secondary";
 	btnPass.id = "changePasswordBtn";
-	btnPass.textContent = "Change Password";
+	btnPass.textContent = "Change password";
 	control2.appendChild(btnPass);
 	item2.appendChild(label2);
 	item2.appendChild(control2);
@@ -484,14 +429,13 @@ const createAccountContent = () => {
 	algoGroup.appendChild(algoH2);
 
 	const algoItem = document.createElement("div");
-	algoItem.className = "setting-item";
-	algoItem.style.cssText = "flex-direction: column; align-items: stretch;";
+	algoItem.className = "setting-item algo-transparency-item";
 
 	const algoStatsContainer = document.createElement("div");
 	algoStatsContainer.id = "settingsAlgorithmStats";
-	algoStatsContainer.style.cssText = "margin-top: 12px;";
+	algoStatsContainer.className = "algo-stats-container";
 	algoStatsContainer.innerHTML = `
-		<div style="display: flex; justify-content: center;">
+		<div class="algo-stats-loading">
 			<svg width="24" height="24" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
 				<style>.spinner_z9k8 {transform-origin: center;animation: spinner_StKS 0.75s infinite linear;}@keyframes spinner_StKS {100% {transform: rotate(360deg);}}</style>
 				<path d="M12,1A11,11,0,1,0,23,12,11,11,0,0,0,12,1Zm0,19a8,8,0,1,1,8-8A8,8,0,0,1,12,20Z" opacity=".25" fill="currentColor"></path>
@@ -513,74 +457,111 @@ const createAccountContent = () => {
 				);
 				if (!algoData.error) {
 					const impact = algoData.algorithm_impact;
-					const ratingColor =
+					const ratingClass =
 						impact.rating === "Excellent"
-							? "#4caf50"
+							? "rating-excellent"
 							: impact.rating === "Good"
-								? "#8bc34a"
+								? "rating-good"
 								: impact.rating === "Average"
-									? "#ffeb3b"
+									? "rating-average"
 									: impact.rating === "Below Average"
-										? "#ff9800"
+										? "rating-below-average"
 										: impact.rating === "Poor"
-											? "#ff5722"
-											: "#f44336";
+											? "rating-poor"
+											: "rating-bad";
 
-					algoStatsContainer.innerHTML = `
-						<div style="background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: 12px;">
-							<div style="display: flex; align-items: center; gap: 8px; margin-bottom: 12px; color: var(--text-primary); font-size: 15px;">
-								<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color: var(--text-secondary);"><path d="M3 3v18h18"/><path d="m19 9-5 5-4-4-3 3"/></svg>
-								<span style="font-weight: 600;">Impact</span>
-								<span style="margin-left: auto; padding: 4px 10px; background: ${ratingColor}22; color: ${ratingColor}; border-radius: 6px; font-size: 12px; font-weight: 600;">${impact.rating}</span>
-							</div>
-							<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
-								<div style="display: flex; flex-direction: column; gap: 4px;">
-									<span style="font-size: 13px; color: var(--text-secondary);">Blocked by</span>
-									<span style="font-size: 16px; font-weight: 600; color: var(--text-primary);">${algoData.blocked_by_count} account${algoData.blocked_by_count !== 1 ? "s" : ""}</span>
-								</div>
-								<div style="display: flex; flex-direction: column; gap: 4px;">
-									<span style="font-size: 13px; color: var(--text-secondary);">Muted by</span>
-									<span style="font-size: 16px; font-weight: 600; color: var(--text-primary);">${algoData.muted_by_count} account${algoData.muted_by_count !== 1 ? "s" : ""}</span>
-								</div>
-								<div style="display: flex; flex-direction: column; gap: 4px;">
-									<span style="font-size: 13px; color: var(--text-secondary);">Spam score</span>
-									<div style="display: flex; align-items: center; gap: 8px;">
-										<span style="font-size: 16px; font-weight: 600; color: var(--text-primary);">${(algoData.spam_score * 100).toFixed(1)}%</span>
-										<button 
-											onclick="window.showSpamScoreDetails('${user.username}')" 
-											style="padding: 4px 8px; background: var(--bg-secondary); border: 1px solid var(--border-secondary); border-radius: 6px; color: var(--text-secondary); font-size: 11px; cursor: pointer; transition: all 0.2s;font-family: inherit;"
-										>
-											<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: middle; margin-right: 2px;"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
-											Details
-										</button>
-									</div>
-								</div>
-								<div style="display: flex; flex-direction: column; gap: 4px;">
-									<span style="font-size: 13px; color: var(--text-secondary);">Account age</span>
-									<span style="font-size: 16px; font-weight: 600; color: var(--text-primary);">${algoData.account_age_days} days</span>
-								</div>
-								<div style="grid-column: 1 / -1; padding-top: 8px; border-top: 1px solid var(--border-color); display: flex; justify-content: space-between; align-items: center;">
-									<span style="font-size: 13px; color: var(--text-secondary);">Overall multiplier</span>
-									<span style="font-size: 16px; font-weight: 600; color: ${ratingColor};">${impact.overall_multiplier}x</span>
-								</div>
-								<div style="grid-column: 1 / -1; font-size: 12px; color: var(--text-secondary); margin-top: 4px; line-height: 1.4;">${impact.description}</div>
-							</div>
-						</div>
+					algoStatsContainer.innerHTML = "";
+					algoStatsContainer.className =
+						"algo-stats-container algo-stats-loaded";
+
+					const statsCard = document.createElement("div");
+					statsCard.className = "algo-stats-card";
+
+					const header = document.createElement("div");
+					header.className = "algo-stats-header";
+					header.innerHTML = `
+						<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="m19 9-5 5-4-4-3 3"/></svg>
+						<span class="algo-stats-title">Impact</span>
+						<span class="algo-stats-rating ${ratingClass}">${impact.rating}</span>
 					`;
+					statsCard.appendChild(header);
+
+					const grid = document.createElement("div");
+					grid.className = "algo-stats-grid";
+
+					const blockedStat = document.createElement("div");
+					blockedStat.className = "algo-stat";
+					blockedStat.innerHTML = `
+						<span class="algo-stat-label">Blocked by</span>
+						<span class="algo-stat-value">${algoData.blocked_by_count} account${algoData.blocked_by_count !== 1 ? "s" : ""}</span>
+					`;
+					grid.appendChild(blockedStat);
+
+					const mutedStat = document.createElement("div");
+					mutedStat.className = "algo-stat";
+					mutedStat.innerHTML = `
+						<span class="algo-stat-label">Muted by</span>
+						<span class="algo-stat-value">${algoData.muted_by_count} account${algoData.muted_by_count !== 1 ? "s" : ""}</span>
+					`;
+					grid.appendChild(mutedStat);
+
+					const spamStat = document.createElement("div");
+					spamStat.className = "algo-stat";
+					const spamLabel = document.createElement("span");
+					spamLabel.className = "algo-stat-label";
+					spamLabel.textContent = "Spam score";
+					const spamValueWrapper = document.createElement("div");
+					spamValueWrapper.className = "algo-stat-value-wrapper";
+					const spamValue = document.createElement("span");
+					spamValue.className = "algo-stat-value";
+					spamValue.textContent = `${(algoData.spam_score * 100).toFixed(1)}%`;
+					const detailsBtn = document.createElement("button");
+					detailsBtn.className = "algo-details-btn";
+					detailsBtn.innerHTML = `
+						<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+						Details
+					`;
+					detailsBtn.addEventListener("click", () =>
+						showSpamScoreDetails(user.username),
+					);
+					spamValueWrapper.appendChild(spamValue);
+					spamValueWrapper.appendChild(detailsBtn);
+					spamStat.appendChild(spamLabel);
+					spamStat.appendChild(spamValueWrapper);
+					grid.appendChild(spamStat);
+
+					const ageStat = document.createElement("div");
+					ageStat.className = "algo-stat";
+					ageStat.innerHTML = `
+						<span class="algo-stat-label">Account age</span>
+						<span class="algo-stat-value">${algoData.account_age_days} days</span>
+					`;
+					grid.appendChild(ageStat);
+
+					const multiplierRow = document.createElement("div");
+					multiplierRow.className = "algo-stat algo-stat-full";
+					multiplierRow.innerHTML = `
+						<span class="algo-stat-label">Overall multiplier</span>
+						<span class="algo-stat-value ${ratingClass}">${impact.overall_multiplier}x</span>
+					`;
+					grid.appendChild(multiplierRow);
+
+					statsCard.appendChild(grid);
+					algoStatsContainer.appendChild(statsCard);
 				} else {
-					algoStatsContainer.innerHTML = `
-						<div style="padding: 16px; text-align: center; color: var(--text-secondary);">
-							Failed to load algorithm stats
-						</div>
-					`;
+					algoStatsContainer.innerHTML = "";
+					const errorDiv = document.createElement("div");
+					errorDiv.className = "algo-stats-error";
+					errorDiv.textContent = "Failed to load algorithm stats";
+					algoStatsContainer.appendChild(errorDiv);
 				}
 			} catch (error) {
 				console.error("Failed to load algorithm stats:", error);
-				algoStatsContainer.innerHTML = `
-					<div style="padding: 16px; text-align: center; color: var(--text-secondary);">
-						Failed to load algorithm stats
-					</div>
-				`;
+				algoStatsContainer.innerHTML = "";
+				const errorDiv = document.createElement("div");
+				errorDiv.className = "algo-stats-error";
+				errorDiv.textContent = "Failed to load algorithm stats";
+				algoStatsContainer.appendChild(errorDiv);
 			}
 		}
 	}, 0);
@@ -599,7 +580,7 @@ const createAccountContent = () => {
 	const btnDel = document.createElement("button");
 	btnDel.className = "btn danger";
 	btnDel.id = "deleteAccountBtn";
-	btnDel.textContent = "Delete Account";
+	btnDel.textContent = "Delete account";
 	control3.appendChild(btnDel);
 	item3.appendChild(label3);
 	item3.appendChild(control3);
@@ -654,13 +635,13 @@ const openChangePasswordModal = async () => {
 
 	const submit = modal.querySelector("button[type='submit']");
 	if (submit) {
-		submit.textContent = hasPassword ? "Change Password" : "Set Password";
+		submit.textContent = hasPassword ? "Change password" : "Set password";
 	}
 
 	const currentPasswordGroup = document.getElementById("currentPasswordGroup");
 	const currentPasswordInput = document.getElementById("current-password");
 	if (currentPasswordGroup) {
-		currentPasswordGroup.style.display = hasPassword ? "flex" : "none";
+		currentPasswordGroup.classList.toggle("hidden", !hasPassword);
 	}
 	if (currentPasswordInput) {
 		currentPasswordInput.required = hasPassword;
@@ -838,20 +819,18 @@ const createPasskeysContent = () => {
 	section.className = "settings-section";
 
 	const h1 = document.createElement("h1");
-	h1.textContent = "Passkey Management";
+	h1.textContent = "Passkey management";
 	section.appendChild(h1);
 
 	const group = document.createElement("div");
 	group.className = "setting-group";
 
 	const h2 = document.createElement("h2");
-	h2.textContent = "Your Passkeys";
+	h2.textContent = "Your passkeys";
 	group.appendChild(h2);
 
 	const description = document.createElement("p");
-	description.style.color = "var(--text-secondary)";
-	description.style.fontSize = "14px";
-	description.style.marginBottom = "16px";
+	description.className = "settings-description";
 	description.textContent =
 		"Passkeys allow you to sign in securely without a password. You can use your device's biometric authentication or security key.";
 	group.appendChild(description);
@@ -862,7 +841,7 @@ const createPasskeysContent = () => {
 	addPasskeyLabel.className = "setting-label";
 	const addPasskeyTitle = document.createElement("div");
 	addPasskeyTitle.className = "setting-title";
-	addPasskeyTitle.textContent = "Add New Passkey";
+	addPasskeyTitle.textContent = "Add new passkey";
 	const addPasskeyDesc = document.createElement("div");
 	addPasskeyDesc.className = "setting-description";
 	addPasskeyDesc.textContent = "Register a new passkey for this account";
@@ -873,7 +852,7 @@ const createPasskeysContent = () => {
 	const addPasskeyBtn = document.createElement("button");
 	addPasskeyBtn.className = "btn primary";
 	addPasskeyBtn.id = "addPasskeyBtn";
-	addPasskeyBtn.textContent = "Add Passkey";
+	addPasskeyBtn.textContent = "Add passkey";
 	addPasskeyBtn.addEventListener("click", async (e) => {
 		e.preventDefault();
 		e.stopPropagation();
@@ -889,14 +868,12 @@ const createPasskeysContent = () => {
 	const passkeyListGroup = document.createElement("div");
 	passkeyListGroup.className = "setting-group";
 	const passkeyListTitle = document.createElement("h2");
-	passkeyListTitle.textContent = "Registered Passkeys";
+	passkeyListTitle.textContent = "Registered passkeys";
 	passkeyListGroup.appendChild(passkeyListTitle);
 
 	const passkeyList = document.createElement("div");
 	passkeyList.id = "passkeyListSettings";
-	passkeyList.style.display = "flex";
-	passkeyList.style.flexDirection = "column";
-	passkeyList.style.gap = "12px";
+	passkeyList.className = "passkey-list";
 	passkeyListGroup.appendChild(passkeyList);
 
 	section.appendChild(passkeyListGroup);
@@ -916,41 +893,37 @@ const loadPasskeys = async () => {
 		const data = await query("/auth/passkeys");
 
 		if (data.error) {
-			passkeyList.innerHTML = `<p style="color: var(--text-secondary); font-size: 14px;">Failed to load passkeys</p>`;
+			const errorP = document.createElement("p");
+			errorP.className = "passkey-empty";
+			errorP.textContent = "Failed to load passkeys";
+			passkeyList.innerHTML = "";
+			passkeyList.appendChild(errorP);
 			return;
 		}
 
-		console.log("Loaded passkeys:", data.passkeys);
-
 		if (!data.passkeys || data.passkeys.length === 0) {
-			passkeyList.innerHTML = `<p style="color: var(--text-secondary); font-size: 14px;">No passkeys registered yet</p>`;
+			const emptyP = document.createElement("p");
+			emptyP.className = "passkey-empty";
+			emptyP.textContent = "No passkeys registered yet";
+			passkeyList.innerHTML = "";
+			passkeyList.appendChild(emptyP);
 			return;
 		}
 
 		passkeyList.innerHTML = "";
 		data.passkeys.forEach((passkey) => {
-			console.log("Passkey object:", passkey);
 			const item = document.createElement("div");
-			item.style.display = "flex";
-			item.style.justifyContent = "space-between";
-			item.style.alignItems = "center";
-			item.style.padding = "16px";
-			item.style.backgroundColor = "var(--bg-primary)";
-			item.style.borderRadius = "8px";
-			item.style.border = "1px solid var(--border-primary)";
+			item.className = "passkey-item";
 
 			const info = document.createElement("div");
-			info.style.flex = "1";
+			info.className = "passkey-info";
 
 			const name = document.createElement("div");
-			name.style.fontWeight = "500";
-			name.style.color = "var(--text-primary)";
-			name.style.marginBottom = "4px";
+			name.className = "passkey-name";
 			name.textContent = passkey.name || "Unnamed Passkey";
 
 			const createdAt = document.createElement("div");
-			createdAt.style.fontSize = "12px";
-			createdAt.style.color = "var(--text-secondary)";
+			createdAt.className = "passkey-date";
 			const date = passkey.createdAt ? new Date(passkey.createdAt) : new Date();
 			createdAt.textContent = `Created: ${date.toLocaleDateString()}`;
 
@@ -958,9 +931,8 @@ const loadPasskeys = async () => {
 			info.appendChild(createdAt);
 
 			const deleteBtn = document.createElement("button");
-			deleteBtn.className = "btn danger";
+			deleteBtn.className = "btn danger passkey-remove-btn";
 			deleteBtn.textContent = "Remove";
-			deleteBtn.style.maxWidth = "120px";
 			deleteBtn.onclick = () => deletePasskey(passkey.id);
 
 			item.appendChild(info);
@@ -974,7 +946,7 @@ const loadPasskeys = async () => {
 };
 
 const deletePasskey = async (passkeyId) => {
-	console.log("Deleting passkey with ID:", passkeyId);
+	// Tr Neutral Cursor
 	if (!confirm("Are you sure you want to remove this passkey?")) return;
 
 	try {
@@ -1017,7 +989,7 @@ const createOthersContent = () => {
 	cardComposerLabel.className = "setting-label";
 	const cardComposerTitle = document.createElement("div");
 	cardComposerTitle.className = "setting-title";
-	cardComposerTitle.textContent = "Card Composer";
+	cardComposerTitle.textContent = "Card composer";
 	const cardComposerDesc = document.createElement("div");
 	cardComposerDesc.className = "setting-description";
 	cardComposerDesc.textContent = "Create interactive cards";
@@ -1030,7 +1002,7 @@ const createOthersContent = () => {
 	const cardComposerBtn = document.createElement("button");
 	cardComposerBtn.className = "btn primary";
 	cardComposerBtn.id = "open-card-composer-btn";
-	cardComposerBtn.textContent = "Open Card Composer";
+	cardComposerBtn.textContent = "Open card composer";
 	cardComposerBtn.addEventListener("click", async (e) => {
 		e.preventDefault();
 		e.stopPropagation();
@@ -1048,7 +1020,7 @@ const createOthersContent = () => {
 	cleanupGroup.className = "setting-group";
 
 	const cleanupHeader = document.createElement("h2");
-	cleanupHeader.textContent = "Post Cleanup";
+	cleanupHeader.textContent = "Post cleanup";
 	cleanupGroup.appendChild(cleanupHeader);
 
 	const cleanupCard = document.createElement("div");
@@ -1365,23 +1337,12 @@ const createDelegatesContent = () => {
 	myDelegatesGroup.appendChild(myDelegatesH2);
 
 	const inviteForm = document.createElement("div");
-	inviteForm.style.cssText = `
-    display: flex;
-    gap: 8px;
-    margin-bottom: 16px;
-  `;
+	inviteForm.className = "delegate-invite-form";
 
 	const inviteInput = document.createElement("input");
 	inviteInput.type = "text";
 	inviteInput.placeholder = "Enter username to invite";
-	inviteInput.style.cssText = `
-    flex: 1;
-    padding: 8px 12px;
-    border: 1px solid var(--border-primary);
-    border-radius: 8px;
-    background: var(--bg-primary);
-    color: var(--text-primary);
-  `;
+	inviteInput.className = "delegate-invite-input";
 
 	const inviteBtn = document.createElement("button");
 	inviteBtn.className = "btn primary";
@@ -1419,11 +1380,7 @@ const createDelegatesContent = () => {
 
 	const delegatesList = document.createElement("div");
 	delegatesList.id = "delegates-list";
-	delegatesList.style.cssText = `
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
-  `;
+	delegatesList.className = "delegates-list";
 	myDelegatesGroup.appendChild(delegatesList);
 
 	section.appendChild(myDelegatesGroup);
@@ -1437,11 +1394,7 @@ const createDelegatesContent = () => {
 
 	const delegationsList = document.createElement("div");
 	delegationsList.id = "delegations-list";
-	delegationsList.style.cssText = `
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
-  `;
+	delegationsList.className = "delegates-list";
 	delegationsGroup.appendChild(delegationsList);
 
 	section.appendChild(delegationsGroup);
@@ -1455,11 +1408,7 @@ const createDelegatesContent = () => {
 
 	const invitationsList = document.createElement("div");
 	invitationsList.id = "pending-invitations-list";
-	invitationsList.style.cssText = `
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
-  `;
+	invitationsList.className = "delegates-list";
 	invitationsGroup.appendChild(invitationsList);
 
 	section.appendChild(invitationsGroup);
@@ -1494,7 +1443,11 @@ const loadDelegates = async () => {
 				delegatesList.appendChild(item);
 			});
 		} else {
-			delegatesList.innerHTML = `<p style="color: var(--text-secondary); font-size: 14px;">No delegates yet</p>`;
+			delegatesList.innerHTML = "";
+			const emptyP = document.createElement("p");
+			emptyP.className = "delegates-empty";
+			emptyP.textContent = "No delegates yet";
+			delegatesList.appendChild(emptyP);
 		}
 
 		if (delegationsData.delegations && delegationsData.delegations.length > 0) {
@@ -1504,7 +1457,11 @@ const loadDelegates = async () => {
 				delegationsList.appendChild(item);
 			});
 		} else {
-			delegationsList.innerHTML = `<p style="color: var(--text-secondary); font-size: 14px;">You're not a delegate for anyone</p>`;
+			delegationsList.innerHTML = "";
+			const emptyP = document.createElement("p");
+			emptyP.className = "delegates-empty";
+			emptyP.textContent = "You're not a delegate for anyone";
+			delegationsList.appendChild(emptyP);
 		}
 
 		if (invitationsData.invitations && invitationsData.invitations.length > 0) {
@@ -1514,7 +1471,11 @@ const loadDelegates = async () => {
 				invitationsList.appendChild(item);
 			});
 		} else {
-			invitationsList.innerHTML = `<p style="color: var(--text-secondary); font-size: 14px;">No pending invitations</p>`;
+			invitationsList.innerHTML = "";
+			const emptyP = document.createElement("p");
+			emptyP.className = "delegates-empty";
+			emptyP.textContent = "No pending invitations";
+			invitationsList.appendChild(emptyP);
 		}
 	} catch (error) {
 		console.error("Failed to load delegates:", error);
@@ -1523,45 +1484,23 @@ const loadDelegates = async () => {
 
 const createDelegateItem = (item, type) => {
 	const container = document.createElement("div");
-	container.style.cssText = `
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 12px;
-    background: var(--bg-primary);
-    border: 1px solid var(--border-primary);
-    border-radius: 8px;
-  `;
+	container.className = "delegate-item";
 
 	const userInfo = document.createElement("div");
-	userInfo.style.cssText = `
-    display: flex;
-    align-items: center;
-    gap: 12px;
-  `;
+	userInfo.className = "delegate-user-info";
 
 	const avatar = document.createElement("img");
 	avatar.src = item.avatar || "/shared/assets/default-avatar.png";
-	avatar.style.cssText = `
-    width: 40px;
-    height: 40px;
-    border-radius: 50%;
-  `;
+	avatar.className = "delegate-avatar";
 
 	const textInfo = document.createElement("div");
 
 	const name = document.createElement("div");
-	name.style.cssText = `
-    font-weight: 600;
-    color: var(--text-primary);
-  `;
+	name.className = "delegate-name";
 	name.textContent = item.name || item.username;
 
 	const username = document.createElement("div");
-	username.style.cssText = `
-    color: var(--text-secondary);
-    font-size: 14px;
-  `;
+	username.className = "delegate-username";
 	username.textContent = `@${item.username}`;
 
 	textInfo.appendChild(name);
@@ -1571,12 +1510,8 @@ const createDelegateItem = (item, type) => {
 	userInfo.appendChild(textInfo);
 
 	const removeBtn = document.createElement("button");
-	removeBtn.className = "btn danger";
+	removeBtn.className = "btn danger delegate-remove-btn";
 	removeBtn.textContent = "Remove";
-	removeBtn.style.cssText = `
-    padding: 6px 12px;
-    font-size: 13px;
-  `;
 	removeBtn.onclick = async () => {
 		const confirmMsg =
 			type === "delegate"
@@ -1612,45 +1547,23 @@ const createDelegateItem = (item, type) => {
 
 const createInvitationItem = (invitation) => {
 	const container = document.createElement("div");
-	container.style.cssText = `
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 12px;
-    background: var(--bg-primary);
-    border: 1px solid var(--border-primary);
-    border-radius: 8px;
-  `;
+	container.className = "delegate-item";
 
 	const userInfo = document.createElement("div");
-	userInfo.style.cssText = `
-    display: flex;
-    align-items: center;
-    gap: 12px;
-  `;
+	userInfo.className = "delegate-user-info";
 
 	const avatar = document.createElement("img");
 	avatar.src = invitation.avatar || "/shared/assets/default-avatar.png";
-	avatar.style.cssText = `
-    width: 40px;
-    height: 40px;
-    border-radius: 50%;
-  `;
+	avatar.className = "delegate-avatar";
 
 	const textInfo = document.createElement("div");
 
 	const name = document.createElement("div");
-	name.style.cssText = `
-    font-weight: 600;
-    color: var(--text-primary);
-  `;
+	name.className = "delegate-name";
 	name.textContent = invitation.name || invitation.username;
 
 	const username = document.createElement("div");
-	username.style.cssText = `
-    color: var(--text-secondary);
-    font-size: 14px;
-  `;
+	username.className = "delegate-username";
 	username.textContent = `@${invitation.username}`;
 
 	textInfo.appendChild(name);
@@ -1660,18 +1573,11 @@ const createInvitationItem = (invitation) => {
 	userInfo.appendChild(textInfo);
 
 	const actions = document.createElement("div");
-	actions.style.cssText = `
-    display: flex;
-    gap: 8px;
-  `;
+	actions.className = "delegate-actions";
 
 	const acceptBtn = document.createElement("button");
-	acceptBtn.className = "btn primary";
+	acceptBtn.className = "btn primary delegate-action-btn";
 	acceptBtn.textContent = "Accept";
-	acceptBtn.style.cssText = `
-    padding: 6px 12px;
-    font-size: 13px;
-  `;
 	acceptBtn.onclick = async () => {
 		try {
 			const result = await query(`/delegates/${invitation.id}/accept`, {
@@ -1695,12 +1601,8 @@ const createInvitationItem = (invitation) => {
 	};
 
 	const declineBtn = document.createElement("button");
-	declineBtn.className = "btn";
+	declineBtn.className = "btn secondary delegate-action-btn";
 	declineBtn.textContent = "Decline";
-	declineBtn.style.cssText = `
-    padding: 6px 12px;
-    font-size: 13px;
-  `;
 	declineBtn.onclick = async () => {
 		try {
 			const result = await query(`/delegates/${invitation.id}/decline`, {
@@ -1735,21 +1637,19 @@ const createScheduledContent = () => {
 	section.className = "settings-section";
 
 	const h1 = document.createElement("h1");
-	h1.textContent = "Scheduled Tweets";
+	h1.textContent = "Scheduled tweets";
 	section.appendChild(h1);
 
 	const group = document.createElement("div");
 	group.className = "setting-group";
 
 	const h2 = document.createElement("h2");
-	h2.textContent = "Upcoming Posts";
+	h2.textContent = "Upcoming posts";
 	group.appendChild(h2);
 
 	const listDiv = document.createElement("div");
 	listDiv.id = "scheduled-posts-list";
-	listDiv.style.display = "flex";
-	listDiv.style.flexDirection = "column";
-	listDiv.style.gap = "12px";
+	listDiv.className = "scheduled-posts-list";
 	group.appendChild(listDiv);
 
 	section.appendChild(group);
@@ -1769,53 +1669,40 @@ const loadScheduledPosts = async () => {
 		const data = await query("/scheduled/");
 
 		if (data.error) {
-			listDiv.innerHTML = `<p style="color: var(--text-secondary); font-size: 14px;">Failed to load scheduled posts</p>`;
+			listDiv.innerHTML = "";
+			const errorP = document.createElement("p");
+			errorP.className = "scheduled-posts-empty";
+			errorP.textContent = "Failed to load scheduled posts";
+			listDiv.appendChild(errorP);
 			return;
 		}
 
 		if (!data.scheduledPosts || data.scheduledPosts.length === 0) {
-			listDiv.innerHTML = `<p style="color: var(--text-secondary); font-size: 14px;">No scheduled posts yet</p>`;
+			listDiv.innerHTML = "";
+			const emptyP = document.createElement("p");
+			emptyP.className = "scheduled-posts-empty";
+			emptyP.textContent = "No scheduled posts yet";
+			listDiv.appendChild(emptyP);
 			return;
 		}
 
 		listDiv.innerHTML = "";
 		data.scheduledPosts.forEach((post) => {
 			const item = document.createElement("div");
-			item.style.cssText = `
-        display: flex;
-        flex-direction: column;
-        gap: 8px;
-        padding: 16px;
-        background-color: var(--bg-primary);
-        border-radius: 8px;
-        border: 1px solid var(--border-primary);
-      `;
+			item.className = "scheduled-post-item";
 
 			const header = document.createElement("div");
-			header.style.cssText = `
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-      `;
+			header.className = "scheduled-post-header";
 
 			const scheduledTime = document.createElement("div");
-			scheduledTime.style.cssText = `
-        font-weight: 500;
-        color: var(--primary);
-        font-size: 14px;
-      `;
+			scheduledTime.className = "scheduled-post-time";
 			scheduledTime.textContent = `Scheduled for ${new Date(
 				post.scheduled_for,
 			).toLocaleString()}`;
 
 			const deleteBtn = document.createElement("button");
-			deleteBtn.className = "btn danger";
+			deleteBtn.className = "btn danger scheduled-post-delete";
 			deleteBtn.textContent = "Delete";
-			deleteBtn.style.cssText = `
-        padding: 6px 12px;
-        font-size: 13px;
-        max-width: 100px;
-      `;
 			deleteBtn.onclick = async () => {
 				if (confirm("Are you sure you want to delete this scheduled post?")) {
 					try {
@@ -1839,11 +1726,7 @@ const loadScheduledPosts = async () => {
 			header.appendChild(deleteBtn);
 
 			const content = document.createElement("div");
-			content.style.cssText = `
-        color: var(--text-primary);
-        font-size: 14px;
-        word-wrap: break-word;
-      `;
+			content.className = "scheduled-post-content";
 			content.textContent = post.content;
 
 			item.appendChild(header);
@@ -1852,7 +1735,11 @@ const loadScheduledPosts = async () => {
 		});
 	} catch (error) {
 		console.error("Failed to load scheduled posts:", error);
-		listDiv.innerHTML = `<p style="color: var(--text-secondary); font-size: 14px;">Failed to load scheduled posts</p>`;
+		listDiv.innerHTML = "";
+		const errorP = document.createElement("p");
+		errorP.className = "scheduled-posts-empty";
+		errorP.textContent = "Failed to load scheduled posts";
+		listDiv.appendChild(errorP);
 	}
 };
 
@@ -1860,148 +1747,81 @@ const createChangeUsernameModal = () => {
 	const overlay = document.createElement("div");
 	overlay.id = "changeUsernameModal";
 	overlay.className = "settings-modal-overlay";
-	overlay.style.display = "none";
-	overlay.style.position = "fixed";
-	overlay.style.top = "0";
-	overlay.style.left = "0";
-	overlay.style.right = "0";
-	overlay.style.bottom = "0";
-	overlay.style.alignItems = "center";
-	overlay.style.justifyContent = "center";
-	overlay.style.backgroundColor = "rgba(15, 20, 25, 0.6)";
-	overlay.style.zIndex = "1200";
 
 	const modal = document.createElement("div");
 	modal.className = "modal settings-form-modal";
 	modal.setAttribute("role", "dialog");
 	modal.setAttribute("aria-modal", "true");
 	modal.setAttribute("aria-labelledby", "changeUsernameHeading");
-	modal.style.backgroundColor = "var(--bg-primary)";
-	modal.style.borderRadius = "16px";
-	modal.style.width = "min(480px, 90vw)";
-	modal.style.maxHeight = "85vh";
-	modal.style.boxShadow = "0 18px 48px rgba(0, 0, 0, 0.35)";
-	modal.style.display = "flex";
-	modal.style.flexDirection = "column";
-	modal.style.overflow = "hidden";
-	modal.style.margin = "0 auto";
-	modal.style.alignSelf = "center";
 
 	const header = document.createElement("div");
 	header.className = "modal-header";
-	header.style.display = "flex";
-	header.style.alignItems = "center";
-	header.style.justifyContent = "space-between";
-	header.style.padding = "16px 20px";
-	header.style.borderBottom = "1px solid var(--border-primary)";
+
 	const h2 = document.createElement("h2");
 	h2.id = "changeUsernameHeading";
-	h2.textContent = "Change Username";
-	h2.style.margin = "0";
-	h2.style.fontSize = "20px";
-	h2.style.fontWeight = "600";
-	h2.style.color = "var(--text-primary)";
+	h2.textContent = "Change username";
+
 	const close = document.createElement("button");
 	close.className = "close-btn";
 	close.id = "closeUsernameModal";
 	close.type = "button";
 	close.setAttribute("aria-label", "Close change username dialog");
-	close.textContent = "×";
-	close.style.backgroundColor = "transparent";
-	close.style.border = "none";
-	close.style.color = "var(--text-secondary)";
-	close.style.cursor = "pointer";
-	close.style.fontSize = "24px";
-	close.style.lineHeight = "1";
-	close.style.width = "32px";
-	close.style.height = "32px";
-	close.style.borderRadius = "50%";
-	close.style.display = "flex";
-	close.style.alignItems = "center";
-	close.style.justifyContent = "center";
-	close.style.transition = "background-color 0.2s ease, color 0.2s ease";
-	close.addEventListener("pointerenter", () => {
-		close.style.backgroundColor = "var(--bg-secondary)";
-		close.style.color = "var(--text-primary)";
-	});
-	close.addEventListener("pointerleave", () => {
-		close.style.backgroundColor = "transparent";
-		close.style.color = "var(--text-secondary)";
-	});
+	close.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>`;
+
 	header.appendChild(h2);
 	header.appendChild(close);
 
 	const body = document.createElement("div");
 	body.className = "modal-body";
-	body.style.padding = "20px";
-	body.style.overflowY = "auto";
-	body.style.color = "var(--text-primary)";
+
 	const form = document.createElement("form");
 	form.id = "changeUsernameForm";
-	form.style.display = "flex";
-	form.style.flexDirection = "column";
-	form.style.gap = "16px";
+
 	const fg = document.createElement("div");
 	fg.className = "form-group";
-	fg.style.display = "flex";
-	fg.style.flexDirection = "column";
-	fg.style.gap = "8px";
+
 	const label = document.createElement("label");
 	label.htmlFor = "newUsername";
-	label.textContent = "New Username";
-	label.style.fontSize = "14px";
-	label.style.fontWeight = "500";
-	label.style.color = "var(--text-primary)";
+	label.textContent = "New username";
+
 	const userWrap = document.createElement("div");
 	userWrap.className = "username-wrapper";
-	userWrap.style.display = "flex";
-	userWrap.style.alignItems = "center";
-	userWrap.style.gap = "8px";
-	userWrap.style.backgroundColor = "var(--bg-secondary)";
-	userWrap.style.border = "1px solid var(--border-primary)";
-	userWrap.style.borderRadius = "10px";
-	userWrap.style.padding = "10px 12px";
+
 	const at = document.createElement("span");
 	at.setAttribute("inert", "");
 	at.textContent = "@";
-	at.style.color = "var(--text-secondary)";
-	at.style.fontWeight = "600";
+
 	const input = document.createElement("input");
 	input.type = "text";
 	input.id = "newUsername";
 	input.placeholder = "new username";
 	input.required = true;
-	input.style.flex = "1";
-	input.style.backgroundColor = "transparent";
-	input.style.border = "none";
-	input.style.outline = "none";
-	input.style.color = "var(--text-primary)";
+
 	userWrap.appendChild(at);
 	userWrap.appendChild(input);
+
 	const small = document.createElement("small");
 	small.textContent =
 		"Username must be 3-20 characters and contain only letters, numbers, and underscores.";
-	small.style.color = "var(--text-secondary)";
-	small.style.fontSize = "12px";
+
 	fg.appendChild(label);
 	fg.appendChild(userWrap);
 	fg.appendChild(small);
 
 	const actions = document.createElement("div");
 	actions.className = "form-actions";
-	actions.style.display = "flex";
-	actions.style.justifyContent = "flex-end";
-	actions.style.alignItems = "center";
-	actions.style.gap = "10px";
+
 	const cancel = document.createElement("button");
 	cancel.type = "button";
 	cancel.className = "btn secondary";
 	cancel.id = "cancelUsernameChange";
 	cancel.textContent = "Cancel";
+
 	const submit = document.createElement("button");
 	submit.type = "submit";
 	submit.className = "btn primary";
-	submit.textContent = "Change Username";
+	submit.textContent = "Change username";
+
 	actions.appendChild(cancel);
 	actions.appendChild(submit);
 
@@ -2025,133 +1845,71 @@ const createDeleteAccountModal = () => {
 	const overlay = document.createElement("div");
 	overlay.id = "deleteAccountModal";
 	overlay.className = "settings-modal-overlay";
-	overlay.style.display = "none";
-	overlay.style.position = "fixed";
-	overlay.style.top = "0";
-	overlay.style.left = "0";
-	overlay.style.right = "0";
-	overlay.style.bottom = "0";
-	overlay.style.alignItems = "center";
-	overlay.style.justifyContent = "center";
-	overlay.style.backgroundColor = "rgba(15, 20, 25, 0.6)";
-	overlay.style.zIndex = "1200";
 
 	const modal = document.createElement("div");
 	modal.className = "modal settings-form-modal";
 	modal.setAttribute("role", "dialog");
 	modal.setAttribute("aria-modal", "true");
 	modal.setAttribute("aria-labelledby", "deleteAccountHeading");
-	modal.style.backgroundColor = "var(--bg-primary)";
-	modal.style.borderRadius = "16px";
-	modal.style.width = "min(480px, 90vw)";
-	modal.style.maxHeight = "85vh";
-	modal.style.boxShadow = "0 18px 48px rgba(0, 0, 0, 0.35)";
-	modal.style.display = "flex";
-	modal.style.flexDirection = "column";
-	modal.style.overflow = "hidden";
-	modal.style.margin = "0 auto";
-	modal.style.alignSelf = "center";
 
 	const header = document.createElement("div");
 	header.className = "modal-header";
-	header.style.display = "flex";
-	header.style.alignItems = "center";
-	header.style.justifyContent = "space-between";
-	header.style.padding = "16px 20px";
-	header.style.borderBottom = "1px solid var(--border-primary)";
+
 	const h2 = document.createElement("h2");
 	h2.id = "deleteAccountHeading";
-	h2.textContent = "Delete Account";
-	h2.style.margin = "0";
-	h2.style.fontSize = "20px";
-	h2.style.fontWeight = "600";
-	h2.style.color = "var(--text-primary)";
+	h2.textContent = "Delete account";
+
 	const close = document.createElement("button");
 	close.className = "close-btn";
 	close.id = "closeDeleteModal";
 	close.type = "button";
 	close.setAttribute("aria-label", "Close delete account dialog");
-	close.textContent = "×";
-	close.style.backgroundColor = "transparent";
-	close.style.border = "none";
-	close.style.color = "var(--text-secondary)";
-	close.style.cursor = "pointer";
-	close.style.fontSize = "24px";
-	close.style.lineHeight = "1";
-	close.style.width = "32px";
-	close.style.height = "32px";
-	close.style.borderRadius = "50%";
-	close.style.display = "flex";
-	close.style.alignItems = "center";
-	close.style.justifyContent = "center";
-	close.style.transition = "background-color 0.2s ease, color 0.2s ease";
-	close.addEventListener("pointerenter", () => {
-		close.style.backgroundColor = "var(--bg-secondary)";
-		close.style.color = "var(--text-primary)";
-	});
-	close.addEventListener("pointerleave", () => {
-		close.style.backgroundColor = "transparent";
-		close.style.color = "var(--text-secondary)";
-	});
+	close.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>`;
+
 	header.appendChild(h2);
 	header.appendChild(close);
 
 	const body = document.createElement("div");
 	body.className = "modal-body";
-	body.style.padding = "20px";
-	body.style.overflowY = "auto";
-	body.style.color = "var(--text-primary)";
+
 	const warning = document.createElement("p");
+	warning.className = "modal-warning";
 	warning.innerHTML =
 		"<strong>Warning:</strong> This action cannot be undone. All your tweets, likes, follows, and account data will be permanently deleted.";
-	warning.style.margin = "0 0 16px 0";
-	warning.style.fontSize = "14px";
-	warning.style.lineHeight = "1.5";
+
 	const form = document.createElement("form");
 	form.id = "deleteAccountForm";
-	form.style.display = "flex";
-	form.style.flexDirection = "column";
-	form.style.gap = "16px";
+
 	const fg = document.createElement("div");
 	fg.className = "form-group";
-	fg.style.display = "flex";
-	fg.style.flexDirection = "column";
-	fg.style.gap = "8px";
+
 	const label = document.createElement("label");
 	label.htmlFor = "deleteConfirmation";
 	label.textContent = 'Type "DELETE MY ACCOUNT" to confirm:';
-	label.style.fontSize = "14px";
-	label.style.fontWeight = "500";
-	label.style.color = "var(--text-primary)";
+
 	const input = document.createElement("input");
 	input.type = "text";
 	input.id = "deleteConfirmation";
 	input.placeholder = "DELETE MY ACCOUNT";
 	input.required = true;
-	input.style.padding = "10px 12px";
-	input.style.borderRadius = "10px";
-	input.style.border = "1px solid var(--border-primary)";
-	input.style.backgroundColor = "var(--bg-secondary)";
-	input.style.color = "var(--text-primary)";
-	input.style.outline = "none";
+
 	fg.appendChild(label);
 	fg.appendChild(input);
 
 	const actions = document.createElement("div");
 	actions.className = "form-actions";
-	actions.style.display = "flex";
-	actions.style.justifyContent = "flex-end";
-	actions.style.alignItems = "center";
-	actions.style.gap = "10px";
+
 	const cancel = document.createElement("button");
 	cancel.type = "button";
 	cancel.className = "btn secondary";
 	cancel.id = "cancelAccountDelete";
 	cancel.textContent = "Cancel";
+
 	const submit = document.createElement("button");
 	submit.type = "submit";
 	submit.className = "btn danger";
-	submit.textContent = "Delete Account";
+	submit.textContent = "Delete account";
+
 	actions.appendChild(cancel);
 	actions.appendChild(submit);
 
@@ -2176,16 +1934,6 @@ const createChangePasswordModal = () => {
 	const overlay = document.createElement("div");
 	overlay.id = "changePasswordModal";
 	overlay.className = "settings-modal-overlay";
-	overlay.style.display = "none";
-	overlay.style.position = "fixed";
-	overlay.style.top = "0";
-	overlay.style.left = "0";
-	overlay.style.right = "0";
-	overlay.style.bottom = "0";
-	overlay.style.alignItems = "center";
-	overlay.style.justifyContent = "center";
-	overlay.style.backgroundColor = "rgba(15, 20, 25, 0.6)";
-	overlay.style.zIndex = "1200";
 
 	const modal = document.createElement("div");
 	modal.className = "modal settings-form-modal";
@@ -2193,16 +1941,6 @@ const createChangePasswordModal = () => {
 	modal.setAttribute("aria-modal", "true");
 	modal.setAttribute("aria-labelledby", "changePasswordHeading");
 	modal.setAttribute("aria-describedby", "passwordModalDescription");
-	modal.style.backgroundColor = "var(--bg-primary)";
-	modal.style.borderRadius = "16px";
-	modal.style.width = "min(480px, 90vw)";
-	modal.style.maxHeight = "85vh";
-	modal.style.boxShadow = "0 18px 48px rgba(0, 0, 0, 0.35)";
-	modal.style.display = "flex";
-	modal.style.flexDirection = "column";
-	modal.style.overflow = "hidden";
-	modal.style.margin = "0 auto";
-	modal.style.alignSelf = "center";
 
 	const header = document.createElement("div");
 	header.className = "modal-header";
@@ -2216,124 +1954,76 @@ const createChangePasswordModal = () => {
 	close.id = "closePasswordModal";
 	close.type = "button";
 	close.setAttribute("aria-label", "Close change password dialog");
-	close.textContent = "×";
-	close.style.backgroundColor = "transparent";
-	close.style.border = "none";
-	close.style.color = "var(--text-secondary)";
-	close.style.cursor = "pointer";
-	close.style.fontSize = "24px";
-	close.style.lineHeight = "1";
-	close.style.width = "32px";
-	close.style.height = "32px";
-	close.style.borderRadius = "50%";
-	close.style.display = "flex";
-	close.style.alignItems = "center";
-	close.style.justifyContent = "center";
-	close.style.position = "absolute";
-	close.style.top = "10px";
-	close.style.right = "10px";
-	close.style.transition = "background-color 0.2s ease, color 0.2s ease";
-	close.addEventListener("pointerenter", () => {
-		close.style.backgroundColor = "var(--bg-secondary)";
-		close.style.color = "var(--text-primary)";
-	});
-	close.addEventListener("pointerleave", () => {
-		close.style.backgroundColor = "transparent";
-		close.style.color = "var(--text-secondary)";
-	});
+	close.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>`;
+
 	header.appendChild(h2);
 	header.appendChild(close);
 
 	const body = document.createElement("div");
 	body.className = "modal-body";
-	body.style.padding = "20px";
-	body.style.overflowY = "auto";
-	body.style.color = "var(--text-primary)";
+
 	const description = document.createElement("p");
 	description.id = "passwordModalDescription";
+	description.className = "modal-description";
 	description.textContent =
 		"Set a password for your account to enable traditional username/password login.";
-	description.style.margin = "0 0 16px 0";
-	description.style.fontSize = "14px";
-	description.style.lineHeight = "1.5";
+
 	const form = document.createElement("form");
 	form.id = "changePasswordForm";
-	form.style.display = "flex";
-	form.style.flexDirection = "column";
-	form.style.gap = "16px";
+
 	const fgCur = document.createElement("div");
-	fgCur.className = "form-group";
+	fgCur.className = "form-group hidden";
 	fgCur.id = "currentPasswordGroup";
-	fgCur.style.display = "none";
-	fgCur.style.flexDirection = "column";
-	fgCur.style.gap = "8px";
+
 	const labelCur = document.createElement("label");
 	labelCur.htmlFor = "current-password";
-	labelCur.textContent = "Current Password";
-	labelCur.style.fontSize = "14px";
-	labelCur.style.fontWeight = "500";
-	labelCur.style.color = "var(--text-primary)";
+	labelCur.textContent = "Current password";
+
 	const inputCur = document.createElement("input");
 	inputCur.type = "password";
 	inputCur.id = "current-password";
 	inputCur.placeholder = "enter your current password";
 	inputCur.required = false;
-	inputCur.style.padding = "10px 12px";
-	inputCur.style.borderRadius = "10px";
-	inputCur.style.border = "1px solid var(--border-primary)";
-	inputCur.style.backgroundColor = "var(--bg-secondary)";
-	inputCur.style.color = "var(--text-primary)";
-	inputCur.style.outline = "none";
+
 	fgCur.appendChild(labelCur);
 	fgCur.appendChild(inputCur);
 
 	const fgNew = document.createElement("div");
 	fgNew.className = "form-group";
-	fgNew.style.display = "flex";
-	fgNew.style.flexDirection = "column";
-	fgNew.style.gap = "8px";
+
 	const labelNew = document.createElement("label");
 	labelNew.htmlFor = "new-password";
-	labelNew.textContent = "New Password";
-	labelNew.style.fontSize = "14px";
-	labelNew.style.fontWeight = "500";
-	labelNew.style.color = "var(--text-primary)";
+	labelNew.textContent = "New password";
+
 	const inputNew = document.createElement("input");
 	inputNew.type = "password";
 	inputNew.id = "new-password";
 	inputNew.placeholder = "enter your new password";
 	inputNew.minLength = 8;
 	inputNew.required = true;
-	inputNew.style.padding = "10px 12px";
-	inputNew.style.borderRadius = "10px";
-	inputNew.style.border = "1px solid var(--border-primary)";
-	inputNew.style.backgroundColor = "var(--bg-secondary)";
-	inputNew.style.color = "var(--text-primary)";
-	inputNew.style.outline = "none";
+
 	const hint = document.createElement("small");
 	hint.textContent = "Password must be at least 8 characters long.";
-	hint.style.color = "var(--text-secondary)";
-	hint.style.fontSize = "12px";
+
 	fgNew.appendChild(labelNew);
 	fgNew.appendChild(inputNew);
 	fgNew.appendChild(hint);
 
 	const actions = document.createElement("div");
 	actions.className = "form-actions";
-	actions.style.display = "flex";
-	actions.style.justifyContent = "flex-end";
-	actions.style.alignItems = "center";
-	actions.style.gap = "10px";
+
 	const cancel = document.createElement("button");
 	cancel.type = "button";
 	cancel.className = "btn secondary";
 	cancel.id = "cancelPasswordChange";
 	cancel.textContent = "Cancel";
+
 	const submit = document.createElement("button");
 	submit.type = "submit";
 	submit.className = "btn primary";
 	submit.id = "changePasswordSubmit";
-	submit.textContent = "Set Password";
+	submit.textContent = "Set password";
+
 	actions.appendChild(cancel);
 	actions.appendChild(submit);
 
@@ -2696,7 +2386,6 @@ const loadPrivacySettings = async () => {
 				transparencySelect.dataset.listenerAttached = "true";
 				transparencySelect.addEventListener("change", async (e) => {
 					const display = e.target.value;
-					console.log("Transparency location changed to:", display);
 					try {
 						const result = await query(
 							"/profile/settings/transparency-location",
@@ -2708,8 +2397,6 @@ const loadPrivacySettings = async () => {
 								body: JSON.stringify({ display }),
 							},
 						);
-
-						console.log("API response:", result);
 
 						if (result.success) {
 							if (currentUser) {
@@ -2792,33 +2479,17 @@ const showModal = (element) => {
 		? element
 		: element.closest?.(".settings-modal-overlay") || element;
 	if (!overlay) return;
-
-	overlay.style.display = "flex";
-	overlay.style.alignItems = "center";
-	overlay.style.justifyContent = "center";
-	overlay.style.flexDirection = "column";
-	overlay.style.width = "100%";
-	overlay.style.height = "100%";
-	overlay.style.minWidth = "100vw";
-	overlay.style.minHeight = "100vh";
-	overlay.style.padding = "0";
-	overlay.style.boxSizing = "border-box";
-	overlay.style.overflowY = "auto";
+	overlay.classList.add("active");
 	overlay.scrollTop = 0;
-
-	const modal = overlay.querySelector?.(".settings-form-modal");
-	if (modal) {
-		modal.style.margin = "auto";
-		modal.style.alignSelf = "center";
-	}
 };
+
 const hideModal = (element) => {
 	if (!element) return;
 	const overlay = element.classList?.contains("settings-modal-overlay")
 		? element
 		: element.closest?.(".settings-modal-overlay") || element;
 	if (!overlay) return;
-	overlay.style.display = "none";
+	overlay.classList.remove("active");
 };
 
 const handleAddPasskey = async () => {
@@ -3232,7 +2903,7 @@ export const openSettingsModal = (section = "account") => {
 };
 
 // Spam score details modal
-window.showSpamScoreDetails = async (username) => {
+async function showSpamScoreDetails(username) {
 	try {
 		const data = await query(`/profile/${username}/spam-score`);
 
@@ -3416,7 +3087,7 @@ window.showSpamScoreDetails = async (username) => {
 							<h3 style="margin: 0; font-size: 16px; color: var(--text-primary);">
 								${indicator.displayName}
 							</h3>
-							<button style="background: none; border: none; color: var(--text-secondary); font-size: 20px; cursor: pointer; padding: 4px 8px;">&times;</button>
+							<button class="close-btn"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></button>
 						</div>
 						<div style="font-size: 11px; color: var(--text-secondary); margin-top: 8px;">Older tweets have less impact on your score (7-day half-life)</div>
 					</div>
@@ -3435,8 +3106,7 @@ window.showSpamScoreDetails = async (username) => {
 			});
 		};
 
-		window._spamIndicators = data.indicators;
-		window._spamUsername = username;
+		_spamIndicators = data.indicators;
 
 		const indicatorsHTML = data.indicators
 			.slice(0, 12)
@@ -3525,9 +3195,9 @@ window.showSpamScoreDetails = async (username) => {
 				<div style="padding: 24px; border-bottom: 1px solid var(--border-color); position: sticky; top: 0; background: var(--bg-primary); z-index: 1;">
 					<div style="display: flex; justify-content: space-between; align-items: center;">
 						<h2 style="margin: 0; font-size: 20px; color: var(--text-primary); display: flex; align-items: center; gap: 10px;">
-							Spam Score Analysis
+							Spam score analysis
 						</h2>
-						<button onclick="this.closest('.modal').remove()" style="background: var(--bg-secondary); border: 1px solid var(--border-color); color: var(--text-secondary); font-size: 20px; cursor: pointer; padding: 4px 12px; border-radius: 6px; transition: all 0.2s;" onmouseover="this.style.background='var(--bg-hover)'" onmouseout="this.style.background='var(--bg-secondary)'">&times;</button>
+						<button class="close-btn" onclick="this.closest('.modal').remove()"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></button>
 					</div>
 				</div>
 				
@@ -3602,7 +3272,7 @@ window.showSpamScoreDetails = async (username) => {
 			btn.addEventListener("click", (e) => {
 				e.stopPropagation();
 				const idx = parseInt(btn.dataset.indicatorIdx);
-				const ind = window._spamIndicators[idx];
+				const ind = _spamIndicators[idx];
 				if (ind) showImpactingTweets(ind);
 			});
 		});

@@ -72,6 +72,10 @@
             <i class="bi bi-puzzle"></i>
             Extensions
           </a>
+          <a class="nav-link" href="#" data-section="pastes" id="pastes-nav">
+            <i class="bi bi-file-earmark-code"></i>
+            Pastes
+          </a>
         </nav>
       </div>
 
@@ -602,6 +606,38 @@
               </div>
             </div>
           </div>
+
+          <!-- Pastes Section -->
+          <div id="pastes-section" class="section d-none">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+              <h4>
+                <i class="bi bi-file-earmark-code"></i>
+                Pastes
+              </h4>
+              <div class="d-flex gap-2">
+                <input type="text" class="form-control" id="pasteSearch" placeholder="Search pastes..."
+                  style="width: 250px" />
+                <button class="btn btn-primary" onclick="adminPanel.searchPastes()">
+                  <i class="bi bi-search"></i>
+                </button>
+                <button class="btn btn-secondary" onclick="adminPanel.loadPastes()">
+                  <i class="bi bi-arrow-clockwise"></i>
+                  Refresh
+                </button>
+              </div>
+            </div>
+
+            <div class="card">
+              <div class="card-body">
+                <div id="pastesTable">
+                  <!-- Pastes table will be populated here -->
+                </div>
+                <nav id="pastesPagination" class="mt-3">
+                  <!-- Pagination will be populated here -->
+                </nav>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     </div>
@@ -761,6 +797,33 @@
               Save Settings
             </button>
           </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Paste Details Modal -->
+  <div class="modal fade" id="pasteModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">Paste Details</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body" id="pasteModalBody">
+          <div class="text-center py-5">
+            <div class="spinner-border text-primary" role="status"></div>
+            <div class="mt-2 text-muted">Loading paste...</div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-danger" id="pasteModalDeleteBtn">
+            <i class="bi bi-trash"></i>
+            Delete Paste
+          </button>
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+            Close
+          </button>
         </div>
       </div>
     </div>

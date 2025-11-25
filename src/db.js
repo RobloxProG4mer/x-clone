@@ -48,7 +48,8 @@ CREATE TABLE IF NOT EXISTS users (
   transparency_location_display TEXT DEFAULT 'full',
   blocked_by_count INTEGER DEFAULT 0,
   muted_by_count INTEGER DEFAULT 0,
-  spam_score REAL DEFAULT 0.0
+  spam_score REAL DEFAULT 0.0,
+  ip_address TEXT DEFAULT NULL
 );
 
 CREATE INDEX IF NOT EXISTS idx_users_username ON users(username);
@@ -57,6 +58,27 @@ CREATE INDEX IF NOT EXISTS idx_users_spam_score ON users(spam_score);
 CREATE INDEX IF NOT EXISTS idx_users_suspended ON users(suspended);
 CREATE INDEX IF NOT EXISTS idx_users_created_at ON users(created_at);
 CREATE INDEX IF NOT EXISTS idx_users_super_tweeter ON users(super_tweeter) WHERE super_tweeter = TRUE;
+CREATE INDEX IF NOT EXISTS idx_users_ip_address ON users(ip_address);
+
+CREATE TABLE IF NOT EXISTS ip_bans (
+  ip_address TEXT PRIMARY KEY,
+  banned_by TEXT NOT NULL,
+  reason TEXT NOT NULL,
+  created_at TIMESTAMP DEFAULT (datetime('now', 'utc')),
+  FOREIGN KEY (banned_by) REFERENCES users(id) ON DELETE CASCADE
+);
+
+CREATE TABLE IF NOT EXISTS user_ips (
+  user_id TEXT NOT NULL,
+  ip_address TEXT NOT NULL,
+  use_count INTEGER DEFAULT 1,
+  last_used_at TIMESTAMP DEFAULT (datetime('now', 'utc')),
+  PRIMARY KEY (user_id, ip_address),
+  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+);
+
+CREATE INDEX IF NOT EXISTS idx_user_ips_user_id ON user_ips(user_id);
+CREATE INDEX IF NOT EXISTS idx_user_ips_ip_address ON user_ips(ip_address);
 
 CREATE TABLE IF NOT EXISTS passkeys (
   cred_id TEXT PRIMARY KEY,

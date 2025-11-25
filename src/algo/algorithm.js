@@ -53,11 +53,11 @@ if (existsSync(libPath)) {
 		console.warn("Error:", error.message);
 	}
 } else {
-	console.warn(
+	console.error(
 		`C algorithm library not found at ${libPath} (possibly not compiled?)`,
 	);
 	console.warn(
-		"Run 'make' in src/algo/ to compile the C algorithm (optional, but C algorithm experiment won't work",
+		"-> run 'make' in src/algo/ to compile the C algorithm",
 	);
 }
 

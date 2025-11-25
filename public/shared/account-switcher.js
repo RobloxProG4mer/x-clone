@@ -364,26 +364,6 @@ function createDelegateItem(delegation) {
 		font-weight: 600;
 	`;
 	nameRow.appendChild(delegateBadge);
-	const accounts = JSON.parse(localStorage.getItem("accounts") || "[]");
-	const existingIndex = accounts.findIndex((acc) => acc.userId === user.id);
-	const accountData = {
-		userId: user.id,
-		username: user.username,
-		name: user.name,
-		avatar: user.avatar,
-		verified: user.verified,
-		gold: user.gold,
-		avatar_radius: user.avatar_radius,
-		token,
-	};
-
-	if (existingIndex >= 0) {
-		accounts[existingIndex] = accountData;
-	} else {
-		accounts.push(accountData);
-	}
-
-	localStorage.setItem("accounts", JSON.stringify(accounts));
 
 	const username = document.createElement("div");
 	username.textContent = `@${delegation.username}`;

@@ -89,6 +89,10 @@ const updateUserRestricted = db.prepare(
 	"UPDATE users SET restricted = ? WHERE id = ?",
 );
 
+const checkIpBan = db.prepare(
+	"SELECT reason FROM ip_bans WHERE ip_address = ?",
+);
+
 const CACHE_TTL = 30_000;
 
 export default new Elysia({
@@ -103,6 +107,18 @@ export default new Elysia({
 		}),
 	)
 	.onBeforeHandle(async ({ headers, request, set }) => {
+		const ip = headers["cf-connecting-ip"];
+		if (ip) {
+			const ban = checkIpBan.get(ip);
+			if (ban) {
+				set.status = 403;
+				return {
+					error: "Your IP address has been banned",
+					reason: ban.reason,
+				};
+			}
+		}
+
 		const token = headers.authorization?.split(" ")[1];
 		if (!token) return;
 

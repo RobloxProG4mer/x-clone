@@ -12,6 +12,7 @@ class AdminPanel {
 			suspensions: 1,
 			dms: 1,
 			moderationLogs: 1,
+			pastes: 1,
 		};
 		this.emojiProcessedFile = null;
 		this.emojiPreviewUrl = null;
@@ -32,6 +33,7 @@ class AdminPanel {
 			"image/heif",
 			"image/avif",
 			"image/tiff",
+			"image/tuff",
 		]);
 		this.selectedUsers = new Set();
 		this.bulkModal = null;
@@ -51,6 +53,7 @@ class AdminPanel {
 		this.extensionsData = [];
 		this.extensionConfirmModal = null;
 		this.extensionConfirmResolver = null;
+		this.pasteModal = null;
 		// extension-specific settings modal removed — extensions should implement their own UI
 		this.editPostSaveListenerAttached = false;
 		this.postsTableListenerAttached = false;
@@ -126,12 +129,18 @@ class AdminPanel {
 			}
 		});
 
-		document
-			.addEventListener("keypress", (e) => {
-				if (e.key === "Enter") {
-					this.searchDMs();
-				}
-			});
+		const pasteSearchInput = document.getElementById("pasteSearch");
+		pasteSearchInput?.addEventListener("keypress", (e) => {
+			if (e.key === "Enter") {
+				this.searchPastes();
+			}
+		});
+
+		document.addEventListener("keypress", (e) => {
+			if (e.key === "Enter") {
+				this.searchDMs();
+			}
+		});
 
 		document
 			.getElementById("moderationLogSearch")
@@ -287,6 +296,9 @@ class AdminPanel {
 				break;
 			case "posts":
 				this.loadPosts();
+				break;
+			case "pastes":
+				this.loadPastes();
 				break;
 			case "communities":
 				this.loadCommunities();
@@ -1456,6 +1468,175 @@ class AdminPanel {
 	async searchPosts() {
 		const search = document.getElementById("postSearch").value;
 		this.loadPosts(1, search);
+	}
+
+	async loadPastes(page = 1, search = "") {
+		try {
+			const params = new URLSearchParams({ page, limit: 20 });
+			if (search) params.append("search", search);
+			const data = await this.apiCall(`/api/admin/pastes?${params}`);
+			this.renderPastesTable(data.pastes || []);
+			this.renderPagination("pastes", data.pagination);
+			this.currentPage.pastes = page;
+		} catch (_err) {
+			this.showError("Failed to load pastes");
+		}
+	}
+
+	renderPastesTable(pastes) {
+		const container = document.getElementById("pastesTable");
+		if (!container) return;
+		if (!pastes.length) {
+			container.innerHTML =
+				'<p class="text-muted text-center mb-0">No pastes found.</p>';
+			return;
+		}
+		container.innerHTML = `
+			<div class="table-responsive">
+				<table class="table table-hover">
+					<thead>
+						<tr>
+							<th>Title</th>
+							<th>Slug</th>
+							<th>Owner</th>
+							<th>Visibility</th>
+							<th>Stats</th>
+							<th style="width: 160px;">Actions</th>
+						</tr>
+					</thead>
+					<tbody>
+						${pastes
+							.map((paste) => {
+								const snippetSource = this.escapeHtml(
+									paste.title || paste.content || "Untitled",
+								);
+								const snippet =
+									snippetSource.length > 80
+										? `${snippetSource.slice(0, 80)}&hellip;`
+										: snippetSource;
+								return `
+									<tr>
+										<td>
+											<div class="fw-semibold">${snippet || "Untitled"}</div>
+											<small class="text-muted">${paste.language ? this.escapeHtml(paste.language) : "Plain"}</small>
+										</td>
+										<td>
+											${paste.slug ? `<code>${this.escapeHtml(paste.slug)}</code>` : '<span class="text-muted">&mdash;</span>'}
+										</td>
+										<td>
+											${paste.username ? `@${this.escapeHtml(paste.username)}` : '<span class="text-muted">Anonymous</span>'}
+										</td>
+										<td>
+											${paste.is_public ? '<span class="badge bg-success">Public</span>' : '<span class="badge bg-secondary">Private</span>'}
+											${paste.burn_after_reading ? '<span class="badge bg-warning ms-1">Burn</span>' : ""}
+										</td>
+										<td>
+											<small>
+												Views: ${paste.view_count || 0}<br>
+												Created: ${this.formatDate(paste.created_at)}<br>
+												Expires: ${paste.expires_at ? this.formatDate(paste.expires_at) : "Never"}
+											</small>
+										</td>
+										<td>
+											<div class="btn-group btn-group-sm">
+												<button class="btn btn-outline-primary" onclick="adminPanel.showPasteDetails('${paste.id}')">
+													<i class="bi bi-eye"></i>
+													View
+												</button>
+												<button class="btn btn-outline-danger" onclick="adminPanel.deletePaste('${paste.id}')">
+													<i class="bi bi-trash"></i>
+													Delete
+												</button>
+											</div>
+										</td>
+									</tr>
+								`;
+							})
+							.join("")}
+					</tbody>
+				</table>
+			</div>
+		`;
+	}
+
+	async searchPastes() {
+		const search = document.getElementById("pasteSearch")?.value || "";
+		this.loadPastes(1, search);
+	}
+
+	async showPasteDetails(pasteId) {
+		try {
+			const data = await this.apiCall(`/api/admin/pastes/${pasteId}`);
+			const paste = data.paste;
+			if (!paste) {
+				this.showError("Paste not found");
+				return;
+			}
+			const modalEl = document.getElementById("pasteModal");
+			const modalBody = document.getElementById("pasteModalBody");
+			if (!modalEl || !modalBody) return;
+			const slugDisplay = paste.slug
+				? `<code>${this.escapeHtml(paste.slug)}</code>`
+				: '<span class="text-muted">(none)</span>';
+			const ownerDisplay = paste.username
+				? `@${this.escapeHtml(paste.username)}`
+				: "Anonymous";
+			const expiresDisplay = paste.expires_at
+				? this.formatDate(paste.expires_at)
+				: "Never";
+			modalBody.innerHTML = `
+				<div class="mb-3">
+					<strong>Title:</strong> ${this.escapeHtml(paste.title || "Untitled")}
+				</div>
+				<div class="mb-3">
+					<strong>Slug:</strong> ${slugDisplay}
+				</div>
+				<div class="mb-3">
+					<strong>Owner:</strong> ${ownerDisplay}
+				</div>
+				<div class="mb-3">
+					<strong>Visibility:</strong>
+					${paste.is_public ? '<span class="badge bg-success">Public</span>' : '<span class="badge bg-secondary">Private</span>'}
+					${paste.burn_after_reading ? '<span class="badge bg-warning ms-1">Burn after reading</span>' : ""}
+				</div>
+				<div class="mb-3">
+					<strong>Views:</strong> ${paste.view_count || 0}
+				</div>
+				<div class="mb-3">
+					<strong>Created:</strong> ${this.formatDate(paste.created_at)}<br>
+					<strong>Expires:</strong> ${expiresDisplay}
+				</div>
+				<div class="mb-3">
+					<strong>Content:</strong>
+					<pre class="border rounded p-3 bg-body-tertiary" style="white-space: pre-wrap; word-break: break-word; max-height: 50vh; overflow: auto;">${this.escapeHtml(paste.content || "")}</pre>
+				</div>
+			`;
+			if (!this.pasteModal) {
+				this.pasteModal = new bootstrap.Modal(modalEl);
+			}
+			const deleteBtn = document.getElementById("pasteModalDeleteBtn");
+			if (deleteBtn) {
+				deleteBtn.onclick = () => this.deletePaste(paste.id, true);
+			}
+			this.pasteModal.show();
+		} catch (_err) {
+			this.showError("Failed to load paste");
+		}
+	}
+
+	async deletePaste(pasteId, fromModal = false) {
+		if (!pasteId) return;
+		if (!confirm("Delete this paste?")) return;
+		try {
+			await this.apiCall(`/api/admin/pastes/${pasteId}`, { method: "DELETE" });
+			if (fromModal && this.pasteModal) {
+				this.pasteModal.hide();
+			}
+			this.showSuccess("Paste deleted");
+			this.loadPastes(this.currentPage.pastes);
+		} catch (_err) {
+			this.showError("Failed to delete paste");
+		}
 	}
 
 	async loadSuspensions(page = 1) {

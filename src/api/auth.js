@@ -24,8 +24,15 @@ const getUserByUsername = db.prepare(
 	"SELECT * FROM users WHERE LOWER(username) = LOWER(?)",
 );
 const updateUserLoginTransparency = db.prepare(
-	"UPDATE users SET account_login_transparency = ? WHERE id = ?",
+	"UPDATE users SET account_login_transparency = ?, ip_address = ? WHERE id = ?",
 );
+const recordUserIp = db.prepare(`
+	INSERT INTO user_ips (user_id, ip_address, use_count, last_used_at)
+	VALUES (?, ?, 1, datetime('now', 'utc'))
+	ON CONFLICT(user_id, ip_address) DO UPDATE SET
+	use_count = use_count + 1,
+	last_used_at = datetime('now', 'utc')
+`);
 const userExistsByUsername = db.prepare(
 	"SELECT count(*) FROM users WHERE LOWER(username) = LOWER(?)",
 );
@@ -40,6 +47,7 @@ const parseTransparencyRecord = (raw) => {
 };
 
 async function buildLoginTransparency(headers, existing) {
+	const ip = headers["x-forwarded-for"] || headers["cf-connecting-ip"];
 	const loginTransparency = {
 		city: headers["cf-region"] || headers["cf-ipcity"] || null,
 		country: headers["cf-ipcountry"] || null,
@@ -47,12 +55,7 @@ async function buildLoginTransparency(headers, existing) {
 		latitude: headers["cf-iplatitude"] || null,
 		longitude: headers["cf-iplongitude"] || null,
 		timezone: headers["cf-timezone"] || null,
-		vpn:
-			(await isVPN(
-				headers["cf-ip"] ||
-					headers["cf-connecting-ip"] ||
-					headers["x-forwarded-for"],
-			)) || null,
+		vpn: (await isVPN(ip)) || null,
 	};
 
 	if (existing?.suppress_vpn_warning) {
@@ -395,7 +398,16 @@ export default new Elysia({ prefix: "/auth", tags: ["Auth"] })
 							headers,
 							existingLoginTransparency,
 						);
-						updateUserLoginTransparency.run(loginTransparency, targetUser.id);
+						const ip = headers["cf-connecting-ip"];
+						updateUserLoginTransparency.run(
+							loginTransparency,
+							ip,
+							targetUser.id,
+						);
+						if (ip) recordUserIp.run(targetUser.id, ip);
+					} else {
+						const ip = headers["cf-connecting-ip"];
+						if (ip) recordUserIp.run(targetUser.id, ip);
 					}
 
 					const newToken = await jwt.sign({
@@ -473,7 +485,16 @@ export default new Elysia({ prefix: "/auth", tags: ["Auth"] })
 							headers,
 							existingLoginTransparency,
 						);
-						updateUserLoginTransparency.run(loginTransparency, targetUser.id);
+						const ip = headers["cf-connecting-ip"];
+						updateUserLoginTransparency.run(
+							loginTransparency,
+							ip,
+							targetUser.id,
+						);
+						if (ip) recordUserIp.run(targetUser.id, ip);
+					} else {
+						const ip = headers["cf-connecting-ip"];
+						if (ip) recordUserIp.run(targetUser.id, ip);
 					}
 
 					const newToken = await jwt.sign({
@@ -708,7 +729,16 @@ export default new Elysia({ prefix: "/auth", tags: ["Auth"] })
 							headers,
 							existingLoginTransparency,
 						);
-						updateUserLoginTransparency.run(loginTransparency, user.id);
+						const ip = headers["cf-connecting-ip"];
+						updateUserLoginTransparency.run(
+							loginTransparency,
+							ip,
+							user.id,
+						);
+						if (ip) recordUserIp.run(user.id, ip);
+					} else {
+						const ip = headers["cf-connecting-ip"];
+						if (ip) recordUserIp.run(user.id, ip);
 					}
 
 					return {
@@ -741,9 +771,17 @@ export default new Elysia({ prefix: "/auth", tags: ["Auth"] })
 
 					user = db
 						.query(
-							"INSERT INTO users (id, username, character_limit, account_creation_transparency) VALUES (?, ?, ?, ?) RETURNING *",
+							"INSERT INTO users (id, username, character_limit, account_creation_transparency, ip_address) VALUES (?, ?, ?, ?, ?) RETURNING *",
 						)
-						.get(challengePayload.userId, username, null, creationTransparency);
+						.get(
+							challengePayload.userId,
+							username,
+							null,
+							creationTransparency,
+							headers["cf-connecting-ip"],
+						);
+					const ip = headers["cf-connecting-ip"];
+					if (ip) recordUserIp.run(user.id, ip);
 				}
 
 				savePasskey({
@@ -765,7 +803,11 @@ export default new Elysia({ prefix: "/auth", tags: ["Auth"] })
 						headers,
 						existingLoginTransparency,
 					);
-					updateUserLoginTransparency.run(loginTransparency, user.id);
+					updateUserLoginTransparency.run(
+						loginTransparency,
+						headers["cf-connecting-ip"],
+						user.id,
+					);
 				}
 
 				const token = await jwt.sign({
@@ -1244,7 +1286,11 @@ export default new Elysia({ prefix: "/auth", tags: ["Auth"] })
 						headers,
 						existingLoginTransparency,
 					);
-					updateUserLoginTransparency.run(loginTransparency, user.id);
+					updateUserLoginTransparency.run(
+						loginTransparency,
+						headers["cf-connecting-ip"],
+						user.id,
+					);
 				}
 
 				const token = await jwt.sign({
