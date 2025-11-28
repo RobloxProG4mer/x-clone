@@ -57,6 +57,43 @@ class AdminPanel {
 		// extension-specific settings modal removed — extensions should implement their own UI
 		this.editPostSaveListenerAttached = false;
 		this.postsTableListenerAttached = false;
+		this.adminConfig = null;
+		this.adminConfigPromise = null;
+		this.googleMapsLoadingPromise = null;
+		this.googleMapsLoaded = false;
+		this.locationPickerModalInstance = null;
+		this.locationPickerMap = null;
+		this.locationPickerMarker = null;
+		this.locationPickerAutocomplete = null;
+		this.locationPickerGeocoder = null;
+		this.locationPickerSummaryEl = null;
+		this.locationPickerStatusEl = null;
+		this.locationPickerApplyBtn = null;
+		this.locationPickerSearchInput = null;
+		this.locationPickerContext = null;
+		this.activeLocationSelection = null;
+		this.profileEditEnabled = false;
+		this.timezoneCache = new Map();
+		this.locationFieldMap = {
+			login: {
+				city: "editProfileLoginCity",
+				country: "editProfileLoginCountry",
+				latitude: "editProfileLoginLatitude",
+				longitude: "editProfileLoginLongitude",
+				timezone: "editProfileLoginTimezone",
+				tor: "editProfileLoginTor",
+				preview: "loginLocationPreview",
+			},
+			creation: {
+				city: "editProfileCreationCity",
+				country: "editProfileCreationCountry",
+				latitude: "editProfileCreationLatitude",
+				longitude: "editProfileCreationLongitude",
+				timezone: "editProfileCreationTimezone",
+				tor: "editProfileCreationTor",
+				preview: "creationLocationPreview",
+			},
+		};
 
 		this.init();
 	}

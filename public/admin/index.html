@@ -1057,6 +1057,34 @@
     </div>
   </div>
 
+  <!-- Location Picker Modal -->
+  <div class="modal fade" id="locationPickerModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="locationPickerTitle">Select Location</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <div class="mb-3">
+            <label class="form-label" for="locationPickerSearch">Search</label>
+            <input type="text" class="form-control" id="locationPickerSearch" placeholder="Search for a city or address"
+              autocomplete="off">
+          </div>
+          <div class="location-picker-map" id="locationPickerMap"></div>
+          <div class="mt-3 small text-muted" id="locationPickerSummary">
+            Click on the map or use the search box to choose a location.
+          </div>
+        </div>
+        <div class="modal-footer">
+          <div class="text-muted small me-auto" id="locationPickerStatus"></div>
+          <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+          <button type="button" class="btn btn-primary" id="locationPickerApplyBtn" disabled>Apply Location</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <!-- DM Conversation Modal -->
   <div class="modal fade" id="dmModal" tabindex="-1">
     <div class="modal-dialog modal-xl">
