@@ -5,13 +5,13 @@ self.addEventListener("push", (event) => {
 	try {
 		data = event.data.json();
 	} catch {
-		data = { title: "New notification", body: event.data.text() };
+		data = { title: "New unread notifications", body: event.data.text() };
 	}
 
 	const options = {
 		body: data.body || "",
-		icon: "/public/shared/assets/img/icon-192.png",
-		badge: "/public/shared/assets/img/badge-72.png",
+		icon: "/public/shared/assets/icon.png",
+		badge: "/public/shared/assets/badge.png",
 		tag: data.type || "notification",
 		renotify: true,
 		data: {
@@ -20,7 +20,7 @@ self.addEventListener("push", (event) => {
 	};
 
 	event.waitUntil(
-		self.registration.showNotification(data.title || "Tweetapus", options),
+		self.registration.showNotification(data.title || "New unread notifications", options),
 	);
 });
 
