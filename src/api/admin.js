@@ -4891,7 +4891,7 @@ export default new Elysia({ prefix: "/admin", tags: ["Admin"] })
 	)
 	.get(
 		"/users/:id/ip",
-		async ({ params, user, set }) => {
+		async ({ params, set }) => {
 			const targetUser = adminQueries.getUserIp.get(params.id);
 			if (!targetUser) {
 				set.status = 404;
@@ -4923,7 +4923,7 @@ export default new Elysia({ prefix: "/admin", tags: ["Admin"] })
 				adminQueries.banIp.run(ip, user.id, reason);
 				logModerationAction(user.id, "ban_ip", "ip", ip, { reason });
 				return { success: true };
-			} catch (error) {
+			} catch (_error) {
 				return { error: "Failed to ban IP" };
 			}
 		},

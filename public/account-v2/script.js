@@ -381,6 +381,8 @@ const timeAgo = (date) => {
 
 	const seconds = Math.floor((now - dateObj) / 1000);
 
+	if (seconds === -1) return "just now";
+
 	if (seconds < 60) return `${seconds} second${seconds !== 1 ? "s" : ""} ago`;
 	if (seconds < 3600) {
 		const mins = Math.floor(seconds / 60);

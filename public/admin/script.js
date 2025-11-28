@@ -2541,30 +2541,32 @@ class AdminPanel {
 	setupLocationPickerControls() {
 		const form = document.getElementById("editProfileForm");
 		if (!form) return;
-		form
-			.querySelectorAll(".location-picker-btn")
-			.forEach((btn) => {
-				btn.addEventListener("click", () => {
-					const target = btn.dataset.locationPicker;
-					if (!target) return;
-					if (!this.profileEditEnabled) {
-						this.showError("Enable profile editing to change locations");
-						return;
-					}
-					this.openLocationPicker(target);
-				});
+		form.querySelectorAll(".location-picker-btn").forEach((btn) => {
+			btn.addEventListener("click", () => {
+				const target = btn.dataset.locationPicker;
+				if (!target) return;
+				if (!this.profileEditEnabled) {
+					this.showError("Enable profile editing to change locations");
+					return;
+				}
+				this.openLocationPicker(target);
 			});
-		form
-			.querySelectorAll(".location-clear-btn")
-			.forEach((btn) => {
-				btn.addEventListener("click", () => {
-					const target = btn.dataset.locationClear;
-					if (!target) return;
-					this.clearLocationInputs(target, true);
-				});
+		});
+		form.querySelectorAll(".location-clear-btn").forEach((btn) => {
+			btn.addEventListener("click", () => {
+				const target = btn.dataset.locationClear;
+				if (!target) return;
+				this.clearLocationInputs(target, true);
 			});
+		});
 		for (const [key, fields] of Object.entries(this.locationFieldMap)) {
-			const ids = [fields.city, fields.country, fields.latitude, fields.longitude, fields.timezone];
+			const ids = [
+				fields.city,
+				fields.country,
+				fields.latitude,
+				fields.longitude,
+				fields.timezone,
+			];
 			ids.forEach((id) => {
 				const el = document.getElementById(id);
 				if (!el) return;
@@ -2572,14 +2574,14 @@ class AdminPanel {
 			});
 			const torToggle = document.getElementById(fields.tor);
 			if (torToggle) {
-				torToggle.addEventListener("change", () => this.syncLocationPreview(key));
+				torToggle.addEventListener("change", () =>
+					this.syncLocationPreview(key),
+				);
 			}
 		}
-		form
-			.querySelectorAll("[data-location-control]")
-			.forEach((btn) => {
-				btn.disabled = !this.profileEditEnabled;
-			});
+		form.querySelectorAll("[data-location-control]").forEach((btn) => {
+			btn.disabled = !this.profileEditEnabled;
+		});
 	}
 
 	syncLocationPreview(type) {
@@ -2606,7 +2608,13 @@ class AdminPanel {
 	clearLocationInputs(type, syncPreview = false) {
 		const fields = this.locationFieldMap[type];
 		if (!fields) return;
-		[fields.city, fields.country, fields.latitude, fields.longitude, fields.timezone].forEach((id) => {
+		[
+			fields.city,
+			fields.country,
+			fields.latitude,
+			fields.longitude,
+			fields.timezone,
+		].forEach((id) => {
 			const el = document.getElementById(id);
 			if (el) el.value = "";
 		});
@@ -2621,7 +2629,8 @@ class AdminPanel {
 		const cityInput = document.getElementById(fields.city);
 		if (cityInput && data.city !== undefined) cityInput.value = data.city || "";
 		const countryInput = document.getElementById(fields.country);
-		if (countryInput && data.country !== undefined) countryInput.value = data.country || "";
+		if (countryInput && data.country !== undefined)
+			countryInput.value = data.country || "";
 		const latInput = document.getElementById(fields.latitude);
 		if (latInput && data.latitude !== undefined)
 			latInput.value = data.latitude || "";
@@ -2654,6 +2663,7 @@ class AdminPanel {
 	}
 
 	async ensureGoogleMaps() {
+		// Tr stuck cursor
 		if (window.google?.maps) {
 			this.googleMapsLoaded = true;
 			return window.google;
@@ -2720,10 +2730,18 @@ class AdminPanel {
 		this.locationPickerModalInstance = new bootstrap.Modal(modalEl, {
 			backdrop: "static",
 		});
-		this.locationPickerSummaryEl = document.getElementById("locationPickerSummary");
-		this.locationPickerStatusEl = document.getElementById("locationPickerStatus");
-		this.locationPickerApplyBtn = document.getElementById("locationPickerApplyBtn");
-		this.locationPickerSearchInput = document.getElementById("locationPickerSearch");
+		this.locationPickerSummaryEl = document.getElementById(
+			"locationPickerSummary",
+		);
+		this.locationPickerStatusEl = document.getElementById(
+			"locationPickerStatus",
+		);
+		this.locationPickerApplyBtn = document.getElementById(
+			"locationPickerApplyBtn",
+		);
+		this.locationPickerSearchInput = document.getElementById(
+			"locationPickerSearch",
+		);
 		if (this.locationPickerApplyBtn) {
 			this.locationPickerApplyBtn.addEventListener("click", () =>
 				this.applyLocationPickerSelection(),
@@ -2732,12 +2750,15 @@ class AdminPanel {
 		modalEl.addEventListener("hidden.bs.modal", () => {
 			this.activeLocationSelection = null;
 			this.locationPickerContext = null;
-			if (this.locationPickerApplyBtn) this.locationPickerApplyBtn.disabled = true;
+			if (this.locationPickerApplyBtn)
+				this.locationPickerApplyBtn.disabled = true;
 			if (this.locationPickerSummaryEl)
 				this.locationPickerSummaryEl.textContent =
 					"Click on the map or use the search box to choose a location.";
-			if (this.locationPickerStatusEl) this.locationPickerStatusEl.textContent = "";
-			if (this.locationPickerSearchInput) this.locationPickerSearchInput.value = "";
+			if (this.locationPickerStatusEl)
+				this.locationPickerStatusEl.textContent = "";
+			if (this.locationPickerSearchInput)
+				this.locationPickerSearchInput.value = "";
 		});
 	}
 
@@ -2762,8 +2783,10 @@ class AdminPanel {
 					? "Select Last Login Location"
 					: "Select Account Creation Location";
 		}
-		if (this.locationPickerApplyBtn) this.locationPickerApplyBtn.disabled = true;
-		if (this.locationPickerStatusEl) this.locationPickerStatusEl.textContent = "";
+		if (this.locationPickerApplyBtn)
+			this.locationPickerApplyBtn.disabled = true;
+		if (this.locationPickerStatusEl)
+			this.locationPickerStatusEl.textContent = "";
 		if (this.locationPickerSummaryEl)
 			this.locationPickerSummaryEl.textContent =
 				"Click on the map or use the search box to choose a location.";
@@ -2802,18 +2825,19 @@ class AdminPanel {
 				this.handleLatLngSelection(event.latLng, null);
 			});
 			if (this.locationPickerSearchInput) {
-				this.locationPickerAutocomplete = new googleRef.maps.places.Autocomplete(
-					this.locationPickerSearchInput,
-					{
-						fields: [
-							"geometry",
-							"formatted_address",
-							"address_components",
-							"place_id",
-							"name",
-						],
-					},
-				);
+				this.locationPickerAutocomplete =
+					new googleRef.maps.places.Autocomplete(
+						this.locationPickerSearchInput,
+						{
+							fields: [
+								"geometry",
+								"formatted_address",
+								"address_components",
+								"place_id",
+								"name",
+							],
+						},
+					);
 				this.locationPickerAutocomplete.addListener("place_changed", () => {
 					const place = this.locationPickerAutocomplete.getPlace();
 					this.handleLatLngSelection(place?.geometry?.location, place);
@@ -2834,7 +2858,8 @@ class AdminPanel {
 		} else {
 			this.locationPickerMap.setCenter({ lat: 20, lng: 0 });
 			this.locationPickerMap.setZoom(2);
-			if (this.locationPickerMarker) this.locationPickerMarker.setVisible(false);
+			if (this.locationPickerMarker)
+				this.locationPickerMarker.setVisible(false);
 		}
 	}
 
@@ -2856,7 +2881,7 @@ class AdminPanel {
 						"postal_town",
 						"administrative_area_level_2",
 						"administrative_area_level_1",
-				  ])
+					])
 				: null,
 			country: place?.address_components
 				? this.extractAddressComponent(place.address_components, ["country"])
@@ -2914,7 +2939,8 @@ class AdminPanel {
 				}
 			}
 		}
-		if (this.locationPickerApplyBtn) this.locationPickerApplyBtn.disabled = false;
+		if (this.locationPickerApplyBtn)
+			this.locationPickerApplyBtn.disabled = false;
 		this.updateLocationPickerSummary(
 			selection?.formattedAddress ||
 				`Lat ${selection.latitude.toFixed(3)}, Lng ${selection.longitude.toFixed(3)}`,
@@ -2922,7 +2948,8 @@ class AdminPanel {
 	}
 
 	updateLocationPickerSummary(text) {
-		if (this.locationPickerSummaryEl) this.locationPickerSummaryEl.textContent = text;
+		if (this.locationPickerSummaryEl)
+			this.locationPickerSummaryEl.textContent = text;
 	}
 
 	async applyLocationPickerSelection() {
@@ -2930,7 +2957,8 @@ class AdminPanel {
 			this.showError("Select a location first");
 			return;
 		}
-		if (this.locationPickerApplyBtn) this.locationPickerApplyBtn.disabled = true;
+		if (this.locationPickerApplyBtn)
+			this.locationPickerApplyBtn.disabled = true;
 		if (this.locationPickerStatusEl)
 			this.locationPickerStatusEl.textContent = "Applying selection…";
 		try {
@@ -2965,7 +2993,8 @@ class AdminPanel {
 		} finally {
 			if (this.locationPickerStatusEl)
 				this.locationPickerStatusEl.textContent = "";
-			if (this.locationPickerApplyBtn) this.locationPickerApplyBtn.disabled = false;
+			if (this.locationPickerApplyBtn)
+				this.locationPickerApplyBtn.disabled = false;
 		}
 	}
 
@@ -3056,11 +3085,9 @@ class AdminPanel {
 		if (editBtn) editBtn.classList.toggle("d-none", enable);
 		if (saveBtn) saveBtn.classList.toggle("d-none", !enable);
 
-		form
-			.querySelectorAll("[data-location-control]")
-			.forEach((btn) => {
-				btn.disabled = !enable;
-			});
+		form.querySelectorAll("[data-location-control]").forEach((btn) => {
+			btn.disabled = !enable;
+		});
 
 		if (enable) {
 			const firstEditable = form.querySelector(
