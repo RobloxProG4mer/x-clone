@@ -4593,7 +4593,6 @@ nav {
     word-wrap: break-word;
     word-break: break-word;
     overflow: auto;
-    max-height: 500px;
 
     .dm-message-text {
       margin: 0;

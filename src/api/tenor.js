@@ -49,7 +49,9 @@ export default new Elysia({ prefix: "/tenor", tags: ["Tenor"] })
 				}
 
 				const finalLimit = Math.min(parseInt(limit, 10) || 8, 20);
-				const url = new URL(`${process.env.TENOR_API_HOST || "https://tenor.googleapis.com/v2/"}search`);
+				const url = new URL(
+					`${process.env.TENOR_API_HOST || "https://tenor.googleapis.com/v2/"}search`,
+				);
 				url.searchParams.set("q", q);
 				url.searchParams.set("key", TENOR_API_KEY);
 				url.searchParams.set("client_key", "tweetapus");
