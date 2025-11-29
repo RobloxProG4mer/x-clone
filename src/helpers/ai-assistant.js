@@ -185,7 +185,7 @@ async function executeTool(toolName, args, db) {
 
 		case "get_profile": {
 			const user = db
-				.query("SELECT * FROM users WHERE LOWER(username) = LOWER(?)")
+				.query("SELECT id, username, name, bio, verified, follower_count, following_count, post_count FROM users WHERE LOWER(username) = LOWER(?)")
 				.get(args.username);
 			if (!user) return { error: "User not found" };
 

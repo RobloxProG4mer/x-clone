@@ -13,7 +13,7 @@ const normalizeQuery = (q) => (q || "").trim();
 // We accept a limit param.
 const buildSearchUsersQuery = (limit = 20) => {
 	return db.query(`
-		SELECT * FROM users
+		SELECT id, username, name, avatar, verified, gold, bio, avatar_radius, affiliate, affiliate_with, selected_community_tag, follower_count, created_at FROM users
 		WHERE suspended = 0 AND shadowbanned = 0
 		AND (
 			LOWER(username) LIKE LOWER(?)
@@ -177,7 +177,7 @@ const buildSearchPostsQuery = ({
 };
 
 const getUserByUsername = db.query(
-	"SELECT * FROM users WHERE LOWER(username) = LOWER(?)",
+	"SELECT id, username, admin FROM users WHERE LOWER(username) = LOWER(?)"
 );
 
 const getPollByPostId = db.query(`
@@ -512,7 +512,7 @@ export default new Elysia({ prefix: "/search", tags: ["Search"] })
 
 			const placeholders = userIds.map(() => "?").join(",");
 			const getUsersQuery = db.query(
-				`SELECT * FROM users WHERE id IN (${placeholders})`,
+				`SELECT id, username, name, avatar, verified, gold, bio, avatar_radius, affiliate, affiliate_with, selected_community_tag FROM users WHERE id IN (${placeholders})`,
 			);
 
 			const users = getUsersQuery.all(...userIds);

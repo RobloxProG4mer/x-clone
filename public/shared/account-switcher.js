@@ -71,7 +71,6 @@ export async function openAccountSwitcher() {
 		const currentUserResponse = await query("/auth/me");
 		const currentUser = currentUserResponse.user;
 		const isDelegate = currentUserResponse.isDelegate;
-		const primaryUserId = currentUserResponse.primaryUserId;
 
 		accountsList.innerHTML = "";
 

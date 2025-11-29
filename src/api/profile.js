@@ -9,7 +9,7 @@ import { addNotification } from "./notifications.js";
 const JWT_SECRET = process.env.JWT_SECRET;
 
 const getFollowers = db.prepare(`
-  SELECT users.id, users.username, users.name, users.avatar, users.verified, users.gold, users.avatar_radius
+  SELECT users.id, users.username, users.name, users.avatar, users.verified, users.gold, users.avatar_radius, users.bio
   FROM follows
   JOIN users ON follows.follower_id = users.id
 	WHERE follows.following_id = ? AND users.suspended = 0 AND users.shadowbanned = 0
@@ -18,7 +18,7 @@ const getFollowers = db.prepare(`
 `);
 
 const getFollowing = db.prepare(`
-  SELECT users.id, users.username, users.name, users.avatar, users.verified, users.gold, users.avatar_radius
+  SELECT users.id, users.username, users.name, users.avatar, users.verified, users.gold, users.avatar_radius, users.bio
   FROM follows
   JOIN users ON follows.following_id = users.id
 	WHERE follows.follower_id = ? AND users.suspended = 0 AND users.shadowbanned = 0
@@ -27,7 +27,11 @@ const getFollowing = db.prepare(`
 `);
 
 const getUserByUsername = db.prepare(
-	"SELECT * FROM users WHERE LOWER(username) = LOWER(?)",
+	`SELECT id, username, created_at, name, avatar, verified, bio, location, website, banner, 
+	 follower_count, following_count, suspended, restricted, shadowbanned, private, pronouns, 
+	 avatar_radius, gold, affiliate, label_type, label_automated, affiliate_with, selected_community_tag,
+	 transparency_location_display
+	 FROM users WHERE LOWER(username) = LOWER(?)`
 );
 
 const updateProfile = db.prepare(`
@@ -1939,7 +1943,7 @@ export default new Elysia({ prefix: "/profile", tags: ["Profile"] })
 				addFollow.run(followId, request.requester_id, currentUser.id);
 
 				const requester = db
-					.query("SELECT * FROM users WHERE id = ?")
+					.query("SELECT id, username, name FROM users WHERE id = ?")
 					.get(request.requester_id);
 				if (requester) {
 					addNotification(
@@ -2088,7 +2092,7 @@ export default new Elysia({ prefix: "/profile", tags: ["Profile"] })
 				updateUserAffiliateWith.run(1, request.requester_id, currentUser.id);
 
 				const requester = db
-					.query("SELECT * FROM users WHERE id = ?")
+					.query("SELECT id, username, name FROM users WHERE id = ?")
 					.get(request.requester_id);
 				if (requester) {
 					addNotification(
@@ -2384,7 +2388,10 @@ export default new Elysia({ prefix: "/profile", tags: ["Profile"] })
 	.get("/:username/algorithm-stats", async ({ params }) => {
 		try {
 			const { username } = params;
-			const user = getUserByUsername.get(username);
+			const user = db.prepare(`
+				SELECT id, username, created_at, blocked_by_count, muted_by_count, spam_score, 
+				follower_count, following_count, post_count, verified, gold, super_tweeter
+				FROM users WHERE LOWER(username) = LOWER(?)`).get(username);
 
 			if (!user) {
 				return { error: "User not found" };
@@ -2393,6 +2400,7 @@ export default new Elysia({ prefix: "/profile", tags: ["Profile"] })
 			const accountAgeMs = Date.now() - new Date(user.created_at).getTime();
 			const accountAgeDays = accountAgeMs / (1000 * 60 * 60 * 24);
 
+			// Ensure spam_score is a number, defaulting to 0.0 if null/undefined
 			const spamScore =
 				typeof user.spam_score === "number" ? user.spam_score : 0.0;
 
@@ -2474,7 +2482,8 @@ export default new Elysia({ prefix: "/profile", tags: ["Profile"] })
 	.get("/:username/spam-score", async ({ params }) => {
 		try {
 			const { username } = params;
-			const user = getUserByUsername.get(username);
+			const user = db.prepare(`
+				SELECT id, created_at FROM users WHERE LOWER(username) = LOWER(?)`).get(username);
 
 			if (!user) {
 				return { error: "User not found" };

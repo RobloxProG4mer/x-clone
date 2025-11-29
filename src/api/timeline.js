@@ -14,6 +14,12 @@ const normalizeContent = (value) => {
 		.trim();
 };
 
+const stripInternalFields = (obj) => {
+	if (!obj) return obj;
+	const { super_tweeter, super_tweeter_boost, _normalized_content, ...rest } = obj;
+	return rest;
+};
+
 const JWT_SECRET = process.env.JWT_SECRET;
 
 const getTimelinePosts = db.query(`
@@ -66,7 +72,7 @@ const getFollowingTimelinePostsBefore = db.query(`
 const getPostCreatedAt = db.query(`SELECT created_at FROM posts WHERE id = ?`);
 
 const getUserByUsername = db.query(
-	"SELECT * FROM users WHERE LOWER(username) = LOWER(?)",
+	"SELECT id, username, admin FROM users WHERE LOWER(username) = LOWER(?)"
 );
 
 const getSeenTweets = db.query(`
@@ -540,7 +546,7 @@ export default new Elysia({ prefix: "/timeline", tags: ["Timeline"] })
 			const articleUsers = articleUserIds.length
 				? db
 						.query(
-							`SELECT * FROM users WHERE id IN (${articleUserIds
+							`SELECT id, username, name, avatar, verified, gold, avatar_radius FROM users WHERE id IN (${articleUserIds
 								.map(() => "?")
 								.join(",")})`,
 						)
@@ -651,7 +657,7 @@ export default new Elysia({ prefix: "/timeline", tags: ["Timeline"] })
 			})
 			.filter(Boolean);
 
-		return { timeline };
+		return { timeline: timeline.map(stripInternalFields) };
 	})
 	.get("/following", async ({ jwt, headers, query }) => {
 		const authorization = headers.authorization;
@@ -850,7 +856,7 @@ export default new Elysia({ prefix: "/timeline", tags: ["Timeline"] })
 			const articleUsers = articleUserIds.length
 				? db
 						.query(
-							`SELECT * FROM users WHERE id IN (${articleUserIds
+							`SELECT id, username, name, avatar, verified, gold, avatar_radius FROM users WHERE id IN (${articleUserIds
 								.map(() => "?")
 								.join(",")})`,
 						)
@@ -961,5 +967,5 @@ export default new Elysia({ prefix: "/timeline", tags: ["Timeline"] })
 			})
 			.filter(Boolean);
 
-		return { timeline };
+		return { timeline: timeline.map(stripInternalFields) };
 	});

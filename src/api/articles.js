@@ -7,9 +7,9 @@ import ratelimit from "../helpers/ratelimit.js";
 const JWT_SECRET = process.env.JWT_SECRET;
 
 const getUserByUsername = db.prepare(
-	"SELECT * FROM users WHERE LOWER(username) = LOWER(?)",
+	"SELECT id, username, name, avatar, verified, gold, avatar_radius FROM users WHERE LOWER(username) = LOWER(?)",
 );
-const getUserById = db.prepare("SELECT * FROM users WHERE id = ?");
+const getUserById = db.prepare("SELECT id, username, name, avatar, verified, gold, avatar_radius FROM users WHERE id = ?");
 const listArticles = db.prepare(`
   SELECT p.* FROM posts p
   JOIN users u ON p.user_id = u.id
@@ -239,8 +239,7 @@ export default new Elysia({ prefix: "/articles", tags: ["Articles"] })
 				if (!payload) return { error: "Invalid token" };
 				const user = getUserByUsername.get(payload.username);
 				if (!user) return { error: "User not found" };
-			} catch (error) {
-				console.error("Articles list auth error:", error);
+			} catch {
 				return { error: "Authentication failed" };
 			}
 
@@ -260,7 +259,7 @@ export default new Elysia({ prefix: "/articles", tags: ["Articles"] })
 			const userPlaceholders = userIds.map(() => "?").join(",");
 			const users = userPlaceholders
 				? db
-						.query(`SELECT * FROM users WHERE id IN (${userPlaceholders})`)
+						.query(`SELECT id, username, name, avatar, verified, gold, avatar_radius FROM users WHERE id IN (${userPlaceholders})`)
 						.all(...userIds)
 				: [];
 			const userMap = new Map(users.map((u) => [u.id, u]));
@@ -316,15 +315,6 @@ export default new Elysia({ prefix: "/articles", tags: ["Articles"] })
 				return { error: "Author not found" };
 			}
 
-			// Hide articles authored by shadowbanned users unless viewer is owner or admin
-			const currentUser = getUserByUsername.get(payload.username);
-			if (
-				author.shadowbanned &&
-				!(currentUser && (currentUser.admin || currentUser.id === author.id))
-			) {
-				return { error: "Article not found" };
-			}
-
 			const attachments = db
 				.query("SELECT * FROM attachments WHERE post_id = ?")
 				.all(article.id);
@@ -339,7 +329,7 @@ export default new Elysia({ prefix: "/articles", tags: ["Articles"] })
 			const replyUsers = replyUserIds.length
 				? db
 						.query(
-							`SELECT * FROM users WHERE id IN (${replyUserIds
+							`SELECT id, username, name, avatar, verified, gold, avatar_radius FROM users WHERE id IN (${replyUserIds
 								.map(() => "?")
 								.join(",")})`,
 						)

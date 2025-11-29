@@ -113,6 +113,7 @@ const sanitizeMarkdown = (markdown) =>
 				"big",
 				"sub",
 				"sup",
+				"del",
 			],
 			ALLOWED_ATTR: ["href", "target", "rel", "class"],
 		},

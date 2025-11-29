@@ -5,7 +5,7 @@ const getTweetById = db.query(`
   SELECT * FROM posts WHERE id = ?
 `);
 const getUserById = db.query(`
-  SELECT * FROM users WHERE id = ?
+  SELECT id, username, name, avatar, verified, gold FROM users WHERE id = ?
 `);
 
 export const embeds = new Elysia({ name: "generateEmbeds" })

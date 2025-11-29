@@ -35,7 +35,7 @@ const checkIfAlreadyInvited = db.prepare(
 	"SELECT * FROM delegates WHERE owner_id = ? AND delegate_id = ? AND status IN ('pending', 'accepted')",
 );
 const getUserByUsername = db.prepare(
-	"SELECT * FROM users WHERE LOWER(username) = LOWER(?)",
+	"SELECT id, username, name, avatar, verified, gold FROM users WHERE LOWER(username) = LOWER(?)",
 );
 
 export default new Elysia({ prefix: "/delegates", tags: ["Delegates"] })
@@ -303,7 +303,7 @@ export default new Elysia({ prefix: "/delegates", tags: ["Delegates"] })
 
 			let user;
 			if (actualUserId) {
-				user = db.prepare("SELECT * FROM users WHERE id = ?").get(actualUserId);
+				user = db.prepare("SELECT id, username FROM users WHERE id = ?").get(actualUserId);
 			} else {
 				user = getUserByUsername.get(payload.username);
 			}

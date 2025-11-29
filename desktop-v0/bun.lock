@@ -1,0 +1,14 @@
+{
+  "lockfileVersion": 1,
+  "configVersion": 1,
+  "workspaces": {
+    "": {
+      "dependencies": {
+        "bunview": "^0.0.3",
+      },
+    },
+  },
+  "packages": {
+    "bunview": ["bunview@0.0.3", "", {}, "sha512-vO+EFlCR9uFrEw4yzXfczEPg0VADEuHtBYtnvUy1PV6i2kMpZK8dG0+VfyYGdRtxbZt8DBURgkUsGqkD74b4Xg=="],
+  }
+}

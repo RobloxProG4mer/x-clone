@@ -10,7 +10,7 @@ import { addNotification } from "./notifications.js";
 const JWT_SECRET = process.env.JWT_SECRET;
 
 const getUserByUsername = db.query(
-	"SELECT * FROM users WHERE LOWER(username) = LOWER(?)",
+	"SELECT id, username, name, avatar, verified, gold, admin, avatar_radius, character_limit, restricted, suspended FROM users WHERE LOWER(username) = LOWER(?)",
 );
 
 const checkReplyPermission = async (replier, originalAuthor, restriction) => {
@@ -111,7 +111,7 @@ const getArticlePreviewById = db.query(`
 	WHERE id = ? AND is_article = TRUE
 `);
 
-const getUserById = db.query("SELECT * FROM users WHERE id = ?");
+const getUserById = db.query("SELECT id, username, name, avatar, verified, gold, avatar_radius, affiliate, affiliate_with, selected_community_tag FROM users WHERE id = ?");
 
 const getTweetWithThread = db.query(`
   WITH RECURSIVE thread_posts AS (
@@ -673,7 +673,7 @@ export default new Elysia({ prefix: "/tweets", tags: ["Tweets"] })
 					return { error: "Tweet not found" };
 				}
 				const originalAuthor = db
-					.query("SELECT * FROM users WHERE id = ?")
+					.query("SELECT id, username, verified, gold FROM users WHERE id = ?")
 					.get(originalTweet.user_id);
 
 				const isBlocked = db
@@ -1207,7 +1207,7 @@ export default new Elysia({ prefix: "/tweets", tags: ["Tweets"] })
 
 		const userPlaceholders = allUserIds.map(() => "?").join(",");
 		const getUsersQuery = db.query(
-			`SELECT * FROM users WHERE id IN (${userPlaceholders})`,
+			`SELECT id, username, name, avatar, verified, gold, avatar_radius, affiliate, affiliate_with, selected_community_tag FROM users WHERE id IN (${userPlaceholders})`,
 		);
 		const users = getUsersQuery.all(...allUserIds);
 
@@ -1281,7 +1281,7 @@ export default new Elysia({ prefix: "/tweets", tags: ["Tweets"] })
 			const articleUsers = articleUserIds.length
 				? db
 						.query(
-							`SELECT * FROM users WHERE id IN (${articleUserIds
+							`SELECT id, username, name, avatar, verified, gold, avatar_radius FROM users WHERE id IN (${articleUserIds
 								.map(() => "?")
 								.join(",")})`,
 						)
@@ -1760,7 +1760,7 @@ export default new Elysia({ prefix: "/tweets", tags: ["Tweets"] })
 			if (!tweet) return { canReply: false, error: "Tweet not found" };
 
 			const tweetAuthor = db
-				.query("SELECT * FROM users WHERE id = ?")
+				.query("SELECT id, username, verified, gold FROM users WHERE id = ?")
 				.get(tweet.user_id);
 			if (!tweetAuthor)
 				return { canReply: false, error: "Tweet author not found" };

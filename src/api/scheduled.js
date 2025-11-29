@@ -7,7 +7,7 @@ import ratelimit from "../helpers/ratelimit.js";
 const JWT_SECRET = process.env.JWT_SECRET;
 
 const getUserByUsername = db.query(
-	"SELECT * FROM users WHERE LOWER(username) = LOWER(?)",
+	"SELECT id, username FROM users WHERE LOWER(username) = LOWER(?)",
 );
 
 const createScheduledPost = db.query(`
@@ -193,7 +193,7 @@ const processScheduledPosts = async () => {
 		try {
 			const tweetId = Bun.randomUUIDv7();
 			const user = db
-				.query("SELECT * FROM users WHERE id = ?")
+				.query("SELECT id, username, restricted FROM users WHERE id = ?")
 				.get(scheduledPost.user_id);
 
 			if (!user) {

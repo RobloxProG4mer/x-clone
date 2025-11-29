@@ -1469,8 +1469,7 @@ function updateFollowButton(isFollowing, isBlocked) {
 			});
 
 			if (result.success) {
-				toastQueue.add("<h1>Unblocked user</h1>");
-				if (currentProfile && currentProfile.profile) {
+				if (currentProfile?.profile) {
 					currentProfile.profile.blockedProfile = false;
 				}
 				updateFollowButton(false, false);
@@ -2599,23 +2598,7 @@ export const handleProfileDropdown = (e) => {
 	getUser()
 		.then(async (currentUser) => {
 			try {
-				let popupInstance = null;
-				const navigateToPastes = () => {
-					try {
-						popupInstance?.close?.();
-					} catch (_) {}
-					import("./pastes.js").then(({ openPastesPage }) => {
-						openPastesPage();
-					});
-				};
 				const baseItems = [
-					{
-						id: "open-pastes",
-						icon: `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5h16"></path><path d="M4 12h16"></path><path d="M4 19h16"></path><path d="M9 9h6"></path><path d="M9 16h6"></path></svg>`,
-						title: "Pastes",
-						description: "Create and browse snippets",
-						onClick: navigateToPastes,
-					},
 					{
 						title: "Copy link",
 						icon: `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-link"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg>`,
@@ -2654,53 +2637,29 @@ export const handleProfileDropdown = (e) => {
 					},
 				];
 
-				const items = [...baseItems];
+				const items = baseItems;
 
-				if (
-					currentUser &&
-					currentProfile &&
-					currentProfile.profile &&
-					currentUser.id !== currentProfile.profile.id
-				) {
-					const checkResp = await query(
-						`/blocking/check/${currentProfile.profile.id}`,
-					);
-					const isBlocked = checkResp?.blocked || false;
-
+				if (!currentProfile?.profile?.blockedProfile) {
 					items.push({
-						id: isBlocked ? "unblock-user" : "block-user",
+						id: "block-user",
 						icon: `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"></circle><line x1="15" y1="9" x2="9" y2="15"></line><line x1="9" y1="9" x2="15" y2="15"></line></svg>`,
-						title: isBlocked ? `Unblock` : `Block`,
+						title: `Block`,
 						onClick: async () => {
 							try {
-								const action = isBlocked ? "unblock" : "block";
 								if (
 									!confirm(
-										`Do you want to ${action} @${currentProfile.profile.username}?`,
+										`Do you want to block @${currentProfile.profile.username}?`,
 									)
 								)
 									return;
 
-								const endpoint = isBlocked
-									? "/blocking/unblock"
-									: "/blocking/block";
-								const result = await query(endpoint, {
+								await query("/blocking/block", {
 									method: "POST",
 									headers: { "Content-Type": "application/json" },
 									body: JSON.stringify({ userId: currentProfile.profile.id }),
 								});
 
-								if (result.success) {
-									toastQueue.add(
-										`<h1>${isBlocked ? "User unblocked" : "User blocked"}</h1>`,
-									);
-								} else {
-									toastQueue.add(
-										`<h1>${
-											result.error || "Failed to update block status"
-										}</h1>`,
-									);
-								}
+								toastQueue.add(`<h1>User blocked</h1>`);
 							} catch (err) {
 								console.error("Block/unblock error:", err);
 								toastQueue.add(`<h1>Network error. Please try again.</h1>`);
@@ -2722,7 +2681,7 @@ export const handleProfileDropdown = (e) => {
 					});
 				}
 
-				popupInstance = createPopup({
+				createPopup({
 					triggerElement: triggerEl,
 					items,
 				});

@@ -410,65 +410,6 @@ img {
   text-align: center;
 }
 
-.account-switcher-modal {
-  position: fixed;
-  top: 0px;
-  left: 0px;
-  width: 100%;
-  height: 100%;
-  background: rgba(0, 0, 0, 0.5);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 10000;
-}
-
-.account-switcher-body {
-  background: var(--bg-primary);
-  border-radius: 12px;
-  padding: 24px;
-  max-width: 500px;
-  width: 90%;
-  max-height: 80vh;
-  overflow-y: auto;
-}
-
-button.add-account-button {
-	width: 100%;
-	padding: 12px;
-	border: 2px dashed var(--border-primary);
-	border-radius: 8px;
-	background: transparent;
-	color: var(--text-primary);
-	cursor: pointer;
-	font-weight: 500;
-	font-size: 14px;
-}
-
-button.account-listing {
-	display: flex;
-	align-items: center;
-	gap: 12px;
-	padding: 12px;
-	border: 1px solid var(--border-primary);
-	border-radius: 8px;
-	background: var(--bg-secondary);
-	cursor: default;
-	width: 100%;
-	text-align: left;
-}
-
-.account-listing-title {
-	display: flex;
-	align-items: center;
-	gap: 6px;
-}
-
-.account-listing-username {
-	font-size: 14px;
-	color: var(--text-secondary);
-}
-
 /* Eesti Loafs */
 @font-face {
   font-family: "chirp";

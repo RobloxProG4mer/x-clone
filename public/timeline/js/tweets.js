@@ -37,6 +37,7 @@ const DOMPURIFY_CONFIG = {
 		"big",
 		"sub",
 		"sup",
+		"del",
 	],
 	ALLOWED_ATTR: ["href", "target", "rel", "class"],
 };

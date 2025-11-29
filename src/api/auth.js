@@ -21,7 +21,10 @@ const superAdminIds = (process.env.SUPERADMIN_IDS || "")
 	.filter(Boolean);
 
 const getUserByUsername = db.prepare(
-	"SELECT * FROM users WHERE LOWER(username) = LOWER(?)",
+	`SELECT id, username, name, avatar, verified, gold, admin, theme, accent_color, 
+	 avatar_radius, character_limit, label_type, label_automated, private, password_hash,
+	 account_login_transparency
+	 FROM users WHERE LOWER(username) = LOWER(?)`
 );
 const updateUserLoginTransparency = db.prepare(
 	"UPDATE users SET account_login_transparency = ?, ip_address = ? WHERE id = ?",
@@ -274,7 +277,7 @@ export default new Elysia({ prefix: "/auth", tags: ["Auth"] })
 					};
 				}
 
-				const owner = db.query("SELECT * FROM users WHERE id = ?").get(ownerId);
+				const owner = db.query("SELECT id, username, name, avatar, verified, gold FROM users WHERE id = ?").get(ownerId);
 				if (!owner) return { error: "Owner account not found" };
 
 				const delegateToken = await jwt.sign({
@@ -329,7 +332,7 @@ export default new Elysia({ prefix: "/auth", tags: ["Auth"] })
 				}
 
 				const primaryUser = db
-					.query("SELECT * FROM users WHERE id = ?")
+					.query("SELECT id, username, name, avatar, verified, gold FROM users WHERE id = ?")
 					.get(payload.primaryUserId);
 				if (!primaryUser) return { error: "Primary account not found" };
 
@@ -462,7 +465,8 @@ export default new Elysia({ prefix: "/auth", tags: ["Auth"] })
 					}
 
 					const targetUser = db
-						.query("SELECT * FROM users WHERE id = ?")
+						.query(`SELECT id, username, name, avatar, verified, gold, account_login_transparency 
+							FROM users WHERE id = ?`)
 						.get(passkey.internal_user_id);
 
 					if (!targetUser) {
@@ -710,7 +714,7 @@ export default new Elysia({ prefix: "/auth", tags: ["Auth"] })
 				if (existingPasskey) {
 					if (!user) {
 						user = db
-							.query("SELECT * FROM users WHERE id = ?")
+							.query("SELECT id, username, account_login_transparency FROM users WHERE id = ?")
 							.get(existingPasskey.internal_user_id);
 					}
 
@@ -904,7 +908,7 @@ export default new Elysia({ prefix: "/auth", tags: ["Auth"] })
 				}
 
 				const user = db
-					.query("SELECT * FROM users WHERE id = ?")
+					.query(`SELECT id, username, account_login_transparency FROM users WHERE id = ?`)
 					.get(passkey.internal_user_id);
 
 				if (!user) {
@@ -1310,7 +1314,14 @@ export default new Elysia({ prefix: "/auth", tags: ["Auth"] })
 
 				return {
 					token,
-					user,
+					user: {
+						id: user.id,
+						username: user.username,
+						name: user.name,
+						avatar: user.avatar,
+						verified: user.verified,
+						gold: user.gold,
+					},
 					passkeys: passkeys.map((passkey) => ({
 						id: passkey.cred_id,
 						createdAt: passkey.created_at,
