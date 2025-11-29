@@ -90,7 +90,11 @@ export default async function openTweet(
 
 			let skeletons = [];
 			if (!threadPostsCache || !repliesCache) {
-				skeletons = showSkeletons(repliesContainer, createTweetSkeleton, 3);
+				skeletons = showSkeletons(
+					repliesContainer,
+					createTweetSkeleton,
+					typeof tweet?.reply_count === "number" ? tweet?.reply_count : 3,
+				);
 
 				const apiOutput = await query(`/tweets/${tweet.id}`);
 				tweet = apiOutput.tweet;

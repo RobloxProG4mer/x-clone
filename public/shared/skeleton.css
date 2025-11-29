@@ -1,23 +1,20 @@
-@keyframes skeleton-pulse {
+@keyframes skeleton-shimmer {
   0% {
-    opacity: 1;
-  }
-
-  50% {
-    opacity: 0.5;
+    background-position: -200% 0;
   }
 
   100% {
-    opacity: 1;
+    background-position: 200% 0;
   }
 }
 
 .skeleton-loader {
-  animation: skeleton-pulse 1.5s ease-in-out infinite;
   background: linear-gradient(90deg,
       rgba(var(--text-rgb), 0.08) 0%,
-      rgba(var(--text-rgb), 0.12) 50%,
-      rgba(var(--text-rgb), 0.08) 100%);
+      rgba(var(--text-rgb), 0.14) 20%,
+      rgba(var(--text-rgb), 0.08) 40%);
+  background-size: 200% 100%;
+  animation: skeleton-shimmer 1.4s infinite linear;
   border-radius: 8px;
   pointer-events: none;
 }
@@ -25,14 +22,14 @@
 .skeleton-tweet {
   display: flex;
   gap: 12px;
-  padding: 16px;
-  border-bottom: 1px solid var(--border);
   background: var(--bg-primary);
+  margin-bottom: 26px;
+  flex-direction: column;
 }
 
 .skeleton-tweet-avatar {
-  width: 48px;
-  height: 48px;
+  width: 40px;
+  height: 40px;
   border-radius: 50%;
   flex-shrink: 0;
 }
@@ -47,7 +44,13 @@
 .skeleton-tweet-header {
   display: flex;
   gap: 8px;
-  align-items: center;
+}
+
+.skeleton-tweet-header-container {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  justify-content: center;
 }
 
 .skeleton-tweet-name {
@@ -75,21 +78,21 @@
 
 .skeleton-tweet-actions {
   display: flex;
-  gap: 40px;
+  gap: 14px;
   margin-top: 8px;
 }
 
 .skeleton-tweet-action {
   width: 50px;
-  height: 16px;
+  height: 19px;
 }
 
 .skeleton-dm-conversation {
   display: flex;
   gap: 12px;
-  padding: 16px;
-  border-bottom: 1px solid var(--border);
-  background: var(--bg-primary);
+  padding: 12px;
+  border-bottom: 1px solid var(--border-primary);
+  align-items: center;
 }
 
 .skeleton-dm-avatar {

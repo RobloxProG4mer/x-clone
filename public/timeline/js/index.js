@@ -98,7 +98,6 @@ let timelineScrollPosition = 0;
 
 		try {
 			const { timeline } = await query(url);
-
 			removeSkeletons(skeletons);
 
 			if (!append) {

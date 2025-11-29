@@ -8,7 +8,8 @@
 
   --primary-fg: black;
 
-  --text-primary: #4c4f69;
+  --text-rgb: 76, 79, 105;
+  --text-primary: var(--text-rgb);
   --text-secondary: #5c5f77;
   --text-tertiary: #7c7f93;
   --text-placeholder: #8c8fa1;
@@ -68,7 +69,7 @@
 
   --primary-fg: black;
 
-  --text-primary: #cdd6f4;
+  --text-rgb: 205, 214, 244;
   --text-secondary: #bac2de;
   --text-tertiary: #a6adc8;
   --text-placeholder: #9399b2;

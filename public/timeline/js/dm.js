@@ -350,7 +350,6 @@ async function loadConversations() {
 
 	try {
 		const data = await query("/dm/conversations");
-
 		removeSkeletons(skeletons);
 
 		if (data.error) {

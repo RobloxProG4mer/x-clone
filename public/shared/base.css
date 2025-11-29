@@ -21,7 +21,7 @@ html,
 body {
   scrollbar-gutter: stable;
 }
-/* Don't let the cursor be stuck */
+
 body {
   font-family: "chirp", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
     Roboto, Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji",

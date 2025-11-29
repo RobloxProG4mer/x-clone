@@ -2,12 +2,14 @@ export function createTweetSkeleton() {
 	const skeleton = document.createElement("div");
 	skeleton.className = "skeleton-tweet skeleton-container";
 	skeleton.innerHTML = `
-		<div class="skeleton-loader skeleton-tweet-avatar"></div>
-		<div class="skeleton-tweet-content">
-			<div class="skeleton-tweet-header">
-				<div class="skeleton-loader skeleton-tweet-name"></div>
-				<div class="skeleton-loader skeleton-tweet-username"></div>
+		<div class="skeleton-tweet-header">
+		  <div class="skeleton-loader skeleton-tweet-avatar"></div>
+		  <div class="skeleton-tweet-header-container">
+			  <div class="skeleton-loader skeleton-tweet-name"></div>
+			  <div class="skeleton-loader skeleton-tweet-username"></div>
 			</div>
+		</div>
+		<div class="skeleton-tweet-content">
 			<div class="skeleton-loader skeleton-tweet-text"></div>
 			<div class="skeleton-loader skeleton-tweet-text"></div>
 			<div class="skeleton-loader skeleton-tweet-text"></div>
