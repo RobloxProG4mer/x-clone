@@ -132,7 +132,9 @@ export default async function openProfile(username) {
 			renderProfile(data);
 
 			if (data.profile?.name) {
-				updatePageTitle("profile", { title: `${data.profile.name} (@${username})` });
+				updatePageTitle("profile", {
+					title: `${data.profile.name} (@${username})`,
+				});
 			}
 
 			const affiliatesData = await query(`/profile/${username}/affiliates`);

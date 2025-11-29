@@ -9,7 +9,11 @@ import {
 import toastQueue from "../../shared/toasts.js";
 import query from "./api.js";
 import { authToken } from "./auth.js";
-import switchPage, { addRoute, setUnreadCounts, updatePageTitle } from "./pages.js";
+import switchPage, {
+	addRoute,
+	setUnreadCounts,
+	updatePageTitle,
+} from "./pages.js";
 
 const dmEmojiMap = {};
 (async () => {
@@ -332,8 +336,18 @@ function displayDMCount(count) {
 	}
 	setUnreadCounts(cachedNotificationCount, cachedDMCount);
 	const currentPage = window.location.pathname.split("/")[1] || "timeline";
-	if (currentPage === "" || currentPage === "dm" || currentPage === "notifications") {
-		updatePageTitle(currentPage === "" ? "timeline" : currentPage === "dm" ? "direct-messages" : "notifications");
+	if (
+		currentPage === "" ||
+		currentPage === "dm" ||
+		currentPage === "notifications"
+	) {
+		updatePageTitle(
+			currentPage === ""
+				? "timeline"
+				: currentPage === "dm"
+					? "direct-messages"
+					: "notifications",
+		);
 	}
 }
 
@@ -350,8 +364,18 @@ function displayNotificationCount(count) {
 	}
 	setUnreadCounts(cachedNotificationCount, cachedDMCount);
 	const currentPage = window.location.pathname.split("/")[1] || "timeline";
-	if (currentPage === "" || currentPage === "dm" || currentPage === "notifications") {
-		updatePageTitle(currentPage === "" ? "timeline" : currentPage === "dm" ? "direct-messages" : "notifications");
+	if (
+		currentPage === "" ||
+		currentPage === "dm" ||
+		currentPage === "notifications"
+	) {
+		updatePageTitle(
+			currentPage === ""
+				? "timeline"
+				: currentPage === "dm"
+					? "direct-messages"
+					: "notifications",
+		);
 	}
 }
 
@@ -649,7 +673,13 @@ async function openConversation(conversationId) {
 
 			const skeletons = [];
 			for (let i = 0; i < 6; i++) {
-				skeletons.push(...showSkeletons(messagesElement, () => createDMMessageSkeleton(i % 3 === 0), 1));
+				skeletons.push(
+					...showSkeletons(
+						messagesElement,
+						() => createDMMessageSkeleton(i % 3 === 0),
+						1,
+					),
+				);
 			}
 
 			try {

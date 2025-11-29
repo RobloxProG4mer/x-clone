@@ -25,16 +25,27 @@ let unreadDMs = 0;
 
 const getPageTitle = (page, opts = {}) => {
 	const titles = {
-		timeline: () => unreadNotifications > 0 || unreadDMs > 0 ? `(${unreadNotifications + unreadDMs}) tweetapus` : "tweetapus",
-		tweet: () => opts?.title ? `${opts.title} // tweetapus` : "tweetapus",
-		profile: () => opts?.title ? `${opts.title} // tweetapus` : "tweetapus",
-		notifications: () => unreadNotifications > 0 ? `(${unreadNotifications}) notifications // tweetapus` : "notifications // tweetapus",
+		timeline: () =>
+			unreadNotifications > 0 || unreadDMs > 0
+				? `(${unreadNotifications + unreadDMs}) tweetapus`
+				: "tweetapus",
+		tweet: () => (opts?.title ? `${opts.title} // tweetapus` : "tweetapus"),
+		profile: () => (opts?.title ? `${opts.title} // tweetapus` : "tweetapus"),
+		notifications: () =>
+			unreadNotifications > 0
+				? `(${unreadNotifications}) notifications // tweetapus`
+				: "notifications // tweetapus",
 		search: () => "search // tweetapus",
 		bookmarks: () => "bookmarks // tweetapus",
-		"direct-messages": () => unreadDMs > 0 ? `(${unreadDMs}) messages // tweetapus` : "messages // tweetapus",
-		"dm-conversation": () => opts?.title ? `${opts.title} // tweetapus` : "messages // tweetapus",
+		"direct-messages": () =>
+			unreadDMs > 0
+				? `(${unreadDMs}) messages // tweetapus`
+				: "messages // tweetapus",
+		"dm-conversation": () =>
+			opts?.title ? `${opts.title} // tweetapus` : "messages // tweetapus",
 		communities: () => "communities // tweetapus",
-		"community-detail": () => opts?.title ? `${opts.title} // tweetapus` : "community // tweetapus",
+		"community-detail": () =>
+			opts?.title ? `${opts.title} // tweetapus` : "community // tweetapus",
 		pastes: () => "pastes // tweetapus",
 		settings: () => "settings // tweetapus",
 	};
@@ -152,7 +163,8 @@ function showPage(page, options = {}) {
 						container.textContent = "";
 						const errorDiv = document.createElement("div");
 						errorDiv.className = "error-text";
-						errorDiv.textContent = "Failed to load Pastes UI. Please try again later.";
+						errorDiv.textContent =
+							"Failed to load Pastes UI. Please try again later.";
 						container.append(errorDiv);
 					}
 				});
@@ -177,7 +189,13 @@ function showPage(page, options = {}) {
 
 export default function switchPage(
 	page,
-	{ recoverState = () => {}, path = "/", cleanup = () => {}, noScroll, title } = {},
+	{
+		recoverState = () => {},
+		path = "/",
+		cleanup = () => {},
+		noScroll,
+		title,
+	} = {},
 ) {
 	if (history.state) {
 		history.replaceState(

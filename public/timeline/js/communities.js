@@ -344,8 +344,7 @@ export async function loadCommunityDetail(communityId) {
 		if (!isVisible) {
 			switchPage("community-detail", { path: `/communities/${communityId}` });
 		}
-	} catch (_) {
-	}
+	} catch (_) {}
 
 	const data = await api(`/communities/${communityId}`);
 

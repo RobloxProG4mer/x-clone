@@ -59,7 +59,8 @@ export default async function openTweet(
 
 	const renderedTweets = new Map();
 
-	const authorName = finalTweet.author?.name || finalTweet.author?.username || "Post";
+	const authorName =
+		finalTweet.author?.name || finalTweet.author?.username || "Post";
 	const tweetContent = finalTweet.content?.slice(0, 30) || "";
 	const pageTitle = `${authorName}: "${tweetContent}${tweetContent.length >= 30 ? "..." : ""}"`;
 
@@ -181,9 +182,12 @@ export default async function openTweet(
 				finalTweet.extendedStats = apiOutput.extendedStats || [];
 				hasMoreReplies = apiOutput?.hasMoreReplies || false;
 
-				const loadedAuthorName = finalTweet.author?.name || finalTweet.author?.username || "Post";
+				const loadedAuthorName =
+					finalTweet.author?.name || finalTweet.author?.username || "Post";
 				const loadedContent = finalTweet.content?.slice(0, 30) || "";
-				updatePageTitle("tweet", { title: `${loadedAuthorName}: "${loadedContent}${loadedContent.length >= 30 ? "..." : ""}"` });
+				updatePageTitle("tweet", {
+					title: `${loadedAuthorName}: "${loadedContent}${loadedContent.length >= 30 ? "..." : ""}"`,
+				});
 
 				if ((needsThreadData || !finalThread) && apiOutput.threadPosts) {
 					const newThreadPosts = apiOutput.threadPosts;

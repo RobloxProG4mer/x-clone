@@ -40,7 +40,9 @@ export function createDMConversationSkeleton() {
 export function createDMMessageSkeleton(isOwn = false) {
 	const skeleton = document.createElement("div");
 	skeleton.className = `skeleton-dm-msg skeleton-container${isOwn ? " own" : ""}`;
-	const avatar = isOwn ? "" : '<div class="skeleton-loader skeleton-dm-msg-avatar"></div>';
+	const avatar = isOwn
+		? ""
+		: '<div class="skeleton-loader skeleton-dm-msg-avatar"></div>';
 	skeleton.innerHTML = `
 		${avatar}
 		<div class="skeleton-dm-msg-wrapper">
