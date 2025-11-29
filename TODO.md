@@ -3,7 +3,7 @@
 - personalized algorithm
 - fix ui
 - heavy "ratelimits" that show and automatically solve a Cap captcha to fix
-- update the block/unblock follow button
+- update the follow <-> block/unblock button
 
 - make Tr Cursor not be stuck
 

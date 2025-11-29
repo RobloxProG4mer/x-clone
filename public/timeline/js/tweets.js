@@ -956,7 +956,7 @@ export const createTweetElement = (tweet, config = {}) => {
 		) {
 			affiliateImg.style.setProperty(
 				"border-radius",
-				`${tweet.author.affiliate_with_profile.avatar_radius}px`
+				`${tweet.author.affiliate_with_profile.avatar_radius}px`,
 			);
 		} else if (tweet.author.affiliate_with_profile.gold) {
 			affiliateImg.style.setProperty("border-radius", "4px");
@@ -1684,6 +1684,8 @@ export const createTweetElement = (tweet, config = {}) => {
 			10,
 		);
 
+		tweet.liked_by_user = newIsLiked;
+
 		if (newIsLiked) {
 			svg.setAttribute("fill", "#F91980");
 			svg.setAttribute("stroke", "#F91980");
@@ -1823,6 +1825,7 @@ export const createTweetElement = (tweet, config = {}) => {
 
 						if (result.success) {
 							const newIsRetweeted = result.retweeted;
+							tweet.retweeted_by_user = newIsRetweeted;
 							tweetInteractionsRetweetEl.dataset.retweeted = newIsRetweeted;
 
 							if (newIsRetweeted) {
