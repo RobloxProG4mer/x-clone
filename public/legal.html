@@ -1,395 +1,266 @@
 <!DOCTYPE html>
 <html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>tweetapus terms & privacy</title>
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
 
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>tweetapus</title>
-  <style>
-    body {
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
-        "Helvetica Neue", sans-serif;
-      max-width: 400px;
-      margin: 8em auto;
-      color: #1a1a1a;
-      font-size: 16px;
-      line-height: 1.5;
-      padding: 0 24px;
-    }
+      body {
+        background: #181825;
+        color: rgb(205, 214, 244);
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        line-height: 1.7;
+        padding: 4rem 2rem;
+      }
 
-    h1 {
-      font-weight: 500;
-      font-size: 24px;
-      margin: 10px 0 32px 0;
-      text-align: center;
-      color: #1a1a1a;
-    }
+      .container {
+        max-width: 900px;
+        margin: 0 auto;
+        display: grid;
+        grid-template-columns: 160px 1fr;
+        gap: 4rem;
+      }
 
-    p {
-      margin: 0 0 24px 0;
-      font-size: 18px;
-      color: #1a1a1a;
-    }
+      nav {
+        padding-top: 8rem;
+        user-select: none;
+      }
 
-    .icon {
-      display: block;
-      margin: 0 auto 16px auto;
-      color: black;
-      fill: black;
-    }
+      nav a {
+        display: block;
+        color: #bac2de;
+        text-decoration: none;
+        padding: 0.4rem 0;
+        font-size: 0.9rem;
+        opacity: 0.6;
+        transition: opacity 0.1s;
+      }
 
-    .rules {
-      list-style: none;
-      margin-top: -17px;
-      padding: 0px;
-      margin-bottom: 1em;
-      border-bottom: 1px solid #dfe0e2;
-      padding-bottom: 3em;
-    }
+      nav a:hover {
+        opacity: 1;
+      }
 
-    .rules li {
-      position: relative;
-      padding: 1em 1.75em;
-      padding-inline-start: 3.5em;
-      counter-increment: list-counter;
-      min-height: 4ch;
-      padding-bottom: 0px;
-    }
+      main {
+        max-width: 600px;
+      }
 
-    .rules li:before {
-      content: counter(list-counter);
-      position: absolute;
-      inset-inline-start: 0;
-      top: 1em;
-      background: #f3f4f6;
-      border-radius: 50%;
-      width: 4ch;
-      height: 4ch;
-      font-weight: 500;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-    }
+      h1 {
+        color: #82829a;
+        font-size: 1.5rem;
+        margin-bottom: 0.5rem;
+        font-weight: 400;
+        line-height: 1.26;
+        user-select: none;
+      }
 
-    .full {
-      margin-top: 2em;
-    }
+      h1 b {
+        color: #ac97ff;
+        font-weight: 500;
+      }
 
-    .full * {
-      font-size: 13px;
-      margin-bottom: 8px;
-    }
+      h1 span {
+        color: white;
+      }
 
-    .full h2,
-    .full h3 {
-      font-weight: 600;
-    }
+      h2 {
+        color: #ac97ff;
+        font-size: 1.1rem;
+        font-weight: 600;
+        margin-top: 3rem;
+        margin-bottom: 0.2rem;
+        user-select: none;
+      }
 
-    .full p {
-      color: #5e5e5e;
-      line-height: 1.5;
-      text-align: justify;
-    }
+      p {
+        margin-bottom: 1.2rem;
+        color: rgb(205, 214, 244);
+        opacity: 0.9;
+      }
 
-    .full b {
-      color: #000000bf;
-      font-weight: 500;
-    }
+      a {
+        color: #ac97ff;
+        text-decoration: none;
+      }
 
-    .full a {
-      text-decoration: none;
-      color: black;
+      a:hover {
+        text-decoration: underline;
+      }
 
-    }
-  </style>
-</head>
+      @media (max-width: 768px) {
+        body {
+          padding: 2rem 1.5rem;
+        }
 
-<body>
-  <svg class="icon" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-    <path
-      d="M22 4s-.7 2.1-2 3.4c1.6 10-9.4 17.3-18 11.6 2.2.1 4.4-.6 6-2C3 15.5.5 9.6 3 5c2.2 2.6 5.6 4.1 9 4-.9-4.2 4-6.6 7-3.8 1.1 0 3-1.2 3-1.2z" />
-  </svg>
+        .container {
+          grid-template-columns: 1fr;
+          gap: 2rem;
+        }
 
-  <h1>We value your privacy.</h1>
+        nav {
+          padding-top: 0;
+          display: flex;
+          flex-wrap: wrap;
+          gap: 1rem;
+        }
+      }
+    </style>
+  </head>
 
-  <ul class="rules">
-    <li>
-      No discrimination, harassment, doxxing, promotion of violence, etc
-    </li>
-    <li>No sexually explicit content or gore, even when labeled as such</li>
-    <li>Your account can be banned at any time for any reason</li>
-  </ul>
+  <body>
+    <div class="container">
+      <nav>
+        <a href="#introduction">introduction</a>
+        <a href="#terms">usage guidelines</a>
+        <a href="#privacy">your privacy</a>
+        <a href="#data">data & rights</a>
+      </nav>
+      <main>
+        <h1>
+          <!-- prettier-ignore -->
+          <span>welcome to <b>tweetapus</b>.</span>
+          these terms and privacy policy guide how we handle your data and what
+          you can do with our service.
+        </h1>
 
-  <div class="full">
-    <h2>1. Introduction</h2>
-    <p>Last updated September 11, 2025</p>
-    <!-- prettier-ignore -->
-    <p>
-      Welcome to <b>Tweetapus</b>, a social networking platform operated from
-      Portugal and available globally. These Terms of Service and this Privacy
-      Policy form a legally binding agreement between you and Tweetapus. By
-      creating an account, accessing the website, or otherwise using our
-      services, you acknowledge that you have read, understood, and agreed to
-      these provisions. If you do not accept them, you must immediately
-      discontinue the use of Tweetapus.
-    </p>
-    <p>
-      Our aim is to provide a space for free expression and communication,
-      subject to rules that keep the platform safe, lawful, and respectful for
-      all users. Because this service involves both the creation of
-      user-generated content and the storage of personal data, it is important
-      that you understand your rights, your responsibilities, and our
-      obligations under law, particularly the General Data Protection
-      Regulation (“GDPR”).
-    </p>
+        <h2 id="introduction">introduction</h2>
+        <p>
+          tweetapus is based in portugal. by signing into tweetapus and
+          accepting our policies, you agree to all these terms. if these terms
+          change, we'll post an announcement on our site as we do not collect
+          emails. as well, at times things can go wrong and the service may be
+          interrupted. it's unlikely, but sometimes things can go really wrong.
+        </p>
 
-    <h2>2. Privacy</h2>
+        <p>
+          tweetapus is provided as-is with the maximum limitations of liability
+          permitted under portuguese and eu law. tweetapus is operated by an
+          individual acting as the data controller. the service may be modified
+          or terminated at any time if legally permissible.
+        </p>
 
-    <h3>2.1 Data We Collect</h3>
-    <p>
-      When you sign up for Tweetapus, we collect account information that you
-      provide directly, such as your email address, chosen username, and
-      authentication credentials in the form of passkeys. These details are
-      essential to create and maintain your account, verify your identity, and
-      enable secure access to the service.
-    </p>
-    <p>
-      We may also collect technical and network information such as IP
-      addresses, browser type, device identifiers, and server logs. This
-      information may be collected automatically as part of standard internet
-      communication and is used to help us maintain system security, prevent
-      abuse, and ensure that the service operates correctly.
-    </p>
-    <p>
-      In addition, we store the content you create and share on Tweetapus,
-      including posts, replies, profile details, and any other information you
-      choose to make public or semi-public. Direct messages are also be stored
-      on our servers and may or may not be end-to-end encrypted depending on your account and our server configuration.
-      While we take
-      steps to secure this data, you should not assume that any message or
-      communication on Tweetapus is completely private.
-    </p>
-    <p style="text-transform: uppercase">
-      <b>By default, Tweetapus may display the city and country associated with your last login and account creation
-        based
-        on your IP address for transparency purposes. You can adjust these settings in your profile under "Account" to
-        show only your country or continent. Please note that a notice may still appear on your profile if detailed
-        location information is hidden.</b>
-    </p>
+        <h2 id="terms">usage guidelines</h2>
+        <p>
+          you must meet the minimum age requirement for your jurisdiction to use
+          tweetapus, otherwise you must be at least 13 years old (unless local
+          law requires a higher age). you're responsible for keeping your
+          account secure and for everything that happens on your account.
+        </p>
 
-    <h3>2.2 Cookies &amp; Local Storage</h3>
-    <p>
-      Tweetapus uses cookies and similar technologies (such as local storage
-      in your browser) to ensure the service functions properly. These
-      technologies are mostly first-party and are not shared with advertisers
-      or external analytics providers.
-    </p>
-    <p>
-      We use cookies and local storage to keep you logged in, remember your
-      preferences, prevent abuse, and improve the overall user experience. No
-      third-party tracking cookies are placed on your device, and your
-      browsing activity outside Tweetapus is never monitored by us.
-    </p>
-    <p>
-      By using Tweetapus, you consent to the use of cookies and local storage
-      as described. You may configure your browser to refuse cookies or to
-      alert you when cookies are being sent, but please note that certain
-      features of the service may not function properly without them.
-    </p>
+        <p>
+          you may not post or engage in any illegal content, harassment, spam,
+          any form of nsfw content (including any sexually explicit content or
+          gore, both images, videos, audios and text), or content designed to
+          disrupt the service. you may not use unauthorized scraping,
+          automation, bots, or attempt to find vulnerabilities in the service,
+          including but not limited to evading ratelimits, sending any requests
+          at an unreasonable rate, mass posting, tagging, dming, or blocking,
+          and any other form of abuse.
+        </p>
 
-    <h3>2.3 How We Use Data</h3>
-    <p>
-      The personal data and user content we collect are used solely for the
-      purpose of providing, maintaining, and improving the Tweetapus service.
-      This includes authenticating your account, displaying content to other
-      users, securing our systems, and enforcing our community standards.
-    </p>
-    <p>
-      Data may also be used to investigate technical issues, respond to
-      support inquiries, prevent fraudulent activity, and ensure compliance
-      with applicable law. We do not use your personal data for advertising or
-      for resale to third parties.
-    </p>
+        <p>
+          you own your content, but by posting on tweetapus you grant us a
+          worldwide, non-exclusive, royalty-free license to use, display,
+          reproduce, distribute, and create non-derivative modifications such as
+          formatting, thumbnails or previews for the purposes of operating,
+          improving, promoting, and protecting the service. this license only
+          applies to content you make public. you're responsible for everything
+          you post and for having the rights to post it. if someone reports
+          copyright infringement, we have the right to remove it ourselves, ask
+          you to remove it, take legal action, or consider it invalid when
+          legally reasonable.
+        </p>
 
-    <h3>2.4 Sharing of Data</h3>
-    <p>
-      Tweetapus does not sell your personal data under any circumstances. Your
-      data will only be disclosed to third parties where required by
-      applicable law, where necessary to protect the rights and safety of
-      users and the service, or where essential to the technical operation of
-      the platform (for example, cloud hosting or security providers operating
-      under strict contractual agreements).
-    </p>
-    <p>
-      In cases where disclosure is legally required, we will, where
-      permissible and/or possible, attempt to notify the affected user before
-      complying with such requests.
-    </p>
+        <p>
+          we can suspend or restrict your account if you violate these terms or
+          applicable law. under the eu digital services act, if content is
+          removed or your account is suspended, we will provide the reason for
+          the action unless we are legally prevented from doing so. we have the
+          choice to let you appeal this decision in-app, but you may always
+          appeal to the portuguese courts.
+        </p>
 
-    <h3>2.5 Storage & Retention</h3>
-    <p>
-      All personal data is stored within the European Union, specifically in
-      Portugal. Data will be retained for as long as it is necessary to
-      operate the service, maintain user accounts, and comply with our legal
-      obligations.
-    </p>
-    <p>
-      If you delete your account, we may remove or anonymize your personal
-      data within a reasonable period of time, although some backups may
-      persist temporarily. In limited cases, we may retain certain information
-      if required by law or if necessary to resolve disputes and enforce our
-      agreements. We are not required and are not able to delete or notify you
-      of any 3rd-party archives.
-    </p>
+        <p>
+          you use tweetapus at your own risk. we are not liable for loss of
+          data, service interruptions, or other issues except where liability
+          cannot be excluded under portuguese or eu law. these terms are
+          governed by portuguese law and any disputes will be handled under
+          portuguese jurisdiction.
+        </p>
 
-    <h3>2.6 GDPR Rights</h3>
-    <p>
-      If you are located in the EU, EEA, or another jurisdiction that provides
-      similar protections, you have specific rights under the GDPR. These
-      include the right to access your personal data, request correction of
-      inaccurate data, request deletion of your data (“right to be
-      forgotten”), restrict or object to the processing of your data, and
-      request portability of your data in a commonly used machine-readable
-      format.
-    </p>
-    <p>
-      To exercise these rights, please contact us at by email using the
-      address at the bottom of this document. We will respond to such requests
-      in accordance with applicable law. You also have the right to lodge a
-      complaint with your local supervisory authority for data protection if
-      you believe your rights are being infringed.
-    </p>
+        <h2 id="privacy">your privacy</h2>
+        <p>
+          we collect all data we are required to to keep Tweetapus running and
+          display other users content, including but not limited to your
+          username, password hash, tweets, pastes, replies, retweets, likes,
+          communities, followers, following, blocks, ip addresses, region-level
+          location data, and session data. this data is collected for the
+          purposes of providing the service, securing accounts, preventing
+          abuse, complying with legal obligations, and improving the platform.
+          the lawful bases are contract (running your account), legitimate
+          interest (security and abuse prevention), and consent when required.
+        </p>
 
-    <h3>2.7 Minors</h3>
-    <p>
-      Tweetapus is not directed to children under the age of 13. We do not
-      knowingly collect personal data from anyone under 13 years of age. By
-      using the service, you represent and warrant that you are 13 years of
-      age or older. If we learn that we have inadvertently collected data from
-      a minor under 13, we will promptly delete it.
-    </p>
+        <p>
+          by default, tweetapus may display the region or country associated
+          with your last login and account creation for account security and
+          transparency. you can adjust these settings in your profile under
+          "account" to show only your country or continent. no precise personal
+          information is shared.
+        </p>
 
-    <h2>3. Terms of Service</h2>
+        <p>
+          we use your data to run the service, show you content, connect you
+          with other users, and improve the platform. we also use third-party
+          services including unsplash for images, tenor for gifs, and openai for
+          various features. these services have their own privacy policies but
+          do not recieve your IP or any other device data, except unsplash and
+          tenor when directly viewing images or gifs, which may recieve and
+          collect information according to their privacy policies.
+        </p>
 
-    <h3>3.1 Eligibility</h3>
-    <p>
-      You may only use Tweetapus if you are at least 13 years old and legally
-      permitted to do so in your jurisdiction. By registering for an account,
-      you confirm that you meet this requirement. Use of the service by anyone
-      who does not meet these conditions is strictly prohibited.
-    </p>
+        <p>
+          we'll do our best to protect your data, but we can't guarantee
+          absolute security. we use cookies and similar technologies to keep you
+          logged in and understand how you use the service, including
+          understanding how our service is doing, preventing abuse, storing your
+          user id, caching and preloading content, storing consent information
+          and other settings. we may share data with third parties if required
+          by law or to comply with legally valid requests.
+        </p>
 
-    <h3>3.2 User Responsibilities</h3>
-    <p>
-      You are solely responsible for any activity that occurs under your
-      account. This includes keeping your passkeys secure and not sharing them
-      with others. We strongly recommend that you use secure devices and keep
-      your login information confidential at all times.
-    </p>
-    <p>
-      You are also responsible for the content you post, transmit, or
-      otherwise make available on Tweetapus. You agree not to use the service
-      for unlawful purposes or in ways that violate the rights of others.
-    </p>
+        <h2 id="data">data & rights</h2>
+        <p>
+          your data is stored as long as your account exists. when you delete
+          your account, most data is wiped immediately, though some data might
+          take up to 1 week to be fully removed from backups and systems.
+          certain data may be retained for a longer period if required by law
+          such as for fraud prevention or abuse investigations.
+        </p>
 
-    <h3>3.3 Content Rules</h3>
-    <p>
-      By using Tweetapus, you agree not to post or share content that includes
-      discrimination, harassment, doxxing, threats, or promotion of violence.
-      Sexually explicit material, pornography, gore, or excessively violent
-      imagery are strictly prohibited, even if marked as sensitive.
-    </p>
-    <p>
-      We reserve the right to remove any content that violates these rules or
-      that we determine, in our sole discretion, is harmful to the community
-      or the service. Repeated violations may result in account suspension or
-      termination.
-    </p>
+        <p>
+          if you're in the eu or a region with similar privacy laws, you have
+          certain rights including access to your data, deletion of your account
+          and data, correction of your information, data portability, and the
+          ability to object to processing based on legitimate interests. to
+          exercise these rights, contact us at
+          <a href="javascript:">freewill-irk-wand@duck.com</a>
+        </p>
 
-    <h3>3.4 Content Ownership</h3>
-    <p>
-      You retain all rights to the content you create. However, by submitting
-      content on Tweetapus, you grant us a worldwide, non-exclusive,
-      royalty-free license to host, store, reproduce, display, and distribute
-      your content as necessary to operate the service. This license ends when
-      you delete your content or your account, except where your content has
-      been shared by others and when this is not reasonably possible.
-    </p>
-
-    <h3>3.5 Account Termination</h3>
-    <p>
-      We reserve the right to suspend or terminate your account at any time,
-      with or without notice, for any reason or no reason at all. This
-      includes but is not limited to violations of these Terms, legal
-      obligations, or risks to the security and integrity of the platform.
-    </p>
-    <p>
-      You may deactivate or delete your account at any time. Upon deletion, we
-      will try to remove or anonymize your personal data, subject to the
-      retention rules described above.
-    </p>
-    <p>
-      You may not use the service for unlawful purposes or in ways that
-      violate the rights of others. It is
-      <i>recommended</i>
-      to ask permission before creating multiple accounts but
-      <i>required</i>
-      before owning up to 5 accounts at any given time. You may not create any
-      account in behalf of another person or entity.
-    </p>
-
-    <h3>3.6 Prohibited Uses</h3>
-    <p>
-      You agree not to use Tweetapus in any way that is unauthorized or
-      unlawful. This includes attempting to scrape data, use automated bots,
-      exploit vulnerabilities, disrupt service functionality, impersonate
-      others, or otherwise interfere with the normal operation of the
-      platform.
-    </p>
-
-    <h3>3.7 Disclaimers</h3>
-    <p>
-      The service is provided on an “as is” and “as available” basis. We make
-      no representations or warranties of any kind, whether express or
-      implied, including but not limited to warranties of merchantability,
-      fitness for a particular purpose, and non-infringement. While we take
-      steps to ensure security and reliability, we cannot guarantee that the
-      service will always be available, error-free, or completely secure.
-    </p>
-
-    <h3>3.8 Limitation of Liability</h3>
-    <p>
-      To the maximum extent permitted by law, Tweetapus and its operators
-      shall not be liable for any indirect, incidental, special,
-      consequential, or punitive damages, or for any loss of data, profits,
-      goodwill, or other intangible losses resulting from your access to or
-      use of the service.
-    </p>
-    <p>
-      In no event shall our total liability to you for all claims exceed the
-      amount you have paid to Tweetapus, if any, in the twelve months
-      preceding the claim.
-    </p>
-
-    <h2>4. Changes</h2>
-    <p>
-      We may update this Privacy Policy and Terms of Service from time to time
-      in order to reflect changes to our practices, legal requirements, or
-      service features. Any changes will be posted on this page with the
-      updated effective date. Your continued use of Tweetapus after the
-      updated version takes effect constitutes acceptance of the new terms.
-    </p>
-
-    <h2>5. Contact</h2>
-    <p>
-      If you have any questions, concerns, or requests regarding this Privacy
-      Policy or these Terms of Service, you may contact us at:
-      <a href="mailto:freewill-irk-wand@duck.com" target="_blank">
-        fr‍ee‍wi‍ll‍-i‍rk-‍wan‍d@‍du‍ck‍.‍co‍m
-      </a>
-    </p>
-  </div>
-  <script src="/public/shared/extensions.js" type="module" defer></script>
-</body>
-
+        <p>
+          if you would like to contact tweetapus' data controller, please use
+          the email above. tweetapus is operated by an individual acting as the
+          controller in portugal. for privacy reasons, we will provide legally
+          required information and process notices to portuguese authorities if
+          requested under portuguese law, court orders, or other binding legal
+          obligations.
+        </p>
+      </main>
+    </div>
+  </body>
 </html>

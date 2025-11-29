@@ -303,7 +303,9 @@ export default new Elysia({ prefix: "/delegates", tags: ["Delegates"] })
 
 			let user;
 			if (actualUserId) {
-				user = db.prepare("SELECT id, username FROM users WHERE id = ?").get(actualUserId);
+				user = db
+					.prepare("SELECT id, username FROM users WHERE id = ?")
+					.get(actualUserId);
 			} else {
 				user = getUserByUsername.get(payload.username);
 			}

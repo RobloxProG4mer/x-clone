@@ -185,7 +185,9 @@ async function executeTool(toolName, args, db) {
 
 		case "get_profile": {
 			const user = db
-				.query("SELECT id, username, name, bio, verified, follower_count, following_count, post_count FROM users WHERE LOWER(username) = LOWER(?)")
+				.query(
+					"SELECT id, username, name, bio, verified, follower_count, following_count, post_count FROM users WHERE LOWER(username) = LOWER(?)",
+				)
 				.get(args.username);
 			if (!user) return { error: "User not found" };
 
@@ -451,20 +453,23 @@ async function callOpenAI(messages, db) {
 			};
 		});
 
-		let response = await fetch(`${OPENAPI_HOST || "https://api.openai.com/v1/"}responses`, {
-			method: "POST",
-			headers: {
-				"Content-Type": "application/json",
-				Authorization: `Bearer ${OPENAI_API_KEY}`,
+		let response = await fetch(
+			`${OPENAPI_HOST || "https://api.openai.com/v1/"}responses`,
+			{
+				method: "POST",
+				headers: {
+					"Content-Type": "application/json",
+					Authorization: `Bearer ${OPENAI_API_KEY}`,
+				},
+				body: JSON.stringify({
+					model: process.env.OPENAI_MODEL,
+					instructions: instructions,
+					input: formattedInput,
+					tools: tools,
+					max_output_tokens: 10_000,
+				}),
 			},
-			body: JSON.stringify({
-				model: process.env.OPENAI_MODEL,
-				instructions: instructions,
-				input: formattedInput,
-				tools: tools,
-				max_output_tokens: 10_000,
-			}),
-		});
+		);
 
 		if (!response.ok) {
 			const error = await response.text();
@@ -495,28 +500,31 @@ async function callOpenAI(messages, db) {
 				});
 			}
 
-			response = await fetch(`${OPENAPI_HOST || "https://api.openai.com/v1/"}responses`, {
-				method: "POST",
-				headers: {
-					"Content-Type": "application/json",
-					Authorization: `Bearer ${OPENAI_API_KEY}`,
+			response = await fetch(
+				`${OPENAPI_HOST || "https://api.openai.com/v1/"}responses`,
+				{
+					method: "POST",
+					headers: {
+						"Content-Type": "application/json",
+						Authorization: `Bearer ${OPENAI_API_KEY}`,
+					},
+					body: JSON.stringify({
+						model: process.env.OPENAI_MODEL,
+						instructions: instructions,
+						input: [
+							...formattedInput,
+							...functionCalls.map((fc) => ({
+								type: "function_call",
+								call_id: fc.call_id,
+								name: fc.name,
+								arguments: fc.arguments,
+							})),
+							...toolResults,
+						],
+						max_output_tokens: 10_000,
+					}),
 				},
-				body: JSON.stringify({
-					model: process.env.OPENAI_MODEL,
-					instructions: instructions,
-					input: [
-						...formattedInput,
-						...functionCalls.map((fc) => ({
-							type: "function_call",
-							call_id: fc.call_id,
-							name: fc.name,
-							arguments: fc.arguments,
-						})),
-						...toolResults,
-					],
-					max_output_tokens: 10_000,
-				}),
-			});
+			);
 
 			if (!response.ok) {
 				const error = await response.text();

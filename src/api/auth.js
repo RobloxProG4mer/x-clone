@@ -24,7 +24,7 @@ const getUserByUsername = db.prepare(
 	`SELECT id, username, name, avatar, verified, gold, admin, theme, accent_color, 
 	 avatar_radius, character_limit, label_type, label_automated, private, password_hash,
 	 account_login_transparency
-	 FROM users WHERE LOWER(username) = LOWER(?)`
+	 FROM users WHERE LOWER(username) = LOWER(?)`,
 );
 const updateUserLoginTransparency = db.prepare(
 	"UPDATE users SET account_login_transparency = ?, ip_address = ? WHERE id = ?",
@@ -277,7 +277,11 @@ export default new Elysia({ prefix: "/auth", tags: ["Auth"] })
 					};
 				}
 
-				const owner = db.query("SELECT id, username, name, avatar, verified, gold FROM users WHERE id = ?").get(ownerId);
+				const owner = db
+					.query(
+						"SELECT id, username, name, avatar, verified, gold FROM users WHERE id = ?",
+					)
+					.get(ownerId);
 				if (!owner) return { error: "Owner account not found" };
 
 				const delegateToken = await jwt.sign({
@@ -332,7 +336,9 @@ export default new Elysia({ prefix: "/auth", tags: ["Auth"] })
 				}
 
 				const primaryUser = db
-					.query("SELECT id, username, name, avatar, verified, gold FROM users WHERE id = ?")
+					.query(
+						"SELECT id, username, name, avatar, verified, gold FROM users WHERE id = ?",
+					)
 					.get(payload.primaryUserId);
 				if (!primaryUser) return { error: "Primary account not found" };
 
@@ -714,7 +720,9 @@ export default new Elysia({ prefix: "/auth", tags: ["Auth"] })
 				if (existingPasskey) {
 					if (!user) {
 						user = db
-							.query("SELECT id, username, account_login_transparency FROM users WHERE id = ?")
+							.query(
+								"SELECT id, username, account_login_transparency FROM users WHERE id = ?",
+							)
 							.get(existingPasskey.internal_user_id);
 					}
 
@@ -734,11 +742,7 @@ export default new Elysia({ prefix: "/auth", tags: ["Auth"] })
 							existingLoginTransparency,
 						);
 						const ip = headers["cf-connecting-ip"];
-						updateUserLoginTransparency.run(
-							loginTransparency,
-							ip,
-							user.id,
-						);
+						updateUserLoginTransparency.run(loginTransparency, ip, user.id);
 						if (ip) recordUserIp.run(user.id, ip);
 					} else {
 						const ip = headers["cf-connecting-ip"];
@@ -908,7 +912,9 @@ export default new Elysia({ prefix: "/auth", tags: ["Auth"] })
 				}
 
 				const user = db
-					.query(`SELECT id, username, account_login_transparency FROM users WHERE id = ?`)
+					.query(
+						`SELECT id, username, account_login_transparency FROM users WHERE id = ?`,
+					)
 					.get(passkey.internal_user_id);
 
 				if (!user) {

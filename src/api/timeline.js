@@ -16,7 +16,8 @@ const normalizeContent = (value) => {
 
 const stripInternalFields = (obj) => {
 	if (!obj) return obj;
-	const { super_tweeter, super_tweeter_boost, _normalized_content, ...rest } = obj;
+	const { super_tweeter, super_tweeter_boost, _normalized_content, ...rest } =
+		obj;
 	return rest;
 };
 
@@ -72,7 +73,7 @@ const getFollowingTimelinePostsBefore = db.query(`
 const getPostCreatedAt = db.query(`SELECT created_at FROM posts WHERE id = ?`);
 
 const getUserByUsername = db.query(
-	"SELECT id, username, admin FROM users WHERE LOWER(username) = LOWER(?)"
+	"SELECT id, username, admin FROM users WHERE LOWER(username) = LOWER(?)",
 );
 
 const getSeenTweets = db.query(`

@@ -1,5 +1,5 @@
-import { Elysia, t } from "elysia";
 import { jwt } from "@elysiajs/jwt";
+import { Elysia, t } from "elysia";
 import db from "../db.js";
 
 // Store captchas in memory with expiry

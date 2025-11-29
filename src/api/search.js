@@ -177,7 +177,7 @@ const buildSearchPostsQuery = ({
 };
 
 const getUserByUsername = db.query(
-	"SELECT id, username, admin FROM users WHERE LOWER(username) = LOWER(?)"
+	"SELECT id, username, admin FROM users WHERE LOWER(username) = LOWER(?)",
 );
 
 const getPollByPostId = db.query(`

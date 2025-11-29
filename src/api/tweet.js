@@ -111,7 +111,9 @@ const getArticlePreviewById = db.query(`
 	WHERE id = ? AND is_article = TRUE
 `);
 
-const getUserById = db.query("SELECT id, username, name, avatar, verified, gold, avatar_radius, affiliate, affiliate_with, selected_community_tag FROM users WHERE id = ?");
+const getUserById = db.query(
+	"SELECT id, username, name, avatar, verified, gold, avatar_radius, affiliate, affiliate_with, selected_community_tag FROM users WHERE id = ?",
+);
 
 const getTweetWithThread = db.query(`
   WITH RECURSIVE thread_posts AS (
@@ -1488,7 +1490,7 @@ export default new Elysia({ prefix: "/tweets", tags: ["Tweets"] })
 			const { id } = params;
 			const tweet = getTweetById.get(id);
 			if (!tweet) return { error: "Tweet not found" };
-			
+
 			if (isUserSuspendedById(tweet.user_id)) {
 				return { error: "Tweet not found" };
 			}

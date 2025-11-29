@@ -31,7 +31,7 @@ const getUserByUsername = db.prepare(
 	 follower_count, following_count, suspended, restricted, shadowbanned, private, pronouns, 
 	 avatar_radius, gold, affiliate, label_type, label_automated, affiliate_with, selected_community_tag,
 	 transparency_location_display
-	 FROM users WHERE LOWER(username) = LOWER(?)`
+	 FROM users WHERE LOWER(username) = LOWER(?)`,
 );
 
 const updateProfile = db.prepare(`
@@ -2388,10 +2388,12 @@ export default new Elysia({ prefix: "/profile", tags: ["Profile"] })
 	.get("/:username/algorithm-stats", async ({ params }) => {
 		try {
 			const { username } = params;
-			const user = db.prepare(`
+			const user = db
+				.prepare(`
 				SELECT id, username, created_at, blocked_by_count, muted_by_count, spam_score, 
 				follower_count, following_count, post_count, verified, gold, super_tweeter
-				FROM users WHERE LOWER(username) = LOWER(?)`).get(username);
+				FROM users WHERE LOWER(username) = LOWER(?)`)
+				.get(username);
 
 			if (!user) {
 				return { error: "User not found" };
@@ -2482,8 +2484,10 @@ export default new Elysia({ prefix: "/profile", tags: ["Profile"] })
 	.get("/:username/spam-score", async ({ params }) => {
 		try {
 			const { username } = params;
-			const user = db.prepare(`
-				SELECT id, created_at FROM users WHERE LOWER(username) = LOWER(?)`).get(username);
+			const user = db
+				.prepare(`
+				SELECT id, created_at FROM users WHERE LOWER(username) = LOWER(?)`)
+				.get(username);
 
 			if (!user) {
 				return { error: "User not found" };

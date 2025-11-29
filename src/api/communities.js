@@ -296,9 +296,9 @@ export default new Elysia({ tags: ["Communities"] })
 			},
 			params: t.Object({
 				id: t.String(),
-			})
+			}),
 		},
-	) // 
+	) //
 	.patch(
 		"/communities/:id",
 		async ({ user, params, body, set }) => {
@@ -372,7 +372,7 @@ export default new Elysia({ tags: ["Communities"] })
 				description: t.Optional(t.String()),
 				rules: t.Optional(t.String()),
 				access_mode: t.Optional(t.String()),
-			})
+			}),
 		},
 	)
 	.delete(
@@ -406,7 +406,7 @@ export default new Elysia({ tags: ["Communities"] })
 			},
 			params: t.Object({
 				id: t.String(),
-			})
+			}),
 		},
 	)
 	.post(
@@ -483,7 +483,7 @@ export default new Elysia({ tags: ["Communities"] })
 			}),
 			body: t.Object({
 				username: t.String(),
-			})
+			}),
 		},
 	)
 	.post(
@@ -525,7 +525,7 @@ export default new Elysia({ tags: ["Communities"] })
 			},
 			params: t.Object({
 				id: t.String(),
-			})
+			}),
 		},
 	)
 	.get(
@@ -553,7 +553,7 @@ export default new Elysia({ tags: ["Communities"] })
 			query: t.Object({
 				limit: t.Optional(t.String()),
 				offset: t.Optional(t.String()),
-			})
+			}),
 		},
 	)
 	.post(
@@ -634,7 +634,7 @@ export default new Elysia({ tags: ["Communities"] })
 			}),
 			body: t.Object({
 				role: t.String(),
-			})
+			}),
 		},
 	)
 	.post(
@@ -708,7 +708,7 @@ export default new Elysia({ tags: ["Communities"] })
 			params: t.Object({
 				id: t.String(),
 				userId: t.String(),
-			})
+			}),
 		},
 	)
 	.post(
@@ -761,7 +761,7 @@ export default new Elysia({ tags: ["Communities"] })
 			params: t.Object({
 				id: t.String(),
 				userId: t.String(),
-			})
+			}),
 		},
 	)
 	.patch(
@@ -803,7 +803,7 @@ export default new Elysia({ tags: ["Communities"] })
 			}),
 			body: t.Object({
 				access_mode: t.String(),
-			})
+			}),
 		},
 	)
 	.get(
@@ -842,7 +842,7 @@ export default new Elysia({ tags: ["Communities"] })
 			query: t.Object({
 				limit: t.Optional(t.String()),
 				offset: t.Optional(t.String()),
-			})
+			}),
 		},
 	)
 	.post(
@@ -903,7 +903,7 @@ export default new Elysia({ tags: ["Communities"] })
 			params: t.Object({
 				id: t.String(),
 				requestId: t.String(),
-			})
+			}),
 		},
 	)
 	.post(
@@ -960,7 +960,7 @@ export default new Elysia({ tags: ["Communities"] })
 			params: t.Object({
 				id: t.String(),
 				requestId: t.String(),
-			})
+			}),
 		},
 	)
 	.get(
@@ -982,7 +982,7 @@ export default new Elysia({ tags: ["Communities"] })
 			query: t.Object({
 				limit: t.Optional(t.String()),
 				offset: t.Optional(t.String()),
-			})
+			}),
 		},
 	)
 	.post(
@@ -1021,7 +1021,7 @@ export default new Elysia({ tags: ["Communities"] })
 			}),
 			body: t.Object({
 				icon: t.String(),
-			})
+			}),
 		},
 	)
 	.post(
@@ -1060,7 +1060,7 @@ export default new Elysia({ tags: ["Communities"] })
 			}),
 			body: t.Object({
 				banner: t.String(),
-			})
+			}),
 		},
 	)
 	.get(
@@ -1153,7 +1153,7 @@ export default new Elysia({ tags: ["Communities"] })
 			query: t.Object({
 				limit: t.Optional(t.String()),
 				offset: t.Optional(t.String()),
-			})
+			}),
 		},
 	)
 	.patch(
@@ -1226,4 +1226,3 @@ export default new Elysia({ tags: ["Communities"] })
 			}),
 		},
 	);
-

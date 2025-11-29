@@ -9,7 +9,9 @@ const JWT_SECRET = process.env.JWT_SECRET;
 const getUserByUsername = db.prepare(
 	"SELECT id, username, name, avatar, verified, gold, avatar_radius FROM users WHERE LOWER(username) = LOWER(?)",
 );
-const getUserById = db.prepare("SELECT id, username, name, avatar, verified, gold, avatar_radius FROM users WHERE id = ?");
+const getUserById = db.prepare(
+	"SELECT id, username, name, avatar, verified, gold, avatar_radius FROM users WHERE id = ?",
+);
 const listArticles = db.prepare(`
   SELECT p.* FROM posts p
   JOIN users u ON p.user_id = u.id
@@ -259,7 +261,9 @@ export default new Elysia({ prefix: "/articles", tags: ["Articles"] })
 			const userPlaceholders = userIds.map(() => "?").join(",");
 			const users = userPlaceholders
 				? db
-						.query(`SELECT id, username, name, avatar, verified, gold, avatar_radius FROM users WHERE id IN (${userPlaceholders})`)
+						.query(
+							`SELECT id, username, name, avatar, verified, gold, avatar_radius FROM users WHERE id IN (${userPlaceholders})`,
+						)
 						.all(...userIds)
 				: [];
 			const userMap = new Map(users.map((u) => [u.id, u]));
