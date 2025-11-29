@@ -4,10 +4,17 @@ import { rateLimit } from "elysia-rate-limit";
 import db from "./../db.js";
 import { generateAIResponse } from "../helpers/ai-assistant.js";
 import ratelimit from "../helpers/ratelimit.js";
+import { checkMultipleRateLimits } from "../helpers/customRateLimit.js";
 import { updateUserSpamScore } from "../helpers/spam-detection.js";
 import { addNotification } from "./notifications.js";
 
 const JWT_SECRET = process.env.JWT_SECRET;
+
+const getIdentifier = (headers) => {
+	const token = headers.authorization?.split(" ")[1];
+	const ip = headers["cf-connecting-ip"] || headers["x-forwarded-for"]?.split(",")[0] || "0.0.0.0";
+	return token || ip;
+};
 
 const getUserByUsername = db.query(
 	"SELECT id, username, name, avatar, verified, gold, admin, avatar_radius, character_limit, restricted, suspended FROM users WHERE LOWER(username) = LOWER(?)",
@@ -505,9 +512,25 @@ export default new Elysia({ prefix: "/tweets", tags: ["Tweets"] })
 			generator: ratelimit,
 		}),
 	)
-	.post("/", async ({ jwt, headers, body }) => {
+	.post("/", async ({ jwt, headers, body, set }) => {
 		const authorization = headers.authorization;
 		if (!authorization) return { error: "Authentication required" };
+
+		const identifier = getIdentifier(headers);
+		const isReply = !!body.reply_to;
+		if (isReply) {
+			const rateCheck = checkMultipleRateLimits(identifier, ["reply", "replyBurst"]);
+			if (rateCheck.isLimited) {
+				set.status = 429;
+				return { error: "Too many requests", resetIn: rateCheck.resetIn };
+			}
+		} else {
+			const rateCheck = checkMultipleRateLimits(identifier, ["post"]);
+			if (rateCheck.isLimited) {
+				set.status = 429;
+				return { error: "Too many requests", resetIn: rateCheck.resetIn };
+			}
+		}
 
 		try {
 			const payload = await jwt.verify(authorization.replace("Bearer ", ""));
@@ -1417,9 +1440,16 @@ export default new Elysia({ prefix: "/tweets", tags: ["Tweets"] })
 			hasMoreReplies,
 		};
 	})
-	.post("/:id/like", async ({ jwt, headers, params }) => {
+	.post("/:id/like", async ({ jwt, headers, params, set }) => {
 		const authorization = headers.authorization;
 		if (!authorization) return { error: "Authentication required" };
+
+		const identifier = getIdentifier(headers);
+		const rateCheck = checkMultipleRateLimits(identifier, ["like", "likeBurst"]);
+		if (rateCheck.isLimited) {
+			set.status = 429;
+			return { error: "Too many requests", resetIn: rateCheck.resetIn };
+		}
 
 		try {
 			const payload = await jwt.verify(authorization.replace("Bearer ", ""));
@@ -1476,9 +1506,16 @@ export default new Elysia({ prefix: "/tweets", tags: ["Tweets"] })
 			return { error: "Failed to toggle like" };
 		}
 	})
-	.post("/:id/retweet", async ({ jwt, headers, params }) => {
+	.post("/:id/retweet", async ({ jwt, headers, params, set }) => {
 		const authorization = headers.authorization;
 		if (!authorization) return { error: "Authentication required" };
+
+		const identifier = getIdentifier(headers);
+		const rateCheck = checkMultipleRateLimits(identifier, ["retweet", "retweetBurst"]);
+		if (rateCheck.isLimited) {
+			set.status = 429;
+			return { error: "Too many requests", resetIn: rateCheck.resetIn };
+		}
 
 		try {
 			const payload = await jwt.verify(authorization.replace("Bearer ", ""));

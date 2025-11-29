@@ -256,8 +256,11 @@ let timelineScrollPosition = 0;
 	document
 		.getElementById("profileDropdownBtn")
 		?.addEventListener("click", async (e) => {
+			e.preventDefault();
+			e.stopPropagation();
+
 			const { handleProfileDropdown } = await import("./profile.js");
-			handleProfileDropdown(e);
+			handleProfileDropdown(document.getElementById("profileDropdownBtn"));
 		});
 
 	document

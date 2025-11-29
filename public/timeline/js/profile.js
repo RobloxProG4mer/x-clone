@@ -2590,11 +2590,7 @@ document
 		}
 	});
 
-export const handleProfileDropdown = (e) => {
-	e.preventDefault();
-	e.stopPropagation();
-	const triggerEl = e.currentTarget;
-
+export const handleProfileDropdown = (triggerEl) => {
 	getUser()
 		.then(async (currentUser) => {
 			try {

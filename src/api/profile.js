@@ -3,10 +3,17 @@ import { Elysia } from "elysia";
 import { rateLimit } from "elysia-rate-limit";
 import db from "./../db.js";
 import ratelimit from "../helpers/ratelimit.js";
+import { checkMultipleRateLimits } from "../helpers/customRateLimit.js";
 import { calculateSpamScoreWithDetails } from "../helpers/spam-detection.js";
 import { addNotification } from "./notifications.js";
 
 const JWT_SECRET = process.env.JWT_SECRET;
+
+const getIdentifier = (headers) => {
+	const token = headers.authorization?.split(" ")[1];
+	const ip = headers["cf-connecting-ip"] || headers["x-forwarded-for"]?.split(",")[0] || "0.0.0.0";
+	return token || ip;
+};
 
 const getFollowers = db.prepare(`
   SELECT users.id, users.username, users.name, users.avatar, users.verified, users.gold, users.avatar_radius, users.bio
@@ -1329,7 +1336,7 @@ export default new Elysia({ prefix: "/profile", tags: ["Profile"] })
 			return { error: "Failed to update profile" };
 		}
 	})
-	.post("/:username/follow", async ({ params, jwt, headers }) => {
+	.post("/:username/follow", async ({ params, jwt, headers, set }) => {
 		try {
 			const authorization = headers.authorization;
 			if (!authorization) return { error: "Authentication required" };
@@ -1339,6 +1346,13 @@ export default new Elysia({ prefix: "/profile", tags: ["Profile"] })
 
 			const currentUser = getUserByUsername.get(payload.username);
 			if (!currentUser) return { error: "User not found" };
+
+			const identifier = getIdentifier(headers, currentUser.id);
+			const rateLimitResult = checkMultipleRateLimits(identifier, ["follow", "followBurst"]);
+			if (!rateLimitResult.allowed) {
+				set.status = 429;
+				return { error: "Rate limited", retryAfter: rateLimitResult.retryAfter };
+			}
 
 			const { username } = params;
 			const targetUser = getUserByUsername.get(username);
@@ -1411,7 +1425,7 @@ export default new Elysia({ prefix: "/profile", tags: ["Profile"] })
 			return { error: "Failed to follow user" };
 		}
 	})
-	.delete("/:username/follow", async ({ params, jwt, headers }) => {
+	.delete("/:username/follow", async ({ params, jwt, headers, set }) => {
 		const authorization = headers.authorization;
 		if (!authorization) return { error: "Authentication required" };
 
@@ -1421,6 +1435,13 @@ export default new Elysia({ prefix: "/profile", tags: ["Profile"] })
 
 			const currentUser = getUserByUsername.get(payload.username);
 			if (!currentUser) return { error: "User not found" };
+
+			const identifier = getIdentifier(headers, currentUser.id);
+			const rateLimitResult = checkMultipleRateLimits(identifier, ["follow", "followBurst"]);
+			if (!rateLimitResult.allowed) {
+				set.status = 429;
+				return { error: "Rate limited", retryAfter: rateLimitResult.retryAfter };
+			}
 
 			const { username } = params;
 			const targetUser = getUserByUsername.get(username);

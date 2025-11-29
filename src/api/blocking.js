@@ -4,8 +4,13 @@ import { rateLimit } from "elysia-rate-limit";
 import db from "./../db.js";
 import ratelimit from "../helpers/ratelimit.js";
 import { getSubnetPrefix } from "../helpers/ip.js";
+import { checkMultipleRateLimits } from "../helpers/customRateLimit.js";
 
 const JWT_SECRET = process.env.JWT_SECRET;
+
+const getIdentifier = (headers, userId) => {
+	return headers["cf-connecting-ip"] || headers["x-forwarded-for"]?.split(",")[0] || userId;
+};
 
 const getUserByUsername = db.prepare(
 	"SELECT id, ip_address FROM users WHERE LOWER(username) = LOWER(?)",
@@ -89,7 +94,7 @@ export default new Elysia({ prefix: "/blocking", tags: ["Blocking"] })
 	)
 	.post(
 		"/block",
-		async ({ jwt, headers, body }) => {
+		async ({ jwt, headers, body, set }) => {
 			const authorization = headers.authorization;
 			if (!authorization) return { error: "Authentication required" };
 
@@ -99,6 +104,13 @@ export default new Elysia({ prefix: "/blocking", tags: ["Blocking"] })
 
 				const user = getUserByUsername.get(payload.username);
 				if (!user) return { error: "User not found" };
+
+				const identifier = getIdentifier(headers, user.id);
+				const rateLimitResult = checkMultipleRateLimits(identifier, ["block", "blockBurst"]);
+				if (!rateLimitResult.allowed) {
+					set.status = 429;
+					return { error: "Rate limited", retryAfter: rateLimitResult.retryAfter };
+				}
 
 				const { userId } = body;
 				if (!userId) return { error: "User ID is required" };
@@ -179,7 +191,7 @@ export default new Elysia({ prefix: "/blocking", tags: ["Blocking"] })
 	)
 	.post(
 		"/unblock",
-		async ({ jwt, headers, body }) => {
+		async ({ jwt, headers, body, set }) => {
 			const authorization = headers.authorization;
 			if (!authorization) return { error: "Authentication required" };
 
@@ -189,6 +201,13 @@ export default new Elysia({ prefix: "/blocking", tags: ["Blocking"] })
 
 				const user = getUserByUsername.get(payload.username);
 				if (!user) return { error: "User not found" };
+
+				const identifier = getIdentifier(headers, user.id);
+				const rateLimitResult = checkMultipleRateLimits(identifier, ["block", "blockBurst"]);
+				if (!rateLimitResult.allowed) {
+					set.status = 429;
+					return { error: "Rate limited", retryAfter: rateLimitResult.retryAfter };
+				}
 
 				const { userId } = body;
 				if (!userId) return { error: "User ID is required" };
@@ -293,7 +312,7 @@ export default new Elysia({ prefix: "/blocking", tags: ["Blocking"] })
 	)
 	.post(
 		"/mute",
-		async ({ jwt, headers, body }) => {
+		async ({ jwt, headers, body, set }) => {
 			const authorization = headers.authorization;
 			if (!authorization) return { error: "Authentication required" };
 
@@ -303,6 +322,13 @@ export default new Elysia({ prefix: "/blocking", tags: ["Blocking"] })
 
 				const user = getUserByUsername.get(payload.username);
 				if (!user) return { error: "User not found" };
+
+				const identifier = getIdentifier(headers, user.id);
+				const rateLimitResult = checkMultipleRateLimits(identifier, ["mute", "muteBurst"]);
+				if (!rateLimitResult.allowed) {
+					set.status = 429;
+					return { error: "Rate limited", retryAfter: rateLimitResult.retryAfter };
+				}
 
 				const { userId } = body;
 				if (!userId) return { error: "User ID is required" };
@@ -345,7 +371,7 @@ export default new Elysia({ prefix: "/blocking", tags: ["Blocking"] })
 	)
 	.post(
 		"/unmute",
-		async ({ jwt, headers, body }) => {
+		async ({ jwt, headers, body, set }) => {
 			const authorization = headers.authorization;
 			if (!authorization) return { error: "Authentication required" };
 
@@ -355,6 +381,13 @@ export default new Elysia({ prefix: "/blocking", tags: ["Blocking"] })
 
 				const user = getUserByUsername.get(payload.username);
 				if (!user) return { error: "User not found" };
+
+				const identifier = getIdentifier(headers, user.id);
+				const rateLimitResult = checkMultipleRateLimits(identifier, ["mute", "muteBurst"]);
+				if (!rateLimitResult.allowed) {
+					set.status = 429;
+					return { error: "Rate limited", retryAfter: rateLimitResult.retryAfter };
+				}
 
 				const { userId } = body;
 				if (!userId) return { error: "User ID is required" };

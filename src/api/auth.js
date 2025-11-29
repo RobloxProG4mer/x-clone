@@ -9,6 +9,7 @@ import { Elysia, t } from "elysia";
 import { rateLimit } from "elysia-rate-limit";
 import db from "./../db.js";
 import ratelimit from "../helpers/ratelimit.js";
+import { grantCapBypass } from "../helpers/customRateLimit.js";
 import { isVPN } from "../helpers/vpn-detect.js";
 import cap from "./cap.js";
 
@@ -157,7 +158,7 @@ export default new Elysia({ prefix: "/auth", tags: ["Auth"] })
 	)
 	.post(
 		"/cap/rate-limit-bypass",
-		async ({ body, set }) => {
+		async ({ body, headers, set }) => {
 			const { capToken } = body;
 			if (!capToken) {
 				set.status = 400;
@@ -168,6 +169,10 @@ export default new Elysia({ prefix: "/auth", tags: ["Auth"] })
 				set.status = 401;
 				return { success: false, error: "Invalid Cap token" };
 			}
+			const token = headers.authorization?.split(" ")[1];
+			const ip = headers["cf-connecting-ip"] || headers["x-forwarded-for"]?.split(",")[0] || "0.0.0.0";
+			const identifier = token || ip;
+			grantCapBypass(identifier);
 			return { success: true, message: "Rate limit bypass granted" };
 		},
 		{
