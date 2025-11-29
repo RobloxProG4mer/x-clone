@@ -70,6 +70,31 @@ export function createNotificationSkeleton() {
 	return skeleton;
 }
 
+export function createUserSkeleton() {
+	const skeleton = document.createElement("div");
+	skeleton.className = "skeleton-user skeleton-container";
+	skeleton.innerHTML = `
+		<div class="skeleton-loader skeleton-user-avatar"></div>
+		<div class="skeleton-user-info">
+			<div class="skeleton-loader skeleton-user-name"></div>
+			<div class="skeleton-loader skeleton-user-username"></div>
+		</div>
+	`;
+	return skeleton;
+}
+
+export function createNewsSkeleton() {
+	const skeleton = document.createElement("div");
+	skeleton.className = "skeleton-news skeleton-container";
+	skeleton.innerHTML = `
+		<div class="skeleton-loader skeleton-news-title"></div>
+		<div class="skeleton-loader skeleton-news-text"></div>
+		<div class="skeleton-loader skeleton-news-text"></div>
+		<div class="skeleton-loader skeleton-news-text-short"></div>
+	`;
+	return skeleton;
+}
+
 export function createProfileSkeleton() {
 	const skeleton = document.createElement("div");
 	skeleton.className = "skeleton-profile-header skeleton-container";
@@ -101,5 +126,7 @@ export function showSkeletons(container, skeletonCreator, count = 3) {
 }
 
 export function removeSkeletons(skeletons) {
-	skeletons.forEach((skeleton) => { skeleton.remove(); });
+	skeletons.forEach((skeleton) => {
+		skeleton.remove();
+	});
 }

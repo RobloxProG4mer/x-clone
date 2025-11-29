@@ -139,7 +139,11 @@ async function loadNotifications() {
 			isLoadingMoreNotifications = true;
 
 			const listElement = document.getElementById("notificationsList");
-			const skeletons = showSkeletons(listElement, createNotificationSkeleton, 3);
+			const skeletons = showSkeletons(
+				listElement,
+				createNotificationSkeleton,
+				3,
+			);
 
 			try {
 				const data = await query(
@@ -169,7 +173,7 @@ async function loadNotifications() {
 					oldestNotificationId =
 						newNotifications[newNotifications.length - 1].id;
 					hasMoreNotifications = data.hasMoreNotifications || false;
-					
+
 					requestAnimationFrame(() => {
 						checkIfNeedsMoreContent();
 					});

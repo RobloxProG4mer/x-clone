@@ -217,7 +217,7 @@ async function loadCommunities() {
 	const skeletons = showSkeletons(list, createCommunitySkeleton, 3);
 
 	const { communities } = await api("/communities?limit=50");
-	
+
 	removeSkeletons(skeletons);
 	list.innerHTML = "";
 
@@ -245,7 +245,7 @@ async function loadMyCommunities() {
 	const skeletons = showSkeletons(list, createCommunitySkeleton, 3);
 
 	const { communities } = await api(`/users/${userId}/communities?limit=50`);
-	
+
 	removeSkeletons(skeletons);
 	list.innerHTML = "";
 

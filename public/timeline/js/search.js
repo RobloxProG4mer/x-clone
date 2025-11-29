@@ -1,3 +1,10 @@
+import {
+	createNewsSkeleton,
+	createTweetSkeleton,
+	createUserSkeleton,
+	removeSkeletons,
+	showSkeletons,
+} from "../../shared/skeleton-utils.js";
 import { updateTabIndicator } from "../../shared/tab-indicator.js";
 import query from "./api.js";
 import { createTweetElement } from "./tweets.js";
@@ -29,6 +36,23 @@ const performSearch = async (q) => {
 	const controller = new AbortController();
 	currentAbortController = controller;
 
+	searchEmpty.style.display = "none";
+
+	let userSkeletons = [];
+	let tweetSkeletons = [];
+
+	if (currentFilter === "all" || currentFilter === "users") {
+		usersSection.style.display = "block";
+		usersResults.innerHTML = "";
+		userSkeletons = showSkeletons(usersResults, createUserSkeleton, 3);
+	}
+
+	if (currentFilter === "all" || currentFilter === "tweets") {
+		tweetsSection.style.display = "block";
+		tweetsResults.innerHTML = "";
+		tweetSkeletons = showSkeletons(tweetsResults, createTweetSkeleton, 3);
+	}
+
 	try {
 		const promises = [];
 
@@ -51,6 +75,9 @@ const performSearch = async (q) => {
 		}
 
 		const results = await Promise.all(promises);
+
+		removeSkeletons(userSkeletons);
+		removeSkeletons(tweetSkeletons);
 
 		if (controller.signal.aborted || searchId !== lastSearchId) return;
 
@@ -83,6 +110,8 @@ const performSearch = async (q) => {
 
 		displayResults(users, posts);
 	} catch (error) {
+		removeSkeletons(userSkeletons);
+		removeSkeletons(tweetSkeletons);
 		if (controller.signal.aborted) return;
 		console.error("Search error:", error);
 	} finally {
@@ -151,11 +180,14 @@ const showEmptyState = async () => {
 	usersSection.style.display = "none";
 	tweetsSection.style.display = "none";
 
-	searchEmpty.innerHTML = `<svg width="20" height="20" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><style>.spinner_z9k8 {transform-origin: center;animation: spinner_StKS 0.75s infinite linear;}@keyframes spinner_StKS {100% {transform: rotate(360deg);}}</style><path d="M12,1A11,11,0,1,0,23,12,11,11,0,0,0,12,1Zm0,19a8,8,0,1,1,8-8A8,8,0,0,1,12,20Z" opacity=".25" fill="currentColor"></path><path d="M12,4a8,8,0,0,1,7.89,6.7A1.53,1.53,0,0,0,21.38,12h0a1.5,1.5,0,0,0,1.48-1.75,11,11,0,0,0-21.72,0A1.5,1.5,0,0,0,2.62,12h0a1.53,1.53,0,0,0,1.49-1.3A8,8,0,0,1,12,4Z" class="spinner_z9k8" fill="currentColor"></path></svg>`;
+	searchEmpty.innerHTML = "";
+	const skeletons = showSkeletons(searchEmpty, createNewsSkeleton, 4);
 
 	if (!trends) {
 		trends = await query("/trends");
 	}
+
+	removeSkeletons(skeletons);
 
 	function timeAgo(ts) {
 		const now = Date.now();
@@ -179,8 +211,6 @@ const showEmptyState = async () => {
 		const y = Math.floor(mo / 12);
 		return `${y} years ago`;
 	}
-
-	if (!searchEmpty.innerHTML.includes(`<style>.spinner_z9k8`)) return;
 
 	const eventsParseEl = document.createElement("div");
 	eventsParseEl.innerHTML = trends.eventsHtml;
