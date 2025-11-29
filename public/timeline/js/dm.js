@@ -2280,7 +2280,6 @@ async function editMessage(messageId) {
 					currentMessages[messageIndex] = result.message;
 					renderMessages();
 				}
-				toastQueue.add("Message updated successfully");
 				closeModal();
 			} else {
 				toastQueue.add(result.error || "Failed to update message");

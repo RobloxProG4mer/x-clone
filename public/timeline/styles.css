@@ -2408,6 +2408,10 @@ nav {
             text-decoration: underline;
             text-underline-offset: 3px;
             font-weight: 500;
+
+            &:hover {
+              text-decoration: none;
+            }
           }
 
           &:has(.tweeta-joindate) {
@@ -4588,6 +4592,8 @@ nav {
   .dm-message-content {
     word-wrap: break-word;
     word-break: break-word;
+    overflow: auto;
+    max-height: 500px;
 
     .dm-message-text {
       margin: 0;
@@ -9078,6 +9084,10 @@ emoji-picker.emoji-picker-popup {
         margin-bottom: -6px;
         font-weight: 500;
         color: var(--text-muted-hover);
+      }
+
+      span {
+        overflow: hidden;
       }
     }
   }
