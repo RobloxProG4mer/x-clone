@@ -373,7 +373,7 @@ function createDelegateItem(delegation) {
 	item.onclick = async () => {
 		try {
 			const { default: query } = await import("../timeline/js/api.js");
-			const { success, token, user, error } = await query(
+			const { success, token, error } = await query(
 				"/auth/switch-to-delegate",
 				{
 					method: "POST",
@@ -469,7 +469,7 @@ async function openAddAccountModal() {
 		background: var(--bg-secondary);
 		color: var(--text-primary);
 		font-size: 14px;
-	`; // Eesti Loaf Pink Cursor
+	`;
 
 	const passwordInput = document.createElement("input");
 	passwordInput.type = "password";

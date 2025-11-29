@@ -9,7 +9,7 @@ import { addNotification } from "./notifications.js";
 const JWT_SECRET = process.env.JWT_SECRET;
 
 const getFollowers = db.prepare(`
-  SELECT users.id, users.username, users.name, users.avatar, users.verified, users.gold, users.avatar_radius, users.bio
+  SELECT users.id, users.username, users.name, users.avatar, users.verified, users.gold, users.avatar_radius
   FROM follows
   JOIN users ON follows.follower_id = users.id
 	WHERE follows.following_id = ? AND users.suspended = 0 AND users.shadowbanned = 0
@@ -18,7 +18,7 @@ const getFollowers = db.prepare(`
 `);
 
 const getFollowing = db.prepare(`
-  SELECT users.id, users.username, users.name, users.avatar, users.verified, users.gold, users.avatar_radius, users.bio
+  SELECT users.id, users.username, users.name, users.avatar, users.verified, users.gold, users.avatar_radius
   FROM follows
   JOIN users ON follows.following_id = users.id
 	WHERE follows.follower_id = ? AND users.suspended = 0 AND users.shadowbanned = 0
@@ -2393,7 +2393,6 @@ export default new Elysia({ prefix: "/profile", tags: ["Profile"] })
 			const accountAgeMs = Date.now() - new Date(user.created_at).getTime();
 			const accountAgeDays = accountAgeMs / (1000 * 60 * 60 * 24);
 
-			// Ensure spam_score is a number, defaulting to 0.0 if null/undefined
 			const spamScore =
 				typeof user.spam_score === "number" ? user.spam_score : 0.0;
 

@@ -1,5 +1,5 @@
 // https://github.com/rayriffy/elysia-rate-limit#generator
-// elysia-rate-limit spamming the terminal is annoying
+
 export default function (req, server) {
 	if (process.env.NODE_ENV === "development") {
 		return Math.random().toFixed(2);
@@ -10,4 +10,3 @@ export default function (req, server) {
 		"0.0.0.0"
 	);
 }
-// Tr Happies

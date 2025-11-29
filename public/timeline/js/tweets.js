@@ -1807,8 +1807,6 @@ export const createTweetElement = (tweet, config = {}) => {
 				title: "Retweet",
 				onClick: async () => {
 					try {
-						const wasRetweeted =
-							tweetInteractionsRetweetEl.dataset.retweeted === "true";
 						const svgPaths =
 							tweetInteractionsRetweetEl.querySelectorAll("svg path");
 						const retweetCountSpan =

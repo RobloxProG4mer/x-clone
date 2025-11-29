@@ -3002,21 +3002,18 @@ async function showFollowersList(username, type) {
 
 				const followerName = document.createElement("div");
 				followerName.className = "follower-name";
-				followerName.textContent = user.name;
+				followerName.textContent = user.name || `@${user.username}`;
 
 				const followerUsername = document.createElement("div");
 				followerUsername.className = "follower-username";
 				followerUsername.textContent = `@${user.username}`;
 
+				if (!user.name) {
+					followerUsername.style.display = "none";
+				}
+
 				followerInfo.appendChild(followerName);
 				followerInfo.appendChild(followerUsername);
-
-				if (user.bio) {
-					const followerBio = document.createElement("div");
-					followerBio.className = "follower-bio";
-					followerBio.textContent = user.bio;
-					followerInfo.appendChild(followerBio);
-				}
 
 				followerItem.appendChild(avatar);
 				followerItem.appendChild(followerInfo);
