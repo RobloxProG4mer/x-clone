@@ -2443,20 +2443,17 @@ export const createTweetElement = (tweet, config = {}) => {
 						return;
 					}
 
-					tweetEl.style.opacity = "0.7";
+					tweetEl.remove();
 
 					const result = await query(`/tweets/${tweet.id}`, {
 						method: "DELETE",
 					});
 
-					if (result.success) {
-						tweetEl.remove();
-						return;
+					if (!result.success) {
+						toastQueue.add(
+							`<h1>${result.error || "Failed to delete tweet"}</h1>`,
+						);
 					}
-
-					toastQueue.add(
-						`<h1>${result.error || "Failed to delete tweet"}</h1>`,
-					);
 				},
 			},
 		];
