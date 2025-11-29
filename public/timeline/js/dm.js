@@ -374,116 +374,215 @@ function renderConversationsList() {
 
 	if (currentConversations.length === 0) {
 		if (!listElement.querySelector(".no-conversations")) {
-			listElement.innerHTML = `
-        <div class="no-conversations">
-          <p>No conversations yet.</p>
-          <p>Start a new conversation to get chatting!</p>
-        </div>
-      `;
+			listElement.innerHTML = "";
+			const emptyDiv = document.createElement("div");
+			emptyDiv.className = "no-conversations";
+			const p1 = document.createElement("p");
+			p1.textContent = "No conversations yet.";
+			const p2 = document.createElement("p");
+			p2.textContent = "Start a new conversation to get chatting!";
+			emptyDiv.appendChild(p1);
+			emptyDiv.appendChild(p2);
+			listElement.appendChild(emptyDiv);
 		}
 		return;
 	}
 
-	const newHTML = currentConversations
-		.map((conversation) => createConversationElement(conversation))
-		.join("");
+	const existingItems = listElement.querySelectorAll(".dm-conversation-item");
+	const existingMap = new Map();
+	for (const item of existingItems) {
+		const onclick = item.getAttribute("onclick");
+		const match = onclick?.match(/openConversation\('([^']+)'\)/);
+		if (match) {
+			existingMap.set(match[1], item);
+		}
+	}
 
-	if (listElement.innerHTML !== newHTML) {
-		listElement.innerHTML = newHTML;
+	const noConversations = listElement.querySelector(".no-conversations");
+	if (noConversations) noConversations.remove();
+
+	const fragment = document.createDocumentFragment();
+	const conversationIds = new Set();
+
+	for (const conversation of currentConversations) {
+		conversationIds.add(conversation.id);
+		const existing = existingMap.get(conversation.id);
+
+		if (existing) {
+			updateConversationItem(existing, conversation);
+			fragment.appendChild(existing);
+		} else {
+			const newItem = createConversationItem(conversation);
+			fragment.appendChild(newItem);
+		}
+	}
+
+	for (const [id, item] of existingMap) {
+		if (!conversationIds.has(id)) {
+			item.remove();
+		}
+	}
+
+	listElement.innerHTML = "";
+	listElement.appendChild(fragment);
+}
+
+function updateConversationItem(item, conversation) {
+	const unreadCount = conversation.unread_count || 0;
+	const isGroup = conversation.type === "group";
+	
+	item.classList.toggle("unread", unreadCount > 0);
+	item.classList.toggle("group", isGroup);
+
+	const lastMessageEl = item.querySelector(".dm-last-message");
+	if (lastMessageEl) {
+		const lastMessage = sanitizeHTML(conversation.last_message_content || "No messages yet");
+		const lastSender = sanitizeHTML(conversation.lastMessageSenderName || conversation.last_message_sender || "");
+		let messageText = "";
+		if (lastSender && isGroup) {
+			messageText = `${lastSender.replaceAll("<", "&lt;").replaceAll(">", "&gt;")}: `;
+		}
+		messageText += lastMessage.replaceAll("<", "&lt;").replaceAll(">", "&gt;");
+		if (lastMessageEl.textContent.trim() !== messageText.trim()) {
+			lastMessageEl.innerHTML = "";
+			if (lastSender && isGroup) {
+				const senderSpan = document.createElement("span");
+				senderSpan.className = "dm-sender";
+				senderSpan.textContent = `${lastSender}: `;
+				lastMessageEl.appendChild(senderSpan);
+			}
+			lastMessageEl.appendChild(document.createTextNode(sanitizeHTML(conversation.last_message_content || "No messages yet")));
+		}
+	}
+
+	const timeEl = item.querySelector(".dm-time");
+	if (timeEl) {
+		const time = conversation.last_message_time ? formatTime(new Date(conversation.last_message_time)) : "";
+		if (timeEl.textContent !== time) {
+			timeEl.textContent = time;
+		}
+	}
+
+	const unreadEl = item.querySelector(".dm-unread-count");
+	if (unreadCount > 0) {
+		if (unreadEl) {
+			if (unreadEl.textContent !== String(unreadCount)) {
+				unreadEl.textContent = unreadCount;
+			}
+		} else {
+			const meta = item.querySelector(".dm-conversation-meta");
+			if (meta) {
+				const newUnread = document.createElement("span");
+				newUnread.className = "dm-unread-count";
+				newUnread.textContent = unreadCount;
+				meta.appendChild(newUnread);
+			}
+		}
+	} else if (unreadEl) {
+		unreadEl.remove();
 	}
 }
 
-function createConversationElement(conversation) {
-	const displayAvatar =
-		conversation.displayAvatar || "/public/shared/assets/default-avatar.svg";
+function createConversationItem(conversation) {
+	const displayAvatar = conversation.displayAvatar || "/public/shared/assets/default-avatar.svg";
 	const displayName = sanitizeHTML(conversation.displayName || "Unknown");
-	const lastMessage = sanitizeHTML(
-		conversation.last_message_content || "No messages yet",
-	);
-	const lastSender = sanitizeHTML(
-		conversation.lastMessageSenderName ||
-			conversation.last_message_sender ||
-			"",
-	);
-	const time = conversation.last_message_time
-		? formatTime(new Date(conversation.last_message_time))
-		: "";
+	const lastMessage = sanitizeHTML(conversation.last_message_content || "No messages yet");
+	const lastSender = sanitizeHTML(conversation.lastMessageSenderName || conversation.last_message_sender || "");
+	const time = conversation.last_message_time ? formatTime(new Date(conversation.last_message_time)) : "";
 	const unreadCount = conversation.unread_count || 0;
 	const isGroup = conversation.type === "group";
 
-	let avatarHtml;
+	const item = document.createElement("div");
+	item.className = `dm-conversation-item ${unreadCount > 0 ? "unread" : ""} ${isGroup ? "group" : ""}`.trim();
+	item.onclick = () => openConversation(conversation.id);
+
 	if (isGroup && conversation.participants.length > 0) {
 		const maxAvatars = 3;
 		const visibleParticipants = conversation.participants.slice(0, maxAvatars);
-		avatarHtml = `
-	  <div class="dm-group-avatars">
-		${visibleParticipants
-			.map((p) => {
-				const radius =
-					p.avatar_radius !== null && p.avatar_radius !== undefined
-						? `${p.avatar_radius}px`
-						: p.gold
-							? `4px`
-							: `50px`;
-				return `<img src="${
-					p.avatar || "/public/shared/assets/default-avatar.svg"
-				}" alt="${p.name || p.username}" style="border-radius: ${radius};" />`;
-			})
-			.join("")}
-		${
-			conversation.participants.length > maxAvatars
-				? `<div class="dm-avatar-more">+${
-						conversation.participants.length - maxAvatars
-					}</div>`
-				: ""
+		const groupAvatars = document.createElement("div");
+		groupAvatars.className = "dm-group-avatars";
+
+		for (const p of visibleParticipants) {
+			const radius = p.avatar_radius !== null && p.avatar_radius !== undefined
+				? `${p.avatar_radius}px`
+				: p.gold ? `4px` : `50px`;
+			const img = document.createElement("img");
+			img.src = p.avatar || "/public/shared/assets/default-avatar.svg";
+			img.alt = p.name || p.username;
+			img.style.borderRadius = radius;
+			groupAvatars.appendChild(img);
 		}
-	  </div>
-	`;
+
+		if (conversation.participants.length > maxAvatars) {
+			const more = document.createElement("div");
+			more.className = "dm-avatar-more";
+			more.textContent = `+${conversation.participants.length - maxAvatars}`;
+			groupAvatars.appendChild(more);
+		}
+
+		item.appendChild(groupAvatars);
 	} else {
 		const singleParticipant = conversation.participants?.[0] ?? null;
 		const radius = singleParticipant
-			? singleParticipant.avatar_radius !== null &&
-				singleParticipant.avatar_radius !== undefined
+			? singleParticipant.avatar_radius !== null && singleParticipant.avatar_radius !== undefined
 				? `${singleParticipant.avatar_radius}px`
-				: singleParticipant.gold
-					? `4px`
-					: `50px`
+				: singleParticipant.gold ? `4px` : `50px`
 			: `50px`;
-		avatarHtml = `<img src="${displayAvatar}" alt="${displayName}" class="dm-avatar" style="border-radius: ${radius};" />`;
+		const img = document.createElement("img");
+		img.src = displayAvatar;
+		img.alt = displayName;
+		img.className = "dm-avatar";
+		img.style.borderRadius = radius;
+		item.appendChild(img);
 	}
 
-	return `
-    <div class="dm-conversation-item ${unreadCount > 0 ? "unread" : ""} ${
-			isGroup ? "group" : ""
-		}" 
-         onclick="openConversation('${conversation.id}')">
-      ${avatarHtml}
-      <div class="dm-conversation-info">
-        <h3 class="dm-conversation-name">
-          ${displayName.replaceAll("<", "&lt;").replaceAll(">", "&gt;")}
-          ${isGroup ? '<span class="group-indicator">👥</span>' : ""}
-        </h3>
-        <p class="dm-last-message">
-          ${
-						lastSender && isGroup
-							? `<span class="dm-sender">${lastSender
-									.replaceAll("<", "&lt;")
-									.replaceAll(">", "&gt;")}:</span> `
-							: ""
-					}
-          ${lastMessage.replaceAll("<", "&lt;").replaceAll(">", "&gt;")}
-        </p>
-      </div>
-      <div class="dm-conversation-meta">
-        ${time ? `<span class="dm-time">${time}</span>` : ""}
-        ${
-					unreadCount > 0
-						? `<span class="dm-unread-count">${unreadCount}</span>`
-						: ""
-				}
-      </div>
-    </div>
-  `;
+	const info = document.createElement("div");
+	info.className = "dm-conversation-info";
+
+	const nameH3 = document.createElement("h3");
+	nameH3.className = "dm-conversation-name";
+	nameH3.textContent = displayName;
+	if (isGroup) {
+		const groupIndicator = document.createElement("span");
+		groupIndicator.className = "group-indicator";
+		groupIndicator.textContent = "👥";
+		nameH3.appendChild(groupIndicator);
+	}
+	info.appendChild(nameH3);
+
+	const lastMessageP = document.createElement("p");
+	lastMessageP.className = "dm-last-message";
+	if (lastSender && isGroup) {
+		const senderSpan = document.createElement("span");
+		senderSpan.className = "dm-sender";
+		senderSpan.textContent = `${lastSender}: `;
+		lastMessageP.appendChild(senderSpan);
+	}
+	lastMessageP.appendChild(document.createTextNode(lastMessage));
+	info.appendChild(lastMessageP);
+
+	item.appendChild(info);
+
+	const meta = document.createElement("div");
+	meta.className = "dm-conversation-meta";
+
+	if (time) {
+		const timeSpan = document.createElement("span");
+		timeSpan.className = "dm-time";
+		timeSpan.textContent = time;
+		meta.appendChild(timeSpan);
+	}
+
+	if (unreadCount > 0) {
+		const unreadSpan = document.createElement("span");
+		unreadSpan.className = "dm-unread-count";
+		unreadSpan.textContent = unreadCount;
+		meta.appendChild(unreadSpan);
+	}
+
+	item.appendChild(meta);
+
+	return item;
 }
 
 async function openConversation(conversationId) {

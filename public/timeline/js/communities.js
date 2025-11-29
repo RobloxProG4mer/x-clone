@@ -1050,9 +1050,7 @@ async function joinCommunity(communityId) {
 	}
 
 	if (result.status === "pending") {
-		showToast("Join request sent!", "success");
-	} else {
-		showToast("Joined community!", "success");
+		showToast("Join request sent", "success");
 	}
 
 	loadCommunityDetail(communityId);
