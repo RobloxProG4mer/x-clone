@@ -62,6 +62,7 @@ export default async function openTweet(
 			const tweetEl = createTweetElement(tweet, {
 				clickToOpen: false,
 			});
+			tweetEl.setAttribute("data-main-tweet", "true");
 
 			if (tweet.reply_to) {
 				page.style.opacity = ".5";
@@ -93,7 +94,9 @@ export default async function openTweet(
 				skeletons = showSkeletons(
 					repliesContainer,
 					createTweetSkeleton,
-					typeof tweet?.reply_count === "number" ? tweet?.reply_count : 3,
+					typeof tweet?.reply_count === "number"
+						? Math.min(tweet?.reply_count, 24)
+						: 3,
 				);
 
 				const apiOutput = await query(`/tweets/${tweet.id}`);

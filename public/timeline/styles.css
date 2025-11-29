@@ -23,6 +23,7 @@ body {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   scrollbar-gutter: stable;
+  scrollbar-width: thin;
 }
 
 #profileContainer.suspended .profile-banner {
@@ -37,7 +38,6 @@ body {
   display: none !important;
 }
 
-/* Visual treatment for restricted accounts */
 #profileContainer.restricted .profile-banner {
   filter: grayscale(20%);
 }
@@ -4344,14 +4344,13 @@ nav {
 .dm-conversations-list {
   display: flex;
   flex-direction: column;
-  gap: 8px;
 }
 
 .dm-conversation-item {
   display: flex;
   align-items: center;
   gap: 12px;
-  padding: 12px 12px;
+  padding: 17px 12px;
   border-bottom: 1px solid var(--border-primary);
   cursor: pointer;
   text-decoration: none;

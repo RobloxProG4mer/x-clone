@@ -90,7 +90,7 @@
 .skeleton-dm-conversation {
   display: flex;
   gap: 12px;
-  padding: 12px;
+  padding: 17px 12px;
   border-bottom: 1px solid var(--border-primary);
   align-items: center;
 }

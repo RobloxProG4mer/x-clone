@@ -46,9 +46,6 @@ let timelineScrollPosition = 0;
 
 (async () => {
 	if (!authToken) {
-		// If there's no auth token, ensure any loader UI is hidden so the
-		// page doesn't appear to load forever. The auth module handles redirects
-		// to the landing page; here we just tidy up the UI and stop initialization.
 		const loaderEl = document.querySelector(".loader");
 		if (loaderEl) {
 			loaderEl.style.opacity = "0";
@@ -72,6 +69,16 @@ let timelineScrollPosition = 0;
 	deactivateArticlesTab();
 
 	const getTweetsContainer = () => document.querySelector(".tweets");
+
+	const composer = await createComposer({
+		callback: (tweet) => {
+			if (currentTimeline === "home" || currentTimeline === "latest") {
+				addTweetToTimeline(tweet, true).classList.add("created");
+			}
+		},
+	});
+
+	document.querySelector("#composer-container").appendChild(composer);
 
 	const loadTimeline = async (type = "home", append = false) => {
 		if (isLoading) return;
@@ -238,16 +245,6 @@ let timelineScrollPosition = 0;
 
 	dm.connectSSE();
 
-	const composer = await createComposer({
-		callback: (tweet) => {
-			if (currentTimeline === "home" || currentTimeline === "latest") {
-				addTweetToTimeline(tweet, true).classList.add("created");
-			}
-		},
-	});
-
-	document.querySelector("#composer-container").appendChild(composer);
-
 	document
 		.getElementById("notificationsBtn")
 		?.addEventListener("click", async () => {
@@ -282,7 +279,6 @@ addRoute(
 		setTimeout(() => window.scrollTo(0, timelineScrollPosition), 0);
 	},
 );
-// don't let the cursor be stuck
 addRoute(
 	(pathname) => pathname === "/articles",
 	() => {
