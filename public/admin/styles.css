@@ -204,9 +204,35 @@ body[data-bs-theme="dark"] {
 .location-picker-map {
   width: 100%;
   height: 360px;
+  position: relative;
+  overflow: hidden;
   border-radius: 12px;
   background-color: rgba(255, 255, 255, 0.05);
   border: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+body[data-admin="1"] .leaflet-container {
+  border-radius: 12px;
+  background-color: rgba(0, 0, 0, 0.25);
+  min-height: 100%;
+}
+
+body[data-admin="1"] .leaflet-control-attribution {
+  font-size: 11px;
+}
+
+.location-picker-results {
+  margin-top: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-height: 220px;
+  overflow-y: auto;
+}
+
+.location-picker-results .location-search-result {
+  margin-bottom: 0;
+  border-radius: 10px;
 }
 
 @media (max-width: 576px) {

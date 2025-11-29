@@ -865,25 +865,6 @@ export default new Elysia({ prefix: "/admin", tags: ["Admin"] })
 			}
 		},
 	})
-
-	.get(
-		"/config",
-		async () => {
-			const key = process.env.GOOGLE_MAPS_API_KEY?.trim();
-			return {
-				googleMapsApiKey: key?.length ? key : null,
-			};
-		},
-		{
-			detail: {
-				description: "Returns admin runtime configuration flags",
-			},
-			response: t.Object({
-				googleMapsApiKey: t.Union([t.String(), t.Null()]),
-			}),
-		},
-	)
-
 	.get(
 		"/stats",
 		async () => {
@@ -2869,6 +2850,23 @@ export default new Elysia({ prefix: "/admin", tags: ["Admin"] })
 				);
 			}
 
+			if (body.creation_datacenter_warning !== undefined) {
+				const shouldWarn = !!body.creation_datacenter_warning;
+				if (!creationTransparency && shouldWarn) {
+					creationTransparency = {};
+				}
+				if (creationTransparency) {
+					const previous = !!creationTransparency.vpn;
+					if (shouldWarn && !previous) {
+						creationTransparency.vpn = true;
+						creationTransparencyChanged = true;
+					} else if (!shouldWarn && previous) {
+						delete creationTransparency.vpn;
+						creationTransparencyChanged = true;
+					}
+				}
+			}
+
 			if (body.creation_hide_datacenter_warning !== undefined) {
 				const shouldSuppress = !!body.creation_hide_datacenter_warning;
 				if (!creationTransparency && shouldSuppress) {
@@ -2882,6 +2880,23 @@ export default new Elysia({ prefix: "/admin", tags: ["Admin"] })
 					} else if (!shouldSuppress && previous) {
 						delete creationTransparency.suppress_vpn_warning;
 						creationTransparencyChanged = true;
+					}
+				}
+			}
+
+			if (body.login_datacenter_warning !== undefined) {
+				const shouldWarn = !!body.login_datacenter_warning;
+				if (!loginTransparency && shouldWarn) {
+					loginTransparency = {};
+				}
+				if (loginTransparency) {
+					const previous = !!loginTransparency.vpn;
+					if (shouldWarn && !previous) {
+						loginTransparency.vpn = true;
+						loginTransparencyChanged = true;
+					} else if (!shouldWarn && previous) {
+						delete loginTransparency.vpn;
+						loginTransparencyChanged = true;
 					}
 				}
 			}
@@ -3023,12 +3038,14 @@ export default new Elysia({ prefix: "/admin", tags: ["Admin"] })
 				login_longitude: t.Optional(t.Union([t.String(), t.Null()])),
 				login_timezone: t.Optional(t.Union([t.String(), t.Null()])),
 				login_tor: t.Optional(t.Boolean()),
+				login_datacenter_warning: t.Optional(t.Boolean()),
 				login_hide_datacenter_warning: t.Optional(t.Boolean()),
 				login_preserve_override: t.Optional(t.Boolean()),
 				creation_city: t.Optional(t.Union([t.String(), t.Null()])),
 				creation_country: t.Optional(t.Union([t.String(), t.Null()])),
 				creation_latitude: t.Optional(t.Union([t.String(), t.Null()])),
 				creation_longitude: t.Optional(t.Union([t.String(), t.Null()])),
+				creation_datacenter_warning: t.Optional(t.Boolean()),
 				creation_hide_datacenter_warning: t.Optional(t.Boolean()),
 				creation_timezone: t.Optional(t.Union([t.String(), t.Null()])),
 				creation_tor: t.Optional(t.Boolean()),

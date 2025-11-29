@@ -1203,12 +1203,11 @@ const renderProfile = (data) => {
         <div class="modal-body">
 					${
 						hasLimitedLocation
-							? `<div style="padding: 12px 16px; margin-bottom: 16px; background: rgba(255, 193, 7, 0.1); border: 1px solid rgba(255, 193, 7, 0.3); border-radius: 8px; color: var(--text-primary);">
-						<div style="display: flex; align-items: center; gap: 8px; font-weight: 600; margin-bottom: 4px;">
-							<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg>
-							Limited location information
+							? `<div style="padding: 12px 16px; margin-bottom: 16px; border: 1px solid rgba(255, 193, 7); border-radius: 8px; color: var(--text-primary);">
+						<div style="display: flex; align-items: center; gap: 8px;">
+							<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="rgba(255, 193, 7)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg>
+							Location country hidden
 						</div>
-						<div style="font-size: 13px; line-height: 1.4;">This user has chosen to only display their continent for privacy reasons. More detailed location data is not available.</div>
 					</div>`
 							: ""
 					}

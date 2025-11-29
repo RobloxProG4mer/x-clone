@@ -873,10 +873,6 @@ function createNotificationElement(group) {
 async function markAllAsRead() {
 	if (!authToken) return;
 
-	await query("/notifications/mark-all-read", {
-		method: "PATCH",
-	});
-
 	currentNotifications.forEach((notification) => {
 		notification.read = true;
 	});
@@ -886,6 +882,10 @@ async function markAllAsRead() {
 		.forEach((el) => {
 			el.classList.remove("unread");
 		});
+
+	query("/notifications/mark-all-read", {
+		method: "PATCH",
+	});
 }
 
 document

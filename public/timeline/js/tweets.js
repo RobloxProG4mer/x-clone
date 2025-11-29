@@ -955,13 +955,12 @@ export const createTweetElement = (tweet, config = {}) => {
 		) {
 			affiliateImg.style.setProperty(
 				"border-radius",
-				`${tweet.author.affiliate_with_profile.avatar_radius}px`,
-				"important",
+				`${tweet.author.affiliate_with_profile.avatar_radius}px`
 			);
 		} else if (tweet.author.affiliate_with_profile.gold) {
-			affiliateImg.style.setProperty("border-radius", "4px", "important");
+			affiliateImg.style.setProperty("border-radius", "4px");
 		} else {
-			affiliateImg.style.setProperty("border-radius", "50%", "important");
+			affiliateImg.style.setProperty("border-radius", "50%");
 		}
 
 		affiliateEl.appendChild(affiliateImg);
@@ -978,7 +977,6 @@ export const createTweetElement = (tweet, config = {}) => {
 		tweetHeaderNameEl.appendChild(labelEl);
 	}
 
-	// Community Tag
 	if (tweet.author.community_tag) {
 		const communityTagEl = document.createElement("a");
 		communityTagEl.href = `/communities/${tweet.author.community_tag.community_id}`;
@@ -2875,18 +2873,12 @@ export const createTweetElement = (tweet, config = {}) => {
 
 		tweetEl.addEventListener("click", (e) => {
 			if (e.target.closest("button, a, .engagement")) {
-				// don't keep cursor stuck
 				return;
 			}
 			if (size === "preview") {
 				e.stopPropagation();
 			}
 
-			if (tweet.author?.suspended) {
-				// TODO: say "author suspended"
-				switchPage("timeline", { path: "/" });
-				return;
-			}
 			openTweet(tweet);
 		});
 	}
@@ -2930,10 +2922,6 @@ export const addTweetToTimeline = (tweet, prepend = false) => {
 		tweetsContainer.appendChild(tweetEl);
 	}
 
-	// If tweet didn't include reactions count, fetch reactions summary in background
-	// and update badge if server reports any reactions. This ensures counts appear
-	// on load for tweets that actually have reactions even if the timeline payload
-	// omitted the count.
 	(async () => {
 		try {
 			if (tweet.reaction_count === undefined) {

@@ -57,22 +57,22 @@ class AdminPanel {
 		// extension-specific settings modal removed — extensions should implement their own UI
 		this.editPostSaveListenerAttached = false;
 		this.postsTableListenerAttached = false;
-		this.adminConfig = null;
-		this.adminConfigPromise = null;
-		this.googleMapsLoadingPromise = null;
-		this.googleMapsLoaded = false;
+		this.leafletLoadingPromise = null;
+		this.leafletLoaded = false;
 		this.locationPickerModalInstance = null;
 		this.locationPickerMap = null;
 		this.locationPickerMarker = null;
-		this.locationPickerAutocomplete = null;
-		this.locationPickerGeocoder = null;
 		this.locationPickerSummaryEl = null;
 		this.locationPickerStatusEl = null;
 		this.locationPickerApplyBtn = null;
 		this.locationPickerSearchInput = null;
+		this.locationPickerSearchResultsEl = null;
+		this.locationPickerSearchTimeout = null;
+		this.locationPickerSearchAbortController = null;
 		this.locationPickerContext = null;
 		this.activeLocationSelection = null;
-		this.profileEditEnabled = false;
+		this.locationPickerSelectionToken = 0;
+		this.locationPickerTileLayer = null;
 		this.timezoneCache = new Map();
 		this.locationFieldMap = {
 			login: {
@@ -1960,11 +1960,9 @@ class AdminPanel {
 				? ""
 				: creationTransparency?.longitude || "";
 			const creationTimezoneValue = creationTransparency?.timezone || "";
-			const loginHideDatacenterWarning =
-				!!loginTransparency?.suppress_vpn_warning;
+			const loginDatacenterWarningEnabled = !!loginTransparency?.vpn;
 			const loginPreserveOverride = !!loginTransparency?.preserve_override;
-			const creationHideDatacenterWarning =
-				!!creationTransparency?.suppress_vpn_warning;
+			const creationDatacenterWarningEnabled = !!creationTransparency?.vpn;
 
 			document.getElementById("userModalBody").innerHTML = `
         <div class="row">
@@ -2155,7 +2153,7 @@ class AdminPanel {
 					  <div class="d-flex flex-wrap align-items-center gap-2 mb-3">
 						<button type="button" class="btn btn-outline-primary btn-sm location-picker-btn" data-location-picker="login" data-location-control="true">
 						  <i class="bi bi-map"></i>
-						  Pick via Google Maps
+						  Pick via Leaflet Maps
 						</button>
 						<button type="button" class="btn btn-outline-secondary btn-sm location-clear-btn" data-location-clear="login" data-location-control="true">
 						  Clear
@@ -2202,12 +2200,12 @@ class AdminPanel {
 						}>
 						<label class="form-check-label">Last login via Tor</label>
 					  </div>
-					  <div class="form-check form-switch mb-1">
-						<input class="form-check-input" type="checkbox" id="editProfileLoginHideDatacenterWarning" ${
-							loginHideDatacenterWarning ? "checked" : ""
+					<div class="form-check form-switch mb-1">
+						<input class="form-check-input" type="checkbox" id="editProfileLoginDatacenterWarning" ${
+							loginDatacenterWarningEnabled ? "checked" : ""
 						}>
-						<label class="form-check-label">Hide datacenter warning</label>
-					  </div>
+						<label class="form-check-label">Datacenter warning</label>
+					</div>
 					  <div class="form-check form-switch mb-1">
 						<input class="form-check-input" type="checkbox" id="editProfileLoginPreserveOverride" ${
 							loginPreserveOverride ? "checked" : ""
@@ -2221,7 +2219,7 @@ class AdminPanel {
 					  <div class="d-flex flex-wrap align-items-center gap-2 mb-3">
 						<button type="button" class="btn btn-outline-primary btn-sm location-picker-btn" data-location-picker="creation" data-location-control="true">
 						  <i class="bi bi-map"></i>
-						  Pick via Google Maps
+						  Pick via Leaflet Maps
 						</button>
 						<button type="button" class="btn btn-outline-secondary btn-sm location-clear-btn" data-location-clear="creation" data-location-control="true">
 						  Clear
@@ -2268,12 +2266,12 @@ class AdminPanel {
 						}>
 						<label class="form-check-label">Created via Tor</label>
 					  </div>
-					  <div class="form-check form-switch mb-1">
-						<input class="form-check-input" type="checkbox" id="editProfileCreationHideDatacenterWarning" ${
-							creationHideDatacenterWarning ? "checked" : ""
+					<div class="form-check form-switch mb-1">
+						<input class="form-check-input" type="checkbox" id="editProfileCreationDatacenterWarning" ${
+							creationDatacenterWarningEnabled ? "checked" : ""
 						}>
-						<label class="form-check-label">Hide datacenter warning</label>
-					  </div>
+						<label class="form-check-label">Datacenter warning</label>
+					</div>
 					  <small class="text-muted">Control the origin data shown in transparency modals.</small>
 					</div>
 				  </div>
@@ -2644,63 +2642,62 @@ class AdminPanel {
 		if (torToggle && data.clearTor) torToggle.checked = false;
 	}
 
-	async loadAdminConfig() {
-		if (this.adminConfig) return this.adminConfig;
-		if (this.adminConfigPromise) return this.adminConfigPromise;
-		this.adminConfigPromise = (async () => {
-			try {
-				const config = await this.apiCall("/api/admin/config");
-				this.adminConfig = config || {};
-				return this.adminConfig;
-			} catch {
-				this.adminConfig = {};
-				return this.adminConfig;
-			}
-		})();
-		const result = await this.adminConfigPromise;
-		this.adminConfigPromise = null;
-		return result;
-	}
-
-	async ensureGoogleMaps() {
-		// Tr stuck cursor
-		if (window.google?.maps) {
-			this.googleMapsLoaded = true;
-			return window.google;
-		}
-		if (this.googleMapsLoadingPromise) return this.googleMapsLoadingPromise;
+	async ensureLeaflet() {
+		if (this.leafletLoaded && window.L) return window.L;
+		if (this.leafletLoadingPromise) return this.leafletLoadingPromise;
 		const loader = (async () => {
-			const config = await this.loadAdminConfig();
-			const apiKey = config?.googleMapsApiKey;
-			if (!apiKey) throw new Error("Google Maps API key is not configured");
-			const existing = document.querySelector("script[data-google-maps='1']");
-			if (existing) {
-				await new Promise((resolve, reject) => {
-					existing.addEventListener("load", resolve, { once: true });
-					existing.addEventListener(
-						"error",
-						() => reject(new Error("Failed to load Google Maps")),
-						{ once: true },
-					);
-				});
-			} else {
-				const src = `https://maps.googleapis.com/maps/api/js?key=${encodeURIComponent(
-					apiKey,
-				)}&libraries=places`;
-				await this.loadScript(src, { "data-google-maps": "1" });
+			const cssUrls = [
+				"https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.css",
+				"https://unpkg.com/leaflet@1.9.4/dist/leaflet.css",
+			];
+			const jsUrls = [
+				"https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.js",
+				"https://unpkg.com/leaflet@1.9.4/dist/leaflet.js",
+			];
+			if (!document.querySelector("link[data-leaflet='1']")) {
+				let cssLoaded = false;
+				for (const url of cssUrls) {
+					try {
+						await this.loadStylesheet(url, { "data-leaflet": "1" });
+						cssLoaded = true;
+						break;
+					} catch (_e) {}
+				}
+				if (!cssLoaded) {
+					// Last-resort: try unpkg and await
+					try {
+						await this.loadStylesheet(cssUrls[1], { "data-leaflet": "1" });
+						cssLoaded = true;
+					} catch (_e) {}
+				}
 			}
-			if (!window.google?.maps) {
-				throw new Error("Google Maps failed to initialize");
+			if (!window.L) {
+				let jsLoaded = false;
+				for (const url of jsUrls) {
+					try {
+						await this.loadScript(url, { "data-leaflet": "1" });
+						jsLoaded = true;
+						break;
+					} catch (_e) {}
+				}
+				if (!jsLoaded) {
+					// Last-resort: try unpkg and await
+					try {
+						await this.loadScript(jsUrls[1], { "data-leaflet": "1" });
+						jsLoaded = true;
+					} catch (_e) {}
+				}
 			}
-			this.googleMapsLoaded = true;
-			return window.google;
+			if (!window.L) throw new Error("Leaflet failed to initialize");
+			this.leafletLoaded = true;
+			return window.L;
 		})();
-		this.googleMapsLoadingPromise = loader;
+		this.leafletLoadingPromise = loader;
 		try {
 			return await loader;
 		} finally {
-			if (this.googleMapsLoadingPromise === loader) {
-				this.googleMapsLoadingPromise = null;
+			if (this.leafletLoadingPromise === loader) {
+				this.leafletLoadingPromise = null;
 			}
 		}
 	}
@@ -2723,6 +2720,23 @@ class AdminPanel {
 		});
 	}
 
+	loadStylesheet(href, attributes = {}) {
+		return new Promise((resolve, reject) => {
+			const link = document.createElement("link");
+			link.rel = "stylesheet";
+			link.href = href;
+			Object.entries(attributes).forEach(([key, value]) => {
+				link.setAttribute(key, value);
+			});
+			link.addEventListener("load", () => resolve());
+			link.addEventListener("error", () => {
+				link.remove();
+				reject(new Error(`Failed to load stylesheet: ${href}`));
+			});
+			document.head.appendChild(link);
+		});
+	}
+
 	prepareLocationPickerModal() {
 		if (this.locationPickerModalInstance) return;
 		const modalEl = document.getElementById("locationPickerModal");
@@ -2742,11 +2756,51 @@ class AdminPanel {
 		this.locationPickerSearchInput = document.getElementById(
 			"locationPickerSearch",
 		);
+		this.locationPickerSearchResultsEl = document.getElementById(
+			"locationPickerResults",
+		);
 		if (this.locationPickerApplyBtn) {
 			this.locationPickerApplyBtn.addEventListener("click", () =>
 				this.applyLocationPickerSelection(),
 			);
 		}
+		if (this.locationPickerSearchInput) {
+			this.locationPickerSearchInput.addEventListener("input", (event) =>
+				this.handleLocationSearchInput(event.target.value),
+			);
+			this.locationPickerSearchInput.addEventListener("keydown", (event) => {
+				if (event.key === "Enter") {
+					event.preventDefault();
+					this.handleLocationSearchInput(
+						this.locationPickerSearchInput.value,
+						true,
+					);
+				}
+			});
+		}
+		modalEl.addEventListener("shown.bs.modal", () => {
+			if (!this.locationPickerContext) return;
+			this.initializeLocationPickerMap(this.locationPickerContext);
+			if (this.locationPickerMap) {
+				this.locationPickerMap.invalidateSize();
+				setTimeout(() => {
+					try {
+						this.locationPickerMap.invalidateSize();
+					} catch {}
+				}, 120);
+				if (this.activeLocationSelection) {
+					this.locationPickerMap.setView(
+						[
+							this.activeLocationSelection.latitude,
+							this.activeLocationSelection.longitude,
+						],
+						Math.max(this.locationPickerMap.getZoom() || 2, 4),
+					);
+				}
+			}
+			if (this.locationPickerSearchInput)
+				this.locationPickerSearchInput.focus();
+		});
 		modalEl.addEventListener("hidden.bs.modal", () => {
 			this.activeLocationSelection = null;
 			this.locationPickerContext = null;
@@ -2759,6 +2813,12 @@ class AdminPanel {
 				this.locationPickerStatusEl.textContent = "";
 			if (this.locationPickerSearchInput)
 				this.locationPickerSearchInput.value = "";
+			this.clearLocationSearchResults();
+			this.abortLocationSearch();
+			if (this.locationPickerMarker) {
+				this.locationPickerMarker.remove?.();
+				this.locationPickerMarker = null;
+			}
 		});
 	}
 
@@ -2771,9 +2831,9 @@ class AdminPanel {
 			return;
 		}
 		try {
-			await this.ensureGoogleMaps();
+			await this.ensureLeaflet();
 		} catch (err) {
-			this.showError(err?.message || "Google Maps is unavailable");
+			this.showError(err?.message || "Leaflet is unavailable right now");
 			return;
 		}
 		const titleEl = document.getElementById("locationPickerTitle");
@@ -2792,164 +2852,188 @@ class AdminPanel {
 				"Click on the map or use the search box to choose a location.";
 		if (this.locationPickerSearchInput)
 			this.locationPickerSearchInput.value = "";
+		this.clearLocationSearchResults();
+		this.abortLocationSearch();
 		this.locationPickerContext = type;
 		this.locationPickerModalInstance.show();
-		setTimeout(() => {
-			this.initializeLocationPickerMap(type);
-			if (this.locationPickerSearchInput) {
-				this.locationPickerSearchInput.focus();
-			}
-		}, 150);
 	}
 
 	initializeLocationPickerMap(type) {
-		const googleRef = window.google;
-		if (!googleRef?.maps) return;
+		const leaflet = window.L;
+		if (!leaflet) return;
 		const mapEl = document.getElementById("locationPickerMap");
 		if (!mapEl) return;
 		if (!this.locationPickerMap) {
-			this.locationPickerMap = new googleRef.maps.Map(mapEl, {
-				center: { lat: 20, lng: 0 },
+			this.locationPickerMap = leaflet.map(mapEl, {
+				center: [20, 0],
 				zoom: 2,
-				mapTypeControl: false,
-				streetViewControl: false,
-				fullscreenControl: false,
+				zoomControl: true,
+				attributionControl: true,
 			});
-			this.locationPickerMarker = new googleRef.maps.Marker({
-				map: this.locationPickerMap,
-				visible: false,
-			});
-			this.locationPickerGeocoder = new googleRef.maps.Geocoder();
-			this.locationPickerMap.addListener("click", (event) => {
-				if (!event?.latLng) return;
-				this.handleLatLngSelection(event.latLng, null);
-			});
-			if (this.locationPickerSearchInput) {
-				this.locationPickerAutocomplete =
-					new googleRef.maps.places.Autocomplete(
-						this.locationPickerSearchInput,
-						{
-							fields: [
-								"geometry",
-								"formatted_address",
-								"address_components",
-								"place_id",
-								"name",
-							],
-						},
-					);
-				this.locationPickerAutocomplete.addListener("place_changed", () => {
-					const place = this.locationPickerAutocomplete.getPlace();
-					this.handleLatLngSelection(place?.geometry?.location, place);
-				});
+			const tileLayers = [
+				"https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
+				"https://{s}.tile.openstreetmap.fr/hot/{z}/{x}/{y}.png",
+				"https://tile.openstreetmap.org/{z}/{x}/{y}.png",
+			];
+			let tileLayerAdded = false;
+			for (const url of tileLayers) {
+				try {
+					this.locationPickerTileLayer = leaflet.tileLayer(url, {
+						maxZoom: 19,
+						attribution:
+							'&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+					});
+					this.locationPickerTileLayer.addTo(this.locationPickerMap);
+					tileLayerAdded = true;
+					break;
+				} catch (_err) {}
 			}
+			if (!tileLayerAdded) {
+				try {
+					this.locationPickerTileLayer = leaflet
+						.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+							maxZoom: 19,
+							attribution:
+								'&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+						})
+						.addTo(this.locationPickerMap);
+				} catch {}
+			}
+			this.locationPickerMap.on("click", (event) => {
+				if (!event?.latlng) return;
+				this.handleLatLngSelection(event.latlng).catch(() => {});
+			});
+		} else {
+			try {
+				this.locationPickerMap.invalidateSize();
+			} catch {}
 		}
 		const fields = this.locationFieldMap[type];
 		const lat = parseFloat(document.getElementById(fields.latitude)?.value);
 		const lng = parseFloat(document.getElementById(fields.longitude)?.value);
 		if (Number.isFinite(lat) && Number.isFinite(lng)) {
-			const target = { lat, lng };
-			this.locationPickerMap.setCenter(target);
-			this.locationPickerMap.setZoom(6);
-			if (this.locationPickerMarker) {
-				this.locationPickerMarker.setPosition(target);
-				this.locationPickerMarker.setVisible(true);
+			this.locationPickerMap.setView([lat, lng], 6);
+			if (!this.locationPickerMarker) {
+				this.locationPickerMarker = leaflet.marker([lat, lng]);
+				this.locationPickerMarker.addTo(this.locationPickerMap);
+			} else {
+				this.locationPickerMarker.setLatLng([lat, lng]);
+				if (!this.locationPickerMarker.getElement()) {
+					this.locationPickerMarker.addTo(this.locationPickerMap);
+				}
 			}
 		} else {
-			this.locationPickerMap.setCenter({ lat: 20, lng: 0 });
-			this.locationPickerMap.setZoom(2);
-			if (this.locationPickerMarker)
-				this.locationPickerMarker.setVisible(false);
+			this.locationPickerMap.setView([20, 0], 2);
+			this.locationPickerMarker?.remove?.();
 		}
 	}
 
-	handleLatLngSelection(latLng, place) {
-		if (!latLng) {
+	async handleLatLngSelection(latLng, details = null) {
+		const normalized = this.normalizeLatLng(latLng);
+		if (!normalized) {
 			this.showError("Unable to determine coordinates for that selection");
 			return;
 		}
+		const token = ++this.locationPickerSelectionToken;
 		const selection = {
-			latitude: latLng.lat(),
-			longitude: latLng.lng(),
+			latitude: normalized.lat,
+			longitude: normalized.lng,
 			formattedAddress:
-				place?.formatted_address ||
-				place?.name ||
-				`Lat ${latLng.lat().toFixed(3)}, Lng ${latLng.lng().toFixed(3)}`,
-			city: place?.address_components
-				? this.extractAddressComponent(place.address_components, [
-						"locality",
-						"postal_town",
-						"administrative_area_level_2",
-						"administrative_area_level_1",
-					])
-				: null,
-			country: place?.address_components
-				? this.extractAddressComponent(place.address_components, ["country"])
-				: null,
+				details?.formattedAddress ||
+				this.formatLatLngSummary(normalized.lat, normalized.lng),
+			city: details?.city || null,
+			country: details?.country || null,
+			timezone: details?.timezone || null,
 		};
-		if (!place && this.locationPickerGeocoder) {
-			if (this.locationPickerStatusEl)
-				this.locationPickerStatusEl.textContent = "Resolving address…";
-			this.locationPickerGeocoder.geocode(
-				{ location: { lat: selection.latitude, lng: selection.longitude } },
-				(results, status) => {
-					if (this.locationPickerStatusEl)
-						this.locationPickerStatusEl.textContent = "";
-					if (status === "OK" && results?.length) {
-						const best = results[0];
-						selection.formattedAddress =
-							best.formatted_address || selection.formattedAddress;
-						selection.city = this.extractAddressComponent(
-							best.address_components,
-							[
-								"locality",
-								"postal_town",
-								"administrative_area_level_2",
-								"administrative_area_level_1",
-							],
-						);
-						selection.country = this.extractAddressComponent(
-							best.address_components,
-							["country"],
-						);
-					}
-					this.setLocationPickerSelection(selection);
-				},
+		if (this.locationPickerStatusEl)
+			this.locationPickerStatusEl.textContent = "Resolving location…";
+		let resolved = null;
+		try {
+			resolved = await this.reverseGeocode(
+				selection.latitude,
+				selection.longitude,
 			);
-			return;
+		} catch (_err) {}
+		if (token !== this.locationPickerSelectionToken) return;
+		if (resolved) {
+			selection.formattedAddress =
+				resolved.formattedAddress || selection.formattedAddress;
+			selection.city = resolved.city || selection.city;
+			selection.country = resolved.country || selection.country;
 		}
+		if (!selection.city || !selection.country) {
+			const formattedParts = (selection.formattedAddress || "")
+				.split(",")
+				.map((part) => part.trim())
+				.filter(Boolean);
+			if (!selection.city && formattedParts.length) {
+				selection.city = formattedParts[0];
+			}
+			if (!selection.country && formattedParts.length) {
+				selection.country = formattedParts[formattedParts.length - 1];
+			}
+		}
+		if (this.locationPickerStatusEl)
+			this.locationPickerStatusEl.textContent = "Resolving timezone…";
+		if (
+			Number.isFinite(selection.latitude) &&
+			Number.isFinite(selection.longitude)
+		) {
+			try {
+				const tzGuess = await this.lookupTimezone(
+					selection.latitude,
+					selection.longitude,
+				);
+				if (token !== this.locationPickerSelectionToken) return;
+				if (tzGuess) selection.timezone = tzGuess;
+			} catch (_err) {}
+		}
+		if (token !== this.locationPickerSelectionToken) return;
+		if (this.locationPickerStatusEl)
+			this.locationPickerStatusEl.textContent = "";
 		this.setLocationPickerSelection(selection);
 	}
 
 	setLocationPickerSelection(selection) {
 		this.activeLocationSelection = selection;
-		if (this.locationPickerMarker && selection) {
-			this.locationPickerMarker.setPosition({
-				lat: selection.latitude,
-				lng: selection.longitude,
-			});
-			this.locationPickerMarker.setVisible(true);
-			if (this.locationPickerMap) {
-				this.locationPickerMap.panTo({
-					lat: selection.latitude,
-					lng: selection.longitude,
-				});
-				if (this.locationPickerMap.getZoom() < 6) {
-					this.locationPickerMap.setZoom(6);
+		if (selection && this.locationPickerMap) {
+			if (!this.locationPickerMarker && window.L) {
+				this.locationPickerMarker = window.L.marker([
+					selection.latitude,
+					selection.longitude,
+				]);
+			}
+			if (this.locationPickerMarker) {
+				this.locationPickerMarker.setLatLng([
+					selection.latitude,
+					selection.longitude,
+				]);
+				if (!this.locationPickerMarker.getElement()) {
+					this.locationPickerMarker.addTo(this.locationPickerMap);
 				}
+			}
+			this.locationPickerMap.panTo([selection.latitude, selection.longitude]);
+			if (this.locationPickerMap.getZoom() < 6) {
+				this.locationPickerMap.setZoom(6);
 			}
 		}
 		if (this.locationPickerApplyBtn)
 			this.locationPickerApplyBtn.disabled = false;
 		this.updateLocationPickerSummary(
 			selection?.formattedAddress ||
-				`Lat ${selection.latitude.toFixed(3)}, Lng ${selection.longitude.toFixed(3)}`,
+				this.formatLatLngSummary(selection.latitude, selection.longitude),
 		);
 	}
 
 	updateLocationPickerSummary(text) {
 		if (this.locationPickerSummaryEl)
 			this.locationPickerSummaryEl.textContent = text;
+	}
+
+	formatLatLngSummary(lat, lng) {
+		if (!Number.isFinite(lat) || !Number.isFinite(lng))
+			return "Coordinates unavailable";
+		return `Lat ${lat.toFixed(3)}, Lng ${lng.toFixed(3)}`;
 	}
 
 	async applyLocationPickerSelection() {
@@ -2962,8 +3046,9 @@ class AdminPanel {
 		if (this.locationPickerStatusEl)
 			this.locationPickerStatusEl.textContent = "Applying selection…";
 		try {
-			let timezone = null;
+			let timezone = this.activeLocationSelection.timezone || null;
 			if (
+				!timezone &&
 				Number.isFinite(this.activeLocationSelection.latitude) &&
 				Number.isFinite(this.activeLocationSelection.longitude)
 			) {
@@ -2971,6 +3056,7 @@ class AdminPanel {
 					this.activeLocationSelection.latitude,
 					this.activeLocationSelection.longitude,
 				);
+				this.activeLocationSelection.timezone = timezone || null;
 			}
 			const latString = Number.isFinite(this.activeLocationSelection.latitude)
 				? this.activeLocationSelection.latitude.toFixed(6)
@@ -2998,42 +3084,292 @@ class AdminPanel {
 		}
 	}
 
-	extractAddressComponent(components, typeList) {
-		if (!Array.isArray(components)) return null;
-		for (const targetType of typeList) {
-			const component = components.find((entry) =>
-				entry?.types?.includes(targetType),
-			);
-			if (component?.long_name) return component.long_name;
+	normalizeLatLng(latLng) {
+		if (!latLng) return null;
+		if (typeof latLng.lat === "function" && typeof latLng.lng === "function") {
+			return { lat: latLng.lat(), lng: latLng.lng() };
+		}
+		if (typeof latLng.lat === "number" && typeof latLng.lng === "number") {
+			return { lat: latLng.lat, lng: latLng.lng };
+		}
+		if (
+			typeof latLng.latitude === "number" &&
+			typeof latLng.longitude === "number"
+		) {
+			return { lat: latLng.latitude, lng: latLng.longitude };
+		}
+		if (Array.isArray(latLng) && latLng.length === 2) {
+			const [lat, lng] = latLng;
+			if (Number.isFinite(lat) && Number.isFinite(lng)) {
+				return { lat, lng };
+			}
 		}
 		return null;
+	}
+
+	abortLocationSearch() {
+		if (this.locationPickerSearchAbortController) {
+			this.locationPickerSearchAbortController.abort();
+			this.locationPickerSearchAbortController = null;
+		}
+		if (this.locationPickerSearchTimeout) {
+			clearTimeout(this.locationPickerSearchTimeout);
+			this.locationPickerSearchTimeout = null;
+		}
+	}
+
+	handleLocationSearchInput(query, immediate = false) {
+		const text = query?.trim() || "";
+		if (text.length === 0) {
+			this.abortLocationSearch();
+			this.clearLocationSearchResults();
+			if (this.locationPickerStatusEl)
+				this.locationPickerStatusEl.textContent = "";
+			return;
+		}
+		if (text.length < 3) {
+			this.abortLocationSearch();
+			this.clearLocationSearchResults("Type at least 3 characters to search.");
+			if (this.locationPickerStatusEl)
+				this.locationPickerStatusEl.textContent = "";
+			return;
+		}
+		if (this.locationPickerSearchTimeout) {
+			clearTimeout(this.locationPickerSearchTimeout);
+		}
+		const trigger = () => {
+			this.runLocationSearch(text);
+		};
+		if (immediate) {
+			trigger();
+		} else {
+			this.locationPickerSearchTimeout = setTimeout(trigger, 450);
+		}
+	}
+
+	async runLocationSearch(query) {
+		this.abortLocationSearch();
+		if (this.locationPickerStatusEl)
+			this.locationPickerStatusEl.textContent = "Searching…";
+		const controller = new AbortController();
+		this.locationPickerSearchAbortController = controller;
+		try {
+			const results = await this.performLocationSearch(query, controller);
+			if (controller.signal.aborted) return;
+			this.renderLocationSearchResults(results);
+			if (this.locationPickerStatusEl)
+				this.locationPickerStatusEl.textContent = results.length
+					? ""
+					: "No matches found.";
+		} catch (err) {
+			if (controller.signal.aborted) return;
+			this.showError(err?.message || "Location search failed");
+			this.clearLocationSearchResults();
+			if (this.locationPickerStatusEl)
+				this.locationPickerStatusEl.textContent = "";
+		} finally {
+			if (this.locationPickerSearchAbortController === controller) {
+				this.locationPickerSearchAbortController = null;
+			}
+		}
+	}
+
+	async performLocationSearch(query, controller) {
+		const url = new URL("https://nominatim.openstreetmap.org/search");
+		url.searchParams.set("format", "jsonv2");
+		url.searchParams.set("limit", "5");
+		url.searchParams.set("addressdetails", "1");
+		url.searchParams.set("q", query);
+		url.searchParams.set("email", "support@tweetapus.com");
+		const response = await fetch(url.toString(), {
+			headers: { Accept: "application/json" },
+			signal: controller?.signal,
+		});
+		if (!response.ok) throw new Error("Search request failed");
+		const data = await response.json();
+		if (!Array.isArray(data)) return [];
+		return data;
+	}
+
+	clearLocationSearchResults(message = "") {
+		if (!this.locationPickerSearchResultsEl) return;
+		this.locationPickerSearchResultsEl.innerHTML = "";
+		if (message) {
+			const note = document.createElement("div");
+			note.className = "text-muted small";
+			note.textContent = message;
+			this.locationPickerSearchResultsEl.appendChild(note);
+		}
+	}
+
+	renderLocationSearchResults(results) {
+		if (!this.locationPickerSearchResultsEl) return;
+		this.locationPickerSearchResultsEl.innerHTML = "";
+		if (!results.length) return;
+		results.forEach((entry) => {
+			const latValue = Number.parseFloat(entry.lat);
+			const lngValue = Number.parseFloat(entry.lon);
+			if (!Number.isFinite(latValue) || !Number.isFinite(lngValue)) return;
+			const button = document.createElement("button");
+			button.type = "button";
+			button.className =
+				"btn btn-outline-light btn-sm w-100 text-start mb-2 location-search-result";
+			const title = document.createElement("div");
+			title.className = "fw-semibold";
+			title.textContent = entry.display_name || "Unknown";
+			const meta = document.createElement("div");
+			meta.className = "small text-muted";
+			const cityCandidate =
+				entry.address?.city ||
+				entry.address?.town ||
+				entry.address?.village ||
+				entry.address?.state ||
+				"";
+			const countryCandidate = entry.address?.country || "";
+			meta.textContent = [cityCandidate, countryCandidate]
+				.filter(Boolean)
+				.join(" · ");
+			button.appendChild(title);
+			if (meta.textContent) button.appendChild(meta);
+			button.addEventListener("click", () => {
+				this.handleLatLngSelection(
+					{ lat: latValue, lng: lngValue },
+					{
+						formattedAddress: entry.display_name,
+						city: cityCandidate || null,
+						country: countryCandidate || null,
+					},
+				).catch(() => {});
+				if (this.locationPickerSearchInput)
+					this.locationPickerSearchInput.value = entry.display_name || "";
+			});
+			this.locationPickerSearchResultsEl.appendChild(button);
+		});
+	}
+
+	async reverseGeocode(lat, lng) {
+		try {
+			const cloudUrl = new URL(
+				"https://api.bigdatacloud.net/data/reverse-geocode-client",
+			);
+			cloudUrl.searchParams.set("latitude", lat.toString());
+			cloudUrl.searchParams.set("longitude", lng.toString());
+			cloudUrl.searchParams.set("localityLanguage", "en");
+			const response = await fetch(cloudUrl.toString(), {
+				headers: { Accept: "application/json" },
+			});
+			if (response.ok) {
+				const data = await response.json();
+				if (data) {
+					const formattedParts = [
+						data.city || data.locality,
+						data.principalSubdivision,
+						data.countryName,
+					]
+						.filter(Boolean)
+						.map((part) => part.trim());
+					return {
+						formattedAddress: formattedParts.length
+							? formattedParts.join(", ")
+							: null,
+						city:
+							data.city || data.locality || data.principalSubdivision || null,
+						country: data.countryCode || data.countryName || null,
+					};
+				}
+			}
+		} catch (_err) {}
+		try {
+			const url = new URL("https://nominatim.openstreetmap.org/reverse");
+			url.searchParams.set("format", "jsonv2");
+			url.searchParams.set("lat", lat.toString());
+			url.searchParams.set("lon", lng.toString());
+			url.searchParams.set("zoom", "14");
+			url.searchParams.set("addressdetails", "1");
+			url.searchParams.set("email", "support@tweetapus.com");
+			const response = await fetch(url.toString(), {
+				headers: { Accept: "application/json" },
+			});
+			if (!response.ok) return null;
+			const data = await response.json();
+			if (!data) return null;
+			return {
+				formattedAddress: data.display_name || null,
+				city:
+					data.address?.city ||
+					data.address?.town ||
+					data.address?.village ||
+					data.address?.state ||
+					null,
+				country: data.address?.country || data.address?.country_code || null,
+			};
+		} catch {
+			return null;
+		}
 	}
 
 	async lookupTimezone(lat, lng) {
 		const key = `${lat.toFixed(4)},${lng.toFixed(4)}`;
 		if (this.timezoneCache.has(key)) return this.timezoneCache.get(key);
-		try {
-			const config = await this.loadAdminConfig();
-			const apiKey = config?.googleMapsApiKey;
-			if (!apiKey) return null;
-			const url = new URL("https://maps.googleapis.com/maps/api/timezone/json");
-			url.searchParams.set("location", `${lat},${lng}`);
-			url.searchParams.set(
-				"timestamp",
-				Math.floor(Date.now() / 1000).toString(),
-			);
-			url.searchParams.set("key", apiKey);
-			const response = await fetch(url.toString());
-			if (!response.ok) return null;
-			const data = await response.json();
-			if (data.status === "OK" && data.timeZoneId) {
-				this.timezoneCache.set(key, data.timeZoneId);
-				return data.timeZoneId;
-			}
-			return null;
-		} catch {
-			return null;
+		const storeTimezone = (value) => {
+			if (!value || typeof value !== "string") return null;
+			const trimmed = value.trim();
+			if (!trimmed) return null;
+			this.timezoneCache.set(key, trimmed);
+			return trimmed;
+		};
+		const attempts = [
+			async () => {
+				const url = new URL("https://api.open-meteo.com/v1/forecast");
+				url.searchParams.set("latitude", lat.toString());
+				url.searchParams.set("longitude", lng.toString());
+				url.searchParams.set("timezone", "auto");
+				url.searchParams.set("forecast_days", "1");
+				url.searchParams.set("hourly", "temperature_2m");
+				url.searchParams.set("past_days", "0");
+				const response = await fetch(url.toString());
+				if (!response.ok) return null;
+				const data = await response.json();
+				return data?.timezone || null;
+			},
+			async () => {
+				const url = new URL("https://timeapi.io/api/TimeZone/coordinate");
+				url.searchParams.set("latitude", lat.toString());
+				url.searchParams.set("longitude", lng.toString());
+				const response = await fetch(url.toString(), {
+					headers: { Accept: "application/json" },
+				});
+				if (!response.ok) return null;
+				const data = await response.json();
+				return (
+					data?.timeZone ||
+					data?.timezone ||
+					data?.timeZoneId ||
+					data?.timeZoneName ||
+					null
+				);
+			},
+			async () => {
+				const url = new URL("https://api.geonames.org/timezoneJSON");
+				url.searchParams.set("lat", lat.toString());
+				url.searchParams.set("lng", lng.toString());
+				url.searchParams.set("username", "demo");
+				const response = await fetch(url.toString(), {
+					headers: { Accept: "application/json" },
+				});
+				if (!response.ok) return null;
+				const data = await response.json();
+				return data?.timezoneId || data?.timeZoneId || null;
+			},
+		];
+		for (const attempt of attempts) {
+			try {
+				const candidate = await attempt();
+				const stored = storeTimezone(candidate);
+				if (stored) return stored;
+			} catch (_err) {}
 		}
+		return null;
 	}
 
 	toggleEditMode(enable) {
@@ -3229,11 +3565,11 @@ class AdminPanel {
 		if (loginTorInput) {
 			payload.login_tor = !!loginTorInput.checked;
 		}
-		const loginHideWarningInput = document.getElementById(
-			"editProfileLoginHideDatacenterWarning",
+		const loginWarningInput = document.getElementById(
+			"editProfileLoginDatacenterWarning",
 		);
-		if (loginHideWarningInput) {
-			payload.login_hide_datacenter_warning = !!loginHideWarningInput.checked;
+		if (loginWarningInput) {
+			payload.login_datacenter_warning = !!loginWarningInput.checked;
 		}
 		const loginPreserveOverrideInput = document.getElementById(
 			"editProfileLoginPreserveOverride",
@@ -3286,12 +3622,11 @@ class AdminPanel {
 		if (creationTorInput) {
 			payload.creation_tor = !!creationTorInput.checked;
 		}
-		const creationHideWarningInput = document.getElementById(
-			"editProfileCreationHideDatacenterWarning",
+		const creationWarningInput = document.getElementById(
+			"editProfileCreationDatacenterWarning",
 		);
-		if (creationHideWarningInput) {
-			payload.creation_hide_datacenter_warning =
-				!!creationHideWarningInput.checked;
+		if (creationWarningInput) {
+			payload.creation_datacenter_warning = !!creationWarningInput.checked;
 		}
 
 		try {

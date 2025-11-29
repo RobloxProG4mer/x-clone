@@ -531,7 +531,7 @@ nav {
         margin-bottom: 4px;
         cursor: pointer;
         background-image: linear-gradient(45deg, transparent 50%, var(--text-placeholder) 50%), linear-gradient(135deg, var(--text-placeholder) 50%, transparent 50%);
-        background-position: calc(100% - 12px) calc(1em + -7px), calc(100% - 8px) calc(1em + -7px);
+        background-position: calc(100% - 12px) calc(1em + -9px), calc(100% - 8px) calc(1em + -9px);
         background-size: 4px 4px, 4px 4px;
         background-repeat: no-repeat;
         padding-right: 23px;
@@ -6428,34 +6428,29 @@ nav {
   display: inline-block;
   margin-left: 6px;
   padding: 1px 4px;
-  font-weight: 600;
-  border-radius: 3px;
-  font-size: 9px;
+  font-weight: 500;
+  border-radius: 6px;
+  font-size: 10px;
   vertical-align: middle;
-  letter-spacing: -0.1px;
 }
 
 .profile-label {
-  padding: 2px 6px;
   font-size: 11px;
 }
 
 .label-parody {
-  background-color: rgb(218 165 32 / 6%);
   color: #d9ab3b;
-  border: 1px solid rgb(218 165 32 / 10%);
+  border: 1px solid rgb(218 165 32);
 }
 
 .label-fan {
-  background-color: rgba(219, 39, 119, 0.15);
   color: #db2777;
-  border: 1px solid rgba(219, 39, 119, 0.3);
+  border: 1px solid rgba(219, 39, 119);
 }
 
 .label-commentary {
-  background-color: rgba(59, 130, 246, 0.15);
   color: #3b82f6;
-  border: 1px solid rgba(59, 130, 246, 0.3);
+  border: 1px solid rgba(59, 130, 246);
 }
 
 .communities-page {

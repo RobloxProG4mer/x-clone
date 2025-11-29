@@ -24,6 +24,7 @@ const state = {
 		loading: false,
 		done: false,
 		error: "",
+		filter: "",
 	},
 	view: {
 		slug: null,
@@ -153,27 +154,25 @@ const renderApp = () => {
 	const shell = createEl("div", { className: "paste-shell" });
 	shell.append(renderNav());
 
-	// Responsive two-column layout: main content + aside
-	const grid = createEl("div", { className: "paste-grid" });
-	const main = createEl("main", { className: "paste-main" });
-	const aside = createEl("aside", { className: "paste-aside" });
+	if (state.mode === "create") shell.append(renderCreateCard());
+	if (state.mode === "explore") shell.append(renderExploreCard());
+	if (state.mode === "view") shell.append(renderViewCard());
+	if (state.mode === "mine") shell.append(renderMyPastesCard());
 
-	// Primary content
-	if (state.mode === "create") main.append(renderCreateCard());
-	if (state.mode === "explore") main.append(renderExploreCard());
-	if (state.mode === "view") main.append(renderViewCard());
-	if (state.mode === "mine") main.append(renderMyPastesCard());
-
-	// Secondary/auxiliary content in the aside: expose Explore or Create depending on context
-	if (state.mode !== "explore") {
-		aside.append(renderExploreCard());
-	} else {
-		// When in Explore mode, show quick create in aside
-		aside.append(renderCreateCard());
+	if (state.mode !== "create") {
+		const fab = createEl("button", { className: "fab", type: "button" });
+		fab.innerHTML = `<svg width="24" height="24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>`;
+		fab.addEventListener("click", () => {
+			state.mode = "create";
+			state.view.slug = null;
+			state.view.data = null;
+			state.view.error = "";
+			updateUrl(null, null);
+			renderApp();
+		});
+		shell.append(fab);
 	}
 
-	grid.append(main, aside);
-	shell.append(grid);
 	app.append(shell);
 };
 
@@ -545,7 +544,30 @@ const renderExploreCard = () => {
 		return card;
 	}
 
-	if (!state.publicList.items.length) {
+	const searchRow = createEl("div", { className: "form-row" });
+	const searchLabel = createEl("label", { text: "Filter" });
+	const searchInput = createEl("input", {
+		placeholder: "Search title, language or slug",
+		value: state.publicList.filter || "",
+	});
+	searchInput.addEventListener("input", (e) => {
+		state.publicList.filter = e.target.value;
+		renderApp();
+	});
+	searchRow.append(searchLabel, searchInput);
+	card.append(searchRow);
+
+	const filtered = state.publicList.items.filter((p) => {
+		if (!state.publicList.filter) return true;
+		const s = state.publicList.filter.toLowerCase();
+		return (
+			(p.title || "").toLowerCase().includes(s) ||
+			(p.language || "").toLowerCase().includes(s) ||
+			(p.slug || "").toLowerCase().includes(s)
+		);
+	});
+
+	if (!filtered.length) {
 		const emptyState = createEl("div", { className: "empty-state" });
 		emptyState.append(
 			createEl("div", { className: "empty-state-icon", text: "📋" }),
@@ -554,7 +576,7 @@ const renderExploreCard = () => {
 		card.append(emptyState);
 	} else {
 		const list = createEl("div", { className: "public-list" });
-		state.publicList.items.forEach((item) => {
+		filtered.forEach((item) => {
 			list.append(renderPublicItem(item));
 		});
 		card.append(list);
@@ -604,6 +626,12 @@ const renderPublicItem = (item) => {
 		);
 	}
 	entry.append(header);
+	if (item.content) {
+		const preview = createEl("pre", { className: "item-preview" });
+		preview.textContent =
+			item.content.slice(0, 200) + (item.content.length > 200 ? "…" : "");
+		entry.append(preview);
+	}
 	const meta = createEl("div", { className: "item-meta" });
 	meta.append(createEl("span", { text: `${item.view_count || 0} views` }));
 	meta.append(createEl("span", { text: formatDate(item.created_at) }));
