@@ -1,55 +1,91 @@
 import { Elysia } from "elysia";
 import db from "../db.js";
 
-const getTweetById = db.query(`
-  SELECT * FROM posts WHERE id = ?
-`);
-const getUserById = db.query(`
-  SELECT id, username, name, avatar, verified, gold FROM users WHERE id = ?
-`);
+const stripHtml = (html) => {
+	return html.replace(/<[^>]*>?/gm, "");
+};
+
+const esc = (str) =>
+	str
+		?.replaceAll('"', "&quot;")
+		?.replaceAll("<", "&lt;")
+		?.replaceAll(">", "&gt;");
+
+const getTweetById = db.query(`SELECT * FROM posts WHERE id = ?`);
+const getUserById = db.query(`SELECT * FROM users WHERE id = ?`);
 
 export const embeds = new Elysia({ name: "generateEmbeds" })
 	.mapResponse(({ request, response, set }) => {
-		if (request.url.endsWith("?rb=1")) {
-			return response;
-		}
-		const userAgent = request.headers.get("user-agent").toLowerCase();
+		if (request.url.endsWith("?rb=1")) return response;
+		const userAgent = request.headers.get("user-agent")?.toLowerCase() || "";
 		if (!userAgent) return response;
 		const goodMatches = ["applewebkit", "chrome/", "firefox/", "safari/"];
-		for (const goodMatch of goodMatches) {
-			if (userAgent.includes(goodMatch)) {
-				return response;
-			}
+		if (
+			goodMatches.some((match) => userAgent.includes(match)) &&
+			!userAgent.includes("discord")
+		) {
+			return response;
 		}
 
 		const pathname = new URL(request.url).pathname;
-		if (!pathname || pathname.startsWith("/api/")) return response;
+		if (!pathname?.startsWith("/tweet/")) return response;
 
-		if (pathname?.startsWith("/tweet/")) {
-			set.headers["Content-Type"] = "text/html; charset=utf-8";
+		set.headers["Content-Type"] = "text/html; charset=utf-8";
 
-			const tweetId = pathname.replaceAll("/tweet/", "").split("/")[0];
-			const tweet = getTweetById.get(tweetId);
-			if (!tweet) {
-				return `<!DOCTYPE html><html><head><meta property="og:title" content="Tweetapus"/><meta property="og:description" content="That tweet doesn't exist"/></head><body>That tweet doesn't exist. <a href="/">Go back to the homepage</a></body></html>`;
-			}
+		const tweetId = pathname.replaceAll("/tweet/", "").split("/")[0];
+		const tweet = getTweetById.get(tweetId);
 
-			const author = getUserById.get(tweet.user_id);
-			if (!author) {
-				return `<!DOCTYPE html><html><head><meta property="og:title" content="Tweetapus"/><meta property="og:description" content="That tweet doesn't exist"/></head><body>That tweet doesn't exist. <a href="/">Go back to the homepage</a></body></html>`;
-			}
-
-			const esc = (str) =>
-				str
-					?.replaceAll('"', '\\"')
-					?.replaceAll("<", "&lt;")
-					?.replaceAll(">", "&gt;");
-
-			if (tweet.content.length > 280) {
-				tweet.content = `${tweet.content.substring(0, 280)}…`;
-			}
-
-			return `<!DOCTYPE html><html lang="en"><head><meta name="application-title" content="Tweetapus" /><link rel="canonical" href="${process.env.BASE_URL}/tweet/${pathname.replaceAll("/tweet/", "")}"/><meta property="og:url" content="${process.env.BASE_URL}/tweet/${pathname.replaceAll("/tweet/", "")}"/><meta property="theme-color" content="#AC97FF"/><meta property="twitter:title" content="${esc(author.name || author.username)} (@${author.username})"/><meta http-equiv="refresh" content="0;url=${process.env.BASE_URL}/tweet/${pathname.replaceAll("/tweet/", "")}?rb=1"/><meta property="twitter:card" content="summary_large_image"/><meta property="og:title" content="${esc(author.name || author.username)} (@${author.username})"/><meta property="og:description" content="${esc(tweet.article_title || tweet.content)}"/><meta property="og:site_name" content="Tweetapus"/><link rel="alternate" href="${process.env.BASE_URL}/api/owoembed?i=${encodeURIComponent(pathname.replaceAll("/tweet/", ""))}&a=${encodeURIComponent(`💬 ${tweet.reply_count}   🔁 ${tweet.quote_count + tweet.retweet_count}   ❤️ ${tweet.like_count}   👁️ ${tweet.view_count}`)}" type="application/json+oembed" title="${esc(author.name || author.username)} (@${author.username})"></head><body></body></html>`;
+		if (!tweet) {
+			return `<!DOCTYPE html><html><head><meta property="og:title" content="Tweetapus"/><meta property="og:description" content="Tweet not found"/></head><body>Tweet not found.</body></html>`;
 		}
+
+		const author = getUserById.get(tweet.user_id);
+		const authorName = author ? author.name || author.username : "Unknown";
+		const authorHandle = author ? author.username : "unknown";
+
+		let cleanContent = stripHtml(tweet.content || "");
+		if (cleanContent.length > 350) {
+			cleanContent = `${cleanContent.substring(0, 350)}…`;
+		}
+
+		const imageUrl = tweet.image_url || tweet.attachment_url || null;
+
+		let imageMeta = "";
+		if (imageUrl) {
+			imageMeta = `
+                <meta property="twitter:image" content="${imageUrl}" />
+                <meta property="og:image" content="${imageUrl}" />
+            `;
+		}
+
+		const statsString = `💬 ${tweet.reply_count || 0}   🔁 ${tweet.retweet_count || 0}   ❤️ ${tweet.like_count || 0}   👁️ ${tweet.view_count || 0}`;
+
+		return `<!DOCTYPE html>
+        <html lang="en">
+            <head>
+                <meta name="application-title" content="Tweetapus" />
+                <link rel="canonical" href="${process.env.BASE_URL}/tweet/${tweetId}"/>
+                <meta property="og:url" content="${process.env.BASE_URL}/tweet/${tweetId}"/>
+                <meta property="theme-color" content="#AC97FF"/>
+                
+                <meta property="og:title" content="${esc(authorName)} (@${authorHandle})"/>
+                <meta property="og:description" content="${esc(cleanContent)}"/>
+                <meta property="og:site_name" content="Tweetapus"/>
+                
+                <meta property="twitter:card" content="summary_large_image"/>
+                <meta property="twitter:title" content="${esc(authorName)} (@${authorHandle})"/>
+                <meta property="twitter:description" content="${esc(cleanContent)}"/>
+                ${imageMeta}
+                
+                <meta http-equiv="refresh" content="0;url=${process.env.BASE_URL}/tweet/${tweetId}?rb=1"/>
+                
+                <link rel="alternate" 
+                    href="${process.env.BASE_URL}/api/owooembed?author=${encodeURIComponent(authorName)}&handle=${encodeURIComponent(authorHandle)}&stats=${encodeURIComponent(statsString)}" 
+                    type="application/json+oembed" 
+                    title="${esc(authorName)} (@${authorHandle})"
+                >
+            </head>
+            <body></body>
+        </html>`;
 	})
 	.as("plugin");

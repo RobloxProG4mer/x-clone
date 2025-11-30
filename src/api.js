@@ -306,17 +306,19 @@ export default new Elysia({
 			},
 		},
 	)
-	.get("/owoembed", async ({ query }) => {
-		const { i, a } = query;
+	.get("/api/owooembed", ({ query }) => {
+		const { author, handle, stats } = query;
 
 		return {
-			author_name: a,
-			author_url: `${process.env.BASE_URL}/tweet/${encodeURIComponent(i)}`,
-			provider_name: "Tweetapus",
-			provider_url: process.env.BASE_URL,
-			title: "Embed",
 			type: "rich",
 			version: "1.0",
+
+			author_name: `${author} (@${handle})`,
+			author_url: `${process.env.BASE_URL}/${handle}`,
+
+			provider_name: `Tweetapus  •  ${stats}`,
+			provider_url: process.env.BASE_URL,
+
 		};
 	})
 	.use(auth)
