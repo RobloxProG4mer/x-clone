@@ -454,7 +454,7 @@ async function callOpenAI(messages, db) {
 		});
 
 		let response = await fetch(
-			`${OPENAPI_HOST || "https://api.openai.com/v1/"}responses`,
+			`${process.env.OPENAPI_HOST || "https://api.openai.com/v1/"}responses`,
 			{
 				method: "POST",
 				headers: {
@@ -501,7 +501,7 @@ async function callOpenAI(messages, db) {
 			}
 
 			response = await fetch(
-				`${OPENAPI_HOST || "https://api.openai.com/v1/"}responses`,
+				`${process.env.OPENAPI_HOST || "https://api.openai.com/v1/"}responses`,
 				{
 					method: "POST",
 					headers: {

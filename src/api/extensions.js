@@ -439,6 +439,37 @@ const enabledExtensionsQuery = db.prepare(
 
 const extensionByIdQuery = db.prepare("SELECT * FROM extensions WHERE id = ?");
 
+export async function mountServerExtensions(app) {
+	const enabledRows = enabledExtensionsQuery.all();
+	const managed = enabledRows.map(mapExtensionRecord);
+	const managedDirs = new Set(managed.map((r) => r.installDir).filter(Boolean));
+	const manual = await discoverManualExtensions(managedDirs);
+	const candidates = [...managed, ...manual];
+
+	for (const ext of candidates) {
+		try {
+			const root = ext.installDir
+				? join(process.cwd(), "ext", ext.installDir)
+				: null;
+			if (!root) continue;
+			const serverApiPath = join(root, "server", "api.js");
+			const fileExists = await Bun.file(serverApiPath).exists();
+			if (!fileExists) continue;
+			const module = await import(`file://${serverApiPath}`);
+			if (module?.default && typeof app.use === "function") {
+				try {
+					app.use(module.default);
+					console.log(`Mounted server extension API: ${ext.id}`);
+				} catch (err) {
+					console.error(`Failed to mount server extension ${ext.id}:`, err);
+				}
+			}
+		} catch (err) {
+			console.error("Error while processing extension server API:", err);
+		}
+	}
+}
+
 export default new Elysia({ prefix: "/extensions", tags: ["Extensions"] })
 	.get("/", async () => {
 		const enabledRows = enabledExtensionsQuery.all();

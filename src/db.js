@@ -748,6 +748,48 @@ CREATE TABLE IF NOT EXISTS push_subscriptions (
 );
 
 CREATE INDEX IF NOT EXISTS idx_push_subscriptions_user_id ON push_subscriptions(user_id);
+
+CREATE TABLE IF NOT EXISTS lists (
+  id TEXT PRIMARY KEY,
+  user_id TEXT NOT NULL,
+  name TEXT NOT NULL,
+  description TEXT DEFAULT NULL,
+  is_private BOOLEAN DEFAULT FALSE,
+  member_count INTEGER DEFAULT 0,
+  created_at TIMESTAMP DEFAULT (datetime('now', 'utc')),
+  updated_at TIMESTAMP DEFAULT (datetime('now', 'utc')),
+  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+);
+
+CREATE INDEX IF NOT EXISTS idx_lists_user_id ON lists(user_id);
+CREATE INDEX IF NOT EXISTS idx_lists_created_at ON lists(created_at);
+CREATE INDEX IF NOT EXISTS idx_lists_is_private ON lists(is_private);
+
+CREATE TABLE IF NOT EXISTS list_members (
+  id TEXT PRIMARY KEY,
+  list_id TEXT NOT NULL,
+  user_id TEXT NOT NULL,
+  added_at TIMESTAMP DEFAULT (datetime('now', 'utc')),
+  FOREIGN KEY (list_id) REFERENCES lists(id) ON DELETE CASCADE,
+  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+  UNIQUE(list_id, user_id)
+);
+
+CREATE INDEX IF NOT EXISTS idx_list_members_list_id ON list_members(list_id);
+CREATE INDEX IF NOT EXISTS idx_list_members_user_id ON list_members(user_id);
+
+CREATE TABLE IF NOT EXISTS list_followers (
+  id TEXT PRIMARY KEY,
+  list_id TEXT NOT NULL,
+  user_id TEXT NOT NULL,
+  followed_at TIMESTAMP DEFAULT (datetime('now', 'utc')),
+  FOREIGN KEY (list_id) REFERENCES lists(id) ON DELETE CASCADE,
+  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+  UNIQUE(list_id, user_id)
+);
+
+CREATE INDEX IF NOT EXISTS idx_list_followers_list_id ON list_followers(list_id);
+CREATE INDEX IF NOT EXISTS idx_list_followers_user_id ON list_followers(user_id);
 `,
 ).run();
 

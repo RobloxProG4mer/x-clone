@@ -151,23 +151,11 @@ function showPage(page, options = {}) {
 
 		if (page === "pastes" && !lazyInitializers.pastes) {
 			lazyInitializers.pastes = true;
-			import("/public/timeline/js/pastes-extension.js")
-				.then(({ initializePastesPage }) => {
-					const container = document.querySelector(".pastes-page");
-					initializePastesPage(container);
-				})
-				.catch((error) => {
-					console.error("Failed to initialize pastes page:", error);
-					const container = document.querySelector(".pastes-page");
-					if (container) {
-						container.textContent = "";
-						const errorDiv = document.createElement("div");
-						errorDiv.className = "error-text";
-						errorDiv.textContent =
-							"Failed to load Pastes UI. Please try again later.";
-						container.append(errorDiv);
-					}
-				});
+			const api = window.tweetapus?.extensions?.pastes;
+			if (api && typeof api.initializePastesPage === "function") {
+				const container = document.querySelector(".pastes-page");
+				api.initializePastesPage(container);
+			}
 		}
 	} else if (page === "settings") {
 		updatePageTitle("settings");
@@ -262,16 +250,12 @@ window.addEventListener("popstate", (event) => {
 	showPage(page, { recoverState, title });
 	updateNavbar();
 
-	// Re-initialize pastes page if needed (handle back/forward navigation)
 	if (page === "pastes" && lazyInitializers.pastes) {
-		import("/public/timeline/js/pastes-extension.js")
-			.then(({ initializePastesPage }) => {
-				const container = document.querySelector(".pastes-page");
-				initializePastesPage(container);
-			})
-			.catch((error) =>
-				console.error("Failed to re-initialize pastes on popstate:", error),
-			);
+		const api = window.tweetapus?.extensions?.pastes;
+		if (api && typeof api.initializePastesPage === "function") {
+			const container = document.querySelector(".pastes-page");
+			api.initializePastesPage(container);
+		}
 	}
 
 	setTimeout(() => {

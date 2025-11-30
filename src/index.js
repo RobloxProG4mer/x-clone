@@ -4,6 +4,7 @@ import { staticPlugin } from "@elysiajs/static";
 import { Elysia, file } from "elysia";
 
 import api from "./api.js";
+import { mountServerExtensions } from "./api/extensions.js";
 import db from "./db.js";
 import { compression } from "./helpers/compress.js";
 import { embeds } from "./helpers/embeds.js";
@@ -116,7 +117,7 @@ const cleanupExpiredMessages = () => {
 setInterval(cleanupExpiredMessages, 60000);
 cleanupExpiredMessages();
 
-new Elysia()
+const appServer = new Elysia()
 	.use(embeds)
 	.use(compression)
 	.use(staticPlugin())
@@ -309,10 +310,6 @@ new Elysia()
 	.get("/legal", () => file("./public/legal.html"))
 	.get("/pastes", () => file("./public/timeline/index.html"))
 	.get("/pastes/p/:slug", () => file("./public/timeline/index.html"))
-	/* Explicit module fallbacks where static plugin may be unreliable behind proxies */
-	.get("/public/timeline/js/pastes.js", () =>
-		file("./public/timeline/js/pastes-extension.js"),
-	)
 	.get("/public/paste/script.js", () => file("./public/paste/script.js"))
 	.get("*", ({ cookie }) => {
 		return cookie.agree?.value === "yes"
@@ -343,7 +340,13 @@ new Elysia()
 			tags: ["Emojis"],
 		},
 	)
-	.listen({ port: process.env.PORT || 3000, idleTimeout: 255 }, () => {
+	.listen({ port: process.env.PORT || 3000, idleTimeout: 255 }, async () => {
+		try {
+			await mountServerExtensions(appServer);
+		} catch (err) {
+			console.error("Failed to mount server extensions:", err);
+		}
+		
 		console.log(
 			`\x1b[38;2;29;161;242m __    _                     _
  \\ \\  | |___      _____  ___| |_ __ _ _ __  _   _ ___

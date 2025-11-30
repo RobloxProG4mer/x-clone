@@ -332,9 +332,10 @@ addRoute(
 addRoute(
 	(pathname) => pathname === "/pastes",
 	() => {
-		import("./pastes-extension.js").then(({ openPastesPage }) => {
-			openPastesPage();
-		});
+		const api = window.tweetapus?.extensions?.pastes;
+		if (api && typeof api.openPastesPage === "function") {
+			api.openPastesPage();
+		}
 	},
 );
 
@@ -345,9 +346,10 @@ addRoute(
 		const slug = decodeURIComponent(parts[3]);
 		const params = new URLSearchParams(window.location.search);
 		const secret = params.get("secret") || "";
-		import("./pastes-extension.js").then(({ openPasteView }) => {
-			openPasteView(slug, secret);
-		});
+		const api = window.tweetapus?.extensions?.pastes;
+		if (api && typeof api.openPasteView === "function") {
+			api.openPasteView(slug, secret);
+		}
 	},
 );
 

@@ -134,51 +134,6 @@ function saveAccountToStorage(user, token) {
 				},
 			},
 			{
-				title: "Pastes",
-
-				icon: `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5h16"/><path d="M4 12h16"/><path d="M4 19h16"/><path d="M9 9h6"/><path d="M9 16h6"/></svg>`,
-				onClick: () => {
-					const tryImports = async () => {
-						try {
-							const { openPastesPage } = await import("./pastes-extension.js");
-							openPastesPage();
-							return true;
-						} catch {}
-						try {
-							const { openPastesPage } = await import(
-								"/public/timeline/js/pastes-extension.js"
-							);
-							openPastesPage();
-							return true;
-						} catch (_) {
-							return false;
-						}
-					};
-
-					try {
-						popupObj?.close?.();
-					} catch {}
-
-					tryImports().then((ok) => {
-						if (!ok) {
-							if (window.location.pathname.startsWith("/pastes")) {
-								const container = document.querySelector(".pastes-page");
-								if (container) {
-									container.textContent = "";
-									const errorDiv = document.createElement("div");
-									errorDiv.className = "error-text";
-									errorDiv.textContent =
-										"Failed to load Pastes UI. Please try again later.";
-									container.append(errorDiv);
-								}
-							} else {
-								window.location.href = "/pastes";
-							}
-						}
-					});
-				},
-			},
-			{
 				title: "Change user",
 
 				icon: `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>`,
@@ -226,7 +181,22 @@ function saveAccountToStorage(user, token) {
 				},
 			},
 		];
-		const popupObj = createPopup({
+
+		try {
+			window.dispatchEvent(
+				new CustomEvent("tweetapus:account-menu-items", {
+					detail: {
+						add(item) {
+							if (!item || typeof item !== "object") return;
+							popupItems.push(item);
+						},
+					},
+				}),
+			);
+		} catch (err) {
+			console.error("Failed to process account menu extensions", err);
+		}
+		createPopup({
 			triggerElement: accountBtn,
 			items: popupItems,
 		});

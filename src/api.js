@@ -1,6 +1,5 @@
 import { Elysia, t } from "elysia";
 import { rateLimit } from "elysia-rate-limit";
-
 import admin from "./api/admin.js";
 import articles from "./api/articles.js";
 import auth from "./api/auth.js";
@@ -10,8 +9,8 @@ import communities from "./api/communities.js";
 import delegates from "./api/delegates.js";
 import dm from "./api/dm.js";
 import extensions from "./api/extensions.js";
+import lists from "./api/lists.js";
 import notifications from "./api/notifications.js";
-import pastes from "./api/pastes.js";
 import profile from "./api/profile.js";
 import publicTweets from "./api/public-tweets.js";
 import push from "./api/push.js";
@@ -334,7 +333,6 @@ export default new Elysia({
 	.use(search)
 	.use(upload)
 	.use(extensions)
-	.use(pastes)
 	.use(notifications)
 	.use(dm)
 	.use(push)
@@ -343,4 +341,5 @@ export default new Elysia({
 	.use(scheduled)
 	.use(reports)
 	.use(uploadRoutes)
-	.use(trends);
+	.use(trends)
+	.use(lists);

@@ -53,7 +53,7 @@ export function showReportModal({ type, id, username }) {
     { value: "harassment", label: "Harassment or bullying" },
     { value: "hate_speech", label: "Hate speech or symbols" },
     { value: "violence", label: "Violence or threats" },
-    { value: "nsfw", label: "NSFW content (not marked)" },
+    { value: "nsfw", label: "NSFW content" },
     { value: "impersonation", label: "Impersonation" },
     { value: "misinformation", label: "False information" },
     { value: "illegal", label: "Illegal activity" },

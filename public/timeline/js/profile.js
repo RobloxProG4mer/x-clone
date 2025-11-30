@@ -7,6 +7,7 @@ import {
 	isConvertibleImage,
 } from "../../shared/image-utils.js";
 import { showReportModal } from "../../shared/report-modal.js";
+import { createProfileSkeleton } from "../../shared/skeleton-utils.js";
 import { updateTabIndicator } from "../../shared/tab-indicator.js";
 import toastQueue from "../../shared/toasts.js";
 import { createModal, createPopup } from "../../shared/ui-utils.js";
@@ -38,7 +39,7 @@ const escapeHTML = (str) =>
 	str ? str.split("").join("").replace(/</g, "&lt;").replace(/>/g, "&gt;") : "";
 
 const countries =
-	"AFAfghanistan;ALAlbania;DZAlgeria;ASAmerican Samoa;ADAndorra;AOAngola;AGAntigua and Barbuda;ARArgentina;AMArmenia;AWAruba;AUAustralia;ATAustria;AZAzerbaijan;BSBahamas;BHBahrain;BDBangladesh;BBBarbados;BYBelarus;BEBelgium;BZBelize;BJBenin;BMBermuda;BTBhutan;BOBolivia;BABosnia and Herzegovina;BWBotswana;BRBrazil;BNBrunei Darussalam;BGBulgaria;BFBurkina Faso;BIBurundi;KHCambodia;CMCameroon;CACanada;CVCape Verde;KYCayman Islands;CFCentral African Republic;TDChad;CLChile;CNChina;COColombia;KMComoros;CGRepublic of the Congo;CDDemocratic Republic of the Congo;CKCook Islands;CRCosta Rica;CIIvory Coast;HRCroatia;CUCuba;CYCyprus;CZCzech Republic;DKDenmark;DJDjibouti;DMDominica;DODominican Republic;ECEcuador;EGEgypt;SVEl Salvador;GQEquatorial Guinea;EREritrea;EEEstonia;ETEthiopia;FOFaroe Islands;FJFiji;FIFinland;FRFrance;GFFrench Guiana;PFFrench Polynesia;GAGabon;GMGambia;GEGeorgia;DEGermany;GHGhana;GIGibraltar;GRGreece;GLGreenland;GDGrenada;GPGuadeloupe;GUGuam;GTGuatemala;GNGuinea;GWGuinea-Bissau;GYGuyana;HTHaiti;HNHonduras;HKHong Kong;HUHungary;ISIceland;INIndia;IDIndonesia;IRIran;IQIraq;IEIreland;ILIsrael;ITItaly;JMJamaica;JPJapan;JOJordan;KZKazakhstan;KEKenya;KIKiribati;KPNorth Korea;KRSouth Korea;KWKuwait;KGKyrgyzstan;LALao People's Democratic Republic;LVLatvia;LBLebanon;LSLesotho;LRLiberia;LYLibya;LILiechtenstein;LTLithuania;LULuxembourg;MOMacao;MGMadagascar;MWMalawi;MYMalaysia;MVMaldives;MLMali;MTMalta;MHMarshall Islands;MQMartinique;MRMauritania;MUMauritius;YTMayotte;MXMexico;FMMicronesia, Federated States of;MDMoldova, Republic of;MCMonaco;MNMongolia;MAMorocco;MZMozambique;MMMyanmar;NANamibia;NRNauru;NPNepal;NLNetherlands;NCNew Caledonia;NZNew Zealand;NINicaragua;NENiger;NGNigeria;MKNorth Macedonia;MPNorthern Mariana Islands;NONorway;OMOman;PKPakistan;PWPalau;PSState of Palestine;PAPanama;PGPapua New Guinea;PYParaguay;PEPeru;PHPhilippines;PLPoland;PTPortugal;PRPuerto Rico;QAQatar;REReunion;RORomania;RURussia;RWRwanda;KNSaint Kitts and Nevis;LCSaint Lucia;VCSaint Vincent and the Grenadines;WSSamoa;SMSan Marino;STSao Tome and Principe;SASaudi Arabia;SNSenegal;SCSeychelles;SLSierra Leone;SGSingapore;SKSlovakia;SISlovenia;SBSolomon Islands;SOSomalia;ZASouth Africa;ESSpain;LKSri Lanka;SDSudan;SRSuriname;SZEswatini;SESweden;CHSwitzerland;SYSyrian Arab Republic;TWTaiwan;TJTajikistan;TZTanzania;THThailand;TLTimor-Leste;TGTogo;TOTonga;TTTrinidad and Tobago;TNTunisia;TRTurkey;TMTurkmenistan;TCTurks and Caicos Islands;TVTuvalu;UGUganda;UAUkraine;AEUnited Arab Emirates;GBUnited Kingdom;USUnited States of America;UYUruguay;UZUzbekistan;VUVanuatu;VEVenezuela;VNVietnam;VGVirgin Islands, British;VIVirgin Islands;WFWallis and Futuna;EHWestern Sahara;YEYemen;ZMZambia;ZWZimbabwe;AXAland Islands;BQBonaire, Sint Eustatius and Saba;CWCuraçao;GGGuernsey;IMIsle of Man;JEJersey;MEMontenegro;MFSaint Martin;RSSerbia;SXSint Maarten;SSSouth Sudan;XKKosovo;XXUnknown".split(
+	"AFAfghanistan;ALAlbania;DZAlgeria;ASAmerican Samoa;ADAndorra;AOAngola;AGAntigua and Barbuda;ARArgentina;AMArmenia;AWAruba;AUAustralia;ATAustria;AZAzerbaijan;BSBahamas;BHBahrain;BDBangladesh;BBBarbados;BYBelarus;BEBelgium;BZBelize;BJBenin;BMBermuda;BTBhutan;BOBolivia;BABosnia and Herzegovina;BWBotswana;BRBrazil;BNBrunei Darussalam;BGBulgaria;BFBurkina Faso;BIBurundi;KHCambodia;CMCameroon;CACanada;CVCape Verde;KYCayman Islands;CFCentral African Republic;TDChad;CLChile;CNChina;COColombia;KMComoros;CGRepublic of the Congo;CDDemocratic Republic of the Congo;CKCook Islands;CRCosta Rica;CIIvory Coast;HRCroatia;CUCuba;CYCyprus;CZCzech Republic;DKDenmark;DJDjibouti;DMDominica;DODominican Republic;ECEcuador;EGEgypt;SVEl Salvador;GQEquatorial Guinea;EREritrea;EEEstonia;ETEthiopia;FOFaroe Islands;FJFiji;FIFinland;FRFrance;GFFrench Guiana;PFFrench Polynesia;GAGabon;GMGambia;GEGeorgia;DEGermany;GHGhana;GIGibraltar;GRGreece;GLGreenland;GDGrenada;GPGuadeloupe;GUGuam;GTGuatemala;GNGuinea;GWGuinea-Bissau;GYGuyana;HTHaiti;HNHonduras;HKHong Kong;HUHungary;ISIceland;INIndia;IDIndonesia;IRIran;IQIraq;IEIreland;ILIsrael;ITItaly;JMJamaica;JPJapan;JOJordan;KZKazakhstan;KEKenya;KIKiribati;KPNorth Korea;KRSouth Korea;KWKuwait;KGKyrgyzstan;LALao People's Democratic Republic;LVLatvia;LBLebanon;LSLesotho;LRLiberia;LYLibya;LILiechtenstein;LTLithuania;LULuxembourg;MOMacao;MGMadagascar;MWMalawi;MYMalaysia;MVMaldives;MLMali;MTMalta;MHMarshall Islands;MQMartinique;MRMauritania;MUMauritius;YTMayotte;MXMexico;FMMicronesia, Federated States of;MDMoldova, Republic of;MCMonaco;MNMongolia;MAMorocco;MZMozambique;MMMyanmar;NANamibia;NRNauru;NPNepal;NLNetherlands;NCNew Caledonia;NZNew Zealand;NINicaragua;NENiger;NGNigeria;MKNorth Macedonia;MPNorthern Mariana Islands;NONorway;OMOman;PKPakistan;PWPalau;PSState of Palestine;PAPanama;PGPapua New Guinea;PYParaguay;PEPeru;PHPhilippines;PLPoland;PTPortugal;PRPuerto Rico;QAQatar;REReunion;RORomania;RURussia;RWRwanda;KNSaint Kitts and Nevis;LCSaint Lucia;VCSaint Vincent and the Grenadines;WSSamoa;SMSan Marino;STSao Tome and Principe;SASaudi Arabia;SNSenegal;SCSeychelles;SLSierra Leone;SGSingapore;SKSlovakia;SISlovenia;SBSolomon Islands;SOSomalia;ZASouth Africa;ESSpain;LKSri Lanka;SDSudan;SRSuriname;SZEswatini;SESweden;CHSwitzerland;SYSyrian Arab Republic;TWTaiwan;TJTajikistan;TZTanzania;THThailand;TLTimor-Leste;TGTogo;TOTonga;TTTrinidad and Tobago;TNTunisia;TRTurkey;TMTurkmenistan;TCTurks and Caicos Islands;TVTuvalu;UGUganda;UAUkraine;AEUnited Arab Emirates;GBUnited Kingdom;USUSA;UYUruguay;UZUzbekistan;VUVanuatu;VEVenezuela;VNVietnam;VGVirgin Islands, British;VIVirgin Islands;WFWallis and Futuna;EHWestern Sahara;YEYemen;ZMZambia;ZWZimbabwe;AXAland Islands;BQBonaire, Sint Eustatius and Saba;CWCuraçao;GGGuernsey;IMIsle of Man;JEJersey;MEMontenegro;MFSaint Martin;RSSerbia;SXSint Maarten;SSSouth Sudan;XKKosovo;XXUnknown".split(
 		";",
 	);
 
@@ -84,19 +85,16 @@ export default async function openProfile(username) {
 			const profileContainer = document.getElementById("profileContainer");
 			profileContainer.style.display = "block";
 
-			const loadingOverlay = document.createElement("div");
-			loadingOverlay.style.cssText =
-				"display: flex; justify-content: center; align-items: center; min-height: 400px; position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: var(--bg-primary); z-index: 100; margin-left: -24px; margin-right: -24px;";
-			const spinner = document.createElement("div");
-			spinner.innerHTML = `<svg width="24" height="24" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><style>.spinner_z9k8 {transform-origin: center;animation: spinner_StKS 0.75s infinite linear;}@keyframes spinner_StKS {100% {transform: rotate(360deg);}}</style><path d="M12,1A11,11,0,1,0,23,12,11,11,0,0,0,12,1Zm0,19a8,8,0,1,1,8-8A8,8,0,0,1,12,20Z" opacity=".25" fill="currentColor"></path><path d="M12,4a8,8,0,0,1,7.89,6.7A1.53,1.53,0,0,0,21.38,12h0a1.5,1.5,0,0,0,1.48-1.75,11,11,0,0,0-21.72,0A1.5,1.5,0,0,0,2.62,12h0a1.53,1.53,0,0,0,1.49-1.3A8,8,0,0,1,12,4Z" class="spinner_z9k8" fill="currentColor"></path></svg>`;
-			loadingOverlay.appendChild(spinner);
-			profileContainer.style.position = "relative";
-			profileContainer.appendChild(loadingOverlay);
+			const existingContent = profileContainer.innerHTML;
+			profileContainer.innerHTML = "";
+			
+			const skeleton = createProfileSkeleton();
+			profileContainer.appendChild(skeleton);
 
 			const data = await query(`/profile/${username}`);
 
-			loadingOverlay.remove();
-			profileContainer.style.position = "";
+			skeleton.remove();
+			profileContainer.innerHTML = existingContent;
 
 			if (data.error) {
 				if (data.error === "User is suspended") {
@@ -137,6 +135,10 @@ export default async function openProfile(username) {
 				});
 			}
 
+			if (!data.isOwnProfile && authToken) {
+				loadFollowersYouKnow(username);
+			}
+
 			const affiliatesData = await query(`/profile/${username}/affiliates`);
 			if (!affiliatesData.error && affiliatesData.affiliates) {
 				currentAffiliates = affiliatesData.affiliates;
@@ -157,6 +159,61 @@ export default async function openProfile(username) {
 			}
 		},
 	});
+}
+
+async function loadFollowersYouKnow(username) {
+	const container = document.getElementById("followersYouKnowContainer");
+	if (!container) return;
+
+	container.innerHTML = "";
+	container.style.display = "none";
+
+	try {
+		const data = await query(`/profile/${username}/followers-you-know`);
+		if (data.error || !data.followersYouKnow || data.followersYouKnow.length === 0) {
+			return;
+		}
+
+		container.style.display = "flex";
+
+		const avatarsContainer = document.createElement("div");
+		avatarsContainer.className = "followers-you-know-avatars";
+
+		const displayCount = Math.min(data.followersYouKnow.length, 3);
+		for (let i = 0; i < displayCount; i++) {
+			const user = data.followersYouKnow[i];
+			const avatar = document.createElement("img");
+			avatar.src = user.avatar || "/public/shared/assets/default-avatar.svg";
+			avatar.alt = user.name || user.username;
+			avatar.className = "followers-you-know-avatar";
+			const radius = user.avatar_radius !== null && user.avatar_radius !== undefined
+				? `${user.avatar_radius}px`
+				: user.gold ? "4px" : "50px";
+			avatar.style.borderRadius = radius;
+			avatarsContainer.appendChild(avatar);
+		}
+
+		const textSpan = document.createElement("span");
+		textSpan.className = "followers-you-know-text";
+
+		if (data.count === 1) {
+			textSpan.textContent = `Followed by ${data.followersYouKnow[0].name || data.followersYouKnow[0].username}`;
+		} else if (data.count === 2) {
+			textSpan.textContent = `Followed by ${data.followersYouKnow[0].name || data.followersYouKnow[0].username} and ${data.followersYouKnow[1].name || data.followersYouKnow[1].username}`;
+		} else {
+			const othersCount = data.count - 2;
+			textSpan.textContent = `Followed by ${data.followersYouKnow[0].name || data.followersYouKnow[0].username}, ${data.followersYouKnow[1].name || data.followersYouKnow[1].username}, and ${othersCount} other${othersCount > 1 ? "s" : ""} you follow`;
+		}
+
+		container.appendChild(avatarsContainer);
+		container.appendChild(textSpan);
+
+		container.addEventListener("click", () => {
+			showFollowersList(username, "mutuals");
+		});
+	} catch (err) {
+		console.error("Error loading followers you know:", err);
+	}
 }
 
 const renderAffiliates = () => {
@@ -2952,92 +3009,170 @@ document.getElementById("editProfileModal").addEventListener("click", (e) => {
 	if (e.target === e.currentTarget) closeEditModal();
 });
 
-async function showFollowersList(username, type) {
-	try {
-		const endpoint = `/profile/${username}/${type}`;
-		const { error, followers, following } = await query(endpoint, {
-			headers: { Authorization: `Bearer ${authToken}` },
-		});
+function createUserListItem(user, onClickCallback) {
+	const followerItem = document.createElement("div");
+	followerItem.className = "follower-item";
+	followerItem.dataset.username = user.username;
 
-		if (error) {
-			toastQueue.add(
-				`<h1>Error loading ${type}</h1><p>${escapeHTML(error)}</p>`,
-			);
-			return;
-		}
+	const avatar = document.createElement("img");
+	avatar.src = user.avatar || "/public/shared/assets/default-avatar.svg";
+	avatar.alt = user.name || user.username;
+	avatar.className = "follower-avatar";
+	const radius = user.avatar_radius !== null && user.avatar_radius !== undefined
+		? `${user.avatar_radius}px`
+		: user.gold ? "4px" : "50px";
+	avatar.style.borderRadius = radius;
 
-		const users = type === "followers" ? followers : following;
-		const title = type === "followers" ? "Followers" : "Following";
+	const followerInfo = document.createElement("div");
+	followerInfo.className = "follower-info";
 
-		const followersList = document.createElement("div");
-		followersList.className = "followers-list";
+	const followerName = document.createElement("div");
+	followerName.className = "follower-name";
+	followerName.textContent = user.name || `@${user.username}`;
 
-		if (users.length === 0) {
-			const emptyDiv = document.createElement("div");
-			emptyDiv.className = "empty-followers";
-			emptyDiv.textContent = `No ${type} yet`;
-			followersList.appendChild(emptyDiv);
-		} else {
-			users.forEach((user) => {
-				const followerItem = document.createElement("div");
-				followerItem.className = "follower-item";
-				followerItem.dataset.username = user.username;
+	const followerUsername = document.createElement("div");
+	followerUsername.className = "follower-username";
+	followerUsername.textContent = `@${user.username}`;
 
-				const avatar = document.createElement("img");
-				avatar.src = user.avatar || "/public/shared/assets/default-avatar.svg";
-				avatar.alt = user.name;
-				avatar.className = "follower-avatar";
-				const radius =
-					user.avatar_radius !== null && user.avatar_radius !== undefined
-						? `${user.avatar_radius}px`
-						: user.gold
-							? `4px`
-							: `50px`;
-				avatar.style.borderRadius = radius;
-
-				const followerInfo = document.createElement("div");
-				followerInfo.className = "follower-info";
-
-				const followerName = document.createElement("div");
-				followerName.className = "follower-name";
-				followerName.textContent = user.name || `@${user.username}`;
-
-				const followerUsername = document.createElement("div");
-				followerUsername.className = "follower-username";
-				followerUsername.textContent = `@${user.username}`;
-
-				if (!user.name) {
-					followerUsername.style.display = "none";
-				}
-
-				followerInfo.appendChild(followerName);
-				followerInfo.appendChild(followerUsername);
-
-				followerItem.appendChild(avatar);
-				followerItem.appendChild(followerInfo);
-
-				followerItem.addEventListener("click", () => {
-					modal.close();
-					openProfile(user.username);
-				});
-
-				followersList.appendChild(followerItem);
-			});
-		}
-
-		const modalContent = document.createElement("div");
-		modalContent.className = "followers-modal";
-		modalContent.appendChild(followersList);
-
-		const modal = createModal({
-			title,
-			content: modalContent,
-			className: "modal-overlay",
-		});
-	} catch (error) {
-		console.error("Error loading followers:", error);
-		toastQueue.add(`<h1>Error loading ${type}</h1><p>Please try again</p>`);
+	if (!user.name) {
+		followerUsername.style.display = "none";
 	}
+
+	followerInfo.appendChild(followerName);
+	followerInfo.appendChild(followerUsername);
+
+	followerItem.appendChild(avatar);
+	followerItem.appendChild(followerInfo);
+
+	followerItem.addEventListener("click", onClickCallback);
+
+	return followerItem;
+}
+
+async function showFollowersList(username, initialType = "followers") {
+	const modalContent = document.createElement("div");
+	modalContent.className = "followers-modal-container";
+
+	const tabNav = document.createElement("div");
+	tabNav.className = "followers-modal-tabs tab-nav";
+
+	const tabs = [
+		{ id: "followers", label: "Followers" },
+		{ id: "following", label: "Following" },
+		{ id: "mutuals", label: "Followers you know" },
+	];
+
+	tabs.forEach((tab) => {
+		const tabBtn = document.createElement("button");
+		tabBtn.className = `followers-modal-tab${tab.id === initialType ? " active" : ""}`;
+		tabBtn.dataset.tab = tab.id;
+		tabBtn.textContent = tab.label;
+		tabNav.appendChild(tabBtn);
+	});
+
+	const listContainer = document.createElement("div");
+	listContainer.className = "followers-list-container";
+
+	const followersList = document.createElement("div");
+	followersList.className = "followers-list";
+	listContainer.appendChild(followersList);
+
+	modalContent.appendChild(tabNav);
+	modalContent.appendChild(listContainer);
+
+	let modal;
+	let currentTab = initialType;
+
+	const loadTabContent = async (type) => {
+		followersList.innerHTML = "";
+		
+		const loadingDiv = document.createElement("div");
+		loadingDiv.className = "followers-loading";
+		loadingDiv.innerHTML = `<svg width="24" height="24" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><style>.spinner_z9k8{transform-origin:center;animation:spinner_StKS .75s infinite linear}@keyframes spinner_StKS{100%{transform:rotate(360deg)}}</style><path d="M12,1A11,11,0,1,0,23,12,11,11,0,0,0,12,1Zm0,19a8,8,0,1,1,8-8A8,8,0,0,1,12,20Z" opacity=".25" fill="currentColor"/><path d="M12,4a8,8,0,0,1,7.89,6.7A1.53,1.53,0,0,0,21.38,12h0a1.5,1.5,0,0,0,1.48-1.75,11,11,0,0,0-21.72,0A1.5,1.5,0,0,0,2.62,12h0a1.53,1.53,0,0,0,1.49-1.3A8,8,0,0,1,12,4Z" class="spinner_z9k8" fill="currentColor"/></svg>`;
+		followersList.appendChild(loadingDiv);
+
+		try {
+			let users = [];
+			let endpoint = "";
+
+			if (type === "followers") {
+				endpoint = `/profile/${username}/followers`;
+				const data = await query(endpoint);
+				if (data.error) throw new Error(data.error);
+				users = data.followers || [];
+			} else if (type === "following") {
+				endpoint = `/profile/${username}/following`;
+				const data = await query(endpoint);
+				if (data.error) throw new Error(data.error);
+				users = data.following || [];
+			} else if (type === "mutuals") {
+				endpoint = `/profile/${username}/followers-you-know`;
+				const data = await query(endpoint);
+				if (data.error) throw new Error(data.error);
+				users = data.followersYouKnow || [];
+			}
+
+			followersList.innerHTML = "";
+
+			if (users.length === 0) {
+				const emptyDiv = document.createElement("div");
+				emptyDiv.className = "empty-followers";
+				if (type === "mutuals") {
+					emptyDiv.textContent = "No mutual followers";
+				} else {
+					emptyDiv.textContent = `No ${type} yet`;
+				}
+				followersList.appendChild(emptyDiv);
+			} else {
+				users.forEach((user) => {
+					const item = createUserListItem(user, () => {
+						modal.close();
+						openProfile(user.username);
+					});
+					followersList.appendChild(item);
+				});
+			}
+		} catch (error) {
+			console.error(`Error loading ${type}:`, error);
+			followersList.innerHTML = "";
+			const errorDiv = document.createElement("div");
+			errorDiv.className = "empty-followers";
+			errorDiv.textContent = `Failed to load ${type}`;
+			followersList.appendChild(errorDiv);
+		}
+	};
+
+	tabNav.addEventListener("click", (e) => {
+		const tabBtn = e.target.closest(".followers-modal-tab");
+		if (!tabBtn) return;
+
+		const newTab = tabBtn.dataset.tab;
+		if (newTab === currentTab) return;
+
+		tabNav.querySelectorAll(".followers-modal-tab").forEach((t) => {
+			t.classList.remove("active");
+		});
+		tabBtn.classList.add("active");
+		currentTab = newTab;
+
+		updateTabIndicator(tabNav, tabBtn);
+		loadTabContent(newTab);
+	});
+
+	modal = createModal({
+		title: `@${username}`,
+		content: modalContent,
+		className: "modal-overlay followers-modal-overlay",
+	});
+
+	setTimeout(() => {
+		const activeTab = tabNav.querySelector(".active");
+		if (activeTab) {
+			updateTabIndicator(tabNav, activeTab);
+		}
+	}, 50);
+
+	loadTabContent(initialType);
 }
 
 export { openProfile };
