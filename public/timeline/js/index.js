@@ -115,7 +115,10 @@ let timelineScrollPosition = 0;
 			await loadTimeline(currentTimeline, false);
 			window.scrollTo(0, 0);
 		});
-		getTweetsContainer().parentElement.insertBefore(banner, getTweetsContainer());
+		getTweetsContainer().parentElement.insertBefore(
+			banner,
+			getTweetsContainer(),
+		);
 		return banner;
 	};
 
@@ -158,9 +161,17 @@ let timelineScrollPosition = 0;
 
 		if (!append) {
 			getTweetsContainer().innerHTML = "";
-			currentSkeletons = showSkeletons(getTweetsContainer(), createTweetSkeleton, 5);
+			currentSkeletons = showSkeletons(
+				getTweetsContainer(),
+				createTweetSkeleton,
+				5,
+			);
 		} else {
-			currentSkeletons = showSkeletons(getTweetsContainer(), createTweetSkeleton, 3);
+			currentSkeletons = showSkeletons(
+				getTweetsContainer(),
+				createTweetSkeleton,
+				3,
+			);
 		}
 
 		try {
@@ -234,27 +245,27 @@ let timelineScrollPosition = 0;
 
 			const tab = link.dataset.tab || "home";
 			if (tab === "articles") {
-			disconnectLatestTimelineSSE();
-			currentTimeline = "articles";
+				disconnectLatestTimelineSSE();
+				currentTimeline = "articles";
+				deactivateArticlesTab();
+				document.querySelector("#composer-container").style.display = "none";
+				document.querySelector(".tweets").style.display = "none";
+				activateArticlesTab();
+				return;
+			}
+
 			deactivateArticlesTab();
-			document.querySelector("#composer-container").style.display = "none";
-			document.querySelector(".tweets").style.display = "none";
-			activateArticlesTab();
-			return;
-		}
+			document.querySelector("#composer-container").style.display = "block";
+			document.querySelector(".tweets").style.display = "flex";
+			oldestTweetId = null;
+			hasMoreTweets = true;
+			currentTimeline = tab;
 
-		deactivateArticlesTab();
-		document.querySelector("#composer-container").style.display = "block";
-		document.querySelector(".tweets").style.display = "flex";
-		oldestTweetId = null;
-		hasMoreTweets = true;
-		currentTimeline = tab;
-
-		if (tab === "latest") {
-			connectLatestTimelineSSE();
-		} else {
-			disconnectLatestTimelineSSE();
-		}
+			if (tab === "latest") {
+				connectLatestTimelineSSE();
+			} else {
+				disconnectLatestTimelineSSE();
+			}
 
 			await loadTimeline(currentTimeline);
 		});
