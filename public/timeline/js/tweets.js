@@ -623,15 +623,19 @@ const updatePollDisplay = (pollElement, poll) => {
 };
 
 async function showInteractionsModal(tweetId, initialTab = "likes") {
+	const { observeTabContainer, updateTabIndicator } = await import(
+		"../../shared/tab-indicator.js"
+	);
+
 	const modalContent = document.createElement("div");
 	modalContent.className = "interactions-modal-content";
 
 	const tabsContainer = document.createElement("div");
-	tabsContainer.className = "interactions-tabs";
+	tabsContainer.className = "interactions-tabs tab-nav";
 
 	const tabs = [
 		{ id: "likes", label: "Likes" },
-		{ id: "retweets", label: "Retweets"},
+		{ id: "retweets", label: "Retweets" },
 		{ id: "quotes", label: "Quotes" },
 	];
 
@@ -718,7 +722,7 @@ async function showInteractionsModal(tweetId, initialTab = "likes") {
 		const tabButton = document.createElement("button");
 		tabButton.className = "tab-button";
 		tabButton.dataset.tab = tab.id;
-		tabButton.innerHTML = `<span>${tab.label}</span>`;
+		tabButton.textContent = tab.label;
 
 		if (tab.id === activeTab) {
 			tabButton.classList.add("active");
@@ -730,6 +734,7 @@ async function showInteractionsModal(tweetId, initialTab = "likes") {
 			});
 			tabButton.classList.add("active");
 			activeTab = tab.id;
+			updateTabIndicator(tabsContainer, tabButton);
 			loadTabContent(tab.id);
 		});
 
@@ -744,6 +749,14 @@ async function showInteractionsModal(tweetId, initialTab = "likes") {
 		content: modalContent,
 		className: "interactions-tabbed-modal",
 	});
+
+	setTimeout(() => {
+		observeTabContainer(tabsContainer);
+		const activeButton = tabsContainer.querySelector(".tab-button.active");
+		if (activeButton) {
+			updateTabIndicator(tabsContainer, activeButton);
+		}
+	}, 50);
 
 	await loadTabContent(activeTab);
 }
