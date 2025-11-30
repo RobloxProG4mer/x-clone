@@ -306,7 +306,7 @@ export default new Elysia({
 			},
 		},
 	)
-	.get("/api/owooembed", ({ query }) => {
+	.get("/owoembed", ({ query }) => {
 		const { author, handle, stats } = query;
 
 		return {
@@ -318,7 +318,6 @@ export default new Elysia({
 
 			provider_name: `Tweetapus  •  ${stats}`,
 			provider_url: process.env.BASE_URL,
-
 		};
 	})
 	.use(auth)

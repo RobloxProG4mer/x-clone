@@ -91,7 +91,7 @@ const appServer = new Elysia()
 				},
 			},
 			exclude: {
-				paths: ["/*", "/public/*", "/legal", "/admin", "/api/owoembed"],
+				paths: ["/*", "/public/*", "/legal", "/admin", "/api/owoembed", "/public/account-v2", "/public/admin", "/public/shared/assets/img/flags/LICENSE"],
 			},
 		}),
 	)
