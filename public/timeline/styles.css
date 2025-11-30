@@ -606,19 +606,6 @@ nav {
           max-width: 100%;
           overflow: auto;
           position: relative;
-          width: 100%;
-
-          &:after {
-            position: absolute;
-            content: "";
-            height: 100%;
-            width: 35px;
-            background: linear-gradient(to right, transparent, var(--bg-secondary));
-            right: 0;
-            top: 0px;
-            bottom: 0px;
-            pointer-events: none;
-          }
 
           button {
             background-color: transparent;
@@ -642,24 +629,73 @@ nav {
         .compose-submit {
           display: flex;
           align-items: center;
-          gap: 12px;
-          width: -webkit-fill-available;
+          gap: 6px;
           justify-content: flex-end;
         }
 
         .character-counter {
-          font-size: 14px;
-          color: var(--text-secondary);
-          font-weight: 500;
+          position: relative;
+          width: 30px;
+          height: 30px;
           user-select: none;
+          display: flex;
+          align-items: center;
+          justify-content: center;
 
-          &#over-limit {
-            color: #ef4444;
+          svg {
+            transform: rotate(-90deg);
+                        width: 24px;
+                        height: 24px;
+          }
+
+          .counter-bg {
+            fill: none;
+            stroke: var(--border-primary);
+            stroke-width: 3;
+          }
+
+          .counter-progress {
+            fill: none;
+            stroke: var(--primary);
+            stroke-width: 3;
+            stroke-linecap: round;
+            transition: stroke-dashoffset 0.15s ease, stroke 0.15s ease;
+          }
+
+          .counter-text {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 10px;
             font-weight: 600;
+            color: var(--text-secondary);
+          }
+
+          &.warning .counter-progress {
+            stroke: #f59e0b;
+          }
+
+          &.warning .counter-text {
+            color: #f59e0b;
+          }
+
+          &#over-limit .counter-progress {
+            stroke: #ef4444;
+          }
+
+          &#over-limit .counter-text {
+            color: #ef4444;
           }
         }
 
-        button#tweet-button {
+        &:has(#tweet-button[disabled]) {
+          .character-counter {
+            display: none;
+          }
+        }
+
+        #tweet-button {
           background-color: var(--primary);
           color: var(--primary-fg);
           border: none;
@@ -669,8 +705,8 @@ nav {
           font-size: 15px;
           font-weight: 600;
           cursor: pointer;
-          transition: background-color 0.15s ease, opacity 0.15s ease,
-            transform 0.15s ease;
+          transition: background-color 0.15s ease, opacity 0.1s ease,
+            transform 0.2s ease;
 
           &:hover:not(:disabled) {
             background-color: var(--primary-hover);
@@ -1792,6 +1828,47 @@ nav {
     width: 100%;
     height: 280px;
     border-radius: 10px;
+  }
+
+  .tweet-edited-indicator {
+    color: var(--text-secondary);
+    font-size: 12px;
+    font-weight: 500;
+    cursor: pointer;
+    margin-left: 3px;
+  padding: 0px 4px;
+  height: 18px;
+  border-radius: 4px;
+  text-decoration: none;
+  position: relative;
+
+
+  &::after {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: var(--border-primary);
+    border-radius: 4px;
+    opacity: .5;
+    pointer-events: none;
+    transition: opacity .2s, transform .2s;
+    z-index: -1;
+  }
+
+  &:hover {
+    &::after {
+      opacity: 1;
+    }
+  }
+
+  &:active {
+    &::after {
+      transform: scale(.95)
+    }
+  }
   }
 
   .fact-check-banner {

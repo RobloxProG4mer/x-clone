@@ -64,16 +64,43 @@ export const useComposer = (
 	let selectedUnsplashImage = null;
 	let scheduledFor = null;
 
+	const CIRCLE_CIRCUMFERENCE = 87.96;
+
 	const updateCharacterCount = () => {
 		if (!textarea || !charCount || !tweetButton) return;
 		const length = textarea.value.length;
-		charCount.textContent = length;
+		const counter = charCount.closest(".character-counter");
+		const progressCircle = counter?.querySelector(".counter-progress");
+
+		const ratio = Math.min(length / maxChars, 1);
+		const offset = CIRCLE_CIRCUMFERENCE * (1 - ratio);
+
+		if (progressCircle) {
+			progressCircle.style.strokeDashoffset = offset;
+		}
 
 		if (length > maxChars) {
-			charCount.parentElement.id = "over-limit";
+			counter.id = "over-limit";
+			counter.classList.remove("warning");
+			charCount.textContent = maxChars - length;
 			tweetButton.disabled = true;
+		} else if (length >= maxChars - 20) {
+			counter.id = "";
+			counter.classList.add("warning");
+			charCount.textContent = maxChars - length;
+			tweetButton.disabled = false;
+			const hasExtras =
+				(pendingFiles && pendingFiles.length > 0) ||
+				!!selectedGif ||
+				!!selectedUnsplashImage ||
+				pollEnabled ||
+				!!interactiveCard ||
+				!!article;
+			tweetButton.disabled = !hasExtras && length === 0;
 		} else {
-			charCount.parentElement.id = "";
+			counter.id = "";
+			counter.classList.remove("warning");
+			charCount.textContent = "";
 			const hasExtras =
 				(pendingFiles && pendingFiles.length > 0) ||
 				!!selectedGif ||
@@ -1663,8 +1690,12 @@ export const createComposer = async ({
                 </button>
               </div>
               <div class="compose-submit">
-                <div class="character-counter">
-                  <span id="char-count">0</span>/400
+                <div class="character-counter" data-max="400">
+                  <svg viewBox="0 0 32 32">
+                    <circle class="counter-bg" cx="16" cy="16" r="14"></circle>
+                    <circle class="counter-progress" cx="16" cy="16" r="14" stroke-dasharray="87.96" stroke-dashoffset="87.96"></circle>
+                  </svg>
+                  <span class="counter-text" id="char-count"></span>
                 </div>
                 <button id="tweet-button" disabled="">Tweet</button>
               </div>
@@ -1778,7 +1809,7 @@ export const createComposer = async ({
 
 		const counter = el.querySelector(".character-counter");
 		if (counter) {
-			counter.innerHTML = `<span id="char-count">0</span>/${maxChars}`;
+			counter.dataset.max = maxChars;
 		}
 
 		if (maxChars > 999999) {

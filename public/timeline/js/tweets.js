@@ -1056,13 +1056,6 @@ export const createTweetElement = (tweet, config = {}) => {
 		const editedIndicator = document.createElement("span");
 		editedIndicator.className = "tweet-edited-indicator";
 		editedIndicator.textContent = " (edited)";
-		editedIndicator.style.cssText = `
-			color: var(--text-secondary);
-			font-size: 12px;
-			font-style: italic;
-			cursor: pointer;
-			text-decoration: underline;
-		`;
 		editedIndicator.title = "Click to view edit history";
 		editedIndicator.addEventListener("click", async (e) => {
 			e.stopPropagation();
@@ -1073,12 +1066,6 @@ export const createTweetElement = (tweet, config = {}) => {
 					toastQueue.add(`<h1>${history.error}</h1>`);
 					return;
 				}
-
-				const modal = createModal({
-					title: "Edit History",
-					content: "",
-					className: "edit-history-modal",
-				});
 
 				const historyContainer = document.createElement("div");
 				historyContainer.className = "edit-history-list";
@@ -1114,9 +1101,7 @@ export const createTweetElement = (tweet, config = {}) => {
 							color: var(--text-secondary);
 							font-weight: 600;
 						`;
-						timeEl.textContent = version.is_current
-							? `Current version (${timeAgo(version.edited_at)})`
-							: timeAgo(version.edited_at);
+						timeEl.textContent = timeAgo(version.edited_at);
 
 						headerEl.appendChild(timeEl);
 
@@ -1150,12 +1135,11 @@ export const createTweetElement = (tweet, config = {}) => {
 					historyContainer.innerHTML = `<p style="text-align: center; color: var(--text-secondary);">No edit history available</p>`;
 				}
 
-				const modalContent = modal.querySelector(".modal-content");
-				if (modalContent) {
-					modalContent.appendChild(historyContainer);
-				}
-
-				document.body.appendChild(modal);
+				createModal({
+					title: "Edit History",
+					content: historyContainer,
+					className: "edit-history-modal",
+				});
 			} catch (error) {
 				console.error("Error fetching edit history:", error);
 				toastQueue.add(`<h1>Failed to load edit history</h1>`);
@@ -2417,11 +2401,6 @@ export const createTweetElement = (tweet, config = {}) => {
 								const editedIndicator = document.createElement("span");
 								editedIndicator.className = "tweet-edited-indicator";
 								editedIndicator.textContent = " (edited)";
-								editedIndicator.style.cssText = `
-									color: var(--text-secondary);
-									font-size: 12px;
-									font-style: italic;
-								`;
 								const usernameEl = tweetEl.querySelector(
 									".tweet-header-username",
 								);
