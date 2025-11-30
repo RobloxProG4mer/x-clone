@@ -608,100 +608,119 @@ async function showTweetsTab() {
 			communityId: currentCommunity.id,
 		});
 
-		// rely on stylesheet for spacing and borders to avoid inline-style inconsistencies
 		composer.classList.remove();
 		composer.classList.add("compose-tweet");
 		tweetsWrapper.appendChild(composer);
 	}
 
-	// Add a class on the container when there is no composer so CSS can style spacing
 	const container = document.querySelector(".community-detail-content");
 	if (container)
 		container.classList.toggle("tweets-no-composer", !currentMember);
 
-	const loadingDiv = document.createElement("div");
-	loadingDiv.className = "loading";
-	loadingDiv.textContent = "Loading tweets...";
-	tweetsWrapper.appendChild(loadingDiv);
-
 	content.appendChild(tweetsWrapper);
 
-	const { tweets } = await api(
-		`/communities/${currentCommunity.id}/tweets?limit=50`,
+	const { createTweetSkeleton, removeSkeletons, showSkeletons } = await import(
+		"../../shared/skeleton-utils.js"
 	);
 
-	tweetsWrapper.removeChild(loadingDiv);
+	const skeletons = showSkeletons(tweetsWrapper, createTweetSkeleton, 3);
 
-	if (!tweets || tweets.length === 0) {
+	try {
+		const { tweets } = await api(
+			`/communities/${currentCommunity.id}/tweets?limit=50`,
+		);
+
+		removeSkeletons(skeletons);
+
+		if (!tweets || tweets.length === 0) {
+			const emptyMsg = document.createElement("p");
+			emptyMsg.className = "empty-state";
+			emptyMsg.textContent = "No tweets in this community yet.";
+			tweetsWrapper.appendChild(emptyMsg);
+			return;
+		}
+
+		const tweetsContainer = document.createElement("div");
+		tweetsContainer.className = "community-tweets";
+		tweetsContainer.style.cssText =
+			"display: flex; flex-direction: column; gap: 16px;";
+
+		const { createTweetElement } = await import("./tweets.js");
+
+		for (const tweet of tweets) {
+			const tweetEl = createTweetElement(tweet, {
+				clickToOpen: true,
+				showTopReply: false,
+				isTopReply: false,
+				size: "normal",
+			});
+			tweetsContainer.appendChild(tweetEl);
+		}
+
+		tweetsWrapper.appendChild(tweetsContainer);
+	} catch (error) {
+		removeSkeletons(skeletons);
+		console.error("Error loading community tweets:", error);
 		const emptyMsg = document.createElement("p");
 		emptyMsg.className = "empty-state";
-		emptyMsg.textContent = "No tweets in this community yet.";
+		emptyMsg.textContent = "Failed to load tweets.";
 		tweetsWrapper.appendChild(emptyMsg);
-		return;
 	}
-
-	const tweetsContainer = document.createElement("div");
-	tweetsContainer.className = "community-tweets";
-	tweetsContainer.style.cssText =
-		"display: flex; flex-direction: column; gap: 16px;";
-
-	const { createTweetElement } = await import("./tweets.js");
-
-	for (const tweet of tweets) {
-		const tweetEl = createTweetElement(tweet, {
-			clickToOpen: true,
-			showTopReply: false,
-			isTopReply: false,
-			size: "normal",
-		});
-		tweetsContainer.appendChild(tweetEl);
-	}
-
-	tweetsWrapper.appendChild(tweetsContainer);
 }
 
 async function showMembersTab() {
 	const content = document.getElementById("membersContent");
 	if (!content) return;
 
-	content.innerHTML = '<div class="loading">Loading members...</div>';
-
-	const { members } = await api(
-		`/communities/${currentCommunity.id}/members?limit=100`,
+	const { createFollowerSkeleton, removeSkeletons, showSkeletons } = await import(
+		"../../shared/skeleton-utils.js"
 	);
 
-	// Filter out suspended accounts on the client-side. Prefer server-side
-	// filtering, but handle common suspension markers returned by the API.
-	// Use a helper that checks multiple common shapes/fields to be robust
-	// across API variants.
-	const visibleMembers = (members || []).filter((m) => {
-		if (!m) return false;
-
-		// If the returned element is itself a user-like object, respect that
-		if (isSuspendedEntity(m)) return false;
-
-		// If member wraps a user/profile/account object, check those too
-		if (m.user && isSuspendedEntity(m.user)) return false;
-		if (m.profile && isSuspendedEntity(m.profile)) return false;
-		if (m.account && isSuspendedEntity(m.account)) return false;
-		if (m.member && isSuspendedEntity(m.member)) return false;
-
-		return true;
-	});
-
 	content.innerHTML = "";
+	const skeletons = showSkeletons(content, createFollowerSkeleton, 5);
 
-	if (!visibleMembers || visibleMembers.length === 0) {
+	try {
+		const { members } = await api(
+			`/communities/${currentCommunity.id}/members?limit=100`,
+		);
+
+		removeSkeletons(skeletons);
+
+		const visibleMembers = (members || []).filter((m) => {
+			if (!m) return false;
+
+			if (isSuspendedEntity(m)) return false;
+
+			if (m.user && isSuspendedEntity(m.user)) return false;
+			if (m.profile && isSuspendedEntity(m.profile)) return false;
+			if (m.account && isSuspendedEntity(m.account)) return false;
+			if (m.member && isSuspendedEntity(m.member)) return false;
+
+			return true;
+		});
+
+		content.innerHTML = "";
+
+		if (!visibleMembers || visibleMembers.length === 0) {
+			const empty = document.createElement("div");
+			empty.className = "empty-state";
+			empty.textContent = "No visible members.";
+			content.appendChild(empty);
+			return;
+		}
+
+		for (const member of visibleMembers) {
+			const memberEl = createMemberElement(member);
+			content.appendChild(memberEl);
+		}
+	} catch (error) {
+		removeSkeletons(skeletons);
+		console.error("Error loading members:", error);
+		content.innerHTML = "";
 		const empty = document.createElement("div");
 		empty.className = "empty-state";
-		empty.textContent = "No visible members.";
+		empty.textContent = "Failed to load members.";
 		content.appendChild(empty);
-		return;
-	}
-
-	for (const member of visibleMembers) {
-		const memberEl = createMemberElement(member);
-		content.appendChild(memberEl);
 	}
 }
 
@@ -828,25 +847,40 @@ async function showRequestsTab() {
 	const content = document.getElementById("requestsContent");
 	if (!content) return;
 
-	content.innerHTML = '<div class="loading">Loading join requests...</div>';
-
-	const { requests } = await api(
-		`/communities/${currentCommunity.id}/join-requests?limit=100`,
+	const { createFollowerSkeleton, removeSkeletons, showSkeletons } = await import(
+		"../../shared/skeleton-utils.js"
 	);
 
 	content.innerHTML = "";
+	const skeletons = showSkeletons(content, createFollowerSkeleton, 3);
 
-	if (!requests || requests.length === 0) {
+	try {
+		const { requests } = await api(
+			`/communities/${currentCommunity.id}/join-requests?limit=100`,
+		);
+
+		removeSkeletons(skeletons);
+
+		if (!requests || requests.length === 0) {
+			const empty = document.createElement("div");
+			empty.className = "empty-state";
+			empty.textContent = "No pending join requests.";
+			content.appendChild(empty);
+			return;
+		}
+
+		for (const request of requests) {
+			const requestEl = createRequestElement(request);
+			content.appendChild(requestEl);
+		}
+	} catch (error) {
+		removeSkeletons(skeletons);
+		console.error("Error loading join requests:", error);
+		content.innerHTML = "";
 		const empty = document.createElement("div");
 		empty.className = "empty-state";
-		empty.textContent = "No pending join requests.";
+		empty.textContent = "Failed to load join requests.";
 		content.appendChild(empty);
-		return;
-	}
-
-	for (const request of requests) {
-		const requestEl = createRequestElement(request);
-		content.appendChild(requestEl);
 	}
 }
 

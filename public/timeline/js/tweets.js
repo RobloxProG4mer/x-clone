@@ -626,6 +626,8 @@ async function showInteractionsModal(tweetId, initialTab = "likes") {
 	const { observeTabContainer, updateTabIndicator } = await import(
 		"../../shared/tab-indicator.js"
 	);
+	const { createTweetSkeleton, createUserSkeleton, removeSkeletons, showSkeletons } =
+		await import("../../shared/skeleton-utils.js");
 
 	const modalContent = document.createElement("div");
 	modalContent.className = "interactions-modal-content";
@@ -644,16 +646,24 @@ async function showInteractionsModal(tweetId, initialTab = "likes") {
 
 	let activeTab = initialTab;
 	let modal = null;
+	let currentSkeletons = [];
 
 	const loadTabContent = async (tabId) => {
-		contentContainer.innerHTML = '<div class="loading">Loading...</div>';
+		contentContainer.innerHTML = "";
+		if (currentSkeletons.length) removeSkeletons(currentSkeletons);
+
+		const isQuotes = tabId === "quotes";
+		const skeletonCreator = isQuotes ? createTweetSkeleton : createUserSkeleton;
+
+		currentSkeletons = showSkeletons(contentContainer, skeletonCreator, 3);
 
 		try {
 			const data = await query(`/tweets/${tweetId}/${tabId}`);
 
 			contentContainer.innerHTML = "";
+			currentSkeletons = [];
 
-			if (tabId === "quotes") {
+			if (isQuotes) {
 				if (!data.tweets || data.tweets.length === 0) {
 					contentContainer.innerHTML = `<div class="empty-state">No quotes yet</div>`;
 					return;
@@ -714,6 +724,8 @@ async function showInteractionsModal(tweetId, initialTab = "likes") {
 			}
 		} catch (error) {
 			console.error("Error loading interactions:", error);
+			removeSkeletons(currentSkeletons);
+			currentSkeletons = [];
 			contentContainer.innerHTML = `<div class="empty-state">Failed to load ${tabId}</div>`;
 		}
 	};
@@ -1964,7 +1976,6 @@ export const createTweetElement = (tweet, config = {}) => {
 					tweet.bookmark_count ? `(${tweet.bookmark_count || "0"})` : ""
 				}`,
 				onClick: async () => {
-					// check discord, Tr.
 					e.preventDefault();
 					e.stopPropagation();
 

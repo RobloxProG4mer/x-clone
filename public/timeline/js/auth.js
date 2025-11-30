@@ -241,6 +241,9 @@ const openBookmarks = async () => {
 
 const loadBookmarks = async () => {
 	const { default: query } = await import("./api.js");
+	const { createTweetSkeleton, removeSkeletons, showSkeletons } = await import(
+		"../../shared/skeleton-utils.js"
+	);
 
 	if (!authToken) {
 		toastQueue.add("<h1>Please log in to view bookmarks</h1>");
@@ -248,7 +251,17 @@ const loadBookmarks = async () => {
 	}
 
 	try {
+		const bookmarksList = document.getElementById("bookmarksList");
+		const bookmarksEmpty = document.getElementById("bookmarksEmpty");
+
+		bookmarksList.innerHTML = "";
+		bookmarksEmpty.style.display = "none";
+
+		const skeletons = showSkeletons(bookmarksList, createTweetSkeleton, 8);
+
 		const response = await query("/bookmarks");
+
+		removeSkeletons(skeletons);
 
 		if (response.error) {
 			toastQueue.add(
@@ -257,16 +270,12 @@ const loadBookmarks = async () => {
 			return;
 		}
 
-		const bookmarksList = document.getElementById("bookmarksList");
-		const bookmarksEmpty = document.getElementById("bookmarksEmpty");
-
 		if (!response.bookmarks || response.bookmarks.length === 0) {
 			bookmarksList.innerHTML = "";
 			bookmarksEmpty.style.display = "block";
 			return;
 		}
 
-		bookmarksEmpty.style.display = "none";
 		bookmarksList.innerHTML = "";
 
 		response.bookmarks.forEach((bookmark) => {
