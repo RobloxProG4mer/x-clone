@@ -64,6 +64,11 @@ let timelineScrollPosition = 0;
 	const BATCH_SIZE = 10;
 	let lastScrollCheck = 0;
 	const SCROLL_DEBOUNCE = 100;
+	let currentSkeletons = [];
+	let newTweetsCount = 0;
+	let latestTweetId = null;
+	let isTabActive = true;
+	let eventSource = null;
 
 	initArticles();
 	deactivateArticlesTab();
@@ -79,6 +84,60 @@ let timelineScrollPosition = 0;
 	});
 
 	document.querySelector("#composer-container").appendChild(composer);
+
+	const createNewTweetsBanner = () => {
+		const banner = document.createElement("div");
+		banner.id = "new-tweets-banner";
+		banner.style.cssText = `
+			display: none;
+			position: sticky;
+			top: 0;
+			z-index: 10;
+			background: var(--primary);
+			color: var(--primary-fg);
+			padding: 12px 16px;
+			text-align: center;
+			cursor: pointer;
+			border-bottom: 1px solid var(--border);
+			font-weight: 600;
+			transition: all 0.2s ease;
+		`;
+		banner.addEventListener("mouseover", () => {
+			banner.style.background = "var(--primary-hover, var(--primary))";
+		});
+		banner.addEventListener("mouseout", () => {
+			banner.style.background = "var(--primary)";
+		});
+		banner.addEventListener("click", async () => {
+			banner.style.display = "none";
+			newTweetsCount = 0;
+			latestTweetId = null;
+			await loadTimeline(currentTimeline, false);
+			window.scrollTo(0, 0);
+		});
+		getTweetsContainer().parentElement.insertBefore(banner, getTweetsContainer());
+		return banner;
+	};
+
+	const newTweetsBanner = createNewTweetsBanner();
+
+	const updateNewTweetsBanner = () => {
+		if (newTweetsCount > 0 && isTabActive && currentTimeline === "latest") {
+			newTweetsBanner.textContent = `Show ${newTweetsCount} new ${
+				newTweetsCount === 1 ? "tweet" : "tweets"
+			}`;
+			newTweetsBanner.style.display = "block";
+		} else {
+			newTweetsBanner.style.display = "none";
+		}
+	};
+
+	document.addEventListener("visibilitychange", () => {
+		isTabActive = !document.hidden;
+		if (isTabActive && newTweetsCount > 0 && currentTimeline === "latest") {
+			updateNewTweetsBanner();
+		}
+	});
 
 	const loadTimeline = async (type = "home", append = false) => {
 		if (isLoading) return;
@@ -97,17 +156,15 @@ let timelineScrollPosition = 0;
 
 		const url = `${endpoint}?${queryParams}`;
 
-		let skeletons = [];
 		if (!append) {
 			getTweetsContainer().innerHTML = "";
-			skeletons = showSkeletons(getTweetsContainer(), createTweetSkeleton, 5);
+			currentSkeletons = showSkeletons(getTweetsContainer(), createTweetSkeleton, 5);
 		} else {
-			skeletons = showSkeletons(getTweetsContainer(), createTweetSkeleton, 3);
+			currentSkeletons = showSkeletons(getTweetsContainer(), createTweetSkeleton, 3);
 		}
 
 		try {
 			const { timeline } = await query(url);
-			removeSkeletons(skeletons);
 
 			if (!append) {
 				oldestTweetId = null;
@@ -115,6 +172,8 @@ let timelineScrollPosition = 0;
 			}
 
 			if (timeline.length === 0) {
+				removeSkeletons(currentSkeletons);
+				currentSkeletons = [];
 				if (type === "following" && !append) {
 					const emptyMessage = document.createElement("div");
 					emptyMessage.className = "empty-timeline";
@@ -126,7 +185,8 @@ let timelineScrollPosition = 0;
 				}
 				hasMoreTweets = false;
 			} else {
-				// Sort tweets by created_at descending (newest first)
+				removeSkeletons(currentSkeletons);
+				currentSkeletons = [];
 				timeline.sort(
 					(a, b) => new Date(b.created_at) - new Date(a.created_at),
 				);
@@ -140,7 +200,8 @@ let timelineScrollPosition = 0;
 				}
 			}
 		} catch (error) {
-			removeSkeletons(skeletons);
+			removeSkeletons(currentSkeletons);
+			currentSkeletons = [];
 			console.error("Error loading timeline:", error);
 			toastQueue.add(`<h1>Error loading timeline</h1><p>Please try again</p>`);
 		} finally {
@@ -173,20 +234,28 @@ let timelineScrollPosition = 0;
 
 			const tab = link.dataset.tab || "home";
 			if (tab === "articles") {
-				currentTimeline = "articles";
-				deactivateArticlesTab();
-				document.querySelector("#composer-container").style.display = "none";
-				document.querySelector(".tweets").style.display = "none";
-				activateArticlesTab();
-				return;
-			}
-
+			disconnectLatestTimelineSSE();
+			currentTimeline = "articles";
 			deactivateArticlesTab();
-			document.querySelector("#composer-container").style.display = "block";
-			document.querySelector(".tweets").style.display = "flex";
-			oldestTweetId = null;
-			hasMoreTweets = true;
-			currentTimeline = tab;
+			document.querySelector("#composer-container").style.display = "none";
+			document.querySelector(".tweets").style.display = "none";
+			activateArticlesTab();
+			return;
+		}
+
+		deactivateArticlesTab();
+		document.querySelector("#composer-container").style.display = "block";
+		document.querySelector(".tweets").style.display = "flex";
+		oldestTweetId = null;
+		hasMoreTweets = true;
+		currentTimeline = tab;
+
+		if (tab === "latest") {
+			connectLatestTimelineSSE();
+		} else {
+			disconnectLatestTimelineSSE();
+		}
+
 			await loadTimeline(currentTimeline);
 		});
 	});
@@ -258,6 +327,43 @@ let timelineScrollPosition = 0;
 
 	await loadTimeline("home");
 	handleUrlParams();
+
+	const connectLatestTimelineSSE = () => {
+		if (!authToken || currentTimeline !== "latest") return;
+
+		if (eventSource) {
+			eventSource.close();
+			eventSource = null;
+		}
+
+		eventSource = new EventSource("/api/sse/timeline/latest");
+
+		eventSource.addEventListener("tweet", (event) => {
+			if (isTabActive) {
+				const tweet = JSON.parse(event.data);
+				newTweetsCount++;
+				if (!latestTweetId) latestTweetId = tweet.id;
+				updateNewTweetsBanner();
+			}
+		});
+
+		eventSource.addEventListener("error", () => {
+			if (eventSource && eventSource.readyState === EventSource.CLOSED) {
+				eventSource.close();
+				eventSource = null;
+			}
+		});
+	};
+
+	const disconnectLatestTimelineSSE = () => {
+		if (eventSource) {
+			eventSource.close();
+			eventSource = null;
+		}
+		newTweetsCount = 0;
+		latestTweetId = null;
+		updateNewTweetsBanner();
+	};
 
 	dm.connectSSE();
 
