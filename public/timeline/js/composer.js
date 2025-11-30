@@ -1592,7 +1592,7 @@ export const useComposer = (
 			callback(tweet);
 		} catch {
 			toastQueue.add(`<h1>Network error. Please try again.</h1>`);
-		} finally {
+		} finally { // check discord ASAP, stuck cursor.
 			charCount.innerText = "";
 		}
 	});

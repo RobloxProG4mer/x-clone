@@ -54,6 +54,7 @@ class AdminPanel {
 		this.extensionConfirmResolver = null;
 		this.editPostSaveListenerAttached = false;
 		this.postsTableListenerAttached = false;
+		this.massEngageListenersAttached = false;
 		this.leafletLoadingPromise = null;
 		this.leafletLoaded = false;
 		this.locationPickerModalInstance = null;
@@ -4618,9 +4619,100 @@ class AdminPanel {
 					this.editPostSaveListenerAttached = true;
 				}
 			}
+			this.setupMassEngageListeners();
 		} catch (err) {
 			console.error("Failed to load post details", err);
 			this.showError(err?.message || "Failed to load post details");
+		}
+	}
+
+	setupMassEngageListeners() {
+		if (this.massEngageListenersAttached) return;
+		this.massEngageListenersAttached = true;
+
+		const actionSelect = document.getElementById("massEngageAction");
+		const commentsSection = document.getElementById("massEngageCommentsSection");
+		const executeBtn = document.getElementById("massEngageBtn");
+
+		if (actionSelect && commentsSection) {
+			actionSelect.addEventListener("change", () => {
+				const showComments = actionSelect.value === "quote" || actionSelect.value === "comment";
+				commentsSection.style.display = showComments ? "block" : "none";
+			});
+		}
+
+		if (executeBtn) {
+			executeBtn.addEventListener("click", () => this.executeMassEngage());
+		}
+	}
+
+	async executeMassEngage() {
+		const postId = document.getElementById("editPostId").value;
+		const action = document.getElementById("massEngageAction").value;
+		const percentage = parseInt(document.getElementById("massEngagePercent").value) || 0;
+		const commentsRaw = document.getElementById("massEngageComments").value;
+
+		if (percentage <= 0 || percentage > 100) {
+			this.showError("Percentage must be between 1 and 100");
+			return;
+		}
+
+		const comments = commentsRaw.split("\n").map(c => c.trim()).filter(c => c.length > 0);
+
+		if ((action === "quote" || action === "comment") && comments.length === 0) {
+			this.showError("Please enter at least one comment for quote/comment actions");
+			return;
+		}
+
+		const confirmMsg = `Execute ${action} action with ${percentage}% of userbase?`;
+		if (!confirm(confirmMsg)) return;
+
+		const progressDiv = document.getElementById("massEngageProgress");
+		const progressBar = document.getElementById("massEngageProgressBar");
+		const statusDiv = document.getElementById("massEngageStatus");
+		const executeBtn = document.getElementById("massEngageBtn");
+
+		progressDiv.style.display = "block";
+		progressBar.style.width = "0%";
+		statusDiv.textContent = "Starting...";
+		executeBtn.disabled = true;
+
+		try {
+			progressBar.style.width = "30%";
+			statusDiv.textContent = "Processing...";
+
+			const response = await this.apiCall(`/api/admin/posts/${postId}/mass-engage`, {
+				method: "POST",
+				body: JSON.stringify({ action, percentage, comments }),
+			});
+
+			progressBar.style.width = "100%";
+			progressBar.classList.remove("progress-bar-animated");
+
+			if (response.success) {
+				statusDiv.textContent = `Completed: ${response.successCount}/${response.targetCount} users (${response.action})`;
+				progressBar.classList.add("bg-success");
+				this.showSuccess(`Mass ${action} completed: ${response.successCount}/${response.targetCount} users`);
+			} else {
+				statusDiv.textContent = response.error || "Failed";
+				progressBar.classList.add("bg-danger");
+				this.showError(response.error || "Mass engage failed");
+			}
+		} catch (err) {
+			progressBar.style.width = "100%";
+			progressBar.classList.remove("progress-bar-animated");
+			progressBar.classList.add("bg-danger");
+			statusDiv.textContent = err.message || "Error";
+			this.showError(err.message || "Mass engage failed");
+		} finally {
+			executeBtn.disabled = false;
+			setTimeout(() => {
+				progressDiv.style.display = "none";
+				progressBar.style.width = "0%";
+				progressBar.classList.remove("bg-success", "bg-danger");
+				progressBar.classList.add("progress-bar-animated");
+				statusDiv.textContent = "";
+			}, 5000);
 		}
 	}
 

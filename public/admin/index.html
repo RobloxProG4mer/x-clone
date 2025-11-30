@@ -1200,7 +1200,7 @@
 
     <!-- Edit Post Modal -->
     <div class="modal fade" id="editPostModal" tabindex="-1">
-      <div class="modal-dialog">
+      <div class="modal-dialog modal-lg">
         <div class="modal-content">
           <div class="modal-header">
             <h5 class="modal-title">Edit Post</h5>
@@ -1293,6 +1293,73 @@
                 </div>
               </div>
             </form>
+
+            <hr class="my-4" />
+
+            <div class="card bg-body-secondary">
+              <div class="card-header">
+                <h6 class="mb-0">
+                  <i class="bi bi-lightning-charge"></i>
+                  Mass Engagement
+                </h6>
+              </div>
+              <div class="card-body">
+                <div class="row g-3">
+                  <div class="col-md-4">
+                    <label class="form-label">Action</label>
+                    <select class="form-select" id="massEngageAction">
+                      <option value="like">Like</option>
+                      <option value="retweet">Retweet</option>
+                      <option value="quote">Quote Tweet</option>
+                      <option value="comment">Comment</option>
+                    </select>
+                  </div>
+                  <div class="col-md-4">
+                    <label class="form-label">% of Userbase</label>
+                    <input
+                      type="number"
+                      class="form-control"
+                      id="massEngagePercent"
+                      min="1"
+                      max="100"
+                      value="10"
+                    />
+                  </div>
+                  <div class="col-md-4 d-flex align-items-end">
+                    <button
+                      type="button"
+                      class="btn btn-warning w-100"
+                      id="massEngageBtn"
+                    >
+                      <i class="bi bi-lightning-charge-fill"></i>
+                      Execute
+                    </button>
+                  </div>
+                </div>
+                <div class="mt-3" id="massEngageCommentsSection" style="display: none;">
+                  <label class="form-label">
+                    Comments (one per line, random selection)
+                  </label>
+                  <textarea
+                    class="form-control"
+                    id="massEngageComments"
+                    rows="4"
+                    placeholder="This is amazing!&#10;Great post!&#10;Love this!&#10;Interesting take..."
+                  ></textarea>
+                </div>
+                <div class="mt-3" id="massEngageProgress" style="display: none;">
+                  <div class="progress" style="height: 24px;">
+                    <div
+                      class="progress-bar progress-bar-striped progress-bar-animated"
+                      id="massEngageProgressBar"
+                      role="progressbar"
+                      style="width: 0%"
+                    ></div>
+                  </div>
+                  <div class="text-center mt-2" id="massEngageStatus"></div>
+                </div>
+              </div>
+            </div>
           </div>
           <div class="modal-footer">
             <button

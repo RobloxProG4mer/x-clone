@@ -4,7 +4,6 @@
 		<meta charset="utf-8" />
 		<meta name="viewport" content="width=device-width, initial-scale=1" />
 		<title>happy_phone</title>
-		<!-- <link rel="stylesheet" href="/public/temporary/font-text.css" /> -->
     <style>
       @font-face {
         font-family: "HappiesFont";
@@ -30,15 +29,12 @@
       }
 
       .happy-text {
-        font-size: clamp(2rem, 6vw, 4rem);
-        /* Remove letter-spacing: ligatures require characters to be adjacent */
+        font-size: 48px;
         letter-spacing: 0;
-        /* Enable standard and discretionary ligatures, and contextual alternates */
-        font-variant-ligatures: common-ligatures discretionary-ligatures contextual;
-        font-feature-settings: "liga" 1, "dlig" 1, "calt" 1, "ss01" 1;
-        /* Improve typographic rendering for ligature-heavy fonts */
+        display: inline-block;
+        min-width: 0.01ch;
         text-rendering: optimizeLegibility;
-        -webkit-font-smoothing: antialiased;
+        font-variant-ligatures: common-ligatures discretionary-ligatures contextual;
       }
     </style>
 	</head>
