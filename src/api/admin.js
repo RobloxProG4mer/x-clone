@@ -4896,19 +4896,26 @@ export default new Elysia({ prefix: "/admin", tags: ["Admin"] })
 			}
 
 			const comments = Array.isArray(body.comments) ? body.comments : [];
-			if ((action === "quote" || action === "comment") && comments.length === 0) {
+			if (
+				(action === "quote" || action === "comment") &&
+				comments.length === 0
+			) {
 				return { error: "Comments are required for quote/comment actions" };
 			}
 
-			const totalUsers = db.query("SELECT COUNT(*) as count FROM users WHERE suspended = 0").get().count;
+			const totalUsers = db
+				.query("SELECT COUNT(*) as count FROM users WHERE suspended = 0")
+				.get().count;
 			const targetCount = Math.ceil((totalUsers * percentage) / 100);
 
-			const users = db.query(`
+			const users = db
+				.query(`
 				SELECT id FROM users 
 				WHERE suspended = 0 AND id != ?
 				ORDER BY RANDOM()
 				LIMIT ?
-			`).all(post.user_id, targetCount);
+			`)
+				.all(post.user_id, targetCount);
 
 			let successCount = 0;
 			const results = [];
@@ -4916,30 +4923,52 @@ export default new Elysia({ prefix: "/admin", tags: ["Admin"] })
 			for (const u of users) {
 				try {
 					if (action === "like") {
-						const existing = db.query("SELECT 1 FROM likes WHERE user_id = ? AND post_id = ?").get(u.id, params.id);
+						const existing = db
+							.query("SELECT 1 FROM likes WHERE user_id = ? AND post_id = ?")
+							.get(u.id, params.id);
 						if (!existing) {
-							db.query("INSERT INTO likes (id, user_id, post_id) VALUES (?, ?, ?)").run(Bun.randomUUIDv7(), u.id, params.id);
-							db.query("UPDATE posts SET like_count = like_count + 1 WHERE id = ?").run(params.id);
+							db.query(
+								"INSERT INTO likes (id, user_id, post_id) VALUES (?, ?, ?)",
+							).run(Bun.randomUUIDv7(), u.id, params.id);
+							db.query(
+								"UPDATE posts SET like_count = like_count + 1 WHERE id = ?",
+							).run(params.id);
 							successCount++;
 						}
 					} else if (action === "retweet") {
-						const existing = db.query("SELECT 1 FROM retweets WHERE user_id = ? AND post_id = ?").get(u.id, params.id);
+						const existing = db
+							.query("SELECT 1 FROM retweets WHERE user_id = ? AND post_id = ?")
+							.get(u.id, params.id);
 						if (!existing) {
-							db.query("INSERT INTO retweets (id, user_id, post_id) VALUES (?, ?, ?)").run(Bun.randomUUIDv7(), u.id, params.id);
-							db.query("UPDATE posts SET retweet_count = retweet_count + 1 WHERE id = ?").run(params.id);
+							db.query(
+								"INSERT INTO retweets (id, user_id, post_id) VALUES (?, ?, ?)",
+							).run(Bun.randomUUIDv7(), u.id, params.id);
+							db.query(
+								"UPDATE posts SET retweet_count = retweet_count + 1 WHERE id = ?",
+							).run(params.id);
 							successCount++;
 						}
 					} else if (action === "quote") {
-						const randomComment = comments[Math.floor(Math.random() * comments.length)];
+						const randomComment =
+							comments[Math.floor(Math.random() * comments.length)];
 						const quoteId = Bun.randomUUIDv7();
-						db.query("INSERT INTO posts (id, user_id, content, quote_tweet_id) VALUES (?, ?, ?, ?)").run(quoteId, u.id, randomComment, params.id);
-						db.query("UPDATE posts SET quote_count = COALESCE(quote_count, 0) + 1 WHERE id = ?").run(params.id);
+						db.query(
+							"INSERT INTO posts (id, user_id, content, quote_tweet_id) VALUES (?, ?, ?, ?)",
+						).run(quoteId, u.id, randomComment, params.id);
+						db.query(
+							"UPDATE posts SET quote_count = COALESCE(quote_count, 0) + 1 WHERE id = ?",
+						).run(params.id);
 						successCount++;
 					} else if (action === "comment") {
-						const randomComment = comments[Math.floor(Math.random() * comments.length)];
+						const randomComment =
+							comments[Math.floor(Math.random() * comments.length)];
 						const replyId = Bun.randomUUIDv7();
-						db.query("INSERT INTO posts (id, user_id, content, reply_to) VALUES (?, ?, ?, ?)").run(replyId, u.id, randomComment, params.id);
-						db.query("UPDATE posts SET reply_count = reply_count + 1 WHERE id = ?").run(params.id);
+						db.query(
+							"INSERT INTO posts (id, user_id, content, reply_to) VALUES (?, ?, ?, ?)",
+						).run(replyId, u.id, randomComment, params.id);
+						db.query(
+							"UPDATE posts SET reply_count = reply_count + 1 WHERE id = ?",
+						).run(params.id);
 						successCount++;
 					}
 					results.push({ userId: u.id, success: true });
@@ -4955,17 +4984,20 @@ export default new Elysia({ prefix: "/admin", tags: ["Admin"] })
 				successCount,
 			});
 
-			return { 
-				success: true, 
-				action, 
-				percentage, 
-				targetCount: users.length, 
+			return {
+				success: true,
+				action,
+				percentage,
+				targetCount: users.length,
 				successCount,
-				totalUsers 
+				totalUsers,
 			};
 		},
 		{
-			detail: { description: "Mass engage users on a post (like, retweet, quote, comment)" },
+			detail: {
+				description:
+					"Mass engage users on a post (like, retweet, quote, comment)",
+			},
 			params: t.Object({ id: t.String() }),
 			body: t.Object({
 				action: t.String(),

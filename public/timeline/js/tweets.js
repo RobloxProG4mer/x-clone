@@ -2618,14 +2618,14 @@ export const createTweetElement = (tweet, config = {}) => {
       <path d="M10 5C5 5 2 10 2 10s3 5 8 5 8-5 8-5-3-5-8-5z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
       <circle cx="10" cy="10" r="2.5" stroke="currentColor" stroke-width="1.5" fill="none"/>
     </svg>
-    <span>${tweet.view_count > 0 ? formatNumber(tweet.view_count) : ""}</span>`;
+    <span>${tweet.view_count > 0 ? formatNumber(tweet.view_count) : "1"}</span>`;
 	tweetInteractionsViewsEl.style.setProperty("--color", "119, 119, 119");
 	tweetInteractionsViewsEl.title = `${tweet.view_count || 0} views`;
 
 	const reactionCountSpan = document.createElement("span");
-	reactionCountSpan.className = "reaction-count";
+	reactionCountSpan.className = "reaction-count"; // Tr cursor shouldn't be stuck It's not stuck, Opua YT  Opuadmin i see, Tr. TRdS. Tr✅ OPUADMIN HAMOOD HABIBI UNOFFICIAL HAS HAPPIES HABIBI✅✅ // why does my opus have a warning look at discord and you will see why
 
-	const topReactionsSpan = document.createElement("span");
+	const topReactionsSpan = document.createElement("span"); // NOOOOOO TR STUCK CURSOR
 	topReactionsSpan.className = "top-reactions";
 
 	const tweetInteractionsReactionEl = document.createElement("button");

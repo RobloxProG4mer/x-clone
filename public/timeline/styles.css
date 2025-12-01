@@ -2026,12 +2026,13 @@ nav {
     .views-count {
       display: inline-flex;
       align-items: center;
-      gap: 6px;
+      gap: 4px;
       cursor: default;
       pointer-events: none;
       opacity: 0.7;
       font-size: 15px;
       line-height: 0;
+      color: var(--text-secondary);
 
       &:is(.tweet:not([data-main-tweet]) .views-count) {
         display: none;
@@ -7185,11 +7186,12 @@ nav {
 }
 
 .community-only-container {
-  padding: 12px 16px;
+  padding-top: 12px;
   display: flex;
   align-items: center;
   gap: 8px;
   font-size: 14px;
+  color: var(--text-secondary);
 }
 
 .community-only-checkbox {
@@ -7305,7 +7307,7 @@ nav {
 }
 
 .role-select,
-.community-detail-page select,
+.community-detail-page select:not(:is(.compose-tweet select)),
 .community-detail-page .dropdown {
   padding: 8px 12px;
   border: 1px solid var(--border-primary);

@@ -916,7 +916,7 @@ class AdminPanel {
 
 		const response = await fetch(endpoint, { ...options, headers });
 		const text = await response.text();
-		
+
 		let data;
 		try {
 			data = JSON.parse(text);
@@ -1576,14 +1576,14 @@ class AdminPanel {
                 <td>
                   <div style="max-width: 250px; overflow: hidden; text-overflow: ellipsis;">
                     ${suspension.reason
-															.replaceAll("<", "&lt;")
-															.replaceAll(">", "&gt;")}
+											.replaceAll("<", "&lt;")
+											.replaceAll(">", "&gt;")}
                   </div>
                   ${
 										suspension.notes
 											? `<small class="text-muted">Notes: ${suspension.notes
-															.replaceAll("<", "&lt;")
-															.replaceAll(">", "&gt;")}</small>`
+													.replaceAll("<", "&lt;")
+													.replaceAll(">", "&gt;")}</small>`
 											: ""
 									}
                 </td>
@@ -4638,12 +4638,15 @@ class AdminPanel {
 		this.massEngageListenersAttached = true;
 
 		const actionSelect = document.getElementById("massEngageAction");
-		const commentsSection = document.getElementById("massEngageCommentsSection");
+		const commentsSection = document.getElementById(
+			"massEngageCommentsSection",
+		);
 		const executeBtn = document.getElementById("massEngageBtn");
 
 		if (actionSelect && commentsSection) {
 			actionSelect.addEventListener("change", () => {
-				const showComments = actionSelect.value === "quote" || actionSelect.value === "comment";
+				const showComments =
+					actionSelect.value === "quote" || actionSelect.value === "comment";
 				commentsSection.style.display = showComments ? "block" : "none";
 			});
 		}
@@ -4656,7 +4659,8 @@ class AdminPanel {
 	async executeMassEngage() {
 		const postId = document.getElementById("editPostId").value;
 		const action = document.getElementById("massEngageAction").value;
-		const percentage = parseInt(document.getElementById("massEngagePercent").value) || 0;
+		const percentage =
+			parseInt(document.getElementById("massEngagePercent").value) || 0;
 		const commentsRaw = document.getElementById("massEngageComments").value;
 
 		if (percentage <= 0 || percentage > 100) {
@@ -4664,10 +4668,15 @@ class AdminPanel {
 			return;
 		}
 
-		const comments = commentsRaw.split("\n").map(c => c.trim()).filter(c => c.length > 0);
+		const comments = commentsRaw
+			.split("\n")
+			.map((c) => c.trim())
+			.filter((c) => c.length > 0);
 
 		if ((action === "quote" || action === "comment") && comments.length === 0) {
-			this.showError("Please enter at least one comment for quote/comment actions");
+			this.showError(
+				"Please enter at least one comment for quote/comment actions",
+			);
 			return;
 		}
 
@@ -4688,10 +4697,13 @@ class AdminPanel {
 			progressBar.style.width = "30%";
 			statusDiv.textContent = "Processing...";
 
-			const response = await this.apiCall(`/api/admin/posts/${postId}/mass-engage`, {
-				method: "POST",
-				body: JSON.stringify({ action, percentage, comments }),
-			});
+			const response = await this.apiCall(
+				`/api/admin/posts/${postId}/mass-engage`,
+				{
+					method: "POST",
+					body: JSON.stringify({ action, percentage, comments }),
+				},
+			);
 
 			progressBar.style.width = "100%";
 			progressBar.classList.remove("progress-bar-animated");
@@ -4699,7 +4711,9 @@ class AdminPanel {
 			if (response.success) {
 				statusDiv.textContent = `Completed: ${response.successCount}/${response.targetCount} users (${response.action})`;
 				progressBar.classList.add("bg-success");
-				this.showSuccess(`Mass ${action} completed: ${response.successCount}/${response.targetCount} users`);
+				this.showSuccess(
+					`Mass ${action} completed: ${response.successCount}/${response.targetCount} users`,
+				);
 			} else {
 				statusDiv.textContent = response.error || "Failed";
 				progressBar.classList.add("bg-danger");
