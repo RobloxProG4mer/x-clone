@@ -14,21 +14,23 @@ const esc = (str) =>
 const getTweetById = db.query(`SELECT * FROM posts WHERE id = ?`);
 const getUserById = db.query(`SELECT * FROM users WHERE id = ?`);
 
+const botPatterns = /discord|telegram|slack|twitter|facebook|linkedinbot|whatsapp|skype/i;
+
 export const embeds = new Elysia({ name: "generateEmbeds" })
 	.mapResponse(({ request, response, set }) => {
-		if (request.url.endsWith("?rb=1")) return response;
-		const userAgent = request.headers.get("user-agent")?.toLowerCase() || "";
-		if (!userAgent) return response;
-		const goodMatches = ["applewebkit", "chrome/", "firefox/", "safari/"];
-		if (
-			goodMatches.some((match) => userAgent.includes(match)) &&
-			!userAgent.includes("discord")
-		) {
-			return response;
-		}
-
 		const pathname = new URL(request.url).pathname;
 		if (!pathname?.startsWith("/tweet/")) return response;
+		if (request.url.endsWith("?rb=1")) return response;
+
+		const userAgent = request.headers.get("user-agent")?.toLowerCase() || "";
+		if (!userAgent) return response;
+
+		if (!botPatterns.test(userAgent)) {
+			const goodMatches = ["applewebkit", "chrome/", "firefox/", "safari/"];
+			if (goodMatches.some((match) => userAgent.includes(match))) {
+				return response;
+			}
+		}
 
 		set.headers["Content-Type"] = "text/html; charset=utf-8";
 

@@ -131,6 +131,7 @@ export function isConvertibleImage(file) {
     "image/webp",
     "image/bmp",
     "image/svg+xml",
+    "image/tuff",
   ];
 
   return supportedTypes.includes(file.type);

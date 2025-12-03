@@ -848,6 +848,16 @@ export const createTweetElement = (tweet, config = {}) => {
 		tweetEl.classList.add("clickable");
 	}
 
+	if (tweet.outline && tweet.author.gray) {
+		if (tweet.outline.includes("gradient")) {
+			tweetEl.style.setProperty("border", "2px solid transparent", "important");
+			tweetEl.style.setProperty("border-image", `${tweet.outline} 1`, "important");
+		} else {
+			tweetEl.style.setProperty("border", `2px solid ${tweet.outline}`, "important");
+		}
+		tweetEl.style.setProperty("border-radius", "12px", "important");
+	}
+
 	const tweetHeaderEl = document.createElement("div");
 	tweetHeaderEl.className = "tweet-header";
 
@@ -869,6 +879,11 @@ export const createTweetElement = (tweet, config = {}) => {
 		tweetHeaderAvatarEl.style.setProperty("border-radius", "4px", "important");
 	} else {
 		tweetHeaderAvatarEl.style.setProperty("border-radius", "50px", "important");
+	}
+
+	if (tweet.author.gray && tweet.author.avatar_outline) {
+		tweetHeaderAvatarEl.style.setProperty("border", `2px solid ${tweet.author.avatar_outline}`, "important");
+		tweetHeaderAvatarEl.style.setProperty("box-sizing", "border-box", "important");
 	}
 	tweetHeaderAvatarEl.setAttribute("loading", "lazy");
 	tweetHeaderAvatarEl.addEventListener("click", (e) => {
@@ -919,6 +934,34 @@ export const createTweetElement = (tweet, config = {}) => {
             <path
               d="M2.56667 5.74669C2.46937 5.30837 2.48431 4.85259 2.61011 4.42158C2.73591 3.99058 2.9685 3.59832 3.28632 3.28117C3.60413 2.96402 3.99688 2.73225 4.42814 2.60735C4.85941 2.48245 5.31523 2.46847 5.75334 2.56669C5.99448 2.18956 6.32668 1.8792 6.71931 1.66421C7.11194 1.44923 7.55237 1.33655 8.00001 1.33655C8.44764 1.33655 8.88807 1.44923 9.28071 1.66421C9.67334 1.8792 10.0055 2.18956 10.2467 2.56669C10.6855 2.46804 11.1421 2.48196 11.574 2.60717C12.006 2.73237 12.3992 2.96478 12.7172 3.28279C13.0352 3.6008 13.2677 3.99407 13.3929 4.42603C13.5181 4.85798 13.532 5.31458 13.4333 5.75336C13.8105 5.9945 14.1208 6.32669 14.3358 6.71933C14.5508 7.11196 14.6635 7.55239 14.6635 8.00002C14.6635 8.44766 14.5508 8.88809 14.3358 9.28072C14.1208 9.67336 13.8105 10.0056 13.4333 10.2467C13.5316 10.6848 13.5176 11.1406 13.3927 11.5719C13.2678 12.0032 13.036 12.3959 12.7189 12.7137C12.4017 13.0315 12.0094 13.2641 11.5784 13.3899C11.1474 13.5157 10.6917 13.5307 10.2533 13.4334C10.0125 13.8119 9.68006 14.1236 9.28676 14.3396C8.89346 14.5555 8.45202 14.6687 8.00334 14.6687C7.55466 14.6687 7.11322 14.5555 6.71992 14.3396C6.32662 14.1236 5.99417 13.8119 5.75334 13.4334C5.31523 13.5316 4.85941 13.5176 4.42814 13.3927C3.99688 13.2678 3.60413 13.036 3.28632 12.7189C2.9685 12.4017 2.73591 12.0095 2.61011 11.5785C2.48431 11.1475 2.46937 10.6917 2.56667 10.2534C2.18664 10.0129 1.87362 9.68014 1.65671 9.28617C1.4398 8.8922 1.32605 8.44976 1.32605 8.00002C1.32605 7.55029 1.4398 7.10785 1.65671 6.71388C1.87362 6.31991 2.18664 5.9872 2.56667 5.74669Z"
               fill="#D4AF37"
+            />
+            <path
+              d="M6 8.00002L7.33333 9.33335L10 6.66669"
+              stroke="var(--primary-fg)"
+              stroke-width="1.5"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            />
+          </svg>`;
+	} else if (tweet.author.gray) {
+		const svgWrapper = document.createElement("div");
+		tweetHeaderNameEl.appendChild(svgWrapper);
+		const checkmarkOutline = tweet.author.checkmark_outline || "";
+		const outlineStyle = checkmarkOutline ? `stroke="${checkmarkOutline}" stroke-width="1"` : "";
+
+		svgWrapper.outerHTML = `
+          <svg
+            width="16"
+            height="16"
+            viewBox="0 0 16 16"
+            fill="none"
+            xmlns="http://www.w3.org/2000/svg"
+            title="Gray Check Account"
+          >
+            <path
+              d="M2.56667 5.74669C2.46937 5.30837 2.48431 4.85259 2.61011 4.42158C2.73591 3.99058 2.9685 3.59832 3.28632 3.28117C3.60413 2.96402 3.99688 2.73225 4.42814 2.60735C4.85941 2.48245 5.31523 2.46847 5.75334 2.56669C5.99448 2.18956 6.32668 1.8792 6.71931 1.66421C7.11194 1.44923 7.55237 1.33655 8.00001 1.33655C8.44764 1.33655 8.88807 1.44923 9.28071 1.66421C9.67334 1.8792 10.0055 2.18956 10.2467 2.56669C10.6855 2.46804 11.1421 2.48196 11.574 2.60717C12.006 2.73237 12.3992 2.96478 12.7172 3.28279C13.0352 3.6008 13.2677 3.99407 13.3929 4.42603C13.5181 4.85798 13.532 5.31458 13.4333 5.75336C13.8105 5.9945 14.1208 6.32669 14.3358 6.71933C14.5508 7.11196 14.6635 7.55239 14.6635 8.00002C14.6635 8.44766 14.5508 8.88809 14.3358 9.28072C14.1208 9.67336 13.8105 10.0056 13.4333 10.2467C13.5316 10.6848 13.5176 11.1406 13.3927 11.5719C13.2678 12.0032 13.036 12.3959 12.7189 12.7137C12.4017 13.0315 12.0094 13.2641 11.5784 13.3899C11.1474 13.5157 10.6917 13.5307 10.2533 13.4334C10.0125 13.8119 9.68006 14.1236 9.28676 14.3396C8.89346 14.5555 8.45202 14.6687 8.00334 14.6687C7.55466 14.6687 7.11322 14.5555 6.71992 14.3396C6.32662 14.1236 5.99417 13.8119 5.75334 13.4334C5.31523 13.5316 4.85941 13.5176 4.42814 13.3927C3.99688 13.2678 3.60413 13.036 3.28632 12.7189C2.9685 12.4017 2.73591 12.0095 2.61011 11.5785C2.48431 11.1475 2.46937 10.6917 2.56667 10.2534C2.18664 10.0129 1.87362 9.68014 1.65671 9.28617C1.4398 8.8922 1.32605 8.44976 1.32605 8.00002C1.32605 7.55029 1.4398 7.10785 1.65671 6.71388C1.87362 6.31991 2.18664 5.9872 2.56667 5.74669Z"
+              fill="gray"
+              ${outlineStyle}
             />
             <path
               d="M6 8.00002L7.33333 9.33335L10 6.66669"
@@ -2321,11 +2364,13 @@ export const createTweetElement = (tweet, config = {}) => {
 					const currentUser = await getUser();
 					let maxTweetLength = currentUser.character_limit || 400;
 					if (!currentUser.character_limit) {
-						maxTweetLength = currentUser.gold
-							? 16500
-							: currentUser.verified
-								? 5500
-								: 400;
+						maxTweetLength = currentUser.gray
+							? 37500
+							: currentUser.gold
+								? 16500
+								: currentUser.verified
+									? 5500
+									: 400;
 					}
 
 					const editForm = document.createElement("form");
@@ -2442,6 +2487,95 @@ export const createTweetElement = (tweet, config = {}) => {
 				},
 			},
 			{
+				id: "change-outline",
+				icon: `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="12" cy="12" r="10"></circle>
+              <path d="M12 2a7 7 0 0 1 7 7"></path>
+              <path d="M12 22a7 7 0 0 0 7-7"></path>
+            </svg>`,
+				title: "Change tweet outline",
+				requiresGray: true,
+				onClick: async () => {
+					const { createModal } = await import("../../shared/ui-utils.js");
+					
+					const formContainer = document.createElement("div");
+					formContainer.style.cssText = "display: flex; flex-direction: column; gap: 12px;";
+					
+					const label = document.createElement("label");
+					label.textContent = "Outline (CSS color or gradient)";
+					label.style.cssText = "font-size: 14px; color: var(--text-secondary);";
+					
+					const input = document.createElement("input");
+					input.type = "text";
+					input.placeholder = "e.g. red, #ff0000, linear-gradient(...)";
+					input.value = tweet.outline || "";
+					input.style.cssText = "padding: 10px; border: 1px solid var(--border-primary); border-radius: 8px; background: var(--bg-secondary); color: var(--text-primary); font-size: 14px;";
+					
+					const hint = document.createElement("p");
+					hint.textContent = "Leave empty to remove outline. Supports solid colors and gradients.";
+					hint.style.cssText = "font-size: 12px; color: var(--text-tertiary); margin: 0;";
+					
+					const buttonContainer = document.createElement("div");
+					buttonContainer.style.cssText = "display: flex; gap: 8px; justify-content: flex-end; margin-top: 8px;";
+					
+					const cancelBtn = document.createElement("button");
+					cancelBtn.type = "button";
+					cancelBtn.textContent = "Cancel";
+					cancelBtn.style.cssText = "padding: 8px 16px; border: 1px solid var(--border-primary); background: transparent; border-radius: 8px; cursor: pointer; color: var(--text-primary);";
+					
+					const saveBtn = document.createElement("button");
+					saveBtn.type = "button";
+					saveBtn.textContent = "Save";
+					saveBtn.style.cssText = "padding: 8px 16px; border: none; background: var(--primary); border-radius: 8px; cursor: pointer; color: white;";
+					
+					buttonContainer.appendChild(cancelBtn);
+					buttonContainer.appendChild(saveBtn);
+					
+					formContainer.appendChild(label);
+					formContainer.appendChild(input);
+					formContainer.appendChild(hint);
+					formContainer.appendChild(buttonContainer);
+					
+					const modal = createModal({
+						title: "Change Tweet Outline",
+						content: formContainer,
+						className: "change-outline-modal",
+					});
+					
+					cancelBtn.addEventListener("click", () => modal.close());
+					
+					saveBtn.addEventListener("click", async () => {
+						const outline = input.value.trim() || null;
+						saveBtn.disabled = true;
+						saveBtn.textContent = "Saving...";
+						
+						const result = await query(`/tweets/${tweet.id}/outline`, {
+							method: "PATCH",
+							headers: { "Content-Type": "application/json" },
+							body: JSON.stringify({ outline }),
+						});
+						
+						if (result.success) {
+							tweet.outline = outline;
+							if (outline) {
+								tweetEl.style.border = `2px solid transparent`;
+								tweetEl.style.borderImage = outline.includes("gradient") ? `${outline} 1` : `linear-gradient(${outline}, ${outline}) 1`;
+								tweetEl.style.borderRadius = "16px";
+							} else {
+								tweetEl.style.border = "";
+								tweetEl.style.borderImage = "";
+							}
+							modal.close();
+							toastQueue.add(`<h1>Tweet outline updated</h1>`);
+						} else {
+							toastQueue.add(`<h1>${result.error || "Failed to update outline"}</h1>`);
+							saveBtn.disabled = false;
+							saveBtn.textContent = "Save";
+						}
+					});
+				},
+			},
+			{
 				id: "delete-option",
 				icon: `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
               <polyline points="3,6 5,6 21,6"></polyline>
@@ -2471,9 +2605,17 @@ export const createTweetElement = (tweet, config = {}) => {
 		];
 
 		getUser().then(async (currentUser) => {
+			let filteredUserItems = userItems;
+			if (currentUser?.id === tweet.author.id) {
+				filteredUserItems = userItems.filter(item => {
+					if (item.requiresGray && !currentUser.gray) return false;
+					return true;
+				});
+			}
+			
 			const items =
 				currentUser?.id === tweet.author.id
-					? [...defaultItems, ...userItems]
+					? [...defaultItems, ...filteredUserItems]
 					: [...defaultItems];
 
 			if (currentUser && tweet.author && currentUser.id !== tweet.author.id) {

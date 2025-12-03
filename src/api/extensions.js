@@ -459,7 +459,6 @@ export async function mountServerExtensions(app) {
 			if (module?.default && typeof app.use === "function") {
 				try {
 					app.use(module.default);
-					console.log(`Mounted server extension API: ${ext.id}`);
 				} catch (err) {
 					console.error(`Failed to mount server extension ${ext.id}:`, err);
 				}

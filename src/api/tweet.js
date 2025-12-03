@@ -20,7 +20,7 @@ const getIdentifier = (headers) => {
 };
 
 const getUserByUsername = db.query(
-	"SELECT id, username, name, avatar, verified, gold, admin, avatar_radius, character_limit, restricted, suspended FROM users WHERE LOWER(username) = LOWER(?)",
+	"SELECT id, username, name, avatar, verified, gold, gray, admin, avatar_radius, character_limit, restricted, suspended FROM users WHERE LOWER(username) = LOWER(?)",
 );
 
 const checkReplyPermission = async (replier, originalAuthor, restriction) => {
@@ -166,8 +166,8 @@ const getTweetRepliesBefore = db.query(`
 `);
 
 const createTweet = db.query(`
-	INSERT INTO posts (id, user_id, content, reply_to, source, poll_id, quote_tweet_id, reply_restriction, article_id, community_id, community_only) 
-  VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+	INSERT INTO posts (id, user_id, content, reply_to, source, poll_id, quote_tweet_id, reply_restriction, article_id, community_id, community_only, outline) 
+  VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
 	RETURNING *
 `);
 
@@ -186,7 +186,7 @@ const updateQuoteCount = db.query(`
 `);
 
 const getQuotedTweet = db.query(`
-  SELECT posts.*, users.username, users.name, users.avatar, users.verified, users.gold, users.avatar_radius, users.affiliate, users.affiliate_with
+  SELECT posts.*, users.username, users.name, users.avatar, users.verified, users.gold, users.gray, users.avatar_radius, users.affiliate, users.affiliate_with, users.checkmark_outline, users.avatar_outline
   FROM posts
   JOIN users ON posts.user_id = users.id
   WHERE posts.id = ?
@@ -561,6 +561,7 @@ export default new Elysia({ prefix: "/tweets", tags: ["Tweets"] })
 				interactive_card,
 				ai_vibe,
 				unsplash,
+				outline,
 			} = body;
 			const tweetContent = typeof content === "string" ? content : "";
 			const trimmedContent = tweetContent.trim();
@@ -641,10 +642,10 @@ export default new Elysia({ prefix: "/tweets", tags: ["Tweets"] })
 				}
 			}
 
-			// Allow longer tweets for gold or verified users, or use custom limit
+			// Allow longer tweets for gold, gray, or verified users, or use custom limit
 			let maxTweetLength = user.character_limit || 400;
 			if (!user.character_limit) {
-				maxTweetLength = user.gold ? 16500 : user.verified ? 5500 : 400;
+				maxTweetLength = user.gray ? 37500 : user.gold ? 16500 : user.verified ? 5500 : 400;
 			}
 			if (trimmedContent.length > maxTweetLength) {
 				return {
@@ -752,6 +753,8 @@ export default new Elysia({ prefix: "/tweets", tags: ["Tweets"] })
 				});
 			}
 
+			const tweetOutline = user.gray && outline ? outline : null;
+
 			const tweet = createTweet.get(
 				tweetId,
 				effectiveUserId,
@@ -764,6 +767,7 @@ export default new Elysia({ prefix: "/tweets", tags: ["Tweets"] })
 				targetArticleId,
 				community_id || null,
 				community_only || false,
+				tweetOutline,
 			);
 
 			if (reply_to) {
@@ -2110,6 +2114,38 @@ export default new Elysia({ prefix: "/tweets", tags: ["Tweets"] })
 		} catch (error) {
 			console.error("Edit tweet error:", error);
 			return { error: "Failed to edit tweet" };
+		}
+	})
+	.patch("/:id/outline", async ({ jwt, headers, params, body }) => {
+		const authorization = headers.authorization;
+		if (!authorization) return { error: "Authentication required" };
+
+		try {
+			const payload = await jwt.verify(authorization.replace("Bearer ", ""));
+			if (!payload) return { error: "Invalid token" };
+
+			const user = getUserByUsername.get(payload.username);
+			if (!user) return { error: "User not found" };
+
+			if (!user.gray) {
+				return { error: "Only gray check users can set post outlines" };
+			}
+
+			const { id } = params;
+			const tweet = getTweetById.get(id);
+			if (!tweet) return { error: "Tweet not found" };
+
+			if (tweet.user_id !== user.id) {
+				return { error: "You can only update your own tweets" };
+			}
+
+			const outline = body.outline !== undefined ? (body.outline || null) : null;
+			db.query("UPDATE posts SET outline = ? WHERE id = ?").run(outline, id);
+
+			return { success: true };
+		} catch (error) {
+			console.error("Update outline error:", error);
+			return { error: "Failed to update outline" };
 		}
 	})
 	.get("/:id/edit-history", async ({ jwt, headers, params }) => {

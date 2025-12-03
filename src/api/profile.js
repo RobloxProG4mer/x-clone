@@ -19,7 +19,7 @@ const getIdentifier = (headers) => {
 };
 
 const getFollowers = db.prepare(`
-  SELECT users.id, users.username, users.name, users.avatar, users.verified, users.gold, users.avatar_radius, users.bio
+  SELECT users.id, users.username, users.name, users.avatar, users.verified, users.gold, users.gray, users.avatar_radius, users.bio, users.checkmark_outline, users.avatar_outline
   FROM follows
   JOIN users ON follows.follower_id = users.id
 	WHERE follows.following_id = ? AND users.suspended = 0 AND users.shadowbanned = 0
@@ -28,7 +28,7 @@ const getFollowers = db.prepare(`
 `);
 
 const getFollowing = db.prepare(`
-  SELECT users.id, users.username, users.name, users.avatar, users.verified, users.gold, users.avatar_radius, users.bio
+  SELECT users.id, users.username, users.name, users.avatar, users.verified, users.gold, users.gray, users.avatar_radius, users.bio, users.checkmark_outline, users.avatar_outline
   FROM follows
   JOIN users ON follows.following_id = users.id
 	WHERE follows.follower_id = ? AND users.suspended = 0 AND users.shadowbanned = 0
@@ -39,8 +39,8 @@ const getFollowing = db.prepare(`
 const getUserByUsername = db.prepare(
 	`SELECT id, username, created_at, name, avatar, verified, bio, location, website, banner, 
 	 follower_count, following_count, suspended, restricted, shadowbanned, private, pronouns, 
-	 avatar_radius, gold, affiliate, label_type, label_automated, affiliate_with, selected_community_tag,
-	 transparency_location_display
+	 avatar_radius, gold, gray, affiliate, label_type, label_automated, affiliate_with, selected_community_tag,
+	 transparency_location_display, checkmark_outline, avatar_outline
 	 FROM users WHERE LOWER(username) = LOWER(?)`,
 );
 
@@ -102,8 +102,14 @@ const updatePassword = db.prepare(`
   WHERE id = ?
 `);
 
+const updateOutlines = db.prepare(`
+  UPDATE users
+  SET checkmark_outline = ?, avatar_outline = ?
+  WHERE id = ?
+`);
+
 const getUserReplies = db.prepare(`
-  SELECT posts.*, users.username, users.name, users.avatar, users.verified, users.gold, users.avatar_radius, users.affiliate, users.affiliate_with, users.selected_community_tag
+  SELECT posts.*, users.username, users.name, users.avatar, users.verified, users.gold, users.gray, users.avatar_radius, users.affiliate, users.affiliate_with, users.selected_community_tag, users.checkmark_outline, users.avatar_outline
   FROM posts 
   JOIN users ON posts.user_id = users.id 
   WHERE posts.user_id = ? AND posts.reply_to IS NOT NULL
@@ -112,7 +118,7 @@ const getUserReplies = db.prepare(`
 `);
 
 const getUserRepliesPaginated = db.prepare(`
-  SELECT posts.*, users.username, users.name, users.avatar, users.verified, users.gold, users.avatar_radius, users.affiliate, users.affiliate_with, users.selected_community_tag
+  SELECT posts.*, users.username, users.name, users.avatar, users.verified, users.gold, users.gray, users.avatar_radius, users.affiliate, users.affiliate_with, users.selected_community_tag, users.checkmark_outline, users.avatar_outline
   FROM posts 
   JOIN users ON posts.user_id = users.id 
   WHERE posts.user_id = ? AND posts.reply_to IS NOT NULL AND posts.id < ?
@@ -121,7 +127,7 @@ const getUserRepliesPaginated = db.prepare(`
 `);
 
 const getUserMedia = db.prepare(`
-  SELECT DISTINCT posts.*, users.username, users.name, users.avatar, users.verified, users.gold, users.avatar_radius, users.affiliate, users.affiliate_with, users.selected_community_tag
+  SELECT DISTINCT posts.*, users.username, users.name, users.avatar, users.verified, users.gold, users.gray, users.avatar_radius, users.affiliate, users.affiliate_with, users.selected_community_tag, users.checkmark_outline, users.avatar_outline
   FROM posts 
   JOIN users ON posts.user_id = users.id 
   JOIN attachments ON posts.id = attachments.post_id
@@ -131,7 +137,7 @@ const getUserMedia = db.prepare(`
 `);
 
 const getUserMediaPaginated = db.prepare(`
-  SELECT DISTINCT posts.*, users.username, users.name, users.avatar, users.verified, users.gold, users.avatar_radius, users.affiliate, users.affiliate_with, users.selected_community_tag
+  SELECT DISTINCT posts.*, users.username, users.name, users.avatar, users.verified, users.gold, users.gray, users.avatar_radius, users.affiliate, users.affiliate_with, users.selected_community_tag, users.checkmark_outline, users.avatar_outline
   FROM posts 
   JOIN users ON posts.user_id = users.id 
   JOIN attachments ON posts.id = attachments.post_id
@@ -141,7 +147,7 @@ const getUserMediaPaginated = db.prepare(`
 `);
 
 const getUserPostsPaginated = db.prepare(`
-  SELECT posts.*, users.username, users.name, users.avatar, users.verified, users.gold, users.avatar_radius, users.affiliate, users.affiliate_with, users.selected_community_tag
+  SELECT posts.*, users.username, users.name, users.avatar, users.verified, users.gold, users.gray, users.avatar_radius, users.affiliate, users.affiliate_with, users.selected_community_tag, users.checkmark_outline, users.avatar_outline
   FROM posts 
   JOIN users ON posts.user_id = users.id 
   WHERE posts.user_id = ? AND posts.reply_to IS NULL AND users.suspended = 0 AND posts.id < ?
@@ -152,7 +158,7 @@ const getUserPostsPaginated = db.prepare(`
 const getUserRetweetsPaginated = db.prepare(`
   SELECT 
     original_posts.*,
-    original_users.username, original_users.name, original_users.avatar, original_users.verified, original_users.gold, original_users.avatar_radius, original_users.affiliate, original_users.affiliate_with, original_users.selected_community_tag,
+    original_users.username, original_users.name, original_users.avatar, original_users.verified, original_users.gold, original_users.gray, original_users.avatar_radius, original_users.affiliate, original_users.affiliate_with, original_users.selected_community_tag, original_users.checkmark_outline, original_users.avatar_outline,
     retweets.created_at as retweet_created_at,
     retweets.post_id as original_post_id,
     retweets.id as retweet_id
@@ -516,7 +522,7 @@ export default new Elysia({ prefix: "/profile", tags: ["Profile"] })
 			}
 
 			const userPostsQuery = db.query(`
-				SELECT posts.*, users.username, users.name, users.avatar, users.verified, users.gold, users.avatar_radius, users.affiliate, users.affiliate_with, users.selected_community_tag
+				SELECT posts.*, users.username, users.name, users.avatar, users.verified, users.gold, users.gray, users.avatar_radius, users.affiliate, users.affiliate_with, users.selected_community_tag, users.checkmark_outline, users.avatar_outline
 				FROM posts 
 				JOIN users ON posts.user_id = users.id 
 				WHERE posts.user_id = ? AND posts.reply_to IS NULL AND users.suspended = 0
@@ -526,7 +532,7 @@ export default new Elysia({ prefix: "/profile", tags: ["Profile"] })
 			const userRetweetsQuery = db.query(`
 				SELECT 
 					original_posts.*,
-					original_users.username, original_users.name, original_users.avatar, original_users.verified, original_users.gold, original_users.avatar_radius, original_users.affiliate, original_users.affiliate_with, original_users.selected_community_tag,
+					original_users.username, original_users.name, original_users.avatar, original_users.verified, original_users.gold, original_users.gray, original_users.avatar_radius, original_users.affiliate, original_users.affiliate_with, original_users.selected_community_tag, original_users.checkmark_outline, original_users.avatar_outline,
 					retweets.created_at as retweet_created_at,
 					retweets.post_id as original_post_id
 				FROM retweets
@@ -1952,6 +1958,50 @@ export default new Elysia({ prefix: "/profile", tags: ["Profile"] })
 		} catch (error) {
 			console.error("Update password error:", error);
 			return { error: "Failed to update password" };
+		}
+	})
+	.patch("/:username/outlines", async ({ params, jwt, headers, body }) => {
+		const authorization = headers.authorization;
+		if (!authorization) return { error: "Authentication required" };
+
+		try {
+			const payload = await jwt.verify(authorization.replace("Bearer ", ""));
+			if (!payload) return { error: "Invalid token" };
+
+			if (payload.isDelegate) {
+				return { error: "Delegates cannot change outlines" };
+			}
+
+			const currentUser = db.query("SELECT id, username, gray FROM users WHERE LOWER(username) = LOWER(?)").get(payload.username);
+			if (!currentUser) return { error: "User not found" };
+
+			if (currentUser.username.toLowerCase() !== params.username.toLowerCase()) {
+				return { error: "You can only change your own outlines" };
+			}
+
+			if (!currentUser.gray) {
+				return { error: "Only gray check users can customize outlines" };
+			}
+
+			const checkmarkOutline = body.checkmark_outline !== undefined ? (body.checkmark_outline || null) : undefined;
+			const avatarOutline = body.avatar_outline !== undefined ? (body.avatar_outline || null) : undefined;
+
+			if (checkmarkOutline === undefined && avatarOutline === undefined) {
+				return { error: "No outline values provided" };
+			}
+
+			const currentOutlines = db.query("SELECT checkmark_outline, avatar_outline FROM users WHERE id = ?").get(currentUser.id);
+			
+			updateOutlines.run(
+				checkmarkOutline !== undefined ? checkmarkOutline : currentOutlines.checkmark_outline,
+				avatarOutline !== undefined ? avatarOutline : currentOutlines.avatar_outline,
+				currentUser.id
+			);
+
+			return { success: true };
+		} catch (error) {
+			console.error("Update outlines error:", error);
+			return { error: "Failed to update outlines" };
 		}
 	})
 	.delete("/:username", async ({ params, jwt, headers, body }) => {

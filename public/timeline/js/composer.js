@@ -1799,11 +1799,13 @@ export const createComposer = async ({
 		const maxChars =
 			user?.character_limit !== null && user?.character_limit !== undefined
 				? user.character_limit
-				: user?.gold
-					? 16500
-					: user?.verified
-						? 5500
-						: 400;
+				: user?.gray
+					? 37500
+					: user?.gold
+						? 16500
+						: user?.verified
+							? 5500
+							: 400;
 
 		const counter = el.querySelector(".character-counter");
 		if (counter) {

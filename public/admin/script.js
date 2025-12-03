@@ -989,6 +989,15 @@ class AdminPanel {
           </div>
         </div>
       </div>
+      <div class="col-md-3">
+        <div class="card stat-card">
+          <div class="card-body text-center">
+            <i class="bi bi-check-circle-fill fs-1" style="color: gray;"></i>
+            <h3>${stats.users.gray || 0}</h3>
+            <p class="mb-0">Gray check users</p>
+          </div>
+        </div>
+      </div>
     `;
 	}
 
@@ -1125,6 +1134,11 @@ class AdminPanel {
                     ${
 											this.isFlagSet(user.gold)
 												? '<span class="badge bg-warning">Gold</span>'
+												: ""
+										}
+                    ${
+											this.isFlagSet(user.gray)
+												? '<span class="badge bg-secondary">Gray</span>'
 												: ""
 										}
 					${
@@ -1817,6 +1831,10 @@ class AdminPanel {
 											this.isFlagSet(user.gold)
 												? '<i class="bi bi-patch-check-fill text-warning ms-1" title="Gold"></i>'
 												: ""
+										}${
+											this.isFlagSet(user.gray)
+												? '<i class="bi bi-patch-check-fill text-secondary ms-1" title="Gray Check"></i>'
+												: ""
 										}`
 									: ""
 							}
@@ -1919,6 +1937,25 @@ class AdminPanel {
                 <label class="form-check-label">Gold</label>
               </div>
                <div class="form-check form-switch mb-3">
+                <input class="form-check-input" type="checkbox" id="editProfileGray" ${
+									this.isFlagSet(user.gray) ? "checked" : ""
+								}>
+                <label class="form-check-label">Gray</label>
+              </div>
+              <div class="mb-3" id="grayOutlinesSection" style="${
+								this.isFlagSet(user.gray) ? "" : "display: none;"
+							}">
+                <label class="form-label">Checkmark Outline (CSS color/gradient)</label>
+                <input type="text" class="form-control mb-2" id="editProfileCheckmarkOutline" value="${
+									user.checkmark_outline || ""
+								}" placeholder="e.g. red, #ff0000, linear-gradient(...)">
+                <label class="form-label">Avatar Outline (CSS color/gradient)</label>
+                <input type="text" class="form-control" id="editProfileAvatarOutline" value="${
+									user.avatar_outline || ""
+								}" placeholder="e.g. blue, #0000ff, linear-gradient(...)">
+                <small class="text-muted">Outline colors or gradients for gray check users</small>
+              </div>
+               <div class="form-check form-switch mb-3">
                 <input class="form-check-input" type="checkbox" id="editProfileAdmin" ${
 									user.admin ? "checked" : ""
 								}>
@@ -1961,11 +1998,13 @@ class AdminPanel {
                 <p style="font-size: 12px; color: var(--text-secondary); margin-bottom: 8px;">
                   Current: ${
 										user.character_limit ||
-										(user.gold
-											? "16,500 (Gold Default)"
-											: user.verified
-												? "5,500 (Verified Default)"
-												: "400 (Standard Default)")
+										(user.gray
+											? "37,500 (Gray Default)"
+											: user.gold
+												? "16,500 (Gold Default)"
+												: user.verified
+													? "5,500 (Verified Default)"
+													: "400 (Standard Default)")
 									}
                 </p>
                 <input type="number" class="form-control" id="editProfileCharacterLimit" value="${
@@ -2265,23 +2304,47 @@ class AdminPanel {
 
 			const verifiedCheckbox = document.getElementById("editProfileVerified");
 			const goldCheckbox = document.getElementById("editProfileGold");
+			const grayCheckboxEl = document.getElementById("editProfileGray");
 
-			if (verifiedCheckbox && goldCheckbox) {
+			if (verifiedCheckbox && goldCheckbox && grayCheckboxEl) {
 				const newVerified = verifiedCheckbox.cloneNode(true);
 				verifiedCheckbox.parentNode.replaceChild(newVerified, verifiedCheckbox);
 
 				const newGold = goldCheckbox.cloneNode(true);
 				goldCheckbox.parentNode.replaceChild(newGold, goldCheckbox);
 
+				const newGrayEl = grayCheckboxEl.cloneNode(true);
+				grayCheckboxEl.parentNode.replaceChild(newGrayEl, grayCheckboxEl);
+
 				const vCheckbox = document.getElementById("editProfileVerified");
 				const gCheckbox = document.getElementById("editProfileGold");
+				const grCheckbox = document.getElementById("editProfileGray");
+				const graySection = document.getElementById("grayOutlinesSection");
 
 				vCheckbox.addEventListener("change", () => {
-					if (vCheckbox.checked) gCheckbox.checked = false;
+					if (vCheckbox.checked) {
+						gCheckbox.checked = false;
+						grCheckbox.checked = false;
+						if (graySection) graySection.style.display = "none";
+					}
 				});
 
 				gCheckbox.addEventListener("change", () => {
-					if (gCheckbox.checked) vCheckbox.checked = false;
+					if (gCheckbox.checked) {
+						vCheckbox.checked = false;
+						grCheckbox.checked = false;
+						if (graySection) graySection.style.display = "none";
+					}
+				});
+
+				grCheckbox.addEventListener("change", () => {
+					if (grCheckbox.checked) {
+						vCheckbox.checked = false;
+						gCheckbox.checked = false;
+						if (graySection) graySection.style.display = "block";
+					} else {
+						if (graySection) graySection.style.display = "none";
+					}
 				});
 			}
 
@@ -2311,6 +2374,13 @@ class AdminPanel {
 						if (affiliateWithInput) affiliateWithInput.value = "";
 					}
 				});
+			}
+
+			const grayCheckbox = document.getElementById("editProfileGray");
+			const grayOutlinesSection = document.getElementById("grayOutlinesSection");
+
+			if (grayCheckbox && grayOutlinesSection && !grayCheckbox._grayListenerAttached) {
+				grayCheckbox._grayListenerAttached = true;
 			}
 
 			const superTweeterCheckbox = document.getElementById(
@@ -3268,6 +3338,7 @@ class AdminPanel {
 		const bioInput = document.getElementById("editProfileBio");
 		const verifiedInput = document.getElementById("editProfileVerified");
 		const goldInput = document.getElementById("editProfileGold");
+		const grayInput = document.getElementById("editProfileGray");
 		const adminInput = document.getElementById("editProfileAdmin");
 		const affiliateInput = document.getElementById("editProfileAffiliate");
 
@@ -3294,9 +3365,17 @@ class AdminPanel {
 			bio: bioValue.length ? bioValue : null,
 			verified: !!verifiedInput?.checked,
 			gold: !!goldInput?.checked,
+			gray: !!grayInput?.checked,
 			admin: !!adminInput?.checked,
 			affiliate: !!affiliateInput?.checked,
 		};
+
+		const checkmarkOutlineInput = document.getElementById("editProfileCheckmarkOutline");
+		const avatarOutlineInput = document.getElementById("editProfileAvatarOutline");
+		if (payload.gray) {
+			payload.checkmark_outline = checkmarkOutlineInput?.value?.trim() || null;
+			payload.avatar_outline = avatarOutlineInput?.value?.trim() || null;
+		}
 
 		const affiliateWithInput = document.getElementById(
 			"editProfileAffiliateWith",

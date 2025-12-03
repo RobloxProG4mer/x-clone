@@ -19,6 +19,7 @@ import scheduled from "./api/scheduled.js";
 import search from "./api/search.js";
 import tenor from "./api/tenor.js";
 import timeline from "./api/timeline.js";
+import translate from "./api/translate.js";
 import trends from "./api/trends.js";
 import tweet from "./api/tweet.js";
 import unsplash from "./api/unsplash.js";
@@ -342,5 +343,6 @@ export default new Elysia({
 	.use(scheduled)
 	.use(reports)
 	.use(uploadRoutes)
+	.use(translate)
 	.use(trends)
 	.use(lists);

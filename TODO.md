@@ -3,7 +3,10 @@
 - personalized algorithm
 - better settings, and fixing settings ui 
 - automated spam/nsfw detection using openapi or perspective api
-
+- installation cli guide
+- onboarding
+- gray checks
+- add option to translate tweets (offer translation with franc, translate with LibreTranslate)
 
 **OTHER:**
 

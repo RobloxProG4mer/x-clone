@@ -1,7 +1,17 @@
 import { Elysia } from "elysia";
 
+const skipPaths = /^\/(public|sw\.js|admin|legal)/;
+const staticExtensions = /\.(js|css|html|json|svg|png|jpg|jpeg|gif|webp|ico|woff|woff2|ttf|otf|eot|mp4|webm|mp3|wav)$/i;
+
 export const compression = new Elysia({ name: "compressResponses" })
   .mapResponse(({ request, response, set }) => {
+    const url = new URL(request.url);
+    const pathname = url.pathname;
+
+    if (skipPaths.test(pathname) || staticExtensions.test(pathname)) {
+      return response;
+    }
+
     const isJson = typeof response === "object";
     const compressionRequested = request.headers
       .get("Accept-Encoding")
@@ -9,7 +19,6 @@ export const compression = new Elysia({ name: "compressResponses" })
 
     const text = isJson ? JSON.stringify(response) : response?.toString() ?? "";
 
-    // Only compress if content is larger than 2KB and compression is requested
     if (!compressionRequested || text.length < 2048) {
       return response;
     }

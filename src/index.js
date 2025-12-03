@@ -113,22 +113,16 @@ const appServer = new Elysia()
 	})
 	.get("/admin", () => file("./public/admin/index.html"))
 	.get("/legal", () => file("./public/legal.html"))
-	.get("/public/temporary/font-text.html", ({ set, request }) => {
-		console.log('Serving font-text.html for', request.url);
+	.get("/public/temporary/font-text.html", ({ set }) => {
 		set.headers["content-type"] = "text/html; charset=utf-8";
-		set.headers["x-debug-route"] = "font-text";
 		return file("./public/temporary/font-text.html");
 	})
-	.get("/public/temporary/font-text.css", ({ set, request }) => {
-		console.log('Serving font-text.css for', request.url);
+	.get("/public/temporary/font-text.css", ({ set }) => {
 		set.headers["content-type"] = "text/css; charset=utf-8";
-		set.headers["x-debug-route"] = "font-text-css";
 		return file("./public/temporary/font-text.css");
 	})
-	.get("/public/temporary/HappiesFont-Regular.otf", ({ set, request }) => {
-		console.log('Serving HappiesFont-Regular.otf for', request.url);
+	.get("/public/temporary/HappiesFont-Regular.otf", ({ set }) => {
 		set.headers["content-type"] = "font/otf";
-		set.headers["x-debug-route"] = "font-otf";
 		return file("./public/temporary/HappiesFont-Regular.otf");
 	})
 	.get("/public/paste/script.js", () => file("./public/paste/script.js"))
@@ -160,16 +154,17 @@ const appServer = new Elysia()
 			},
 			tags: ["Emojis"],
 		},
-	)
-	.listen({ port: process.env.PORT || 3000, idleTimeout: 255 }, async () => {
-		try {
-			await mountServerExtensions(appServer);
-		} catch (err) {
-			console.error("Failed to mount server extensions:", err);
-		}
+	);
 
-		console.log(
-			`\x1b[38;2;29;161;242m __    _                     _
+appServer.listen({ port: process.env.PORT || 3000, idleTimeout: 255 }, async () => {
+	try {
+		await mountServerExtensions(appServer);
+	} catch (err) {
+		console.error("Failed to mount server extensions:", err);
+	}
+
+	console.log(
+		`\x1b[38;2;29;161;242m __    _                     _
  \\ \\  | |___      _____  ___| |_ __ _ _ __  _   _ ___
   \\ \\ | __\\ \\ /\\ / / _ \\/ _ \\ __/ _\` | '_ \\| | | / __|
   / / | |_ \\ V  V /  __/  __/ || (_| | |_) | |_| \\__ \\
@@ -177,7 +172,7 @@ const appServer = new Elysia()
                                      |_|\x1b[0m
 
 Happies tweetapus app is running on \x1b[38;2;29;161;242m\x1b[1m\x1b[4mhttp://localhost:${
-				process.env.PORT || 3000
-			}\x1b[0m`,
-		);
-	});
+			process.env.PORT || 3000
+		}\x1b[0m`,
+	);
+});

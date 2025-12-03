@@ -72,7 +72,8 @@ const adminQueries = {
       SUM(CASE WHEN suspended = 1 THEN 1 ELSE 0 END) as suspended,
 	SUM(CASE WHEN restricted = 1 THEN 1 ELSE 0 END) as restricted,
       SUM(CASE WHEN verified = 1 THEN 1 ELSE 0 END) as verified,
-      SUM(CASE WHEN gold = 1 THEN 1 ELSE 0 END) as gold
+      SUM(CASE WHEN gold = 1 THEN 1 ELSE 0 END) as gold,
+      SUM(CASE WHEN gray = 1 THEN 1 ELSE 0 END) as gray
     FROM users
   `),
 	getPostStats: db.prepare("SELECT COUNT(*) as total FROM posts"),
@@ -189,6 +190,8 @@ WHERE u.id = ?
 
 	updateUserVerified: db.prepare("UPDATE users SET verified = ? WHERE id = ?"),
 	updateUserGold: db.prepare("UPDATE users SET gold = ? WHERE id = ?"),
+	updateUserGray: db.prepare("UPDATE users SET gray = ? WHERE id = ?"),
+	updateUserOutlines: db.prepare("UPDATE users SET checkmark_outline = ?, avatar_outline = ? WHERE id = ?"),
 	deleteUser: db.prepare("DELETE FROM users WHERE id = ?"),
 	deletePost: db.prepare("DELETE FROM posts WHERE id = ?"),
 
@@ -215,7 +218,7 @@ WHERE u.id = ?
 		"INSERT INTO posts (id, user_id, content, reply_to, created_at) VALUES (?, ?, ?, ?, ?)",
 	),
 	updateUser: db.prepare(
-		"UPDATE users SET username = ?, name = ?, bio = ?, verified = ?, admin = ?, gold = ?, follower_count = ?, following_count = ?, character_limit = ?, created_at = ?, account_creation_transparency = ?, account_login_transparency = ? WHERE id = ?",
+		"UPDATE users SET username = ?, name = ?, bio = ?, verified = ?, admin = ?, gold = ?, gray = ?, follower_count = ?, following_count = ?, character_limit = ?, created_at = ?, account_creation_transparency = ?, account_login_transparency = ? WHERE id = ?",
 	),
 
 	getAllConversations: db.prepare(`
@@ -1278,6 +1281,7 @@ export default new Elysia({ prefix: "/admin", tags: ["Admin"] })
 			const targetUser = adminQueries.findUserById.get(params.id);
 			if (verified) {
 				adminQueries.updateUserGold.run(0, params.id);
+				adminQueries.updateUserGray.run(0, params.id);
 			}
 			adminQueries.updateUserVerified.run(verified ? 1 : 0, params.id);
 			logModerationAction(
@@ -1303,6 +1307,7 @@ export default new Elysia({ prefix: "/admin", tags: ["Admin"] })
 			const targetUser = adminQueries.findUserById.get(params.id);
 			if (gold) {
 				adminQueries.updateUserVerified.run(0, params.id);
+				adminQueries.updateUserGray.run(0, params.id);
 			}
 			adminQueries.updateUserGold.run(gold ? 1 : 0, params.id);
 			logModerationAction(
@@ -1317,6 +1322,68 @@ export default new Elysia({ prefix: "/admin", tags: ["Admin"] })
 		{
 			body: t.Object({
 				gold: t.Boolean(),
+			}),
+		},
+	)
+
+	.patch(
+		"/users/:id/gray",
+		async ({ params, body, user }) => {
+			const { gray, checkmark_outline, avatar_outline } = body;
+			const targetUser = adminQueries.findUserById.get(params.id);
+			if (gray) {
+				adminQueries.updateUserVerified.run(0, params.id);
+				adminQueries.updateUserGold.run(0, params.id);
+			}
+			adminQueries.updateUserGray.run(gray ? 1 : 0, params.id);
+			if (checkmark_outline !== undefined || avatar_outline !== undefined) {
+				const newCheckmarkOutline = checkmark_outline !== undefined ? checkmark_outline : targetUser?.checkmark_outline;
+				const newAvatarOutline = avatar_outline !== undefined ? avatar_outline : targetUser?.avatar_outline;
+				adminQueries.updateUserOutlines.run(newCheckmarkOutline, newAvatarOutline, params.id);
+			}
+			logModerationAction(
+				user.id,
+				gray ? "grant_gray" : "revoke_gray",
+				"user",
+				params.id,
+				{ username: targetUser?.username, gray, checkmark_outline, avatar_outline },
+			);
+			return { success: true };
+		},
+		{
+			body: t.Object({
+				gray: t.Boolean(),
+				checkmark_outline: t.Optional(t.Union([t.String(), t.Null()])),
+				avatar_outline: t.Optional(t.Union([t.String(), t.Null()])),
+			}),
+		},
+	)
+
+	.patch(
+		"/users/:id/outlines",
+		async ({ params, body, user }) => {
+			const { checkmark_outline, avatar_outline } = body;
+			const targetUser = adminQueries.findUserById.get(params.id);
+			if (!targetUser) return { error: "User not found" };
+			if (!targetUser.gray) return { error: "User is not a gray check" };
+			adminQueries.updateUserOutlines.run(
+				checkmark_outline !== undefined ? checkmark_outline : targetUser.checkmark_outline,
+				avatar_outline !== undefined ? avatar_outline : targetUser.avatar_outline,
+				params.id
+			);
+			logModerationAction(
+				user.id,
+				"update_outlines",
+				"user",
+				params.id,
+				{ username: targetUser?.username, checkmark_outline, avatar_outline },
+			);
+			return { success: true };
+		},
+		{
+			body: t.Object({
+				checkmark_outline: t.Optional(t.Union([t.String(), t.Null()])),
+				avatar_outline: t.Optional(t.Union([t.String(), t.Null()])),
 			}),
 		},
 	)
@@ -2410,13 +2477,36 @@ export default new Elysia({ prefix: "/admin", tags: ["Admin"] })
 						: 0;
 			let newGold =
 				body.gold !== undefined ? (body.gold ? 1 : 0) : user.gold ? 1 : 0;
-			if (newGold) newVerified = 0;
-			if (newVerified) newGold = 0;
+			let newGray =
+				body.gray !== undefined ? (body.gray ? 1 : 0) : user.gray ? 1 : 0;
+
+			const explicitlySetGray = body.gray === true;
+			const explicitlySetGold = body.gold === true;
+			const explicitlySetVerified = body.verified === true;
+
+			if (explicitlySetGray) {
+				newGold = 0;
+				newVerified = 0;
+			} else if (explicitlySetGold) {
+				newVerified = 0;
+				newGray = 0;
+			} else if (explicitlySetVerified) {
+				newGold = 0;
+				newGray = 0;
+			} else {
+				if (newGold) { newVerified = 0; newGray = 0; }
+				else if (newVerified) { newGold = 0; newGray = 0; }
+				else if (newGray) { newGold = 0; newVerified = 0; }
+			}
+
 			if (body.verified !== undefined && body.verified !== user.verified) {
 				changes.verified = { old: user.verified, new: body.verified };
 			}
 			if (body.gold !== undefined && body.gold !== user.gold) {
 				changes.gold = { old: user.gold, new: body.gold };
+			}
+			if (body.gray !== undefined && body.gray !== user.gray) {
+				changes.gray = { old: user.gray, new: body.gray };
 			}
 
 			const newAdminFlag =
@@ -2962,6 +3052,7 @@ export default new Elysia({ prefix: "/admin", tags: ["Admin"] })
 				newVerified,
 				newAdminFlag,
 				newGold,
+				newGray,
 				user.follower_count || 0,
 				user.following_count || 0,
 				newCharacterLimit,
@@ -2974,6 +3065,13 @@ export default new Elysia({ prefix: "/admin", tags: ["Admin"] })
 			db.query(
 				"UPDATE users SET affiliate = ?, affiliate_with = ? WHERE id = ?",
 			).run(newAffiliateFlag, affiliateWith, params.id);
+
+			if (newGray && (body.checkmark_outline !== undefined || body.avatar_outline !== undefined)) {
+				const currentUser = adminQueries.findUserById.get(params.id);
+				const newCheckmarkOutline = body.checkmark_outline !== undefined ? body.checkmark_outline : currentUser?.checkmark_outline;
+				const newAvatarOutline = body.avatar_outline !== undefined ? body.avatar_outline : currentUser?.avatar_outline;
+				adminQueries.updateUserOutlines.run(newCheckmarkOutline || null, newAvatarOutline || null, params.id);
+			}
 
 			logModerationAction(
 				moderator.id,
@@ -2992,6 +3090,7 @@ export default new Elysia({ prefix: "/admin", tags: ["Admin"] })
 					bio: bioToPersist,
 					verified: !!newVerified,
 					gold: !!newGold,
+					gray: !!newGray,
 					admin: !!newAdminFlag,
 					affiliate: !!newAffiliateFlag,
 					affiliate_with: affiliateWith,
@@ -3024,6 +3123,9 @@ export default new Elysia({ prefix: "/admin", tags: ["Admin"] })
 				bio: t.Optional(t.Union([t.String(), t.Null()])),
 				verified: t.Optional(t.Boolean()),
 				gold: t.Optional(t.Boolean()),
+				gray: t.Optional(t.Boolean()),
+				checkmark_outline: t.Optional(t.Union([t.String(), t.Null()])),
+				avatar_outline: t.Optional(t.Union([t.String(), t.Null()])),
 				admin: t.Optional(t.Boolean()),
 				affiliate: t.Optional(t.Boolean()),
 				affiliate_with_username: t.Optional(t.Union([t.String(), t.Null()])),
@@ -4452,7 +4554,6 @@ export default new Elysia({ prefix: "/admin", tags: ["Admin"] })
 			return { error: "Failed to import extension" };
 		}
 
-		// If manual settings exist under the directory name, migrate them to the new managed id
 		try {
 			const manualSettings = extensionSettingsQueries.get.get(dir);
 			if (manualSettings?.settings) {

@@ -986,6 +986,12 @@ const renderProfile = (data) => {
 			} else {
 				avatarImg.style.borderRadius = "50%";
 			}
+			if (profile.gray && profile.avatar_outline) {
+				avatarImg.style.border = `3px solid ${profile.avatar_outline}`;
+				avatarImg.style.boxSizing = "border-box";
+			} else {
+				avatarImg.style.border = "";
+			}
 		}
 	}
 
@@ -994,14 +1000,16 @@ const renderProfile = (data) => {
 		profileNameEl.textContent = profile.name || profile.username;
 		const existingBadge = profileNameEl.querySelector(".verification-badge");
 
-		if (!suspended && (profile.verified || profile.gold)) {
-			const badgeColor = profile.gold ? "#D4AF37" : "var(--primary)";
+		if (!suspended && (profile.verified || profile.gold || profile.gray)) {
+			const badgeColor = profile.gold ? "#D4AF37" : profile.gray ? "gray" : "var(--primary)";
+			const checkmarkOutline = profile.gray && profile.checkmark_outline ? profile.checkmark_outline : "";
+			const outlineStyle = checkmarkOutline ? `stroke="${checkmarkOutline}" stroke-width="1"` : "";
 			if (!existingBadge) {
 				const verificationBadge = document.createElement("span");
 				verificationBadge.className = "verification-badge";
 				verificationBadge.innerHTML = `
           <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-            <path d="M2.566 5.747C2.469 5.308 2.484 4.853 2.61 4.422C2.736 3.991 2.968 3.598 3.286 3.281C3.604 2.964 3.997 2.732 4.428 2.607C4.859 2.482 5.315 2.468 5.753 2.567C5.994 2.19 6.327 1.879 6.719 1.664C7.112 1.449 7.552 1.337 8.000 1.337C8.448 1.337 8.888 1.449 9.281 1.664C9.673 1.879 10.005 2.19 10.246 2.567C10.685 2.468 11.142 2.482 11.574 2.607C12.006 2.732 12.399 2.965 12.717 3.283C13.035 3.601 13.268 3.994 13.393 4.426C13.518 4.858 13.532 5.314 13.433 5.753C13.811 5.994 14.121 6.327 14.336 6.719C14.551 7.112 14.664 7.552 14.664 8.000C14.664 8.448 14.551 8.888 14.336 9.281C14.121 9.673 13.811 10.006 13.433 10.247C13.532 10.685 13.518 11.141 13.393 11.572C13.268 12.003 13.036 12.396 12.719 12.714C12.402 13.032 12.009 13.264 11.578 13.39C11.147 13.516 10.692 13.531 10.253 13.434C10.012 13.812 9.68 14.124 9.287 14.34C8.893 14.556 8.452 14.669 8.003 14.669C7.555 14.669 7.113 14.556 6.72 14.34C6.327 14.124 5.994 13.812 5.753 13.434C5.315 13.532 4.859 13.518 4.428 13.393C3.997 13.268 3.604 13.036 3.286 12.719C2.968 12.401 2.736 12.009 2.61 11.578C2.484 11.147 2.469 10.692 2.567 10.253C2.187 10.013 1.874 9.68 1.657 9.286C1.44 8.892 1.326 8.45 1.326 8.000C1.326 7.55 1.44 7.108 1.657 6.714C1.874 6.32 2.187 5.987 2.567 5.747Z" fill="${badgeColor}"/>
+            <path d="M2.566 5.747C2.469 5.308 2.484 4.853 2.61 4.422C2.736 3.991 2.968 3.598 3.286 3.281C3.604 2.964 3.997 2.732 4.428 2.607C4.859 2.482 5.315 2.468 5.753 2.567C5.994 2.19 6.327 1.879 6.719 1.664C7.112 1.449 7.552 1.337 8.000 1.337C8.448 1.337 8.888 1.449 9.281 1.664C9.673 1.879 10.005 2.19 10.246 2.567C10.685 2.468 11.142 2.482 11.574 2.607C12.006 2.732 12.399 2.965 12.717 3.283C13.035 3.601 13.268 3.994 13.393 4.426C13.518 4.858 13.532 5.314 13.433 5.753C13.811 5.994 14.121 6.327 14.336 6.719C14.551 7.112 14.664 7.552 14.664 8.000C14.664 8.448 14.551 8.888 14.336 9.281C14.121 9.673 13.811 10.006 13.433 10.247C13.532 10.685 13.518 11.141 13.393 11.572C13.268 12.003 13.036 12.396 12.719 12.714C12.402 13.032 12.009 13.264 11.578 13.39C11.147 13.516 10.692 13.531 10.253 13.434C10.012 13.812 9.68 14.124 9.287 14.34C8.893 14.556 8.452 14.669 8.003 14.669C7.555 14.669 7.113 14.556 6.72 14.34C6.327 14.124 5.994 13.812 5.753 13.434C5.315 13.532 4.859 13.518 4.428 13.393C3.997 13.268 3.604 13.036 3.286 12.719C2.968 12.401 2.736 12.009 2.61 11.578C2.484 11.147 2.469 10.692 2.567 10.253C2.187 10.013 1.874 9.68 1.657 9.286C1.44 8.892 1.326 8.45 1.326 8.000C1.326 7.55 1.44 7.108 1.657 6.714C1.874 6.32 2.187 5.987 2.567 5.747Z" fill="${badgeColor}" ${outlineStyle}/>
             <path d="M6 8L7.333 9.333L10 6.667" stroke="var(--primary-fg)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
           </svg>
         `;
@@ -1021,14 +1029,16 @@ const renderProfile = (data) => {
 			".verification-badge",
 		);
 
-		if (!suspended && (profile.verified || profile.gold)) {
-			const badgeColor = profile.gold ? "#D4AF37" : "var(--primary)";
+		if (!suspended && (profile.verified || profile.gold || profile.gray)) {
+			const badgeColor = profile.gold ? "#D4AF37" : profile.gray ? "gray" : "var(--primary)";
+			const checkmarkOutline = profile.gray && profile.checkmark_outline ? profile.checkmark_outline : "";
+			const outlineStyle = checkmarkOutline ? `stroke="${checkmarkOutline}" stroke-width="1"` : "";
 			if (!existingMainBadge) {
 				const verificationBadge = document.createElement("span");
 				verificationBadge.className = "verification-badge";
 				verificationBadge.innerHTML = `
           <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-            <path d="M2.566 5.747C2.469 5.308 2.484 4.853 2.61 4.422C2.736 3.991 2.968 3.598 3.286 3.281C3.604 2.964 3.997 2.732 4.428 2.607C4.859 2.482 5.315 2.468 5.753 2.567C5.994 2.19 6.327 1.879 6.719 1.664C7.112 1.449 7.552 1.337 8.000 1.337C8.448 1.337 8.888 1.449 9.281 1.664C9.673 1.879 10.005 2.19 10.246 2.567C10.685 2.468 11.142 2.482 11.574 2.607C12.006 2.732 12.399 2.965 12.717 3.283C13.035 3.601 13.268 3.994 13.393 4.426C13.518 4.858 13.532 5.314 13.433 5.753C13.811 5.994 14.121 6.327 14.336 6.719C14.551 7.112 14.664 7.552 14.664 8.000C14.664 8.448 14.551 8.888 14.336 9.281C14.121 9.673 13.811 10.006 13.433 10.247C13.532 10.685 13.518 11.141 13.393 11.572C13.268 12.003 13.036 12.396 12.719 12.714C12.402 13.032 12.009 13.264 11.578 13.39C11.147 13.516 10.692 13.531 10.253 13.434C10.012 13.812 9.68 14.124 9.287 14.34C8.893 14.556 8.452 14.669 8.003 14.669C7.555 14.669 7.113 14.556 6.72 14.34C6.327 14.124 5.994 13.812 5.753 13.434C5.315 13.532 4.859 13.518 4.428 13.393C3.997 13.268 3.604 13.036 3.286 12.719C2.968 12.401 2.736 12.009 2.61 11.578C2.484 11.147 2.469 10.692 2.567 10.253C2.187 10.013 1.874 9.68 1.657 9.286C1.44 8.892 1.326 8.45 1.326 8.000C1.326 7.55 1.44 7.108 1.657 6.714C1.874 6.32 2.187 5.987 2.567 5.747Z" fill="${badgeColor}"/>
+            <path d="M2.566 5.747C2.469 5.308 2.484 4.853 2.61 4.422C2.736 3.991 2.968 3.598 3.286 3.281C3.604 2.964 3.997 2.732 4.428 2.607C4.859 2.482 5.315 2.468 5.753 2.567C5.994 2.19 6.327 1.879 6.719 1.664C7.112 1.449 7.552 1.337 8.000 1.337C8.448 1.337 8.888 1.449 9.281 1.664C9.673 1.879 10.005 2.19 10.246 2.567C10.685 2.468 11.142 2.482 11.574 2.607C12.006 2.732 12.399 2.965 12.717 3.283C13.035 3.601 13.268 3.994 13.393 4.426C13.518 4.858 13.532 5.314 13.433 5.753C13.811 5.994 14.121 6.327 14.336 6.719C14.551 7.112 14.664 7.552 14.664 8.000C14.664 8.448 14.551 8.888 14.336 9.281C14.121 9.673 13.811 10.006 13.433 10.247C13.532 10.685 13.518 11.141 13.393 11.572C13.268 12.003 13.036 12.396 12.719 12.714C12.402 13.032 12.009 13.264 11.578 13.39C11.147 13.516 10.692 13.531 10.253 13.434C10.012 13.812 9.68 14.124 9.287 14.34C8.893 14.556 8.452 14.669 8.003 14.669C7.555 14.669 7.113 14.556 6.72 14.34C6.327 14.124 5.994 13.812 5.753 13.434C5.315 13.532 4.859 13.518 4.428 13.393C3.997 13.268 3.604 13.036 3.286 12.719C2.968 12.401 2.736 12.009 2.61 11.578C2.484 11.147 2.469 10.692 2.567 10.253C2.187 10.013 1.874 9.68 1.657 9.286C1.44 8.892 1.326 8.45 1.326 8.000C1.326 7.55 1.44 7.108 1.657 6.714C1.874 6.32 2.187 5.987 2.567 5.747Z" fill="${badgeColor}" ${outlineStyle}/>
             <path d="M6 8L7.333 9.333L10 6.667" stroke="var(--primary-fg)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
           </svg>
         `;
@@ -1044,7 +1054,7 @@ const renderProfile = (data) => {
 				if (pathEl)
 					pathEl.setAttribute(
 						"fill",
-						profile.gold ? "#D4AF37" : "var(--primary)",
+						profile.gold ? "#D4AF37" : profile.gray ? "gray" : "var(--primary)",
 					);
 			}
 		} else if (existingMainBadge) {
@@ -1822,6 +1832,21 @@ const showEditModal = () => {
 		}
 	}
 
+	const grayOutlinesSection = document.getElementById("grayOutlinesSection");
+	const checkmarkOutlineInput = document.getElementById("editCheckmarkOutline");
+	const avatarOutlineInput = document.getElementById("editAvatarOutline");
+	if (grayOutlinesSection) {
+		if (profile.gray) {
+			grayOutlinesSection.style.display = "block";
+			if (checkmarkOutlineInput) checkmarkOutlineInput.value = profile.checkmark_outline || "";
+			if (avatarOutlineInput) avatarOutlineInput.value = profile.avatar_outline || "";
+		} else {
+			grayOutlinesSection.style.display = "none";
+			if (checkmarkOutlineInput) checkmarkOutlineInput.value = "";
+			if (avatarOutlineInput) avatarOutlineInput.value = "";
+		}
+	}
+
 	updateEditAvatarDisplay();
 
 	const avatarRadiusControls = document.getElementById("avatarRadiusControls");
@@ -2496,6 +2521,25 @@ const saveProfile = async (event) => {
 
 			if (val !== originalRadius) {
 				formData.avatar_radius = val;
+			}
+		}
+	}
+
+	const grayOutlinesSection = document.getElementById("grayOutlinesSection");
+	if (grayOutlinesSection && grayOutlinesSection.style.display !== "none" && currentProfile.profile.gray) {
+		const checkmarkOutline = document.getElementById("editCheckmarkOutline")?.value?.trim() || null;
+		const avatarOutline = document.getElementById("editAvatarOutline")?.value?.trim() || null;
+		
+		const origProfile = currentProfile.profile || {};
+		if (checkmarkOutline !== origProfile.checkmark_outline || avatarOutline !== origProfile.avatar_outline) {
+			try {
+				await query(`/profile/${currentProfile.profile.username}/outlines`, {
+					method: "PATCH",
+					headers: { "Content-Type": "application/json" },
+					body: JSON.stringify({ checkmark_outline: checkmarkOutline, avatar_outline: avatarOutline }),
+				});
+			} catch (outlineErr) {
+				console.error("Outline update error:", outlineErr);
 			}
 		}
 	}

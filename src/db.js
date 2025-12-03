@@ -49,7 +49,10 @@ CREATE TABLE IF NOT EXISTS users (
   blocked_by_count INTEGER DEFAULT 0,
   muted_by_count INTEGER DEFAULT 0,
   spam_score REAL DEFAULT 0.0,
-  ip_address TEXT DEFAULT NULL
+  ip_address TEXT DEFAULT NULL,
+  gray BOOLEAN DEFAULT FALSE,
+  checkmark_outline TEXT DEFAULT NULL,
+  avatar_outline TEXT DEFAULT NULL
 );
 
 CREATE INDEX IF NOT EXISTS idx_users_username ON users(username);
@@ -173,6 +176,7 @@ CREATE TABLE IF NOT EXISTS posts (
   article_body_markdown TEXT DEFAULT NULL,
   super_tweet BOOLEAN DEFAULT FALSE,
   super_tweet_boost REAL DEFAULT 50.0,
+  outline TEXT DEFAULT NULL,
   FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
   FOREIGN KEY (poll_id) REFERENCES polls(id) ON DELETE CASCADE,
   FOREIGN KEY (quote_tweet_id) REFERENCES posts(id) ON DELETE CASCADE,
