@@ -204,7 +204,7 @@ async function loadFollowersYouKnow(username) {
 			const radius =
 				user.avatar_radius !== null && user.avatar_radius !== undefined
 					? `${user.avatar_radius}px`
-					: user.gold
+					: (user.gold || user.gray)
 						? "4px"
 						: "50px";
 			avatar.style.borderRadius = radius;
@@ -1001,7 +1001,7 @@ const renderProfile = (data) => {
 		const existingBadge = profileNameEl.querySelector(".verification-badge");
 
 		if (!suspended && (profile.verified || profile.gold || profile.gray)) {
-			const badgeColor = profile.gold ? "#D4AF37" : profile.gray ? "gray" : "var(--primary)";
+			const badgeColor = profile.gold ? "#D4AF37" : profile.gray ? "#829AAB" : "var(--primary)";
 			const checkmarkOutline = profile.gray && profile.checkmark_outline ? profile.checkmark_outline : "";
 			const outlineStyle = checkmarkOutline ? `stroke="${checkmarkOutline}" stroke-width="1"` : "";
 			if (!existingBadge) {
@@ -1030,7 +1030,7 @@ const renderProfile = (data) => {
 		);
 
 		if (!suspended && (profile.verified || profile.gold || profile.gray)) {
-			const badgeColor = profile.gold ? "#D4AF37" : profile.gray ? "gray" : "var(--primary)";
+			const badgeColor = profile.gold ? "#D4AF37" : profile.gray ? "#829AAB" : "var(--primary)";
 			const checkmarkOutline = profile.gray && profile.checkmark_outline ? profile.checkmark_outline : "";
 			const outlineStyle = checkmarkOutline ? `stroke="${checkmarkOutline}" stroke-width="1"` : "";
 			if (!existingMainBadge) {
@@ -1054,7 +1054,7 @@ const renderProfile = (data) => {
 				if (pathEl)
 					pathEl.setAttribute(
 						"fill",
-						profile.gold ? "#D4AF37" : profile.gray ? "gray" : "var(--primary)",
+						profile.gold ? "#D4AF37" : profile.gray ? "#829AAB" : "var(--primary)",
 					);
 			}
 		} else if (existingMainBadge) {
@@ -1107,7 +1107,7 @@ const renderProfile = (data) => {
 							`${safeRadius}px`,
 							"important",
 						);
-					} else if (aff.gold) {
+					} else if (aff.gold || aff.gray) {
 						imgMain.style.setProperty("border-radius", "4px", "important");
 					} else {
 						imgMain.style.setProperty("border-radius", "50%", "important");
@@ -3117,7 +3117,7 @@ function createUserListItem(user, onClickCallback) {
 	const radius =
 		user.avatar_radius !== null && user.avatar_radius !== undefined
 			? `${user.avatar_radius}px`
-			: user.gold
+			: (user.gold || user.gray)
 				? "4px"
 				: "50px";
 	avatar.style.borderRadius = radius;

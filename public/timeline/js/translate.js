@@ -87,12 +87,12 @@ let francLoadPromise = null;
 async function loadFranc() {
 	if (francModule) return francModule;
 	if (francLoadPromise) return francLoadPromise;
-	
+
 	francLoadPromise = new Promise((resolve) => {
 		const script = document.createElement("script");
 		script.src = "https://cdn.jsdelivr.net/npm/franc-min@6.2.0/+esm";
 		script.type = "module";
-		
+
 		const moduleScript = document.createElement("script");
 		moduleScript.type = "module";
 		moduleScript.textContent = `
@@ -100,15 +100,19 @@ async function loadFranc() {
 			window.__francMin = { franc };
 			window.dispatchEvent(new Event("franc-loaded"));
 		`;
-		
-		window.addEventListener("franc-loaded", () => {
-			francModule = window.__francMin;
-			resolve(francModule);
-		}, { once: true });
-		
+
+		window.addEventListener(
+			"franc-loaded",
+			() => {
+				francModule = window.__francMin;
+				resolve(francModule);
+			},
+			{ once: true },
+		);
+
 		document.head.appendChild(moduleScript);
 	});
-	
+
 	return francLoadPromise;
 }
 
@@ -134,7 +138,29 @@ export async function detectLanguage(text) {
 		return { lang: "und", confidence: 0 };
 	}
 
-	const detected = franc.franc(cleanText, { minLength: 30, only: ["eng", "spa", "fra", "deu", "ita", "por", "nld", "pol", "rus", "jpn", "zho", "kor", "ara", "hin", "tur", "vie", "ind", "ukr"] });
+	const detected = franc.franc(cleanText, {
+		minLength: 30,
+		only: [
+			"eng",
+			"spa",
+			"fra",
+			"deu",
+			"ita",
+			"por",
+			"nld",
+			"pol",
+			"rus",
+			"jpn",
+			"zho",
+			"kor",
+			"ara",
+			"hin",
+			"tur",
+			"vie",
+			"ind",
+			"ukr",
+		],
+	});
 	return { lang: detected, confidence: detected !== "und" ? 0.8 : 0 };
 }
 
@@ -152,7 +178,7 @@ export function isNonEnglish(langCode) {
 
 export async function translateText(text, sourceLang, targetLang = "en") {
 	const sourceIso1 = getIso1Code(sourceLang);
-	
+
 	const result = await query("/translate", {
 		method: "POST",
 		headers: { "Content-Type": "application/json" },
@@ -199,23 +225,27 @@ export function createTranslateButton(tweet, contentElement) {
 
 		try {
 			const textToTranslate = tweet.content || "";
-			
+
 			if (!detectedLang) {
 				const detection = await detectLanguage(textToTranslate);
 				detectedLang = detection.lang;
 			}
 
-			const translated = await translateText(textToTranslate, detectedLang, "en");
-			
+			const translated = await translateText(
+				textToTranslate,
+				detectedLang,
+				"en",
+			);
+
 			originalContent = contentElement.innerHTML;
-			
+
 			const translatedDiv = document.createElement("div");
 			translatedDiv.className = "tweet-translated-content";
 			translatedDiv.textContent = translated;
-			
+
 			contentElement.innerHTML = "";
 			contentElement.appendChild(translatedDiv);
-			
+
 			translateBtn.textContent = `Show original (${getLanguageName(detectedLang)})`;
 			isTranslated = true;
 		} catch (err) {
@@ -236,13 +266,13 @@ export async function maybeAddTranslation(tweet, tweetElement, contentElement) {
 	}
 
 	const detection = await detectLanguage(tweet.content);
-	
+
 	if (!isNonEnglish(detection.lang)) {
 		return;
 	}
 
 	const translateContainer = createTranslateButton(tweet, contentElement);
-	
+
 	const factCheck = tweetElement.querySelector(".fact-check-banner");
 	if (factCheck) {
 		factCheck.insertAdjacentElement("beforebegin", translateContainer);
