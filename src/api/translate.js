@@ -1,6 +1,7 @@
 import { Elysia, t } from "elysia";
 
-const LIBRETRANSLATE_URL = process.env.LIBRETRANSLATE_URL || "https://libretranslate.com";
+const LIBRETRANSLATE_URL =
+	process.env.LIBRETRANSLATE_URL || "https://libretranslate.com";
 const LIBRETRANSLATE_API_KEY = process.env.LIBRETRANSLATE_API_KEY || "";
 
 export default new Elysia({ prefix: "/translate" })
