@@ -10073,3 +10073,34 @@ emoji-picker.emoji-picker-popup {
   color: var(--text-secondary);
   font-size: 14px;
 }
+
+.tweet-translate-container {
+  padding: 0;
+}
+
+.tweet-translate-btn {
+  background: none;
+  border: none;
+  color: var(--primary);
+  font-size: 13px;
+  cursor: pointer;
+  padding: 4px 0;
+  font-weight: 500;
+  font-family: inherit;
+  transition: opacity 0.15s;
+
+  &:hover {
+    text-decoration: underline;
+  }
+
+  &:disabled {
+    opacity: 0.6;
+    cursor: wait;
+  }
+}
+
+.tweet-translated-content {
+  line-height: 1.5;
+  white-space: pre-wrap;
+  word-wrap: break-word;
+}

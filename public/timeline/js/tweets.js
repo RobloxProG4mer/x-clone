@@ -8,6 +8,7 @@ import getUser from "./auth.js";
 import switchPage from "./pages.js";
 import { searchQuery } from "./search.js";
 import openTweet from "./tweet.js";
+import { maybeAddTranslation } from "./translate.js";
 
 const DOMPURIFY_CONFIG = {
 	ALLOWED_TAGS: [
@@ -875,7 +876,7 @@ export const createTweetElement = (tweet, config = {}) => {
 	) {
 		const rr = avatarPxToPercent(tweet.author.avatar_radius);
 		tweetHeaderAvatarEl.style.setProperty("border-radius", rr, "important");
-	} else if (tweet.author.gold) {
+	} else if (tweet.author.gold || tweet.author.gray) {
 		tweetHeaderAvatarEl.style.setProperty("border-radius", "4px", "important");
 	} else {
 		tweetHeaderAvatarEl.style.setProperty("border-radius", "50px", "important");
@@ -1030,7 +1031,7 @@ export const createTweetElement = (tweet, config = {}) => {
 				"border-radius",
 				`${tweet.author.affiliate_with_profile.avatar_radius}px`,
 			);
-		} else if (tweet.author.affiliate_with_profile.gold) {
+		} else if (tweet.author.affiliate_with_profile.gold || tweet.author.affiliate_with_profile.gray) {
 			affiliateImg.style.setProperty("border-radius", "4px");
 		} else {
 			affiliateImg.style.setProperty("border-radius", "50%");
@@ -1439,6 +1440,8 @@ export const createTweetElement = (tweet, config = {}) => {
 		if (tweet.fact_check) {
 			tweetEl.appendChild(createFactCheck(tweet.fact_check));
 		}
+
+		maybeAddTranslation(tweet, tweetEl, tweetContentEl);
 
 		if (extractedTweetIds.length > 0 && !tweet.quoted_tweet) {
 			const tweetId = extractedTweetIds[0];

@@ -19,6 +19,7 @@ function saveAccountToStorage(user, token) {
 		avatar: user.avatar,
 		verified: user.verified,
 		gold: user.gold,
+		gray: user.gray,
 		avatar_radius: user.avatar_radius,
 		token: token,
 	};

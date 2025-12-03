@@ -963,7 +963,7 @@ const renderProfile = (data) => {
 				profile.avatar_radius !== undefined
 			) {
 				avatarImg.style.borderRadius = `${profile.avatar_radius}px`;
-			} else if (profile.gold) {
+			} else if (profile.gold || profile.gray) {
 				avatarImg.style.borderRadius = "4px";
 			} else {
 				avatarImg.style.borderRadius = "50%";
@@ -981,7 +981,7 @@ const renderProfile = (data) => {
 				profile.avatar_radius !== undefined
 			) {
 				avatarImg.style.borderRadius = `${profile.avatar_radius}px`;
-			} else if (profile.gold) {
+			} else if (profile.gold || profile.gray) {
 				avatarImg.style.borderRadius = "4px";
 			} else {
 				avatarImg.style.borderRadius = "50%";
@@ -1853,7 +1853,7 @@ const showEditModal = () => {
 	const radiusInput = document.getElementById("radius-input");
 	const presetSquare = document.getElementById("radius-preset-square");
 	const presetDefault = document.getElementById("radius-preset-default");
-	if (profile.gold) {
+	if (profile.gold || profile.gray) {
 		avatarRadiusControls.style.display = "block";
 	} else {
 		avatarRadiusControls.style.display = "none";
@@ -1861,7 +1861,7 @@ const showEditModal = () => {
 	const currentRadius =
 		profile.avatar_radius !== null && profile.avatar_radius !== undefined
 			? profile.avatar_radius
-			: profile.gold
+			: (profile.gold || profile.gray)
 				? 4
 				: 50;
 	radiusInput.value = currentRadius;
@@ -1871,7 +1871,7 @@ const showEditModal = () => {
 	if (avatarPreviewContainer)
 		avatarPreviewContainer.style.borderRadius = `${currentRadius}px`;
 
-	if (!profile.gold) {
+	if (!(profile.gold || profile.gray)) {
 		radiusInput.disabled = true;
 		presetSquare.disabled = true;
 		presetDefault.disabled = true;
@@ -2151,7 +2151,7 @@ const updateEditAvatarDisplay = () => {
 			avatarPreviewContainer.style.borderRadius = `${profile.avatar_radius}px`;
 			if (avatarImg)
 				avatarImg.style.borderRadius = `${profile.avatar_radius}px`;
-		} else if (profile.gold) {
+		} else if (profile.gold || profile.gray) {
 			avatarPreviewContainer.style.borderRadius = `4px`;
 			if (avatarImg) avatarImg.style.borderRadius = `4px`;
 		} else {
@@ -2190,7 +2190,7 @@ const handleEditAvatarUpload = async (file) => {
 
 	try {
 		let uploadFile = null;
-		if (file.type === "image/gif" && currentProfile?.profile?.gold) {
+		if (file.type === "image/gif" && (currentProfile?.profile?.gold || currentProfile?.profile?.gray)) {
 			uploadFile = file;
 		} else {
 			let processedFile = file;
@@ -2244,7 +2244,7 @@ const handleEditAvatarUpload = async (file) => {
 					currentProfile.profile.avatar_radius !== undefined
 				) {
 					profileAvatar.style.borderRadius = `${currentProfile.profile.avatar_radius}px`;
-				} else if (currentProfile.profile.gold) {
+				} else if (currentProfile.profile.gold || currentProfile.profile.gray) {
 					profileAvatar.style.borderRadius = `4px`;
 				} else {
 					profileAvatar.style.borderRadius = `50px`;
@@ -2301,7 +2301,7 @@ const handleEditAvatarRemoval = async () => {
 					currentProfile.profile.avatar_radius !== undefined
 				) {
 					profileAvatar.style.borderRadius = `${currentProfile.profile.avatar_radius}px`;
-				} else if (currentProfile.profile.gold) {
+				} else if (currentProfile.profile.gold || currentProfile.profile.gray) {
 					profileAvatar.style.borderRadius = `4px`;
 				} else {
 					profileAvatar.style.borderRadius = `50px`;

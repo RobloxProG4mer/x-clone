@@ -570,7 +570,7 @@ function createConversationItem(conversation) {
 			const radius =
 				p.avatar_radius !== null && p.avatar_radius !== undefined
 					? `${p.avatar_radius}px`
-					: p.gold
+					: (p.gold || p.gray)
 						? `4px`
 						: `50px`;
 			const img = document.createElement("img");
@@ -594,7 +594,7 @@ function createConversationItem(conversation) {
 			? singleParticipant.avatar_radius !== null &&
 				singleParticipant.avatar_radius !== undefined
 				? `${singleParticipant.avatar_radius}px`
-				: singleParticipant.gold
+				: (singleParticipant.gold || singleParticipant.gray)
 					? `4px`
 					: `50px`
 			: `50px`;
@@ -736,7 +736,7 @@ function renderConversationHeader() {
 		const radius =
 			p.avatar_radius !== null && p.avatar_radius !== undefined
 				? `${p.avatar_radius}px`
-				: p.gold
+				: (p.gold || p.gray)
 					? `4px`
 					: `50px`;
 		const img = document.createElement("img");
@@ -822,7 +822,7 @@ function createMessageElement(message, currentUser) {
 	const radius =
 		message.avatar_radius !== null && message.avatar_radius !== undefined
 			? `${message.avatar_radius}px`
-			: message.gold
+			: (message.gold || message.gray)
 				? `4px`
 				: `50px`;
 	const time = formatTime(new Date(message.created_at));
@@ -1664,7 +1664,7 @@ function renderAddParticipantSuggestions(users) {
 			const radius =
 				user.avatar_radius !== null && user.avatar_radius !== undefined
 					? `${user.avatar_radius}px`
-					: user.gold
+					: (user.gold || user.gray)
 						? `4px`
 						: `50px`;
 			const escapedUsername = (user.username || "")
@@ -1812,7 +1812,7 @@ function renderUserSuggestions(users) {
 			const radius =
 				user.avatar_radius !== null && user.avatar_radius !== undefined
 					? `${user.avatar_radius}px`
-					: user.gold
+					: (user.gold || user.gray)
 						? `4px`
 						: `50px`;
 			const escapedUsername = (user.username || "")

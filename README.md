@@ -46,3 +46,5 @@ an independent, fully-featured Twitter/X clone built with Bun. badly vibe-coded.
 - push notifications
 - user account creation location transparency report, powered by a VPN detection list and cloudflare headers
 - barely decent antibot and ratelimit+challenge system
+- translating tweets
+- gray checks

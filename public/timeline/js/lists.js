@@ -701,7 +701,7 @@ async function openAddMemberModal(listId) {
 					const radius =
 						user.avatar_radius !== null && user.avatar_radius !== undefined
 							? `${user.avatar_radius}px`
-							: user.gold
+							: (user.gold || user.gray)
 								? "4px"
 								: "50px";
 					avatar.style.borderRadius = radius;

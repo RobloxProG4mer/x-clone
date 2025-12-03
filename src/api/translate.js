@@ -1,106 +1,80 @@
 import { Elysia, t } from "elysia";
 
-const LIBRETRANSLATE_URL =
-	process.env.LIBRETRANSLATE_URL || "https://libretranslate.com";
-const LIBRETRANSLATE_API_KEY = process.env.LIBRETRANSLATE_API_KEY || "";
+export default new Elysia({ prefix: "/translate" }).post(
+	"/",
+	async ({ body, headers, set }) => {
+		const { text, source, target } = body;
 
-export default new Elysia({ prefix: "/translate" })
-	.post(
-		"/",
-		async ({ body, headers, set }) => {
-			const { text, source, target } = body;
+		if (!text || text.trim().length === 0) {
+			set.status = 400;
+			return { error: "Text is required" };
+		}
 
-			if (!text || text.trim().length === 0) {
-				set.status = 400;
-				return { error: "Text is required" };
-			}
+		const token = headers.authorization?.split(" ")[1];
+		if (!token) {
+			set.status = 401;
+			return { error: "Unauthorized" };
+		}
 
-			if (!source || !target) {
-				set.status = 400;
-				return { error: "Source and target languages are required" };
-			}
+		try {
+			const sourceLang = source || "auto";
+			const targetLang = target || "en";
 
-			const token = headers.authorization?.split(" ")[1];
-			if (!token) {
-				set.status = 401;
-				return { error: "Unauthorized" };
-			}
+			const url = new URL("https://translate.google.com/translate_a/single");
+			url.searchParams.set("client", "gtx");
+			url.searchParams.set("sl", sourceLang);
+			url.searchParams.set("tl", targetLang);
+			url.searchParams.set("dt", "t");
+			url.searchParams.set("q", text);
 
-			try {
-				const requestBody = {
-					q: text,
-					source: source,
-					target: target,
-					format: "text",
-				};
+			const response = await fetch(url.toString(), {
+				headers: {
+					"User-Agent":
+						"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
+				},
+			});
 
-				if (LIBRETRANSLATE_API_KEY) {
-					requestBody.api_key = LIBRETRANSLATE_API_KEY;
-				}
-
-				const response = await fetch(`${LIBRETRANSLATE_URL}/translate`, {
-					method: "POST",
-					headers: {
-						"Content-Type": "application/json",
-					},
-					body: JSON.stringify(requestBody),
-				});
-
-				if (!response.ok) {
-					const errorData = await response.text();
-					console.error("LibreTranslate error:", errorData);
-					set.status = 500;
-					return { error: "Translation service unavailable" };
-				}
-
-				const data = await response.json();
-
-				return {
-					success: true,
-					translatedText: data.translatedText,
-					detectedLanguage: data.detectedLanguage || source,
-				};
-			} catch (err) {
-				console.error("Translation error:", err);
+			if (!response.ok) {
+				const errorData = await response.text();
+				console.error("Google Translate error:", errorData);
 				set.status = 500;
-				return { error: "Translation failed" };
+				return { error: "Translation service unavailable" };
 			}
-		},
-		{
-			body: t.Object({
-				text: t.String(),
-				source: t.String(),
-				target: t.String(),
-			}),
-			detail: {
-				description: "Translate text using LibreTranslate",
-				tags: ["Translation"],
-			},
-		},
-	)
-	.get(
-		"/languages",
-		async ({ set }) => {
-			try {
-				const response = await fetch(`${LIBRETRANSLATE_URL}/languages`);
 
-				if (!response.ok) {
-					set.status = 500;
-					return { error: "Failed to fetch languages" };
+			const data = await response.json();
+
+			let translatedText = "";
+			if (Array.isArray(data) && Array.isArray(data[0])) {
+				for (const segment of data[0]) {
+					if (Array.isArray(segment) && segment[0]) {
+						translatedText += segment[0];
+					}
 				}
-
-				const languages = await response.json();
-				return { languages };
-			} catch (err) {
-				console.error("Languages fetch error:", err);
-				set.status = 500;
-				return { error: "Failed to fetch languages" };
 			}
+
+			const detectedLanguage =
+				Array.isArray(data) && data[2] ? data[2] : sourceLang;
+
+			return {
+				success: true,
+				translatedText: translatedText,
+				detectedLanguage: detectedLanguage,
+			};
+		} catch (err) {
+			console.error("Translation error:", err);
+			set.status = 500;
+			return { error: "Translation failed" };
+		}
+	},
+	{
+		body: t.Object({
+			text: t.String(),
+			source: t.String(),
+			target: t.String(),
+		}),
+		detail: {
+			description: "Translate text using Google Translate",
+			tags: ["Translation"],
 		},
-		{
-			detail: {
-				description: "Get supported languages from LibreTranslate",
-				tags: ["Translation"],
-			},
-		},
-	);
+	},
+);
