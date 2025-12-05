@@ -178,7 +178,7 @@ export default async function openTweet(
 					finalTweet.author?.name || finalTweet.author?.username || "Post";
 				const loadedContent = finalTweet.content?.slice(0, 30) || "";
 				updatePageTitle("tweet", {
-					title: `${loadedAuthorName}: "${loadedContent}${loadedContent.length >= 30 ? "..." : ""}"`,
+					title: loadedContent? `${loadedAuthorName}: "${loadedContent}${loadedContent.length >= 30 ? "..." : ""}"` : `tweet by ${loadedAuthorName}`,
 				});
 
 				if ((needsThreadData || !finalThread) && apiOutput.threadPosts) {

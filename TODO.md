@@ -2,14 +2,12 @@
 - automated spam/nsfw detection using openapi or perspective api
 - onboarding
 
-- fix not being able to upload 2 unsplash images in a single tweet <-- doing
-- show tweet images in notifications <-- doing
 - dm gifs
 - autodisplay thread replies when author replied to a reply
 - replies algo (author replied first, following and most liked/replied/retweeted after)
 - pull to refresh on timeline and notifications
 - preload autor name, PFP and username on profile page from tweet click
-- dms: big emojis and clean reply indicator
+- dms: big emojis
 - fix unsplash images and sometimes checkmarks not showing up on "share as image"
 
 **other things:**

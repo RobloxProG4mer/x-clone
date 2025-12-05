@@ -24,23 +24,23 @@ let unreadDMs = 0;
 
 const getPageTitle = (page, opts = {}) => {
 	const titles = {
-		timeline: () => "tweetapus",
-		tweet: () => (opts?.title ? `${opts.title} // tweetapus` : "tweetapus"),
-		profile: () => (opts?.title ? `${opts.title} // tweetapus` : "tweetapus"),
-		notifications: () => "notifications // tweetapus",
-		search: () => "search // tweetapus",
-		bookmarks: () => "bookmarks // tweetapus",
-		"direct-messages": () => "messages // tweetapus",
+		timeline: () => null,
+		tweet: () => (opts?.title ? `${opts.title}` : "tweetapus"),
+		profile: () => (opts?.title ? `${opts.title}` : "tweetapus"),
+		notifications: () => "notifications",
+		search: () => "search",
+		bookmarks: () => "bookmarks",
+		"direct-messages": () => "messages",
 		"dm-conversation": () =>
-			opts?.title ? `${opts.title} // tweetapus` : "messages // tweetapus",
-		communities: () => "communities // tweetapus",
+			opts?.title ? `${opts.title}` : "messages",
+		communities: () => "communities",
 		"community-detail": () =>
-			opts?.title ? `${opts.title} // tweetapus` : "community // tweetapus",
+			opts?.title ? `${opts.title}` : "community",
 		"list-detail": () =>
-			opts?.title ? `${opts.title} // tweetapus` : "list // tweetapus",
-		settings: () => "settings // tweetapus",
+			opts?.title ? `${opts.title}` : "list",
+		settings: () => "settings",
 	};
-	return titles[page]?.() || "tweetapus";
+	return titles[page]?.() ? `${titles[page]?.()} // tweetapus` : "tweetapus";
 };
 
 export function updatePageTitle(page, opts = {}) {
