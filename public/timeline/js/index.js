@@ -165,22 +165,29 @@ let timelineScrollPosition = 0;
 	let ptrRefreshing = false;
 
 	const handleTouchStart = (e) => {
-		if (window.scrollY === 0 && !ptrRefreshing && currentTimeline !== "articles") {
+		if (
+			window.scrollY === 0 &&
+			!ptrRefreshing &&
+			currentTimeline !== "articles"
+		) {
 			ptrStartY = e.touches[0].clientY;
 		}
 	};
 
 	const handleTouchMove = (e) => {
-		if (ptrStartY === 0 || ptrRefreshing || currentTimeline === "articles") return;
+		if (ptrStartY === 0 || ptrRefreshing || currentTimeline === "articles")
+			return;
 		ptrCurrentY = e.touches[0].clientY;
 		const pullDistance = ptrCurrentY - ptrStartY;
 		if (pullDistance > 0 && window.scrollY === 0) {
 			const progress = Math.min(pullDistance / 100, 1);
 			ptrIndicator.style.height = `${Math.min(pullDistance * 0.5, 60)}px`;
 			ptrIndicator.style.opacity = progress;
-			ptrIndicator.querySelector(".ptr-path").style.transform = `rotate(${progress * 360}deg)`;
+			ptrIndicator.querySelector(".ptr-path").style.transform =
+				`rotate(${progress * 360}deg)`;
 			if (pullDistance > 80) {
-				ptrIndicator.querySelector(".ptr-text").textContent = "Release to refresh";
+				ptrIndicator.querySelector(".ptr-text").textContent =
+					"Release to refresh";
 			} else {
 				ptrIndicator.querySelector(".ptr-text").textContent = "Pull to refresh";
 			}
