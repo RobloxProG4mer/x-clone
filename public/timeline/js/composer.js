@@ -147,7 +147,7 @@ export const useComposer = (
 	const updateAddOptionButton = () => {
 		if (!pollContainer || !addPollOptionBtn) return;
 		const optionCount = pollContainer.querySelectorAll(".poll-option").length;
-		addPollOptionBtn.style.display = optionCount >= 4 ? "none" : "block";
+		addPollOptionBtn.style.display = optionCount >= 8 ? "none" : "block";
 	};
 
 	const togglePoll = () => {

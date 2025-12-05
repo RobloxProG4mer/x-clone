@@ -47,10 +47,17 @@ const DOMPURIFY_CONFIG = {
 	ALLOWED_ATTR: ["href", "target", "rel", "class"],
 };
 
-const sanitizeSvg = (html) =>
-	DOMPurify.sanitize(html || "", {
-		USE_PROFILES: { svg: true, svgFilters: true, html: true },
-	});
+const sanitizeSvg = (html) => {
+	if (!DOMPurify.isSupported) return "";
+	try {
+		return DOMPurify.sanitize(html || "", {
+			USE_PROFILES: { svg: true, svgFilters: true, html: true },
+		});
+	} catch (e) {
+		console.error("DOMPurify sanitize failed:", e);
+		return "";
+	}
+};
 
 const attachCheckmarkPopup = (badgeEl, type) => {
 	if (!badgeEl) return;
@@ -2758,20 +2765,22 @@ export const createTweetElement = (tweet, config = {}) => {
 		];
 
 		getUser().then(async (currentUser) => {
+			const isOwnTweet =
+				currentUser && String(currentUser.id) === String(tweet.author.id);
+
 			let filteredUserItems = userItems;
-			if (currentUser?.id === tweet.author.id) {
+			if (isOwnTweet) {
 				filteredUserItems = userItems.filter((item) => {
 					if (item.requiresGray && !currentUser.gray) return false;
 					return true;
 				});
 			}
 
-			const items =
-				currentUser?.id === tweet.author.id
-					? [...defaultItems, ...filteredUserItems]
-					: [...defaultItems];
+			const items = isOwnTweet
+				? [...defaultItems, ...filteredUserItems]
+				: [...defaultItems];
 
-			if (currentUser && tweet.author && currentUser.id !== tweet.author.id) {
+			if (currentUser && tweet.author && !isOwnTweet) {
 				const checkResp = await query(`/blocking/check/${tweet.author.id}`);
 				const isBlocked = checkResp?.blocked || false;
 

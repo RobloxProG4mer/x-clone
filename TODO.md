@@ -6,6 +6,8 @@
 - move "delete tweet" and similar dialogs to a modal
 - modals to bottom sheets on mobile
 - unified modals
+- emoji usernames for verified users
+- customizing profile tab colors
 
 **other things:**
 
@@ -19,8 +21,6 @@
 
 - look into all XSS and similar vulnerabitilies
 - optimize client and server
-
-- make custom badges appear on your tweets
 
 **Joke:**
 

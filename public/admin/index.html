@@ -16,6 +16,7 @@
       type="image/svg+xml"
     />
     <link rel="stylesheet" href="/public/shared/variables.css" />
+    <link rel="stylesheet" href="/public/shared/image-cropper.css" />
     <link rel="stylesheet" href="/public/admin/styles.css" />
   </head>
 
@@ -928,7 +929,8 @@
                             placeholder="<svg ...></svg>"
                           ></textarea>
                           <div class="form-text">
-                            Paste SVG markup (should be 16x16 or viewBox-based for best results). Provide either SVG or image URL.
+                            Paste SVG markup (should be 16x16 or viewBox-based
+                            for best results). Provide either SVG or image URL.
                           </div>
                         </div>
                         <div class="mb-3">
@@ -939,7 +941,9 @@
                             id="badgeImageUrl"
                             placeholder="https://example.com/badge.webp"
                           />
-                          <div class="form-text">PNG/WebP preferred. Leave empty if using SVG.</div>
+                          <div class="form-text">
+                            PNG/WebP preferred. Leave empty if using SVG.
+                          </div>
                         </div>
                         <div class="row g-2">
                           <div class="col-md-6">
@@ -1553,6 +1557,18 @@
                   Optional: set creation date/time for the tweet
                 </small>
               </div>
+              <div class="mb-3">
+                <label class="form-label">Source (optional)</label>
+                <input
+                  type="text"
+                  id="tweetSource"
+                  class="form-control"
+                  placeholder="e.g. Twitter for iPhone, Web App, etc."
+                />
+                <small class="text-muted">
+                  Optional: set the source/client for the tweet
+                </small>
+              </div>
             </form>
           </div>
           <div class="modal-footer">
@@ -1626,6 +1642,18 @@
                   Optional: set creation date/time for the tweets
                 </small>
               </div>
+              <div class="mb-3">
+                <label class="form-label">Source (optional)</label>
+                <input
+                  type="text"
+                  id="bulkTweetSource"
+                  class="form-control"
+                  placeholder="e.g. Twitter for iPhone, Web App, etc."
+                />
+                <small class="text-muted">
+                  Optional: set the source/client for the tweets
+                </small>
+              </div>
             </form>
           </div>
           <div class="modal-footer">
@@ -1650,7 +1678,7 @@
 
     <!-- Create User Modal -->
     <div class="modal fade" id="createUserModal" tabindex="-1">
-      <div class="modal-dialog">
+      <div class="modal-dialog modal-lg">
         <div class="modal-content">
           <div class="modal-header">
             <h5 class="modal-title">Create User</h5>
@@ -1703,9 +1731,292 @@
                 <input
                   class="form-check-input"
                   type="checkbox"
+                  id="createGray"
+                />
+                <label class="form-check-label">Gray</label>
+              </div>
+              <div class="form-check form-switch mb-3">
+                <input
+                  class="form-check-input"
+                  type="checkbox"
                   id="createAdmin"
                 />
                 <label class="form-check-label">Admin</label>
+              </div>
+              <div class="form-check form-switch mb-3">
+                <input
+                  class="form-check-input"
+                  type="checkbox"
+                  id="createAffiliate"
+                />
+                <label class="form-check-label">Affiliate Badge</label>
+              </div>
+              <div
+                class="mb-3"
+                id="createAffiliateWithSection"
+                style="display: none"
+              >
+                <label class="form-label">Affiliated With Username</label>
+                <input
+                  type="text"
+                  class="form-control"
+                  id="createAffiliateWith"
+                  placeholder="Enter username"
+                />
+                <small class="text-muted">
+                  The user this account is affiliated with
+                </small>
+              </div>
+              <div class="form-check form-switch mb-3">
+                <input
+                  class="form-check-input"
+                  type="checkbox"
+                  id="createSuperTweeter"
+                />
+                <label class="form-check-label">SuperTweeter</label>
+              </div>
+              <div
+                class="mb-3"
+                id="createSuperTweeterBoostSection"
+                style="display: none"
+              >
+                <label class="form-label">SuperTweeter Boost Multiplier</label>
+                <input
+                  type="number"
+                  class="form-control"
+                  id="createSuperTweeterBoost"
+                  value="50"
+                  min="1"
+                  max="1000"
+                  step="0.1"
+                />
+                <small class="text-muted">
+                  Visibility boost multiplier (1-1000x, default: 50)
+                </small>
+              </div>
+
+              <div class="card bg-body border-0 mt-3 mb-3">
+                <div class="card-body">
+                  <h6 class="card-title mb-3">Custom Badges</h6>
+                  <div class="d-flex gap-2 align-items-center">
+                    <select
+                      class="form-select form-select-sm"
+                      id="createBadgeSelector"
+                      style="max-width: 200px"
+                    >
+                      <option value="">Select badge...</option>
+                    </select>
+                    <button
+                      type="button"
+                      class="btn btn-outline-primary btn-sm"
+                      id="createAddBadgeBtn"
+                    >
+                      Add
+                    </button>
+                  </div>
+                  <div
+                    id="createSelectedBadges"
+                    class="mt-2 d-flex flex-wrap gap-2"
+                  ></div>
+                </div>
+              </div>
+
+              <div class="card bg-body border-0 mt-3">
+                <div class="card-body">
+                  <h6 class="card-title mb-3">Transparency Overrides</h6>
+                  <div class="row g-4">
+                    <div class="col-md-6">
+                      <h6 class="fw-bold">Account Creation</h6>
+                      <div
+                        class="d-flex flex-wrap align-items-center gap-2 mb-2"
+                      >
+                        <button
+                          type="button"
+                          class="btn btn-outline-primary btn-sm create-location-picker-btn"
+                          data-location-picker="createCreation"
+                        >
+                          <i class="bi bi-map"></i>
+                          Pick via Leaflet Maps
+                        </button>
+                        <button
+                          type="button"
+                          class="btn btn-outline-secondary btn-sm create-location-clear-btn"
+                          data-location-clear="createCreation"
+                        >
+                          Clear
+                        </button>
+                      </div>
+                      <div class="mb-2">
+                        <div
+                          class="small text-muted"
+                          id="createCreationLocationPreview"
+                        ></div>
+                      </div>
+                      <div class="mb-2">
+                        <label class="form-label">City</label>
+                        <input
+                          type="text"
+                          class="form-control"
+                          id="createCreationCity"
+                        />
+                      </div>
+                      <div class="mb-2">
+                        <label class="form-label">Country / Region</label>
+                        <input
+                          type="text"
+                          class="form-control"
+                          id="createCreationCountry"
+                        />
+                      </div>
+                      <div class="row">
+                        <div class="col-md-6 mb-2">
+                          <label class="form-label">Latitude</label>
+                          <input
+                            type="text"
+                            class="form-control"
+                            id="createCreationLatitude"
+                          />
+                        </div>
+                        <div class="col-md-6 mb-2">
+                          <label class="form-label">Longitude</label>
+                          <input
+                            type="text"
+                            class="form-control"
+                            id="createCreationLongitude"
+                          />
+                        </div>
+                      </div>
+                      <div class="mb-2">
+                        <label class="form-label">Timezone</label>
+                        <input
+                          type="text"
+                          class="form-control"
+                          id="createCreationTimezone"
+                          placeholder="e.g. UTC"
+                        />
+                      </div>
+                      <div class="form-check form-switch mb-1">
+                        <input
+                          class="form-check-input"
+                          type="checkbox"
+                          id="createCreationTor"
+                        />
+                        <label class="form-check-label">Created via Tor</label>
+                      </div>
+                      <div class="form-check form-switch mb-1">
+                        <input
+                          class="form-check-input"
+                          type="checkbox"
+                          id="createCreationDatacenterWarning"
+                        />
+                        <label class="form-check-label">
+                          Datacenter warning
+                        </label>
+                      </div>
+                    </div>
+                    <div class="col-md-6">
+                      <h6 class="fw-bold">Last Login</h6>
+                      <div
+                        class="d-flex flex-wrap align-items-center gap-2 mb-2"
+                      >
+                        <button
+                          type="button"
+                          class="btn btn-outline-primary btn-sm create-location-picker-btn"
+                          data-location-picker="createLogin"
+                        >
+                          <i class="bi bi-map"></i>
+                          Pick via Leaflet Maps
+                        </button>
+                        <button
+                          type="button"
+                          class="btn btn-outline-secondary btn-sm create-location-clear-btn"
+                          data-location-clear="createLogin"
+                        >
+                          Clear
+                        </button>
+                      </div>
+                      <div class="mb-2">
+                        <div
+                          class="small text-muted"
+                          id="createLoginLocationPreview"
+                        ></div>
+                      </div>
+                      <div class="mb-2">
+                        <label class="form-label">City</label>
+                        <input
+                          type="text"
+                          class="form-control"
+                          id="createLoginCity"
+                        />
+                      </div>
+                      <div class="mb-2">
+                        <label class="form-label">Country / Region</label>
+                        <input
+                          type="text"
+                          class="form-control"
+                          id="createLoginCountry"
+                        />
+                      </div>
+                      <div class="row">
+                        <div class="col-md-6 mb-2">
+                          <label class="form-label">Latitude</label>
+                          <input
+                            type="text"
+                            class="form-control"
+                            id="createLoginLatitude"
+                          />
+                        </div>
+                        <div class="col-md-6 mb-2">
+                          <label class="form-label">Longitude</label>
+                          <input
+                            type="text"
+                            class="form-control"
+                            id="createLoginLongitude"
+                          />
+                        </div>
+                      </div>
+                      <div class="mb-2">
+                        <label class="form-label">Timezone</label>
+                        <input
+                          type="text"
+                          class="form-control"
+                          id="createLoginTimezone"
+                          placeholder="e.g. America/New_York"
+                        />
+                      </div>
+                      <div class="form-check form-switch mb-1">
+                        <input
+                          class="form-check-input"
+                          type="checkbox"
+                          id="createLoginTor"
+                        />
+                        <label class="form-check-label">
+                          Last login via Tor
+                        </label>
+                      </div>
+                      <div class="form-check form-switch mb-1">
+                        <input
+                          class="form-check-input"
+                          type="checkbox"
+                          id="createLoginDatacenterWarning"
+                        />
+                        <label class="form-check-label">
+                          Datacenter warning
+                        </label>
+                      </div>
+                      <div class="form-check form-switch mb-1">
+                        <input
+                          class="form-check-input"
+                          type="checkbox"
+                          id="createLoginPreserveOverride"
+                        />
+                        <label class="form-check-label">
+                          Preserve overrides across logins
+                        </label>
+                      </div>
+                    </div>
+                  </div>
+                </div>
               </div>
             </form>
           </div>
@@ -2038,6 +2349,17 @@
 
     <script type="module" src="/public/shared/notification-icons.js"></script>
     <script src="/public/shared/extensions.js" type="module" defer></script>
+    <script type="module">
+      import DOMPurify from "/public/shared/assets/js/dompurify.js";
+      import {
+        CROP_CANCELLED,
+        openImageCropper,
+      } from "/public/shared/image-cropper.js";
+
+      window.DOMPurify = DOMPurify;
+      window.openImageCropper = openImageCropper;
+      window.CROP_CANCELLED = CROP_CANCELLED;
+    </script>
     <script src="/public/shared/assets/js/bootstrap.min.js"></script>
     <script src="/public/admin/script.js" defer></script>
   </body>

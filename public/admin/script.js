@@ -91,6 +91,24 @@ class AdminPanel {
 				tor: "editProfileCreationTor",
 				preview: "creationLocationPreview",
 			},
+			createCreation: {
+				city: "createCreationCity",
+				country: "createCreationCountry",
+				latitude: "createCreationLatitude",
+				longitude: "createCreationLongitude",
+				timezone: "createCreationTimezone",
+				tor: "createCreationTor",
+				preview: "createCreationLocationPreview",
+			},
+			createLogin: {
+				city: "createLoginCity",
+				country: "createLoginCountry",
+				latitude: "createLoginLatitude",
+				longitude: "createLoginLongitude",
+				timezone: "createLoginTimezone",
+				tor: "createLoginTor",
+				preview: "createLoginLocationPreview",
+			},
 		};
 
 		this.init();
@@ -1291,6 +1309,8 @@ class AdminPanel {
 			.getElementById("bulkTweetReplyTo")
 			?.value?.trim();
 		const replyTo = replyToInput ? replyToInput : undefined;
+		const source =
+			document.getElementById("bulkTweetSource")?.value?.trim() || null;
 		let createdAt = null;
 		const createdAtInput = document.getElementById("bulkTweetCreatedAt");
 		if (createdAtInput?.value) {
@@ -1321,6 +1341,7 @@ class AdminPanel {
 				};
 				if (replyTo) payload.replyTo = replyTo;
 				if (createdAt) payload.created_at = createdAt;
+				if (source) payload.source = source;
 				await this.apiCall(`/api/admin/tweets`, {
 					method: "POST",
 					body: JSON.stringify(payload),
@@ -1333,7 +1354,6 @@ class AdminPanel {
 		}
 
 		new bootstrap.Modal(document.getElementById("bulkTweetModal")).hide();
-		// Reset controlled fields and selection
 		const form = document.getElementById("bulkTweetForm");
 		if (form) form.reset();
 		this.selectedUsers.clear();
@@ -1761,6 +1781,10 @@ class AdminPanel {
 				userData = await this.apiCall(`/api/admin/users/${userId}`);
 			}
 
+			if (userData.error) {
+				throw new Error(userData.error);
+			}
+
 			const { user, suspensions, recentPosts, affiliate } = userData;
 
 			let creationTransparency = null;
@@ -1815,13 +1839,20 @@ class AdminPanel {
           <div class="col-md-4 text-center">
             <img src="${
 							user.avatar || "/public/shared/assets/default-avatar.svg"
-						}" class="img-fluid mb-3" style="max-width: 150px; border-radius: ${
+						}" class="img-fluid mb-3" id="editProfileAvatarPreview" style="max-width: 150px; border-radius: ${
 							user.avatar_radius !== null && user.avatar_radius !== undefined
 								? `${user.avatar_radius}px`
 								: user.gold
 									? "4px"
 									: "50%"
 						};" alt="Avatar">
+            <div class="mb-3">
+              <label class="form-label">Change Avatar</label>
+              <input type="file" class="form-control form-control-sm" id="editProfileAvatarFile" accept="image/*">
+              <div class="d-flex gap-2 mt-2">
+                <button type="button" class="btn btn-sm btn-outline-danger" id="editProfileAvatarRemoveBtn">Remove</button>
+              </div>
+            </div>
             <h4>
               ${this.escapeHtml(user.name || "")}
               ${
@@ -1860,6 +1891,14 @@ class AdminPanel {
 									? '<span class="badge bg-secondary">Shadowbanned</span>'
 									: "")
 							}
+            </div>
+            <div class="mb-3">
+              <label class="form-label">Banner</label>
+              <img src="${user.banner || ""}" class="img-fluid mb-2 w-100" id="editProfileBannerPreview" style="max-height: 100px; object-fit: cover; ${user.banner ? "" : "display: none;"}">
+              <input type="file" class="form-control form-control-sm" id="editProfileBannerFile" accept="image/*">
+              <div class="d-flex gap-2 mt-2">
+                <button type="button" class="btn btn-sm btn-outline-danger" id="editProfileBannerRemoveBtn">Remove</button>
+              </div>
             </div>
           </div>
           <div class="col-md-8">
@@ -2461,9 +2500,147 @@ class AdminPanel {
 			await this.loadUserBadges(userId);
 			await this.loadBadgeSelector();
 			this.setupBadgeAssignButton(userId);
-		} catch {
-			this.showError("Failed to load user details");
+			this.setupAvatarBannerControls(userId);
+		} catch (err) {
+			console.error("showUserModal error:", err);
+			this.showError(err.message || "Failed to load user details");
 		}
+	}
+
+	setupAvatarBannerControls(userId) {
+		const avatarRemoveBtn = document.getElementById(
+			"editProfileAvatarRemoveBtn",
+		);
+		const avatarFileInput = document.getElementById("editProfileAvatarFile");
+		const avatarPreview = document.getElementById("editProfileAvatarPreview");
+
+		const bannerRemoveBtn = document.getElementById(
+			"editProfileBannerRemoveBtn",
+		);
+		const bannerFileInput = document.getElementById("editProfileBannerFile");
+		const bannerPreview = document.getElementById("editProfileBannerPreview");
+
+		if (avatarFileInput) {
+			avatarFileInput.addEventListener("change", async () => {
+				const file = avatarFileInput?.files?.[0];
+				if (!file) return;
+				try {
+					const cropped = await window.openImageCropper(file, {
+						aspect: 1,
+						size: 250,
+					});
+					if (cropped === window.CROP_CANCELLED) {
+						avatarFileInput.value = "";
+						return;
+					}
+					const formData = new FormData();
+					formData.append("avatar", cropped);
+					const result = await this.apiCallFormData(
+						`/api/admin/users/${userId}/avatar`,
+						formData,
+					);
+					if (result.error) throw new Error(result.error);
+					if (result.avatar && avatarPreview) avatarPreview.src = result.avatar;
+					this.showSuccess("Avatar updated");
+				} catch (err) {
+					this.showError(err.message || "Failed to upload avatar");
+				} finally {
+					avatarFileInput.value = "";
+				}
+			});
+		}
+
+		if (avatarRemoveBtn) {
+			avatarRemoveBtn.addEventListener("click", async () => {
+				if (!confirm("Remove avatar?")) return;
+				try {
+					const result = await this.apiCall(
+						`/api/admin/users/${userId}/avatar`,
+						{ method: "DELETE" },
+					);
+					if (result.error) throw new Error(result.error);
+					if (avatarPreview)
+						avatarPreview.src = "/public/shared/assets/default-avatar.svg";
+					this.showSuccess("Avatar removed");
+				} catch (err) {
+					this.showError(err.message || "Failed to remove avatar");
+				}
+			});
+		}
+
+		if (bannerFileInput) {
+			bannerFileInput.addEventListener("change", async () => {
+				const file = bannerFileInput?.files?.[0];
+				if (!file) return;
+				try {
+					const cropped = await window.openImageCropper(file, {
+						aspect: 3,
+						size: 1500,
+					});
+					if (cropped === window.CROP_CANCELLED) {
+						bannerFileInput.value = "";
+						return;
+					}
+					const formData = new FormData();
+					formData.append("banner", cropped);
+					const result = await this.apiCallFormData(
+						`/api/admin/users/${userId}/banner`,
+						formData,
+					);
+					if (result.error) throw new Error(result.error);
+					if (result.banner && bannerPreview) {
+						bannerPreview.src = result.banner;
+						bannerPreview.style.display = "";
+					}
+					this.showSuccess("Banner updated");
+				} catch (err) {
+					this.showError(err.message || "Failed to upload banner");
+				} finally {
+					bannerFileInput.value = "";
+				}
+			});
+		}
+
+		if (bannerRemoveBtn) {
+			bannerRemoveBtn.addEventListener("click", async () => {
+				if (!confirm("Remove banner?")) return;
+				try {
+					const result = await this.apiCall(
+						`/api/admin/users/${userId}/banner`,
+						{ method: "DELETE" },
+					);
+					if (result.error) throw new Error(result.error);
+					if (bannerPreview) {
+						bannerPreview.src = "";
+						bannerPreview.style.display = "none";
+					}
+					this.showSuccess("Banner removed");
+				} catch (err) {
+					this.showError(err.message || "Failed to remove banner");
+				}
+			});
+		}
+	}
+
+	async apiCallFormData(endpoint, formData) {
+		const response = await fetch(endpoint, {
+			method: "POST",
+			headers: {
+				Authorization: `Bearer ${this.token}`,
+			},
+			body: formData,
+		});
+		const text = await response.text();
+		let data;
+		try {
+			data = JSON.parse(text);
+		} catch {
+			throw new Error(text || "Failed to parse response");
+		}
+		if (!response.ok) {
+			throw new Error(data.error || "Request failed");
+		}
+		return data;
 	}
 
 	async loadUserPermissions(userId) {
@@ -5162,6 +5339,8 @@ class AdminPanel {
 		const content = document.getElementById("tweetContent").value;
 		const replyToRaw = document.getElementById("tweetReplyTo")?.value;
 		const replyTo = replyToRaw?.trim() ? replyToRaw.trim() : undefined;
+		const source =
+			document.getElementById("tweetSource")?.value?.trim() || null;
 		const noCharLimit = true;
 
 		if (!content.trim()) {
@@ -5180,6 +5359,7 @@ class AdminPanel {
 				payload.created_at = new Date(tweetCreatedInput.value).toISOString();
 			}
 			if (replyTo !== undefined) payload.replyTo = replyTo;
+			if (source) payload.source = source;
 
 			await this.apiCall("/api/admin/tweets", {
 				method: "POST",
@@ -6150,6 +6330,18 @@ class AdminPanel {
 
 	showCreateUserModal() {
 		document.getElementById("createUserForm").reset();
+		document.getElementById("createAffiliateWithSection").style.display =
+			"none";
+		document.getElementById("createSuperTweeterBoostSection").style.display =
+			"none";
+		const selectedBadgesContainer = document.getElementById(
+			"createSelectedBadges",
+		);
+		if (selectedBadgesContainer) selectedBadgesContainer.innerHTML = "";
+		this.createUserSelectedBadges = [];
+
+		this.loadBadgesForCreateUser();
+
 		const modal = new bootstrap.Modal(
 			document.getElementById("createUserModal"),
 		);
@@ -6157,6 +6349,38 @@ class AdminPanel {
 
 		const verifiedCheckbox = document.getElementById("createVerified");
 		const goldCheckbox = document.getElementById("createGold");
+		const grayCheckbox = document.getElementById("createGray");
+
+		const setupCheckboxes = () => {
+			const vEl = document.getElementById("createVerified");
+			const gEl = document.getElementById("createGold");
+			const grEl = document.getElementById("createGray");
+
+			if (vEl) {
+				vEl.addEventListener("change", () => {
+					if (vEl.checked) {
+						if (gEl) gEl.checked = false;
+						if (grEl) grEl.checked = false;
+					}
+				});
+			}
+			if (gEl) {
+				gEl.addEventListener("change", () => {
+					if (gEl.checked) {
+						if (vEl) vEl.checked = false;
+						if (grEl) grEl.checked = false;
+					}
+				});
+			}
+			if (grEl) {
+				grEl.addEventListener("change", () => {
+					if (grEl.checked) {
+						if (gEl) gEl.checked = false;
+						if (vEl) vEl.checked = false;
+					}
+				});
+			}
+		};
 
 		if (verifiedCheckbox && goldCheckbox) {
 			const newVerified = verifiedCheckbox.cloneNode(true);
@@ -6165,17 +6389,154 @@ class AdminPanel {
 			const newGold = goldCheckbox.cloneNode(true);
 			goldCheckbox.parentNode.replaceChild(newGold, goldCheckbox);
 
-			const vCheckbox = document.getElementById("createVerified");
-			const gCheckbox = document.getElementById("createGold");
+			if (grayCheckbox) {
+				const newGray = grayCheckbox.cloneNode(true);
+				grayCheckbox.parentNode.replaceChild(newGray, grayCheckbox);
+			}
 
-			vCheckbox.addEventListener("change", () => {
-				if (vCheckbox.checked) gCheckbox.checked = false;
-			});
-
-			gCheckbox.addEventListener("change", () => {
-				if (gCheckbox.checked) vCheckbox.checked = false;
-			});
+			setupCheckboxes();
 		}
+
+		const affiliateCheckbox = document.getElementById("createAffiliate");
+		if (affiliateCheckbox) {
+			const newAffiliate = affiliateCheckbox.cloneNode(true);
+			affiliateCheckbox.parentNode.replaceChild(
+				newAffiliate,
+				affiliateCheckbox,
+			);
+			document
+				.getElementById("createAffiliate")
+				.addEventListener("change", (e) => {
+					document.getElementById("createAffiliateWithSection").style.display =
+						e.target.checked ? "" : "none";
+				});
+		}
+
+		const superTweeterCheckbox = document.getElementById("createSuperTweeter");
+		if (superTweeterCheckbox) {
+			const newST = superTweeterCheckbox.cloneNode(true);
+			superTweeterCheckbox.parentNode.replaceChild(newST, superTweeterCheckbox);
+			document
+				.getElementById("createSuperTweeter")
+				.addEventListener("change", (e) => {
+					document.getElementById(
+						"createSuperTweeterBoostSection",
+					).style.display = e.target.checked ? "" : "none";
+				});
+		}
+
+		const addBadgeBtn = document.getElementById("createAddBadgeBtn");
+		if (addBadgeBtn) {
+			const newBtn = addBadgeBtn.cloneNode(true);
+			addBadgeBtn.parentNode.replaceChild(newBtn, addBadgeBtn);
+			document
+				.getElementById("createAddBadgeBtn")
+				.addEventListener("click", () => this.addBadgeToCreateUser());
+		}
+
+		this.setupCreateUserLocationControls();
+	}
+
+	setupCreateUserLocationControls() {
+		const modal = document.getElementById("createUserModal");
+		if (!modal) return;
+		modal.querySelectorAll(".create-location-picker-btn").forEach((btn) => {
+			const newBtn = btn.cloneNode(true);
+			btn.parentNode.replaceChild(newBtn, btn);
+		});
+		modal.querySelectorAll(".create-location-clear-btn").forEach((btn) => {
+			const newBtn = btn.cloneNode(true);
+			btn.parentNode.replaceChild(newBtn, btn);
+		});
+		modal.querySelectorAll(".create-location-picker-btn").forEach((btn) => {
+			btn.addEventListener("click", () => {
+				const target = btn.dataset.locationPicker;
+				if (!target) return;
+				this.openLocationPicker(target);
+			});
+		});
+		modal.querySelectorAll(".create-location-clear-btn").forEach((btn) => {
+			btn.addEventListener("click", () => {
+				const target = btn.dataset.locationClear;
+				if (!target) return;
+				this.clearLocationInputs(target, true);
+			});
+		});
+		["createCreation", "createLogin"].forEach((key) => {
+			const fields = this.locationFieldMap[key];
+			if (!fields) return;
+			const ids = [
+				fields.city,
+				fields.country,
+				fields.latitude,
+				fields.longitude,
+				fields.timezone,
+			];
+			ids.forEach((id) => {
+				const el = document.getElementById(id);
+				if (!el) return;
+				const newEl = el.cloneNode(true);
+				el.parentNode.replaceChild(newEl, el);
+			});
+			ids.forEach((id) => {
+				const el = document.getElementById(id);
+				if (!el) return;
+				el.addEventListener("input", () => this.syncLocationPreview(key));
+			});
+			const torToggle = document.getElementById(fields.tor);
+			if (torToggle) {
+				const newTor = torToggle.cloneNode(true);
+				torToggle.parentNode.replaceChild(newTor, torToggle);
+				document
+					.getElementById(fields.tor)
+					?.addEventListener("change", () => this.syncLocationPreview(key));
+			}
+			this.syncLocationPreview(key);
+		});
+	}
+
+	async loadBadgesForCreateUser() {
+		try {
+			const data = await this.apiCall("/api/admin/badges");
+			const selector = document.getElementById("createBadgeSelector");
+			if (!selector) return;
+			selector.innerHTML = '<option value="">Select badge...</option>';
+			for (const badge of data.badges || []) {
+				const opt = document.createElement("option");
+				opt.value = badge.id;
+				opt.textContent = badge.name;
+				selector.appendChild(opt);
+			}
+		} catch {}
+	}
+
+	addBadgeToCreateUser() {
+		const selector = document.getElementById("createBadgeSelector");
+		const container = document.getElementById("createSelectedBadges");
+		if (!selector || !container) return;
+		const badgeId = selector.value;
+		if (!badgeId) return;
+		const badgeName = selector.options[selector.selectedIndex].text;
+		if (!this.createUserSelectedBadges) this.createUserSelectedBadges = [];
+		if (this.createUserSelectedBadges.includes(badgeId)) return;
+		this.createUserSelectedBadges.push(badgeId);
+		const badgeEl = document.createElement("span");
+		badgeEl.className = "badge bg-primary d-flex align-items-center gap-1";
+		badgeEl.dataset.badgeId = badgeId;
+		badgeEl.textContent = badgeName;
+		const removeBtn = document.createElement("button");
+		removeBtn.type = "button";
+		removeBtn.className = "btn-close btn-close-white ms-1";
+		removeBtn.style.fontSize = "0.6rem";
+		removeBtn.addEventListener("click", () => {
+			this.createUserSelectedBadges = this.createUserSelectedBadges.filter(
+				(id) => id !== badgeId,
+			);
+			badgeEl.remove();
+		});
+		badgeEl.appendChild(removeBtn);
+		container.appendChild(badgeEl);
+		selector.value = "";
 	}
 
 	async createUser() {
@@ -6184,11 +6545,100 @@ class AdminPanel {
 		const bio = document.getElementById("createBio").value.trim();
 		const verified = document.getElementById("createVerified").checked;
 		const gold = document.getElementById("createGold")?.checked || false;
+		const gray = document.getElementById("createGray")?.checked || false;
 		const isAdmin = document.getElementById("createAdmin").checked;
+		const affiliate =
+			document.getElementById("createAffiliate")?.checked || false;
+		const affiliateWith =
+			document.getElementById("createAffiliateWith")?.value.trim() || null;
+		const superTweeter =
+			document.getElementById("createSuperTweeter")?.checked || false;
+		const superTweeterBoost =
+			parseFloat(document.getElementById("createSuperTweeterBoost")?.value) ||
+			50;
+
+		const creationCity =
+			document.getElementById("createCreationCity")?.value.trim() || null;
+		const creationCountry =
+			document.getElementById("createCreationCountry")?.value.trim() || null;
+		const creationLatitude =
+			document.getElementById("createCreationLatitude")?.value.trim() || null;
+		const creationLongitude =
+			document.getElementById("createCreationLongitude")?.value.trim() || null;
+		const creationTimezone =
+			document.getElementById("createCreationTimezone")?.value.trim() || null;
+		const creationTor =
+			document.getElementById("createCreationTor")?.checked || false;
+		const creationDatacenterWarning =
+			document.getElementById("createCreationDatacenterWarning")?.checked ||
+			false;
+
+		const loginCity =
+			document.getElementById("createLoginCity")?.value.trim() || null;
+		const loginCountry =
+			document.getElementById("createLoginCountry")?.value.trim() || null;
+		const loginLatitude =
+			document.getElementById("createLoginLatitude")?.value.trim() || null;
+		const loginLongitude =
+			document.getElementById("createLoginLongitude")?.value.trim() || null;
+		const loginTimezone =
+			document.getElementById("createLoginTimezone")?.value.trim() || null;
+		const loginTor =
+			document.getElementById("createLoginTor")?.checked || false;
+		const loginDatacenterWarning =
+			document.getElementById("createLoginDatacenterWarning")?.checked || false;
+		const loginPreserveOverride =
+			document.getElementById("createLoginPreserveOverride")?.checked || false;
+
+		const badges = this.createUserSelectedBadges || [];
 
 		if (!username) {
 			this.showError("Username is required");
 			return;
+		}
+
+		let accountCreationTransparency = null;
+		if (
+			creationCity ||
+			creationCountry ||
+			creationLatitude ||
+			creationLongitude ||
+			creationTimezone ||
+			creationTor ||
+			creationDatacenterWarning
+		) {
+			accountCreationTransparency = {
+				city: creationCity,
+				country: creationCountry,
+				latitude: creationLatitude ? parseFloat(creationLatitude) : null,
+				longitude: creationLongitude ? parseFloat(creationLongitude) : null,
+				timezone: creationTimezone,
+				tor: creationTor,
+				datacenterWarning: creationDatacenterWarning,
+			};
+		}
+
+		let accountLoginTransparency = null;
+		if (
+			loginCity ||
+			loginCountry ||
+			loginLatitude ||
+			loginLongitude ||
+			loginTimezone ||
+			loginTor ||
+			loginDatacenterWarning ||
+			loginPreserveOverride
+		) {
+			accountLoginTransparency = {
+				city: loginCity,
+				country: loginCountry,
+				latitude: loginLatitude ? parseFloat(loginLatitude) : null,
+				longitude: loginLongitude ? parseFloat(loginLongitude) : null,
+				timezone: loginTimezone,
+				tor: loginTor,
+				datacenterWarning: loginDatacenterWarning,
+				preserveOverride: loginPreserveOverride,
+			};
 		}
 
 		try {
@@ -6200,7 +6650,15 @@ class AdminPanel {
 					bio,
 					verified,
 					gold,
+					gray,
 					admin: isAdmin,
+					affiliate,
+					affiliateWith: affiliate ? affiliateWith : null,
+					superTweeter,
+					superTweeterBoost: superTweeter ? superTweeterBoost : null,
+					badges,
+					accountCreationTransparency,
+					accountLoginTransparency,
 				}),
 			});
 
@@ -8312,6 +8770,78 @@ class AdminPanel {
 		} catch (err) {
 			this.showError(err.message || "Failed to delete badge");
 		}
+	}
+
+	openEditBadgeModal(badge) {
+		let modal = document.getElementById("editBadgeModal");
+		if (!modal) {
+			modal = document.createElement("div");
+			modal.id = "editBadgeModal";
+			modal.className = "modal fade";
+			modal.tabIndex = -1;
+			modal.innerHTML = `
+				<div class="modal-dialog">
+					<div class="modal-content">
+						<div class="modal-header"><h5 class="modal-title">Edit Badge</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+						<div class="modal-body">
+							<div class="mb-3"><label class="form-label">Name</label><input type="text" class="form-control" id="editBadgeName"></div>
+							<div class="mb-3"><label class="form-label">Description</label><textarea class="form-control" id="editBadgeDescription" rows="2"></textarea></div>
+							<div class="mb-3"><label class="form-label">SVG Content</label><textarea class="form-control" id="editBadgeSvgContent" rows="3"></textarea></div>
+							<div class="mb-3"><label class="form-label">Image URL</label><input type="text" class="form-control" id="editBadgeImageUrl"></div>
+							<div class="row g-2">
+								<div class="col-md-6"><label class="form-label">Click Action</label><select class="form-select" id="editBadgeActionType"><option value="none">None</option><option value="url">Open URL</option><option value="modal">Open modal</option><option value="client_js">Run client JS</option></select></div>
+								<div class="col-md-6"><label class="form-label">Action Value</label><input type="text" class="form-control" id="editBadgeActionValue"></div>
+							</div>
+						</div>
+						<div class="modal-footer"><button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button><button type="button" class="btn btn-primary" id="saveEditBadgeBtn">Save</button></div>
+					</div>
+				</div>
+			`;
+			document.body.appendChild(modal);
+		}
+		document.getElementById("editBadgeName").value = badge.name || "";
+		document.getElementById("editBadgeDescription").value =
+			badge.description || "";
+		document.getElementById("editBadgeSvgContent").value =
+			badge.svg_content || "";
+		document.getElementById("editBadgeImageUrl").value = badge.image_url || "";
+		document.getElementById("editBadgeActionType").value =
+			badge.action_type || "none";
+		document.getElementById("editBadgeActionValue").value =
+			badge.action_value || "";
+
+		const bsModal = new bootstrap.Modal(modal);
+		const saveBtn = document.getElementById("saveEditBadgeBtn");
+		const newSaveBtn = saveBtn.cloneNode(true);
+		saveBtn.parentNode.replaceChild(newSaveBtn, saveBtn);
+		newSaveBtn.addEventListener("click", async () => {
+			try {
+				await this.apiCall(`/api/admin/badges/${badge.id}`, {
+					method: "PATCH",
+					body: JSON.stringify({
+						name: document.getElementById("editBadgeName").value.trim(),
+						description: document
+							.getElementById("editBadgeDescription")
+							.value.trim(),
+						svg_content:
+							document.getElementById("editBadgeSvgContent").value.trim() ||
+							null,
+						image_url:
+							document.getElementById("editBadgeImageUrl").value.trim() || null,
+						action_type: document.getElementById("editBadgeActionType").value,
+						action_value:
+							document.getElementById("editBadgeActionValue").value.trim() ||
+							null,
+					}),
+				});
+				this.showSuccess("Badge updated");
+				bsModal.hide();
+				await this.loadBadgesManager();
+			} catch (err) {
+				this.showError(err.message || "Failed to update badge");
+			}
+		});
+		bsModal.show();
 	}
 }
 

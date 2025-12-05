@@ -247,7 +247,7 @@ WHERE u.id = ?
 	),
 	updatePostId: db.prepare("UPDATE posts SET id = ? WHERE id = ?"),
 	createPostAsUser: db.prepare(
-		"INSERT INTO posts (id, user_id, content, reply_to, created_at) VALUES (?, ?, ?, ?, ?)",
+		"INSERT INTO posts (id, user_id, content, reply_to, created_at, source) VALUES (?, ?, ?, ?, ?, ?)",
 	),
 	updateUser: db.prepare(
 		"UPDATE users SET username = ?, name = ?, bio = ?, verified = ?, admin = ?, gold = ?, gray = ?, follower_count = ?, following_count = ?, character_limit = ?, created_at = ?, account_creation_transparency = ?, account_login_transparency = ? WHERE id = ?",
@@ -994,7 +994,23 @@ export default new Elysia({ prefix: "/admin", tags: ["Admin"] })
 	.post(
 		"/users",
 		async ({ body, user: moderator }) => {
-			const { username, name, bio, verified, gold, admin: isAdmin } = body;
+			const {
+				username,
+				name,
+				bio,
+				verified,
+				gold,
+				gray,
+				admin: isAdmin,
+				affiliate,
+				affiliateWith,
+				superTweeter,
+				superTweeterBoost,
+				badges,
+				accountCreationTransparency,
+				accountLoginTransparency,
+			} = body;
+
 			if (!username || !username.trim()) {
 				return { error: "Username is required" };
 			}
@@ -1006,11 +1022,35 @@ export default new Elysia({ prefix: "/admin", tags: ["Admin"] })
 
 			const id = Bun.randomUUIDv7();
 
-			const finalVerified = gold ? 0 : verified ? 1 : 0;
 			const finalGold = gold ? 1 : 0;
+			const finalGray = gray && !gold ? 1 : 0;
+			const finalVerified = gold || gray ? 0 : verified ? 1 : 0;
+			const finalAffiliate = affiliate ? 1 : 0;
+			const finalSuperTweeter = superTweeter ? 1 : 0;
+			const finalSuperTweeterBoost =
+				superTweeter && superTweeterBoost ? superTweeterBoost : 50.0;
+
+			let affiliateWithId = null;
+			if (affiliate && affiliateWith) {
+				const affiliateUser =
+					adminQueries.findUserByUsername.get(affiliateWith);
+				if (affiliateUser) {
+					affiliateWithId = affiliateUser.id;
+				}
+			}
+
+			let creationTransparencyStr = null;
+			if (accountCreationTransparency) {
+				creationTransparencyStr = JSON.stringify(accountCreationTransparency);
+			}
+
+			let loginTransparencyStr = null;
+			if (accountLoginTransparency) {
+				loginTransparencyStr = JSON.stringify(accountLoginTransparency);
+			}
 
 			db.query(
-				`INSERT INTO users (id, username, name, bio, verified, admin, gold, character_limit) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+				`INSERT INTO users (id, username, name, bio, verified, admin, gold, gray, affiliate, affiliate_with, super_tweeter, super_tweeter_boost, account_creation_transparency, account_login_transparency, character_limit) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
 			).run(
 				id,
 				username.trim(),
@@ -1019,8 +1059,36 @@ export default new Elysia({ prefix: "/admin", tags: ["Admin"] })
 				finalVerified,
 				isAdmin ? 1 : 0,
 				finalGold,
+				finalGray,
+				finalAffiliate,
+				affiliateWithId,
+				finalSuperTweeter,
+				finalSuperTweeterBoost,
+				creationTransparencyStr,
+				loginTransparencyStr,
 				null,
 			);
+
+			if (badges && Array.isArray(badges) && badges.length > 0) {
+				for (const badgeId of badges) {
+					const badge = adminQueries.getBadgeById.get(badgeId);
+					if (badge) {
+						const existingBadge = db
+							.query(
+								"SELECT 1 FROM user_custom_badges WHERE user_id = ? AND badge_id = ?",
+							)
+							.get(id, badgeId);
+						if (!existingBadge) {
+							adminQueries.assignUserBadge.run(
+								Bun.randomUUIDv7(),
+								id,
+								badgeId,
+								moderator.id,
+							);
+						}
+					}
+				}
+			}
 
 			logModerationAction(moderator.id, "create_user", "user", id, {
 				username: username.trim(),
@@ -1035,8 +1103,43 @@ export default new Elysia({ prefix: "/admin", tags: ["Admin"] })
 				bio: t.Optional(t.String()),
 				verified: t.Optional(t.Boolean()),
 				gold: t.Optional(t.Boolean()),
+				gray: t.Optional(t.Boolean()),
 				admin: t.Optional(t.Boolean()),
 				cloneAffiliate: t.Optional(t.Boolean()),
+				affiliate: t.Optional(t.Boolean()),
+				affiliateWith: t.Optional(t.Union([t.String(), t.Null()])),
+				superTweeter: t.Optional(t.Boolean()),
+				superTweeterBoost: t.Optional(t.Union([t.Number(), t.Null()])),
+				badges: t.Optional(t.Array(t.String())),
+				accountCreationTransparency: t.Optional(
+					t.Union([
+						t.Object({
+							city: t.Optional(t.Union([t.String(), t.Null()])),
+							country: t.Optional(t.Union([t.String(), t.Null()])),
+							latitude: t.Optional(t.Union([t.Number(), t.Null()])),
+							longitude: t.Optional(t.Union([t.Number(), t.Null()])),
+							timezone: t.Optional(t.Union([t.String(), t.Null()])),
+							tor: t.Optional(t.Boolean()),
+							datacenterWarning: t.Optional(t.Boolean()),
+						}),
+						t.Null(),
+					]),
+				),
+				accountLoginTransparency: t.Optional(
+					t.Union([
+						t.Object({
+							city: t.Optional(t.Union([t.String(), t.Null()])),
+							country: t.Optional(t.Union([t.String(), t.Null()])),
+							latitude: t.Optional(t.Union([t.Number(), t.Null()])),
+							longitude: t.Optional(t.Union([t.Number(), t.Null()])),
+							timezone: t.Optional(t.Union([t.String(), t.Null()])),
+							tor: t.Optional(t.Boolean()),
+							datacenterWarning: t.Optional(t.Boolean()),
+							preserveOverride: t.Optional(t.Boolean()),
+						}),
+						t.Null(),
+					]),
+				),
 			}),
 		},
 	)
@@ -1215,17 +1318,19 @@ export default new Elysia({ prefix: "/admin", tags: ["Admin"] })
 
 	.get(
 		"/users/:id",
-		async ({ params }) => {
+		async ({ params, set }) => {
 			let user = adminQueries.getUserWithDetails.get(params.id);
 			let targetId = params.id;
 			if (!user) {
 				const fallbackUser = adminQueries.findUserByUsername.get(params.id);
 				if (!fallbackUser) {
+					set.status = 404;
 					return { error: "User not found" };
 				}
 				targetId = fallbackUser.id;
 				user = adminQueries.getUserWithDetails.get(targetId);
 				if (!user) {
+					set.status = 404;
 					return { error: "User not found" };
 				}
 			}
@@ -1439,6 +1544,138 @@ export default new Elysia({ prefix: "/admin", tags: ["Admin"] })
 		},
 	)
 
+	.post(
+		"/users/:id/avatar",
+		async ({ params, body, user }) => {
+			const targetUser = adminQueries.findUserById.get(params.id);
+			if (!targetUser) return { error: "User not found" };
+
+			const { avatar } = body;
+			if (!avatar || !avatar.stream) {
+				return { error: "Avatar file is required" };
+			}
+
+			const allowedTypes = { "image/webp": ".webp" };
+			const fileExtension = allowedTypes[avatar.type];
+			if (!fileExtension) {
+				return { error: "Invalid file type. Only WebP images are allowed." };
+			}
+
+			if (avatar.size > 10 * 1024 * 1024) {
+				return {
+					error: "File too large. Please upload an image smaller than 10MB.",
+				};
+			}
+
+			const uploadsDir = "./.data/uploads";
+			const arrayBuffer = await avatar.arrayBuffer();
+			const hasher = new Bun.CryptoHasher("sha256");
+			hasher.update(arrayBuffer);
+			const fileHash = hasher.digest("hex");
+			const fileName = `${fileHash}${fileExtension}`;
+			const filePath = `${uploadsDir}/${fileName}`;
+
+			await Bun.write(filePath, arrayBuffer);
+
+			const avatarUrl = `/api/uploads/${fileName}`;
+			db.query("UPDATE users SET avatar = ? WHERE id = ?").run(
+				avatarUrl,
+				params.id,
+			);
+
+			logModerationAction(user.id, "set_avatar", "user", params.id, {
+				username: targetUser?.username,
+				avatar: avatarUrl,
+			});
+
+			return { success: true, avatar: avatarUrl };
+		},
+		{
+			body: t.Object({
+				avatar: t.File(),
+			}),
+		},
+	)
+
+	.delete("/users/:id/avatar", async ({ params, user }) => {
+		const targetUser = adminQueries.findUserById.get(params.id);
+		if (!targetUser) return { error: "User not found" };
+
+		db.query("UPDATE users SET avatar = NULL WHERE id = ?").run(params.id);
+
+		logModerationAction(user.id, "remove_avatar", "user", params.id, {
+			username: targetUser?.username,
+		});
+
+		return { success: true };
+	})
+
+	.post(
+		"/users/:id/banner",
+		async ({ params, body, user }) => {
+			const targetUser = adminQueries.findUserById.get(params.id);
+			if (!targetUser) return { error: "User not found" };
+
+			const { banner } = body;
+			if (!banner || !banner.stream) {
+				return { error: "Banner file is required" };
+			}
+
+			const allowedTypes = { "image/webp": ".webp" };
+			const fileExtension = allowedTypes[banner.type];
+			if (!fileExtension) {
+				return { error: "Invalid file type. Only WebP images are allowed." };
+			}
+
+			if (banner.size > 10 * 1024 * 1024) {
+				return {
+					error: "File too large. Please upload an image smaller than 10MB.",
+				};
+			}
+
+			const uploadsDir = "./.data/uploads";
+			const arrayBuffer = await banner.arrayBuffer();
+			const hasher = new Bun.CryptoHasher("sha256");
+			hasher.update(arrayBuffer);
+			const fileHash = hasher.digest("hex");
+			const fileName = `${fileHash}${fileExtension}`;
+			const filePath = `${uploadsDir}/${fileName}`;
+
+			await Bun.write(filePath, arrayBuffer);
+
+			const bannerUrl = `/api/uploads/${fileName}`;
+			db.query("UPDATE users SET banner = ? WHERE id = ?").run(
+				bannerUrl,
+				params.id,
+			);
+
+			logModerationAction(user.id, "set_banner", "user", params.id, {
+				username: targetUser?.username,
+				banner: bannerUrl,
+			});
+
+			return { success: true, banner: bannerUrl };
+		},
+		{
+			body: t.Object({
+				banner: t.File(),
+			}),
+		},
+	)
+
+	.delete("/users/:id/banner", async ({ params, user }) => {
+		const targetUser = adminQueries.findUserById.get(params.id);
+		if (!targetUser) return { error: "User not found" };
+
+		db.query("UPDATE users SET banner = NULL WHERE id = ?").run(params.id);
+
+		logModerationAction(user.id, "remove_banner", "user", params.id, {
+			username: targetUser?.username,
+		});
+
+		return { success: true };
+	})
+
 	.get("/users/:id/permissions", async ({ params }) => {
 		const targetUser = adminQueries.findUserById.get(params.id);
 		if (!targetUser) return { error: "User not found" };
@@ -1519,8 +1756,8 @@ export default new Elysia({ prefix: "/admin", tags: ["Admin"] })
 		{
 			body: t.Object({
 				name: t.String(),
-				svg_content: t.Optional(t.String()),
-				image_url: t.Optional(t.String()),
+				svg_content: t.Optional(t.Union([t.String(), t.Null()])),
+				image_url: t.Optional(t.Union([t.String(), t.Null()])),
 				color: t.Optional(t.Union([t.String(), t.Null()])),
 				action_type: t.Optional(
 					t.Union([
@@ -1568,8 +1805,8 @@ export default new Elysia({ prefix: "/admin", tags: ["Admin"] })
 		{
 			body: t.Object({
 				name: t.Optional(t.String()),
-				svg_content: t.Optional(t.String()),
-				image_url: t.Optional(t.String()),
+				svg_content: t.Optional(t.Union([t.String(), t.Null()])),
+				image_url: t.Optional(t.Union([t.String(), t.Null()])),
 				color: t.Optional(t.Union([t.String(), t.Null()])),
 				action_type: t.Optional(
 					t.Union([
@@ -2604,6 +2841,7 @@ export default new Elysia({ prefix: "/admin", tags: ["Admin"] })
 			}
 
 			const replyTo = body.replyTo || null;
+			const source = body.source || null;
 
 			let createdAtForInsert = new Date().toISOString();
 			if (body.created_at) {
@@ -2622,6 +2860,7 @@ export default new Elysia({ prefix: "/admin", tags: ["Admin"] })
 				body.content.trim(),
 				replyTo,
 				createdAtForInsert,
+				source,
 			);
 
 			logModerationAction(user.id, "create_post_as_user", "post", postId, {
@@ -2629,6 +2868,7 @@ export default new Elysia({ prefix: "/admin", tags: ["Admin"] })
 				content: body.content.substring(0, 100),
 				replyTo,
 				noCharLimit,
+				source,
 			});
 
 			if (replyTo) {
@@ -2651,6 +2891,7 @@ export default new Elysia({ prefix: "/admin", tags: ["Admin"] })
 				noCharLimit: t.Optional(t.Boolean()),
 				created_at: t.Optional(t.String()),
 				massTweet: t.Optional(t.Boolean()),
+				source: t.Optional(t.Union([t.String(), t.Null()])),
 			}),
 		},
 	)

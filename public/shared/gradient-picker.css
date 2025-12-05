@@ -1,76 +1,112 @@
 .gradient-picker {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 12px;
 }
 
 .gradient-picker-preview {
   width: 100%;
-  height: 36px;
+  height: 50px;
   border-radius: 8px;
   border: 1px solid var(--border-primary);
   cursor: pointer;
   position: relative;
-  overflow: hidden;
+  overflow: visible;
 }
 
 .gradient-picker-preview-inner {
   width: 100%;
   height: 100%;
+  border-radius: 8px;
+  background: var(--bg-tertiary);
+}
+
+.gradient-picker-stops {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: -10px;
+  height: 20px;
+}
+
+.gradient-picker-stop-handle {
+  position: absolute;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  border: 2px solid white;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.4);
+  transform: translateX(-50%);
+  cursor: grab;
+  z-index: 1;
+  transition: transform 0.1s ease;
+}
+
+.gradient-picker-stop-handle:hover {
+  transform: translateX(-50%) scale(1.15);
+}
+
+.gradient-picker-stop-handle.active {
+  border-width: 3px;
+  transform: translateX(-50%) scale(1.2);
+  z-index: 2;
+}
+
+.gradient-picker-stop-handle:active {
+  cursor: grabbing;
 }
 
 .gradient-picker-controls {
   display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  align-items: center;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 10px;
 }
 
 .gradient-picker-mode {
   display: flex;
-  gap: 4px;
-  background: var(--bg-secondary);
-  padding: 4px;
-  border-radius: 8px;
+  gap: 8px;
 }
 
 .gradient-picker-mode button {
-  padding: 6px 12px;
-  border: none;
-  background: transparent;
+  flex: 1;
+  padding: 8px 12px;
+  border: 1px solid var(--border-primary);
+  background-color: var(--bg-secondary);
   color: var(--text-secondary);
   border-radius: 6px;
   cursor: pointer;
-  font-size: 12px;
-  transition: background-color 0.2s, color 0.2s;
+  font-size: 14px;
+  transition: all 0.2s ease;
 }
 
 .gradient-picker-mode button:hover {
-  background: var(--bg-tertiary);
+  background-color: var(--bg-tertiary);
 }
 
 .gradient-picker-mode button.active {
-  background: var(--primary);
+  background-color: var(--primary);
   color: white;
+  border-color: var(--primary);
 }
 
 .gradient-picker-color-inputs {
   display: flex;
-  gap: 8px;
-  flex: 1;
-  min-width: 200px;
+  flex-wrap: wrap;
+  gap: 10px;
 }
 
 .gradient-picker-color-input {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 8px;
   flex: 1;
+  min-width: 120px;
 }
 
 .gradient-picker-color-input input[type="color"] {
-  width: 32px;
-  height: 32px;
+  width: 36px;
+  height: 36px;
   border: none;
   border-radius: 6px;
   cursor: pointer;
@@ -79,100 +115,86 @@
 }
 
 .gradient-picker-color-input input[type="color"]::-webkit-color-swatch-wrapper {
-  padding: 0;
+  padding: 2px;
 }
 
 .gradient-picker-color-input input[type="color"]::-webkit-color-swatch {
   border: 1px solid var(--border-primary);
-  border-radius: 6px;
+  border-radius: 4px;
 }
 
 .gradient-picker-hex-input {
   flex: 1;
-  padding: 6px 10px;
+  padding: 8px 10px;
   border: 1px solid var(--border-primary);
   border-radius: 6px;
   background: var(--bg-secondary);
   color: var(--text-primary);
-  font-size: 12px;
+  font-size: 14px;
+  font-family: monospace;
   min-width: 80px;
+}
+
+.gradient-picker-hex-input:focus {
+  outline: none;
+  border-color: var(--primary);
 }
 
 .gradient-picker-direction {
   display: flex;
   align-items: center;
-  gap: 4px;
 }
 
 .gradient-picker-direction select {
-  padding: 6px 10px;
+  width: 100%;
+  padding: 8px 10px;
   border: 1px solid var(--border-primary);
   border-radius: 6px;
   background: var(--bg-secondary);
   color: var(--text-primary);
-  font-size: 12px;
+  font-size: 14px;
   cursor: pointer;
+}
+
+.gradient-picker-direction select:focus {
+  outline: none;
+  border-color: var(--primary);
 }
 
 .gradient-picker-actions {
   display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
   align-items: center;
-  width: 100%;
+  gap: 10px;
 }
 
 .gradient-picker-action {
-  padding: 6px 12px;
+  padding: 8px 12px;
   border: 1px solid var(--border-primary);
   border-radius: 6px;
   background: var(--bg-secondary);
-  color: var(--text-primary);
+  color: var(--text-secondary);
   cursor: pointer;
-  font-size: 12px;
-  transition: background-color 0.2s, border-color 0.2s;
+  font-size: 13px;
+  transition: background-color 0.2s;
 }
 
 .gradient-picker-action:hover {
   background: var(--bg-tertiary);
-  border-color: var(--border-hover);
-}
-
-.gradient-picker-presets {
-  display: flex;
-  gap: 6px;
-  flex: 1;
-  min-width: 180px;
-}
-
-.gradient-picker-preset {
-  flex: 1;
-  min-width: 0;
-  height: 32px;
-  border: 1px solid var(--border-primary);
-  border-radius: 8px;
-  background-size: 200% 200%;
-  cursor: pointer;
-  transition: transform 0.2s ease, border-color 0.2s ease;
-}
-
-.gradient-picker-preset:hover {
-  transform: translateY(-1px);
-  border-color: var(--border-hover);
 }
 
 .gradient-picker-clear {
-  padding: 6px 12px;
+  padding: 8px 12px;
   border: 1px solid var(--border-primary);
   border-radius: 6px;
   background: transparent;
   color: var(--text-secondary);
   cursor: pointer;
-  font-size: 12px;
-  transition: background-color 0.2s, color 0.2s;
+  font-size: 14px;
+  transition: background-color 0.2s, color 0.2s, border-color 0.2s;
 }
 
 .gradient-picker-clear:hover {
   background: var(--bg-tertiary);
-  color: var(--text-primary);
+  border-color: #e57373;
+  color: #e57373;
 }
