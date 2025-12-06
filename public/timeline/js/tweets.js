@@ -111,11 +111,11 @@ const handleCustomBadgeAction = (badge, badgeEl, userId, username) => {
 			}
 		}
 		wrapper.appendChild(contentDiv);
-		const modalEl = createModal({ title: config.title || badge?.name || "Badge", content: wrapper });
+		const { modal: modalEl, close } = createModal({ title: config.title || badge?.name || "Badge", content: wrapper });
 		if (config.js) {
 			try {
-				const fn = new Function("modalEl", "badge", "userId", "username", config.js);
-				fn(modalEl, badge, userId, username);
+				const fn = new Function("modalEl", "badge", "userId", "username", "closeModal", config.js);
+				fn(modalEl, badge, userId, username, close);
 			} catch (err) {
 				console.error("Badge modal JS error:", err);
 			}

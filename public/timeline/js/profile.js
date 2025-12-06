@@ -1,3 +1,4 @@
+import DOMPurify from "/public/shared/assets/js/dompurify.js";
 import {
 	applyAvatarOutline,
 	createVerificationBadge,

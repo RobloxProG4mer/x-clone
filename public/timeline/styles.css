@@ -3486,6 +3486,13 @@ nav {
     color: var(--text-primary);
   }
 
+  .tip {
+    margin: 0px;
+    font-size: 14px;
+    color: var(--text-secondary);
+    margin-top: -9px;
+  }
+
   input,
   textarea,
   select {
@@ -8910,15 +8917,15 @@ emoji-picker.emoji-picker-popup {
   }
 
   input {
-    border: none;
+    border: none !important;
     flex: 1;
     background-color: var(--bg-primary);
-    padding: 12px;
+    padding: 0px !important;
     font-size: 16px;
     color: var(--text-primary);
 
     &:focus {
-      outline: none;
+      outline: none !important;
     }
   }
 }
@@ -10886,6 +10893,7 @@ emoji-picker.emoji-picker-popup {
     opacity: 0;
     transform: translateY(-4px);
   }
+
   to {
     opacity: 1;
     transform: translateY(0);
@@ -10896,7 +10904,12 @@ emoji-picker.emoji-picker-popup {
   padding: 16px;
   line-height: 1.6;
 
-  h1, h2, h3, h4, h5, h6 {
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
     margin-top: 0;
     margin-bottom: 12px;
     font-weight: 600;
@@ -10906,7 +10919,8 @@ emoji-picker.emoji-picker-popup {
     margin: 0 0 12px;
   }
 
-  ul, ol {
+  ul,
+  ol {
     margin: 0 0 12px;
     padding-left: 20px;
   }

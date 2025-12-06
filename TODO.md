@@ -2,12 +2,8 @@
 - automated spam/nsfw detection using openapi or perspective api
 
 - maybe remove gray checkmarks outline
-- tell users more clearly about thinks like same name as username = hide username
 
 - gimmickbots clone
-- account hover cards <-- doing
-
-- don't let someone report the same tweet twice
 
 **other things:**
 

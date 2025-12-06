@@ -10,7 +10,7 @@
   justify-content: center;
   z-index: 10000;
   flex-direction: column;
-  transition: background-color 2s ease;
+  transition: background-color .2s ease;
 }
 
 .modal-overlay.visible {
