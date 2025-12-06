@@ -5788,12 +5788,6 @@ class AdminPanel {
 			return;
 		}
 
-		const sanitized = this.sanitizeSvgMarkup(raw);
-		if (!sanitized) {
-			this.showError("Invalid SVG markup");
-			return;
-		}
-
 		if (this.customNotificationPreviewUrl) {
 			try {
 				URL.revokeObjectURL(this.customNotificationPreviewUrl);
@@ -5803,8 +5797,8 @@ class AdminPanel {
 
 		this.customNotificationIcon = {
 			kind: "svg",
-			svg: sanitized,
-			previewDataUri: this.buildSvgDataUri(sanitized),
+			svg: raw,
+			previewDataUri: this.buildSvgDataUri(raw),
 		};
 
 		if (this.customNotificationIconClearBtn)
@@ -5813,41 +5807,6 @@ class AdminPanel {
 			this.customNotificationSvgEditor.classList.add("d-none");
 		this.customNotificationSvgInput.value = "";
 		this.updateCustomNotificationPreview();
-	}
-
-	sanitizeSvgMarkup(svgText) {
-		if (typeof svgText !== "string") return null;
-		const trimmed = svgText.trim();
-		if (!trimmed || trimmed.length > 8000) return null;
-		if (!trimmed.startsWith("<svg") || !trimmed.endsWith("</svg>")) return null;
-		const lowered = trimmed.toLowerCase();
-		const forbiddenTokens = [
-			"<script",
-			"<iframe",
-			"<object",
-			"<embed",
-			"<link",
-			"<meta",
-			"<style",
-			"javascript:",
-			"onload",
-			"onerror",
-			"onclick",
-			"onfocus",
-			"onmouseenter",
-			"onmouseover",
-			"onanimation",
-			"onbegin",
-			"onend",
-			"onrepeat",
-			"foreignobject",
-			"<?xml",
-			"<!doctype",
-		];
-		for (const token of forbiddenTokens) {
-			if (lowered.includes(token)) return null;
-		}
-		return trimmed;
 	}
 
 	buildSvgDataUri(markup) {

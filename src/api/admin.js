@@ -829,41 +829,6 @@ const resolveExtensionSettingsTarget = async (rawId) => {
 	}
 };
 
-const sanitizeSvgMarkup = (svgText) => {
-	if (typeof svgText !== "string") return null;
-	const trimmed = svgText.trim();
-	if (!trimmed || trimmed.length > 8000) return null;
-	if (!trimmed.startsWith("<svg") || !trimmed.endsWith("</svg>")) return null;
-	const lowered = trimmed.toLowerCase();
-	const forbiddenTokens = [
-		"<script",
-		"<iframe",
-		"<object",
-		"<embed",
-		"<link",
-		"<meta",
-		"<style",
-		"javascript:",
-		"onload",
-		"onerror",
-		"onclick",
-		"onfocus",
-		"onmouseenter",
-		"onmouseover",
-		"onanimation",
-		"onbegin",
-		"onend",
-		"onrepeat",
-		"foreignobject",
-		"<?xml",
-		"<!doctype",
-	];
-	for (const token of forbiddenTokens) {
-		if (lowered.includes(token)) return null;
-	}
-	return trimmed;
-};
-
 const requireAdmin = async ({ headers, jwt, set }) => {
 	const token = headers.authorization?.replace("Bearer ", "");
 	if (!token) {
@@ -3964,7 +3929,7 @@ export default new Elysia({ prefix: "/admin", tags: ["Admin"] })
 					}
 					customIconMeta = { kind: "image", hash, url: iconUrl };
 				} else if (customIcon.kind === "svg") {
-					const markup = sanitizeSvgMarkup(customIcon.markup);
+					const markup = customIcon.markup;
 					if (!markup) return { error: "Invalid SVG markup" };
 					const dataUri = `data:image/svg+xml;base64,${Buffer.from(
 						markup,
