@@ -145,6 +145,8 @@ class AdminPanel {
 			this.isSuperAdmin = !!user.superadmin;
 			if (!this.isSuperAdmin) {
 				document.getElementById("bulkTweetBtn")?.classList.add("d-none");
+			} else {
+				document.getElementById("globalMassDeleteBtn")?.style.removeProperty("display");
 			}
 			this.setupEventListeners();
 			this.updateBulkEditControls();
@@ -5991,6 +5993,103 @@ class AdminPanel {
 		}
 	}
 
+	showGlobalMassDeleteModal() {
+		const modal = new bootstrap.Modal(
+			document.getElementById("globalMassDeleteModal"),
+		);
+		document.getElementById("globalMassDeleteDate").value = "";
+		document.getElementById("globalMassDeleteConfirm").value = "";
+		document.getElementById("globalMassDeleteProgress").style.display =
+			"none";
+		modal.show();
+	}
+
+	async executeGlobalMassDelete() {
+		const dateInput = document.getElementById("globalMassDeleteDate").value;
+		const confirmInput = document
+			.getElementById("globalMassDeleteConfirm")
+			.value.trim();
+
+		if (!dateInput) {
+			this.showError("Please select a date");
+			return;
+		}
+
+		if (confirmInput !== "DELETE ALL") {
+			this.showError('Please type "DELETE ALL" to confirm');
+			return;
+		}
+
+		const selectedDate = new Date(dateInput);
+		if (!Number.isFinite(selectedDate.getTime())) {
+			this.showError("Invalid date");
+			return;
+		}
+
+		const progressDiv = document.getElementById("globalMassDeleteProgress");
+		const progressBar = document.getElementById(
+			"globalMassDeleteProgressBar",
+		);
+		const statusDiv = document.getElementById("globalMassDeleteStatus");
+		const executeBtn = document.getElementById("globalMassDeleteExecuteBtn");
+		const cancelBtn = document.getElementById("globalMassDeleteCancelBtn");
+
+		progressDiv.style.display = "block";
+		progressBar.style.width = "0%";
+		statusDiv.textContent = "Starting...";
+		executeBtn.disabled = true;
+		cancelBtn.disabled = true;
+
+		try {
+			progressBar.style.width = "30%";
+			statusDiv.textContent = "Deleting tweets...";
+
+			const response = await this.apiCall("/api/admin/posts/mass-delete", {
+				method: "POST",
+				body: JSON.stringify({ after_date: selectedDate.toISOString() }),
+			});
+
+			progressBar.style.width = "100%";
+			progressBar.classList.remove("progress-bar-animated");
+
+			if (response.success) {
+				statusDiv.textContent = `Deleted ${response.deletedCount} tweets`;
+				progressBar.classList.add("bg-success");
+				this.showSuccess(
+					`Successfully deleted ${response.deletedCount} tweets after ${new Date(response.after_date).toLocaleString()}`,
+				);
+
+				setTimeout(() => {
+					const modal = bootstrap.Modal.getInstance(
+						document.getElementById("globalMassDeleteModal"),
+					);
+					modal?.hide();
+					this.loadPosts();
+				}, 2000);
+			} else {
+				statusDiv.textContent = response.error || "Failed";
+				progressBar.classList.add("bg-danger");
+				this.showError(response.error || "Mass delete failed");
+			}
+		} catch (err) {
+			progressBar.style.width = "100%";
+			progressBar.classList.remove("progress-bar-animated");
+			progressBar.classList.add("bg-danger");
+			statusDiv.textContent = err.message || "Error";
+			this.showError(err.message || "Mass delete failed");
+		} finally {
+			executeBtn.disabled = false;
+			cancelBtn.disabled = false;
+			setTimeout(() => {
+				progressDiv.style.display = "none";
+				progressBar.style.width = "0%";
+				progressBar.classList.remove("bg-success", "bg-danger");
+				progressBar.classList.add("progress-bar-animated");
+				statusDiv.textContent = "";
+			}, 5000);
+		}
+	}
+
 	renderDMsTable(conversations) {
 		const tableHtml = `
 			<div class="table-responsive">
@@ -8697,7 +8796,7 @@ class AdminPanel {
 				const file = imageFileInput.files?.[0];
 				if (!file) return;
 				try {
-					const cropped = await window.openImageCropper(file, { aspect: 1, size: 128 });
+					const cropped = await window.openImageCropper(file, { aspect: 1, size: 128, transparent: true });
 					if (cropped === window.CROP_CANCELLED) {
 						imageFileInput.value = "";
 						return;
@@ -8869,7 +8968,7 @@ class AdminPanel {
 			const file = newFileInput.files?.[0];
 			if (!file) return;
 			try {
-				const cropped = await window.openImageCropper(file, { aspect: 1, size: 128 });
+				const cropped = await window.openImageCropper(file, { aspect: 1, size: 128, transparent: true });
 				if (cropped === window.CROP_CANCELLED) {
 					newFileInput.value = "";
 					return;

@@ -593,6 +593,7 @@ export default new Elysia({ prefix: "/tweets", tags: ["Tweets"] })
 				ai_vibe,
 				unsplash,
 				unsplash_images,
+				emoji_kitchen_url,
 				outline,
 			} = body;
 			const tweetContent = typeof content === "string" ? content : "";
@@ -664,7 +665,8 @@ export default new Elysia({ prefix: "/tweets", tags: ["Tweets"] })
 				!interactive_card &&
 				!targetArticleId &&
 				!unsplash &&
-				!hasUnsplashImages
+				!hasUnsplashImages &&
+				!emoji_kitchen_url
 			) {
 				return { error: "Tweet content is required" };
 			}
@@ -677,7 +679,6 @@ export default new Elysia({ prefix: "/tweets", tags: ["Tweets"] })
 				}
 			}
 
-			// Allow longer tweets for gold, gray, or verified users, or use custom limit
 			let maxTweetLength = user.character_limit || 400;
 			if (!user.character_limit) {
 				maxTweetLength = user.gray
@@ -702,6 +703,15 @@ export default new Elysia({ prefix: "/tweets", tags: ["Tweets"] })
 					)
 				) {
 					return { error: "Invalid GIF URL" };
+				}
+			}
+
+			if (emoji_kitchen_url) {
+				if (
+					typeof emoji_kitchen_url !== "string" ||
+					!emoji_kitchen_url.startsWith("https://emojik.vercel.app/s/")
+				) {
+					return { error: "Invalid emoji kitchen URL" };
 				}
 			}
 
@@ -1033,6 +1043,21 @@ export default new Elysia({ prefix: "/tweets", tags: ["Tweets"] })
 						);
 					}
 				}
+			}
+
+			if (emoji_kitchen_url) {
+				const attachmentId = Bun.randomUUIDv7();
+				const attachment = saveAttachment.get(
+					attachmentId,
+					tweetId,
+					null,
+					"emoji_kitchen.webp",
+					"image/webp",
+					0,
+					emoji_kitchen_url,
+					false,
+				);
+				attachments.push(attachment);
 			}
 
 			let articlePreview = null;

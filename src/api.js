@@ -104,6 +104,7 @@ export default new Elysia({
 			max: 50,
 			scoping: "scoped",
 			generator: ratelimit,
+			skip: (request) => request.method === "GET",
 		}),
 	)
 	.onBeforeHandle(async ({ headers, request, set }) => {

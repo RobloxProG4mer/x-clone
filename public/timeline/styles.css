@@ -1138,12 +1138,10 @@ nav {
     }
 
     &:not(:disabled):hover {
-      transform: translateY(-2px);
       box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
     }
 
     &:not(:disabled):active {
-      transform: translateY(0);
       box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
     }
   }
@@ -8764,7 +8762,7 @@ emoji-picker.emoji-picker-popup {
   color: var(--error-color);
 }
 
-.modal {
+/* .modal {
   display: none;
   width: 100%;
   background-color: var(--bg-overlay);
@@ -8778,7 +8776,7 @@ emoji-picker.emoji-picker-popup {
       opacity: 0;
     }
   }
-}
+} */
 
 .modal-content {
   background: var(--bg-primary);
@@ -9927,7 +9925,6 @@ emoji-picker.emoji-picker-popup {
   align-items: center;
   text-align: center;
   margin-bottom: 25px;
-  font-size: 17px;
   font-size: 18px;
 
   img {

@@ -1,7 +1,7 @@
 export const CROP_CANCELLED = Symbol("CROP_CANCELLED");
 const MAX_RELATIVE_ZOOM = 5;
 
-export function openImageCropper(file, options = {}) {
+export function openImageCropper(file, options = {}) { // options: aspect=1, size=300, transparent=false
 	const aspect = options.aspect || 1;
 	const outSize = options.size || 300;
 
@@ -279,8 +279,10 @@ export function openImageCropper(file, options = {}) {
 				outCanvas.width = outSize;
 				outCanvas.height = Math.round(outSize / aspect);
 				const outCtx = outCanvas.getContext("2d");
-				outCtx.fillStyle = "#FFFFFF";
-				outCtx.fillRect(0, 0, outCanvas.width, outCanvas.height);
+				if (!options.transparent) {
+					outCtx.fillStyle = "#FFFFFF";
+					outCtx.fillRect(0, 0, outCanvas.width, outCanvas.height);
+				}
 
 				const dwCss = canvas.width / ratio;
 				const dhCss = canvas.height / ratio;

@@ -460,14 +460,17 @@ export const useComposer = (
 						if (
 							selectedGif ||
 							selectedUnsplashImages.length > 0 ||
-						pendingFiles.length > 0 ||
-						emojiKitchenUrl
-					) {
-						toastQueue.add(
-							`<h1>Cannot add Emoji Kitchen</h1><p>Remove other media first</p>`,
-						);
-						return;
-					}
+							pendingFiles.length > 0 ||
+							emojiKitchenUrl
+						) {
+							toastQueue.add(
+								`<h1>Cannot add Emoji Kitchen</h1><p>Remove other media first</p>`,
+							);
+							return;
+						}
+
+						let emoji1 = null;
+						let emoji2 = null;
 
 						const kitchenContent = document.createElement("div");
 						kitchenContent.className = "emoji-kitchen-popover";
@@ -513,7 +516,7 @@ export const useComposer = (
 						createBtn.type = "button";
 						createBtn.className = "emoji-kitchen-create";
 						createBtn.disabled = true;
-						createBtn.textContent = "Create Kitchen Emoji";
+						createBtn.textContent = "Create kitchen emoji";
 						kitchenContent.appendChild(createBtn);
 
 						const popupHandle = createPopup({
@@ -580,23 +583,26 @@ export const useComposer = (
 
 							try {
 								const kitchenUrl = `https://emojik.vercel.app/s/${emoji1.replace(/\uFE0F/g, "")}_${emoji2.replace(/\uFE0F/g, "")}`;
-								
+
 								emojiKitchenUrl = kitchenUrl;
-								
+
 								const tempPreview = document.createElement("div");
-								tempPreview.className = "attachment-preview-item emoji-kitchen-preview";
+								tempPreview.className =
+									"attachment-preview-item emoji-kitchen-preview";
 								tempPreview.dataset.kitchenUrl = kitchenUrl;
 								tempPreview.innerHTML = `
 									<img src="${kitchenUrl}" alt="Emoji Kitchen" />
 									<button type="button" class="remove-attachment">×</button>
 								`;
-								
-								tempPreview.querySelector(".remove-attachment")?.addEventListener("click", () => {
-									emojiKitchenUrl = null;
-									tempPreview.remove();
-									updateCharacterCount();
-								});
-								
+
+								tempPreview
+									.querySelector(".remove-attachment")
+									?.addEventListener("click", () => {
+										emojiKitchenUrl = null;
+										tempPreview.remove();
+										updateCharacterCount();
+									});
+
 								attachmentPreview.appendChild(tempPreview);
 								updateCharacterCount();
 
@@ -1582,6 +1588,7 @@ export const useComposer = (
 			(pendingFiles && pendingFiles.length > 0) ||
 			!!selectedGif ||
 			selectedUnsplashImages.length > 0 ||
+			!!emojiKitchenUrl ||
 			pollEnabled ||
 			!!interactiveCard ||
 			!!article;

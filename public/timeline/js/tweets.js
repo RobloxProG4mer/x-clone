@@ -565,7 +565,10 @@ const createPollElement = (poll, tweet) => {
 				<div class="poll-option-content">
 					<span class="poll-option-text">${option.option_text
 						.replaceAll("<", "&lt;")
-						.replaceAll(">", "&gt;")}${poll.userVote === option.id ? `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-circle-check-icon lucide-circle-check"><circle cx="12" cy="12" r="10"/><path d="m9 12 2 2 4-4"/></svg>` : ""}</span>
+						.replaceAll(
+							">",
+							"&gt;",
+						)}${poll.userVote === option.id ? `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-circle-check-icon lucide-circle-check"><circle cx="12" cy="12" r="10"/><path d="m9 12 2 2 4-4"/></svg>` : ""}</span>
 					<span class="poll-option-percentage">${option.percentage}%</span>
 				</div>
 			`;
@@ -575,7 +578,10 @@ const createPollElement = (poll, tweet) => {
 				<div class="poll-option-content">
 					<span class="poll-option-text">${option.option_text
 						.replaceAll("<", "&lt;")
-						.replaceAll(">", "&gt;")}${poll.userVote === option.id ? `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-circle-check-icon lucide-circle-check"><circle cx="12" cy="12" r="10"/><path d="m9 12 2 2 4-4"/></svg>` : ""}</span>
+						.replaceAll(
+							">",
+							"&gt;",
+						)}${poll.userVote === option.id ? `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-circle-check-icon lucide-circle-check"><circle cx="12" cy="12" r="10"/><path d="m9 12 2 2 4-4"/></svg>` : ""}</span>
 				</div>
 			`;
 			optionEl.addEventListener("click", (e) => {
@@ -1727,7 +1733,18 @@ export const createTweetElement = (tweet, config = {}) => {
 					);
 					openImageFullscreen(attachment.file_url, attachment.file_name);
 				});
-				attachmentEl.appendChild(img);
+
+				if (attachment.file_url.startsWith("https://emojik.vercel.app/s/")) {
+					img.style.width = "160px";
+					img.style.height = "160px";
+					img.style.borderRadius = "none";
+					img.style.pointerEvents = "none";
+					img.style.border = "none";
+					img.draggable = false;
+					tweetEl.appendChild(img);
+				} else {
+					attachmentEl.appendChild(img);
+				}
 			} else if (attachment.file_type === "video/mp4") {
 				const video = document.createElement("video");
 				video.src = attachment.file_url;
@@ -1738,7 +1755,7 @@ export const createTweetElement = (tweet, config = {}) => {
 			attachmentsEl.appendChild(attachmentEl);
 		});
 
-		tweetEl.appendChild(attachmentsEl);
+		if (attachmentsEl.querySelectorAll("img, video").length) tweetEl.appendChild(attachmentsEl);
 	}
 
 	if (tweet.quoted_tweet) {
@@ -2772,9 +2789,9 @@ export const createTweetElement = (tweet, config = {}) => {
 
 		getUser().then(async (currentUser) => {
 			const isOwnTweet =
-				currentUser && String(currentUser.id) === String(tweet.author.id);
+				currentUser && String(currentUser.id) === String(tweet.author?.id);
 
-			let filteredUserItems = userItems;
+			let filteredUserItems = [];
 			if (isOwnTweet) {
 				filteredUserItems = userItems.filter((item) => {
 					if (item.requiresGray && !currentUser.gray) return false;

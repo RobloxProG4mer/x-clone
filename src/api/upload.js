@@ -141,9 +141,18 @@ export default new Elysia({ prefix: "/upload", tags: ["Upload"] })
 export const uploadRoutes = new Elysia({
 	prefix: "/uploads",
 	tags: ["Upload"],
-}).get(
-	"/:filename",
-	async ({ params, set }) => {
+})
+	.use(
+		rateLimit({
+			duration: 10_000,
+			max: 1000,
+			scoping: "scoped",
+			generator: ratelimit,
+		}),
+	)
+	.get(
+		"/:filename",
+		async ({ params, set }) => {
 		const { filename } = params;
 
 		if (

@@ -2462,6 +2462,13 @@ const setupSettingsEventHandlers = async () => {
 				target.closest(".settings-modal-overlay") || target.closest(".modal");
 			if (overlay) hideModal(overlay);
 		}
+
+		if (target.classList?.contains("settings-modal-overlay")) {
+			const modal = target.querySelector(".modal");
+			if (modal && event.target === target) {
+				hideModal(target);
+			}
+		}
 	});
 
 	document.addEventListener("submit", (event) => {
@@ -2709,6 +2716,14 @@ const showModal = (element) => {
 	if (!overlay) return;
 	overlay.classList.add("active");
 	overlay.scrollTop = 0;
+
+	const modal = overlay.querySelector(".modal");
+	if (modal) {
+		requestAnimationFrame(() => {
+			modal.classList.add("visible");
+			modal.classList.remove("closing");
+		});
+	}
 };
 
 const hideModal = (element) => {
@@ -2717,7 +2732,18 @@ const hideModal = (element) => {
 		? element
 		: element.closest?.(".settings-modal-overlay") || element;
 	if (!overlay) return;
-	overlay.classList.remove("active");
+
+	const modal = overlay.querySelector(".modal");
+	if (modal) {
+		modal.classList.remove("visible");
+		modal.classList.add("closing");
+		setTimeout(() => {
+			overlay.classList.remove("active");
+			modal.classList.remove("closing");
+		}, 200);
+	} else {
+		overlay.classList.remove("active");
+	}
 };
 
 const handleAddPasskey = async () => {

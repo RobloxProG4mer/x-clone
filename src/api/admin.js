@@ -5469,6 +5469,10 @@ export default new Elysia({ prefix: "/admin", tags: ["Admin"] })
 				return { error: "Post not found" };
 			}
 
+			if (!user.superadmin) {
+				return { error: "You don't have permission to do this" };
+			}
+
 			const percentage = Number(body.percentage) || 0;
 			if (percentage <= 0 || percentage > 100) {
 				return { error: "Percentage must be between 1 and 100" };
@@ -5587,6 +5591,68 @@ export default new Elysia({ prefix: "/admin", tags: ["Admin"] })
 				action: t.String(),
 				percentage: t.Number(),
 				comments: t.Optional(t.Array(t.String())),
+			}),
+		},
+	)
+
+	.post(
+		"/posts/mass-delete",
+		async ({ body, user, set }) => {
+			if (!superAdminIds.includes(user.id)) {
+				set.status = 403;
+				return { error: "Superadmin access required" };
+			}
+
+			const afterDate = body.after_date;
+			if (!afterDate) {
+				set.status = 400;
+				return { error: "after_date is required" };
+			}
+
+			const dateObj = new Date(afterDate);
+			if (!Number.isFinite(dateObj.getTime())) {
+				set.status = 400;
+				return { error: "Invalid date format" };
+			}
+
+			const isoDate = dateObj.toISOString();
+
+			const countResult = db
+				.query(
+					"SELECT COUNT(*) as count FROM posts WHERE created_at > ?",
+				)
+				.get(isoDate);
+
+			const deleteCount = countResult?.count || 0;
+
+			if (deleteCount === 0) {
+				return {
+					success: true,
+					deletedCount: 0,
+					after_date: isoDate,
+				};
+			}
+
+			db.query("DELETE FROM posts WHERE created_at > ?").run(isoDate);
+
+			logModerationAction(user.id, "global_mass_delete", "post", "*", {
+				after_date: isoDate,
+				deletedCount: deleteCount,
+			});
+
+			return {
+				success: true,
+				deletedCount: deleteCount,
+				after_date: isoDate,
+			};
+		},
+		{
+			detail: {
+				description:
+					"Mass delete all tweets after a specific date (superadmin only)",
+			},
+			body: t.Object({
+				after_date: t.String(),
 			}),
 		},
 	);

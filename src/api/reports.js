@@ -19,6 +19,10 @@ const checkReportBan = db.prepare(`
   SELECT id FROM report_bans WHERE user_id = ?
 `);
 
+const checkExistingReport = db.prepare(`
+  SELECT id FROM reports WHERE reporter_id = ? AND reported_type = ? AND reported_id = ?
+`);
+
 const getUser = db.prepare(`
   SELECT id, username, name, avatar FROM users WHERE id = ?
 `);
@@ -66,7 +70,15 @@ export default new Elysia({ prefix: "/reports", tags: ["Reports"] })
 				}
 
 				const { reported_type, reported_id, reason, additional_info } = body;
-
+			const existingReport = checkExistingReport.get(
+				user.id,
+				reported_type,
+				reported_id,
+			);
+			if (existingReport) {
+				set.status = 400;
+				return { error: "You have already reported this" };
+			}
 				if (reported_type === "user") {
 					const reportedUser = getUser.get(reported_id);
 					if (!reportedUser) {
