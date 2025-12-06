@@ -1100,6 +1100,9 @@ export const createTweetElement = (tweet, config = {}) => {
 	tweetHeaderAvatarEl.alt = tweet.author.name || tweet.author.username;
 	tweetHeaderAvatarEl.classList.add("tweet-header-avatar");
 	tweetHeaderAvatarEl.setAttribute("loading", "lazy");
+	tweetHeaderAvatarEl.loading = "lazy";
+	tweetHeaderAvatarEl.width = 48;
+	tweetHeaderAvatarEl.height = 48;
 	tweetHeaderAvatarEl.draggable = false;
 
 	let avatarRadiusValue;
@@ -1152,7 +1155,8 @@ export const createTweetElement = (tweet, config = {}) => {
 
 	const tweetHeaderNameEl = document.createElement("p");
 	tweetHeaderNameEl.className = "name";
-	tweetHeaderNameEl.textContent = tweet.author.name || tweet.author.username;
+	tweetHeaderNameEl.textContent =
+		tweet.author.name || `@${tweet.author.username}`;
 	tweetHeaderNameEl.classList.add("tweet-header-name");
 	tweetHeaderNameEl.addEventListener("click", (e) => {
 		e.stopPropagation();
@@ -1273,7 +1277,7 @@ export const createTweetElement = (tweet, config = {}) => {
 		tweetHeaderNameEl.appendChild(communityTagEl);
 	}
 
-	if (tweet.author.username !== tweet.author.name) {
+	if (tweet.author.username !== tweet.author.name && tweet.author.name) {
 		const usernameEl = document.createElement("span");
 		usernameEl.textContent = `@${tweet.author.username}`;
 		usernameEl.classList.add("tweet-header-username-span");

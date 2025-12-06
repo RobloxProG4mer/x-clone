@@ -506,3 +506,7 @@ body,
 * {
   overscroll-behavior-y: contain;
 }
+
+*::placeholder {
+  user-select: none;
+}
