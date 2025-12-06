@@ -4,15 +4,14 @@
 - maybe remove gray checkmarks outline
 - tell users more clearly about thinks like same name as username = hide username
 - move "delete tweet" and similar dialogs to a modal
-- modals to bottom sheets on mobile
-- unified modals
-- emoji usernames for verified users
-- customizing profile tab colors
+- unified modals with some being bottom sheets on mobile <-- doing
+- emoji usernames for verified users <-- doing
+- customizing profile tab colors <-- doing
 
-- fix dms compose button
-- fix parody labels on tweets
+- fix new-message-modal css being broken. <-- doing
+- fix parody labels on tweets <-- doing
 
-- fix limited amount of replies being shown on tweets with a huge replies count
+- fix limited amount of replies being shown on tweets with a huge replies count <-- doing
 
 **other things:**
 
