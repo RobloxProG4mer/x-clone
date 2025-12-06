@@ -389,10 +389,6 @@ nav {
     width: fit-content;
     margin-bottom: 12px;
 
-    &:hover {
-      background-color: rgba(var(--primary-rgb), 0.1);
-    }
-
     img {
       width: 36px;
       height: 36px;
@@ -1806,6 +1802,7 @@ nav {
 
     img {
       width: 40px;
+      height: 40px;
       border-radius: 50%;
       cursor: pointer;
       transition: transform 0.2s, opacity .2s;
@@ -1839,7 +1836,7 @@ nav {
             display: inline-flex;
             align-items: center;
             vertical-align: middle;
-            margin-left: -2px;
+            margin-left: 2px;
 
             svg {
               width: 16px;
@@ -8948,7 +8945,7 @@ emoji-picker.emoji-picker-popup {
 .role-badge.affiliate-with {
   padding: 0px;
   margin-bottom: -2px;
-  margin-left: 5px;
+  margin-left: 2px;
 
   height: fit-content;
   display: inline-block;

@@ -47,18 +47,6 @@ const DOMPURIFY_CONFIG = {
 	ALLOWED_ATTR: ["href", "target", "rel", "class"],
 };
 
-const sanitizeSvg = (html) => {
-	if (!DOMPurify.isSupported) return "";
-	try {
-		return DOMPurify.sanitize(html || "", {
-			USE_PROFILES: { svg: true, svgFilters: true, html: true },
-		});
-	} catch (e) {
-		console.error("DOMPurify sanitize failed:", e);
-		return "";
-	}
-};
-
 const attachCheckmarkPopup = (badgeEl, type) => {
 	if (!badgeEl) return;
 	const message =
@@ -123,7 +111,7 @@ const renderCustomBadge = (badge) => {
 	badgeEl.tabIndex = 0;
 
 	if (badge?.svg_content) {
-		badgeEl.innerHTML = sanitizeSvg(badge.svg_content);
+		badgeEl.innerHTML = badge.svg_content;
 		const svg = badgeEl.querySelector("svg");
 		if (svg) {
 			svg.setAttribute("width", "16");
