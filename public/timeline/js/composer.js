@@ -60,6 +60,7 @@ export const useComposer = (
 	let replyRestriction = "everyone";
 	let selectedGif = null;
 	const selectedUnsplashImages = [];
+	let emojiKitchenUrl = null;
 	let scheduledFor = null;
 
 	const CIRCLE_CIRCUMFERENCE = 87.96;
@@ -261,11 +262,11 @@ export const useComposer = (
 		});
 	};
 
-	const processFileForUpload = async (file) => {
+	const processFileForUpload = async (file, skipWebP = false) => {
 		try {
-			const processedFile = await convertToWebP(file);
+			const processedFile = skipWebP ? file : await convertToWebP(file);
 
-			const allowedTypes = ["image/webp", "video/mp4"];
+			const allowedTypes = ["image/webp", "image/png", "video/mp4"];
 
 			if (!allowedTypes.includes(processedFile.type)) {
 				toastQueue.add(
@@ -503,6 +504,11 @@ export const useComposer = (
 						pickRow.appendChild(emoji2Btn);
 						kitchenContent.appendChild(pickRow);
 
+						const previewContainer = document.createElement("div");
+						previewContainer.className = "emoji-kitchen-preview-container";
+						previewContainer.style.display = "none";
+						kitchenContent.appendChild(previewContainer);
+
 						const createBtn = document.createElement("button");
 						createBtn.type = "button";
 						createBtn.className = "emoji-kitchen-create";
@@ -517,8 +523,21 @@ export const useComposer = (
 							className: "emoji-kitchen-popup",
 						});
 
-						const updateCreateButton = () => {
-							createBtn.disabled = !(emoji1 && emoji2);
+						const updateCreateButton = async () => {
+							const hasEmojis = emoji1 && emoji2;
+							createBtn.disabled = !hasEmojis;
+							
+							if (hasEmojis) {
+								try {
+									const kitchenUrl = `https://emojik.vercel.app/s/${emoji1.replace(/\uFE0F/g, "")}_${emoji2.replace(/\uFE0F/g, "")}`;
+									previewContainer.innerHTML = `<img src="${kitchenUrl}" alt="Preview" style="max-width: 150px; max-height: 150px; border-radius: 12px;" />`;
+									previewContainer.style.display = "flex";
+								} catch {
+									previewContainer.style.display = "none";
+								}
+							} else {
+								previewContainer.style.display = "none";
+							}
 						};
 
 						emoji1Btn.addEventListener("click", async () => {
@@ -533,6 +552,7 @@ export const useComposer = (
 									updateCreateButton();
 								},
 								{ x: rect.left, y: rect.bottom + 8 },
+								true,
 							);
 						});
 
@@ -548,6 +568,7 @@ export const useComposer = (
 									updateCreateButton();
 								},
 								{ x: rect.left, y: rect.bottom + 8 },
+								true,
 							);
 						});
 
@@ -558,52 +579,39 @@ export const useComposer = (
 							createBtn.textContent = "Creating...";
 
 							try {
-								const data = await query(
-									`/tenor/kitchen/${emoji1.replace(/\uFE0F/g, "")}/${emoji2.replace(/\uFE0F/g, "")}`,
-								);
+								const kitchenUrl = `https://emojik.vercel.app/s/${emoji1.replace(/\uFE0F/g, "")}_${emoji2.replace(/\uFE0F/g, "")}`;
+								const imageResponse = await fetch(kitchenUrl);
+								const blob = await imageResponse.blob();
+								const processedFile = new File([blob], "emoji-kitchen.png", {
+									type: "image/png",
+								});
 
-								if (data.success && data.url) {
-									const kitchenUrl = data.url;
-									const imageResponse = await fetch(kitchenUrl);
-									const blob = await imageResponse.blob();
-									const file = new File([blob], "emoji-kitchen.png", {
-										type: "image/png",
-									});
+								const tempId = crypto.randomUUID();
 
-									const processedFile = await convertToWebP(file);
-									const tempId = Bun.randomUUIDv7();
+								const fileData = {
+									tempId,
+									name: processedFile.name,
+									type: processedFile.type,
+									size: processedFile.size,
+									file: processedFile,
+									uploaded: false,
+									isEmojiKitchen: true,
+								};
 
-									const fileData = {
-										tempId,
-										name: processedFile.name,
-										type: processedFile.type,
-										size: processedFile.size,
-										file: processedFile,
-										uploaded: false,
-										isEmojiKitchen: true,
-									};
-
-									if (processedFile.size > 10 * 1024 * 1024) {
-										toastQueue.add(
-											`<h1>Too large</h1><p>Emoji Kitchen image exceeds 10MB</p>`,
-										);
-										createBtn.disabled = false;
-										createBtn.textContent = "Create Kitchen Emoji";
-										return;
-									}
-
-									pendingFiles.push(fileData);
-									displayAttachmentPreview(fileData);
-									updateCharacterCount();
-
-									if (popupHandle?.close) popupHandle.close();
-								} else {
+								if (processedFile.size > 10 * 1024 * 1024) {
 									toastQueue.add(
-										`<h1>Kitchen failed</h1><p>These emojis cannot be combined</p>`,
+										`<h1>Too large</h1><p>Emoji Kitchen image exceeds 10MB</p>`,
 									);
 									createBtn.disabled = false;
 									createBtn.textContent = "Create Kitchen Emoji";
+									return;
 								}
+
+								pendingFiles.push(fileData);
+								displayAttachmentPreview(fileData);
+								updateCharacterCount();
+
+								if (popupHandle?.close) popupHandle.close();
 							} catch (error) {
 								console.error("Emoji kitchen error:", error);
 								toastQueue.add(
@@ -850,21 +858,21 @@ export const useComposer = (
 	const showVibeModal = () => {
 		const content = document.createElement("div");
 		content.className = "vibe-options-list";
-		
+
 		VIBES.forEach((vibe) => {
 			const btn = document.createElement("button");
 			btn.type = "button";
 			btn.className = `vibe-option-item${vibe.id === selectedVibe ? " selected" : ""}`;
 			btn.dataset.vibe = vibe.id;
-			
+
 			const emoji = document.createElement("span");
 			emoji.className = "vibe-emoji";
 			emoji.textContent = vibe.emoji;
-			
+
 			const label = document.createElement("span");
 			label.className = "vibe-label";
 			label.textContent = vibe.label;
-			
+
 			btn.appendChild(emoji);
 			btn.appendChild(label);
 			content.appendChild(btn);

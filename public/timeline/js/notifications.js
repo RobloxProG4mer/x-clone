@@ -1,3 +1,4 @@
+import { attachHoverCard } from "../../shared/hover-card.js";
 import {
 	NOTIFICATION_ICON_CLASSES,
 	NOTIFICATION_ICON_MAP,
@@ -212,7 +213,8 @@ function renderNotifications() {
 		noNotificationsEl.innerHTML = `<img src="/public/shared/assets/img/cats/pit_cat_400.png" draggable="false">${
 			currentFilter === "mentions"
 				? "No mentions yet!"
-				: "No notifications for now!"}`;
+				: "No notifications for now!"
+		}`;
 		listElement.appendChild(noNotificationsEl);
 		return;
 	}
@@ -412,6 +414,7 @@ function createNotificationElement(group) {
 						e.stopPropagation();
 						openProfile(notif.actor_username);
 					});
+					attachHoverCard(avatarWrapper, notif.actor_username);
 				}
 
 				avatarWrapper.appendChild(avatar);

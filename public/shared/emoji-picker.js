@@ -1,4 +1,4 @@
-async function createEmojiPicker() {
+async function createEmojiPicker(skipCustom = false) {
 	let mod = null;
 	if (!customElements.get("emoji-picker")) {
 		try {
@@ -9,19 +9,21 @@ async function createEmojiPicker() {
 	}
 
 	let custom = [];
-	try {
-		const resp = await fetch("/api/emojis");
-		if (resp.ok) {
-			const data = await resp.json();
-			custom = (data.emojis || []).map((e) => ({
-				name: e.name,
-				shortcodes: [e.name],
-				url: e.file_url,
-				category: e.category || "Custom",
-			}));
+	if (!skipCustom) {
+		try {
+			const resp = await fetch("/api/emojis");
+			if (resp.ok) {
+				const data = await resp.json();
+				custom = (data.emojis || []).map((e) => ({
+					name: e.name,
+					shortcodes: [e.name],
+					url: e.file_url,
+					category: e.category || "Custom",
+				}));
+			}
+		} catch (_err) {
+			custom = [];
 		}
-	} catch (_err) {
-		custom = [];
 	}
 
 	if (mod?.Picker) {
@@ -47,8 +49,8 @@ async function createEmojiPicker() {
 	return picker;
 }
 
-export async function showEmojiPickerPopup(onEmojiSelect, position = {}) {
-	const picker = await createEmojiPicker(onEmojiSelect);
+export async function showEmojiPickerPopup(onEmojiSelect, position = {}, skipCustom = false) {
+	const picker = await createEmojiPicker(skipCustom);
 	picker.className = "emoji-picker emoji-picker-popup";
 
 	document.querySelectorAll("emoji-picker").forEach((pickerEl) => {

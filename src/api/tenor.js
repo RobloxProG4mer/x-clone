@@ -23,35 +23,6 @@ export default new Elysia({ prefix: "/tenor", tags: ["Tenor"] })
 			generator: ratelimit,
 		}),
 	)
-	.get("/kitchen/:a/:b", async ({ jwt, headers, params }) => {
-		const authorization = headers.authorization;
-		if (!authorization) return { error: "Authentication required" };
-
-		try {
-			const payload = await jwt.verify(authorization.replace("Bearer ", ""));
-			if (!payload) return { error: "Invalid token" };
-
-			const user = getUserByUsername.get(payload.username);
-			if (!user) return { error: "User not found" };
-
-			const { a, b } = params;
-			const url = `https://emojik.vercel.app/s/${a}_${b}`;
-
-			const response = await fetch(url, {
-				signal: AbortSignal.timeout(5000),
-			});
-
-			if (!response.ok) {
-				console.error("Emoji Kitchen API error:", response.status);
-				return { error: "Failed to fetch emoji kitchen" };
-			}
-
-			return { success: true, url };
-		} catch (error) {
-			console.error("Emoji Kitchen error:", error.message);
-			return { error: "Failed to create emoji kitchen" };
-		}
-	})
 	.get(
 		"/search",
 		async ({ jwt, headers, query }) => {

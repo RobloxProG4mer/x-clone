@@ -8862,10 +8862,9 @@ class AdminPanel {
 		if (badge.image_url) newClearBtn.classList.remove("d-none");
 		else newClearBtn.classList.add("d-none");
 
-		newChooseBtn.addEventListener("click", () => editImageFileInput.click());
-
 		const newFileInput = editImageFileInput.cloneNode(true);
 		editImageFileInput.parentNode.replaceChild(newFileInput, editImageFileInput);
+		newChooseBtn.addEventListener("click", () => newFileInput.click());
 		newFileInput.addEventListener("change", async () => {
 			const file = newFileInput.files?.[0];
 			if (!file) return;

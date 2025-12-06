@@ -1,8 +1,5 @@
 import query from "../timeline/js/api.js";
-import {
-	applyAvatarOutline,
-	createVerificationBadge,
-} from "./badge-utils.js";
+import { applyAvatarOutline, createVerificationBadge } from "./badge-utils.js";
 
 let activeHoverCard = null;
 let hoverTimeout = null;

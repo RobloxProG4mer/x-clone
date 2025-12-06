@@ -129,7 +129,7 @@ export async function openAccountSwitcher() {
 		}
 
 		const delegationsResponse = await query("/delegates/my-delegations");
-		console.log("Delegations response:", delegationsResponse);
+		// Tr Cursor
 		if (
 			delegationsResponse?.delegations &&
 			delegationsResponse.delegations.length > 0
