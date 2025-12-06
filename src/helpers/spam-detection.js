@@ -12,14 +12,6 @@ const getUserPosts = db.prepare(`
   LIMIT 200
 `);
 
-const getUserOriginalPosts = db.prepare(`
-  SELECT id, content, created_at, like_count, retweet_count, reply_count
-  FROM posts 
-  WHERE user_id = ? AND reply_to IS NULL
-  ORDER BY created_at DESC 
-  LIMIT 200
-`);
-
 const getUserInfo = db.prepare(`
   SELECT 
     created_at,
@@ -274,7 +266,6 @@ const logistic = (x, k = 8, x0 = 0.5) => {
 const getSpamAnalysis = (userId) => {
 	try {
 		const allPosts = getUserPosts.all(userId);
-		const originalPosts = getUserOriginalPosts.all(userId);
 		const userInfo = getUserInfo.get(userId);
 		const replies = getUserReplies.all(userId);
 
@@ -289,7 +280,7 @@ const getSpamAnalysis = (userId) => {
 		const now = Date.now();
 		const indicators = [];
 
-		const recentPosts = originalPosts.slice(0, 60);
+		const recentPosts = allPosts.slice(0, 60);
 		const contentMap = new Map();
 		const contentTexts = [];
 		const duplicateTweets = [];
@@ -382,13 +373,13 @@ const getSpamAnalysis = (userId) => {
 		const sixHoursAgo = now - 6 * 3600000;
 		const oneDayAgo = now - 24 * 3600000;
 
-		const postsInLastHour = originalPosts.filter(
+		const postsInLastHour = allPosts.filter(
 			(p) => new Date(p.created_at).getTime() > oneHourAgo,
 		);
-		const postsInLast6Hours = originalPosts.filter(
+		const postsInLast6Hours = allPosts.filter(
 			(p) => new Date(p.created_at).getTime() > sixHoursAgo,
 		);
-		const postsInLastDay = originalPosts.filter(
+		const postsInLastDay = allPosts.filter(
 			(p) => new Date(p.created_at).getTime() > oneDayAgo,
 		);
 
@@ -399,7 +390,7 @@ const getSpamAnalysis = (userId) => {
 			(p) => new Date(p.created_at).getTime() > oneDayAgo,
 		).length;
 
-		const recencySum = originalPosts
+		const recencySum = allPosts
 			.slice(0, 100)
 			.reduce(
 				(sum, p) => sum + exponentialRecencyWeight(p.created_at, now, 24),
@@ -440,7 +431,7 @@ const getSpamAnalysis = (userId) => {
 			})),
 		});
 
-		const timestamps = originalPosts
+		const timestamps = allPosts
 			.slice(0, 50)
 			.map((p) => new Date(p.created_at).getTime());
 		const intervals = [];
@@ -609,7 +600,6 @@ const getSpamAnalysis = (userId) => {
 		});
 
 		const qualityTweets = [];
-		const oneDayAgoTs = now - 24 * 60 * 60 * 1000;
 		const allCapsPostsInLastDay = postsInLastDay.filter((p) => {
 			return calculateCapitalizationScore(p.content || "") > 0.5;
 		}).length;

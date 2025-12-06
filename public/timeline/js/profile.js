@@ -1327,8 +1327,31 @@ const renderProfile = (data) => {
 		if (suspendedNotice) suspendedNotice.style.display = "block";
 	} else {
 		if (bioEl) {
-			bioEl.textContent = profile.bio || "";
-			bioEl.style.display = profile.bio ? "block" : "none";
+			const bioText = profile.bio || "";
+			bioEl.innerHTML = "";
+			if (bioText) {
+				const mentionRegex = /@([a-zA-Z0-9_]+)/g;
+				const urlRegex = /(https?:\/\/[^\s]+)/g;
+				let processedBio = bioText.replace(/</g, "&lt;").replace(/>/g, "&gt;");
+				processedBio = processedBio.replace(urlRegex, (url) => {
+					const displayUrl = url.length > 40 ? url.slice(0, 37) + "..." : url;
+					return `<a href="${url}" target="_blank" rel="noopener noreferrer">${displayUrl}</a>`;
+				});
+				processedBio = processedBio.replace(mentionRegex, (_match, username) => {
+					return `<a href="/@${username}" class="bio-mention">@${username}</a>`;
+				});
+				bioEl.innerHTML = processedBio;
+				bioEl.querySelectorAll(".bio-mention").forEach((link) => {
+					link.addEventListener("click", (e) => {
+						e.preventDefault();
+						const username = link.getAttribute("href").slice(2);
+						import("./profile.js").then(({ default: openProfile }) => {
+							openProfile(username);
+						});
+					});
+				});
+			}
+			bioEl.style.display = bioText ? "block" : "none";
 		}
 		if (suspendedNotice) suspendedNotice.style.display = "none";
 	}

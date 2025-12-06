@@ -3435,7 +3435,7 @@ async function showSpamScoreDetails(username) {
 							${data.message}
 						</div>
 						<div style="font-size: 13px; color: var(--text-secondary);">
-							Based on analysis of ${metrics.totalPosts} posts (excludes replies)
+							Based on analysis of ${metrics.totalPosts} posts (includes replies)
 						</div>
 					</div>
 

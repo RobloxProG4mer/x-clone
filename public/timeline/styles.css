@@ -96,7 +96,6 @@ body {
   opacity: 0.9;
 }
 
-/* Only disable action buttons for the restricted account owner, not for other viewers */
 #profileContainer.restricted-self #followBtn,
 #profileContainer.restricted-self #profileDmBtn,
 #profileContainer.restricted-self #editProfileBtn,
