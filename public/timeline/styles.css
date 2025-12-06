@@ -8076,6 +8076,8 @@ emoji-picker {
   --outline-color: var(--primary);
   --indicator-color: var(--primary);
   --input-padding: 6px 12px;
+  --emoji-font-family: Noto Color Emoji, Apple Color Emoji, Segoe UI Emoji,
+    Segoe UI Symbol, Android Emoji, EmojiSymbols, sans-serif;
 
   z-index: 10000;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
