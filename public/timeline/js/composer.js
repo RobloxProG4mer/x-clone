@@ -320,25 +320,32 @@ export const useComposer = (
 		previewEl.dataset.tempId = fileData.tempId;
 		previewEl.dataset.isSpoiler = "false";
 
+		if (fileData.isEmojiKitchen) {
+			previewEl.classList.add("emoji-kitchen-preview");
+		}
+
 		if (fileData.type.startsWith("image/")) {
 			const objectUrl = URL.createObjectURL(fileData.file);
 			previewEl.innerHTML = `
 				<img src="${objectUrl}" alt="${fileData.name}" />
-				<button type="button" class="toggle-spoiler" title="Mark as spoiler">🚫</button>
+				${!fileData.isEmojiKitchen ? '<button type="button" class="toggle-spoiler" title="Mark as spoiler">🚫</button>' : ""}
 				<button type="button" class="remove-attachment">×</button>
 			`;
-			previewEl
-				.querySelector(".toggle-spoiler")
-				?.addEventListener("click", (e) => {
-					e.preventDefault();
-					e.stopPropagation();
-					const isSpoiler = previewEl.dataset.isSpoiler === "true";
-					previewEl.dataset.isSpoiler = isSpoiler ? "false" : "true";
-					const btn = previewEl.querySelector(".toggle-spoiler");
-					btn.textContent = isSpoiler ? "🚫" : "⚠️";
-					btn.title = isSpoiler ? "Mark as spoiler" : "Unmark as spoiler";
-					previewEl.classList.toggle("spoiler-marked", !isSpoiler);
-				});
+
+			if (!fileData.isEmojiKitchen) {
+				previewEl
+					.querySelector(".toggle-spoiler")
+					?.addEventListener("click", (e) => {
+						e.preventDefault();
+						e.stopPropagation();
+						const isSpoiler = previewEl.dataset.isSpoiler === "true";
+						previewEl.dataset.isSpoiler = isSpoiler ? "false" : "true";
+						const btn = previewEl.querySelector(".toggle-spoiler");
+						btn.textContent = isSpoiler ? "🚫" : "⚠️";
+						btn.title = isSpoiler ? "Mark as spoiler" : "Unmark as spoiler";
+						previewEl.classList.toggle("spoiler-marked", !isSpoiler);
+					});
+			}
 		} else if (fileData.type === "video/mp4") {
 			const objectUrl = URL.createObjectURL(fileData.file);
 			previewEl.innerHTML = `
@@ -439,10 +446,175 @@ export const useComposer = (
 				{
 					title: "Emoji Kitchen",
 					icon: `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-cat-icon lucide-cat"><path d="M12 5c.67 0 1.35.09 2 .26 1.78-2 5.03-2.84 6.42-2.26 1.4.58-.42 7-.42 7 .57 1.07 1 2.24 1 3.44C21 17.9 16.97 21 12 21s-9-3-9-7.56c0-1.25.5-2.4 1-3.44 0 0-1.89-6.42-.5-7 1.39-.58 4.72.23 6.5 2.23A9.04 9.04 0 0 1 12 5Z"/><path d="M8 14v.5"/><path d="M16 14v.5"/><path d="M11.25 16.25h1.5L12 17l-.75-.75Z"/></svg>`,
-					onClick: () => {
-						// "http://localhost:7557/api/tenor/kitchen/🐈/😊"
+					onClick: async () => {
+						if (cardOnly) {
+							toastQueue.add(
+								`<h1>Emoji Kitchen not available</h1><p>Emoji Kitchen cannot be used in card composer mode</p>`,
+							);
+							return;
+						}
+
+						if (
+							selectedGif ||
+							selectedUnsplashImages.length > 0 ||
+							pendingFiles.length > 0
+						) {
+							toastQueue.add(
+								`<h1>Cannot add Emoji Kitchen</h1><p>Remove other media first</p>`,
+							);
+							return;
+						}
+
+						let emoji1 = null;
+						let emoji2 = null;
+
+						const kitchenContent = document.createElement("div");
+						kitchenContent.className = "emoji-kitchen-popover";
+
+						const heading = document.createElement("div");
+						heading.className = "emoji-kitchen-title";
+						heading.textContent = "Emoji Kitchen";
+						kitchenContent.appendChild(heading);
+
+						const helper = document.createElement("p");
+						helper.className = "emoji-kitchen-helper";
+						helper.textContent = "Pick two emojis to combine";
+						kitchenContent.appendChild(helper);
+
+						const pickRow = document.createElement("div");
+						pickRow.className = "emoji-kitchen-pick-row";
+
+						const emoji1Btn = document.createElement("button");
+						emoji1Btn.type = "button";
+						emoji1Btn.className = "emoji-kitchen-picker";
+						emoji1Btn.textContent = "?";
+
+						const plus = document.createElement("span");
+						plus.className = "emoji-kitchen-plus";
+						plus.textContent = "+";
+
+						const emoji2Btn = document.createElement("button");
+						emoji2Btn.type = "button";
+						emoji2Btn.className = "emoji-kitchen-picker";
+						emoji2Btn.textContent = "?";
+
+						pickRow.appendChild(emoji1Btn);
+						pickRow.appendChild(plus);
+						pickRow.appendChild(emoji2Btn);
+						kitchenContent.appendChild(pickRow);
+
+						const createBtn = document.createElement("button");
+						createBtn.type = "button";
+						createBtn.className = "emoji-kitchen-create";
+						createBtn.disabled = true;
+						createBtn.textContent = "Create Kitchen Emoji";
+						kitchenContent.appendChild(createBtn);
+
+						const popupHandle = createPopup({
+							items: [],
+							triggerElement: mediaMenuBtn,
+							customContent: kitchenContent,
+							className: "emoji-kitchen-popup",
+						});
+
+						const updateCreateButton = () => {
+							createBtn.disabled = !(emoji1 && emoji2);
+						};
+
+						emoji1Btn.addEventListener("click", async () => {
+							const { showEmojiPickerPopup } = await import(
+								"/public/shared/emoji-picker.js"
+							);
+							const rect = emoji1Btn.getBoundingClientRect();
+							showEmojiPickerPopup(
+								(selectedEmoji) => {
+									emoji1 = selectedEmoji;
+									emoji1Btn.textContent = selectedEmoji;
+									updateCreateButton();
+								},
+								{ x: rect.left, y: rect.bottom + 8 },
+							);
+						});
+
+						emoji2Btn.addEventListener("click", async () => {
+							const { showEmojiPickerPopup } = await import(
+								"/public/shared/emoji-picker.js"
+							);
+							const rect = emoji2Btn.getBoundingClientRect();
+							showEmojiPickerPopup(
+								(selectedEmoji) => {
+									emoji2 = selectedEmoji;
+									emoji2Btn.textContent = selectedEmoji;
+									updateCreateButton();
+								},
+								{ x: rect.left, y: rect.bottom + 8 },
+							);
+						});
+
+						createBtn.addEventListener("click", async () => {
+							if (!emoji1 || !emoji2) return;
+
+							createBtn.disabled = true;
+							createBtn.textContent = "Creating...";
+
+							try {
+								const data = await query(
+									`/tenor/kitchen/${emoji1.replace(/\uFE0F/g, "")}/${emoji2.replace(/\uFE0F/g, "")}`,
+								);
+
+								if (data.success && data.url) {
+									const kitchenUrl = data.url;
+									const imageResponse = await fetch(kitchenUrl);
+									const blob = await imageResponse.blob();
+									const file = new File([blob], "emoji-kitchen.png", {
+										type: "image/png",
+									});
+
+									const processedFile = await convertToWebP(file);
+									const tempId = Bun.randomUUIDv7();
+
+									const fileData = {
+										tempId,
+										name: processedFile.name,
+										type: processedFile.type,
+										size: processedFile.size,
+										file: processedFile,
+										uploaded: false,
+										isEmojiKitchen: true,
+									};
+
+									if (processedFile.size > 10 * 1024 * 1024) {
+										toastQueue.add(
+											`<h1>Too large</h1><p>Emoji Kitchen image exceeds 10MB</p>`,
+										);
+										createBtn.disabled = false;
+										createBtn.textContent = "Create Kitchen Emoji";
+										return;
+									}
+
+									pendingFiles.push(fileData);
+									displayAttachmentPreview(fileData);
+									updateCharacterCount();
+
+									if (popupHandle?.close) popupHandle.close();
+								} else {
+									toastQueue.add(
+										`<h1>Kitchen failed</h1><p>These emojis cannot be combined</p>`,
+									);
+									createBtn.disabled = false;
+									createBtn.textContent = "Create Kitchen Emoji";
+								}
+							} catch (error) {
+								console.error("Emoji kitchen error:", error);
+								toastQueue.add(
+									`<h1>Kitchen failed</h1><p>Please try again</p>`,
+								);
+								createBtn.disabled = false;
+								createBtn.textContent = "Create Kitchen Emoji";
+							}
+						});
 					},
-				}
+				},
 			];
 
 			createPopup({

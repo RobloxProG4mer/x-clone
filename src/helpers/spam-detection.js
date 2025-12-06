@@ -768,6 +768,7 @@ const getSpamAnalysis = (userId) => {
 		const noEngagementRatio =
 			noEngagementCount / Math.max(engagementAnalysis.length, 1);
 
+		const originalPosts = allPosts.filter((p) => !p.reply_to);
 		let engagementScore = 0;
 		if (
 			postsInLastDay.length > 30 &&

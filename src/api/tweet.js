@@ -538,16 +538,33 @@ export default new Elysia({ prefix: "/tweets", tags: ["Tweets"] })
 		if (isReply) {
 			const rateCheck = checkMultipleRateLimits(identifier, [
 				"reply",
-				"replyBurst",
+				"rapid_reply",
 			]);
 			if (rateCheck.isLimited) {
 				set.status = 429;
+				if (rateCheck.limitType === "rapid_reply") {
+					return {
+						error: "Please solve the captcha to continue",
+						captcha_required: true,
+						resetIn: rateCheck.resetIn,
+					};
+				}
 				return { error: "Too many requests", resetIn: rateCheck.resetIn };
 			}
 		} else {
-			const rateCheck = checkMultipleRateLimits(identifier, ["post"]);
+			const rateCheck = checkMultipleRateLimits(identifier, [
+				"post",
+				"rapid_post",
+			]);
 			if (rateCheck.isLimited) {
 				set.status = 429;
+				if (rateCheck.limitType === "rapid_post") {
+					return {
+						error: "Please solve the captcha to continue",
+						captcha_required: true,
+						resetIn: rateCheck.resetIn,
+					};
+				}
 				return { error: "Too many requests", resetIn: rateCheck.resetIn };
 			}
 		}
@@ -1532,10 +1549,17 @@ export default new Elysia({ prefix: "/tweets", tags: ["Tweets"] })
 		const identifier = getIdentifier(headers);
 		const rateCheck = checkMultipleRateLimits(identifier, [
 			"like",
-			"likeBurst",
+			"rapid_like",
 		]);
 		if (rateCheck.isLimited) {
 			set.status = 429;
+			if (rateCheck.limitType === "rapid_like") {
+				return {
+					error: "Please solve the captcha to continue",
+					captcha_required: true,
+					resetIn: rateCheck.resetIn,
+				};
+			}
 			return { error: "Too many requests", resetIn: rateCheck.resetIn };
 		}
 
@@ -1601,10 +1625,17 @@ export default new Elysia({ prefix: "/tweets", tags: ["Tweets"] })
 		const identifier = getIdentifier(headers);
 		const rateCheck = checkMultipleRateLimits(identifier, [
 			"retweet",
-			"retweetBurst",
+			"rapid_retweet",
 		]);
 		if (rateCheck.isLimited) {
 			set.status = 429;
+			if (rateCheck.limitType === "rapid_retweet") {
+				return {
+					error: "Please solve the captcha to continue",
+					captcha_required: true,
+					resetIn: rateCheck.resetIn,
+				};
+			}
 			return { error: "Too many requests", resetIn: rateCheck.resetIn };
 		}
 

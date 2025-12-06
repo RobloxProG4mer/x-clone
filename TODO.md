@@ -4,9 +4,9 @@
 - maybe remove gray checkmarks outline
 - tell users more clearly about thinks like same name as username = hide username
 
-- fix three dots menu on profile not doing anything
-
-- fix limited amount of replies being shown on tweets with a huge replies count <-- doing
+- gimmickbots clone
+- Unify all modals into a single utility function and into a single shared CSS classes. Look for ALL css in js and move it to classes, including, for example, the account switcher modal. ALWAYS use SVG icons, including for closing, not &times;. Always add open animations. This should also fix account creation location modal. <-- doing
+- account hover cards <-- doing
 
 **other things:**
 

@@ -10,13 +10,18 @@ const RATE_LIMITS = {
 	upload: { max: 50, duration: FOUR_MINUTES },
 	dm: { max: 200, duration: FOUR_MINUTES },
 	post: { max: 100, duration: FOUR_MINUTES },
+	rapid_post: { max: 3, duration: 3000 },
 	sensitive: { max: 15, duration: FOUR_MINUTES },
 	search: { max: 150, duration: FOUR_MINUTES },
 	timeline: { max: 300, duration: FOUR_MINUTES },
 	like: { max: 200, duration: FOUR_MINUTES },
+	rapid_like: { max: 10, duration: 5000 },
 	reply: { max: 100, duration: FOUR_MINUTES },
+	rapid_reply: { max: 5, duration: 5000 },
 	retweet: { max: 150, duration: FOUR_MINUTES },
+	rapid_retweet: { max: 2, duration: 5000 },
 	follow: { max: 100, duration: FOUR_MINUTES },
+	rapid_follow: { max: 10, duration: 5000 },
 	block: { max: 50, duration: FOUR_MINUTES },
 	mute: { max: 50, duration: FOUR_MINUTES },
 };
@@ -116,6 +121,7 @@ export function checkMultipleRateLimits(identifier, limitTypes) {
 	for (const limitType of limitTypes) {
 		const result = checkRateLimit(identifier, limitType);
 		if (result.isLimited) {
+			result.limitType = limitType;
 			return result;
 		}
 	}
@@ -123,15 +129,16 @@ export function checkMultipleRateLimits(identifier, limitTypes) {
 }
 
 export function getRateLimitMiddleware(limitType = "default") {
+	const limitTypes = Array.isArray(limitType) ? limitType : [limitType];
 	return ({ headers, request, set }) => {
 		if (request.method === "GET") return;
 		const token = headers.authorization?.split(" ")[1];
 		if (!token) return;
-		const result = checkRateLimit(token, limitType);
+		const result = checkMultipleRateLimits(token, limitTypes);
 
-		set.headers["X-RateLimit-Limit"] = result.limit.toString();
-		set.headers["X-RateLimit-Remaining"] = result.remaining.toString();
-		set.headers["X-RateLimit-Reset"] = result.resetIn.toString();
+		set.headers["X-RateLimit-Limit"] = result.limit?.toString() || "0";
+		set.headers["X-RateLimit-Remaining"] = result.remaining?.toString() || "0";
+		set.headers["X-RateLimit-Reset"] = result.resetIn?.toString() || "0";
 
 		if (result.isLimited) {
 			set.status = 429;
@@ -140,6 +147,7 @@ export function getRateLimitMiddleware(limitType = "default") {
 				error: "Too many requests",
 				resetIn: result.resetIn,
 				retryAfter: Math.ceil(backoffMs / 1000),
+				limitType: result.limitType,
 			};
 		}
 	};

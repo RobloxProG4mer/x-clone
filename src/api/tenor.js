@@ -35,29 +35,21 @@ export default new Elysia({ prefix: "/tenor", tags: ["Tenor"] })
 			if (!user) return { error: "User not found" };
 
 			const { a, b } = params;
-			const url = new URL(
-				`${process.env.TENOR_API_HOST || "https://tenor.googleapis.com/v2/"}featured`,
-			);
-			url.searchParams.set("key", TENOR_API_KEY);
-			url.searchParams.set("client_key", "tweetapus");
-			url.searchParams.set("q", `${a}_${b}`);
-			url.searchParams.set("collection", "emoji_kitchen_v6");
-			url.searchParams.set("contentfilter", "high");
+			const url = `https://emojik.vercel.app/s/${a}_${b}`;
 
-			const response = await fetch(url.toString(), {
+			const response = await fetch(url, {
 				signal: AbortSignal.timeout(5000),
 			});
 
 			if (!response.ok) {
-				console.error("Tenor API error:", response.status);
-				return { error: "Failed to fetch GIF" };
+				console.error("Emoji Kitchen API error:", response.status);
+				return { error: "Failed to fetch emoji kitchen" };
 			}
 
-			const data = await response.json();
-			return { success: true, url: data.results };
+			return { success: true, url };
 		} catch (error) {
-			console.error("Tenor search error:", error.message);
-			return { error: "Failed to search GIF" };
+			console.error("Emoji Kitchen error:", error.message);
+			return { error: "Failed to create emoji kitchen" };
 		}
 	})
 	.get(

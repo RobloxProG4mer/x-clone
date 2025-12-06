@@ -4,6 +4,8 @@ export function createPopup(options) {
 		triggerElement = null,
 		anchorPoint = null,
 		onClose = () => {},
+		customContent = null,
+		className = "",
 	} = options;
 	const anchor = anchorPoint
 		? { x: anchorPoint.x ?? 0, y: anchorPoint.y ?? 0 }
@@ -13,53 +15,57 @@ export function createPopup(options) {
 	overlay.className = "popup-overlay";
 
 	const popup = document.createElement("div");
-	popup.className = "popup";
+	popup.className = `popup${className ? ` ${className}` : ""}`;
 
 	const popupContent = document.createElement("div");
 	popupContent.className = "popup-content";
 
-	items.forEach((item) => {
-		const button = document.createElement("button");
-		button.className = "popup-option";
-		button.type = "button";
+	if (customContent) {
+		popupContent.appendChild(customContent);
+	} else {
+		items.forEach((item) => {
+			const button = document.createElement("button");
+			button.className = "popup-option";
+			button.type = "button";
 
-		if (item.id) button.id = item.id;
+			if (item.id) button.id = item.id;
 
-		const icon = document.createElement("div");
-		icon.className = "popup-option-icon";
-		icon.innerHTML = item.icon || "";
+			const icon = document.createElement("div");
+			icon.className = "popup-option-icon";
+			icon.innerHTML = item.icon || "";
 
-		const content = document.createElement("div");
-		content.className = "popup-option-content";
+			const content = document.createElement("div");
+			content.className = "popup-option-content";
 
-		const title = document.createElement("div");
-		title.className = "popup-option-title";
-		title.textContent = item.title || "";
+			const title = document.createElement("div");
+			title.className = "popup-option-title";
+			title.textContent = item.title || "";
 
-		const description = document.createElement("div");
-		description.className = "popup-option-description";
-		description.textContent = item.description || "";
+			const description = document.createElement("div");
+			description.className = "popup-option-description";
+			description.textContent = item.description || "";
 
-		content.appendChild(title);
-		if (item.description) content.appendChild(description);
+			content.appendChild(title);
+			if (item.description) content.appendChild(description);
 
-		button.appendChild(icon);
-		button.appendChild(content);
+			button.appendChild(icon);
+			button.appendChild(content);
 
-		button.addEventListener("click", (e) => {
-			e.preventDefault();
-			e.stopPropagation();
-			try {
-				if (typeof item.onClick === "function") item.onClick(e);
-			} catch (err) {
-				console.error(err);
-			}
+			button.addEventListener("click", (e) => {
+				e.preventDefault();
+				e.stopPropagation();
+				try {
+					if (typeof item.onClick === "function") item.onClick(e);
+				} catch (err) {
+					console.error(err);
+				}
 
-			closePopup();
+				closePopup();
+			});
+
+			popupContent.appendChild(button);
 		});
-
-		popupContent.appendChild(button);
-	});
+	}
 
 	popup.appendChild(popupContent);
 

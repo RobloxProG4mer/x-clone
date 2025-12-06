@@ -1,17 +1,39 @@
-const pages = {
-	timeline: document.querySelector(".timeline"),
-	tweet: document.querySelector(".tweetPage"),
-	profile: document.querySelector(".profile"),
-	notifications: document.querySelector(".notifications"),
-	search: document.querySelector(".search-page"),
-	bookmarks: document.querySelector(".bookmarks-page"),
-	"direct-messages": document.querySelector(".direct-messages"),
-	"dm-conversation": document.querySelector(".dm-conversation"),
-	communities: document.querySelector(".communities-page"),
-	"community-detail": document.querySelector(".community-detail-page"),
-	"list-detail": document.querySelector(".list-detail-page"),
-	settings: null,
+const pageSelectors = {
+	timeline: ".timeline",
+	tweet: ".tweetPage",
+	profile: ".profile",
+	notifications: ".notifications",
+	search: ".search-page",
+	bookmarks: ".bookmarks-page",
+	"direct-messages": ".direct-messages",
+	"dm-conversation": ".dm-conversation",
+	communities: ".communities-page",
+	"community-detail": ".community-detail-page",
+	"list-detail": ".list-detail-page",
+	settings: ".settings",
 };
+
+const pageCache = {};
+
+function getPage(name) {
+	if (pageCache[name]) return pageCache[name];
+	const selector = pageSelectors[name];
+	if (!selector) return null;
+	const el = document.querySelector(selector);
+	if (el) pageCache[name] = el;
+	return el;
+}
+
+const pages = new Proxy({}, {
+	get(_, prop) {
+		return getPage(prop);
+	},
+	set(_, prop, value) {
+		pageCache[prop] = value;
+		return true;
+	}
+});
+
 const states = {};
 const cleanups = {};
 const lazyInitializers = {
@@ -99,7 +121,8 @@ function showPage(page, options = {}) {
 		}
 	}
 
-	Object.values(pages).forEach((p) => {
+	Object.keys(pageSelectors).forEach((name) => {
+		const p = getPage(name);
 		if (p) {
 			p.style.display = "none";
 			p.classList.remove("page-active");

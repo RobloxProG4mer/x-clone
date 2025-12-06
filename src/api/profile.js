@@ -1381,16 +1381,20 @@ export default new Elysia({ prefix: "/profile", tags: ["Profile"] })
 			if (!currentUser) return { error: "User not found" };
 
 			const identifier = getIdentifier(headers);
-			const rateLimitResult = checkMultipleRateLimits(identifier, [
+			const rateCheck = checkMultipleRateLimits(identifier, [
 				"follow",
-				"followBurst",
+				"rapid_follow",
 			]);
-			if (rateLimitResult.isLimited) {
+			if (rateCheck.isLimited) {
 				set.status = 429;
-				return {
-					error: "Too many requests",
-					resetIn: rateLimitResult.resetIn,
-				};
+				if (rateCheck.limitType === "rapid_follow") {
+					return {
+						error: "Please solve the captcha to continue",
+						captcha_required: true,
+						resetIn: rateCheck.resetIn,
+					};
+				}
+				return { error: "Too many requests", resetIn: rateCheck.resetIn };
 			}
 
 			const { username } = params;

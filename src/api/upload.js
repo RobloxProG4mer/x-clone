@@ -1,14 +1,10 @@
-import { existsSync, promises as fsPromises, mkdirSync } from "node:fs";
+import { existsSync, mkdirSync } from "node:fs";
 import { join } from "node:path";
 import { jwt } from "@elysiajs/jwt";
 import { Elysia, file, t } from "elysia";
 import { rateLimit } from "elysia-rate-limit";
 import db from "../db.js";
 import ratelimit from "../helpers/ratelimit.js";
-import {
-	compressVideo,
-	shouldCompressVideo,
-} from "../helpers/video-compression.js";
 
 const JWT_SECRET = process.env.JWT_SECRET;
 
@@ -81,85 +77,9 @@ export default new Elysia({ prefix: "/upload", tags: ["Upload"] })
 				let finalArrayBuffer = arrayBuffer;
 				const finalType = file.type;
 
+				// Video compression disabled
 				if (file.type === "video/mp4") {
-					const tempInputPath = join(
-						uploadsDir,
-						`temp_input_${Bun.randomUUIDv7()}.mp4`,
-					);
-					const tempOutputPath = join(
-						uploadsDir,
-						`temp_output_${Bun.randomUUIDv7()}.mp4`,
-					);
-
-					try {
-						await Bun.write(tempInputPath, arrayBuffer);
-
-						const compressionCheck = await shouldCompressVideo(
-							tempInputPath,
-							MAX_COMPRESSED_SIZE,
-						);
-
-						if (compressionCheck.needsCompression) {
-							const compressionResult = await compressVideo(
-								tempInputPath,
-								tempOutputPath,
-								{
-									crf: 28,
-									preset: "fast",
-									maxWidth: 1280,
-									maxHeight: 720,
-								},
-							);
-
-							if (compressionResult.success) {
-								finalArrayBuffer = await Bun.file(tempOutputPath).arrayBuffer();
-							} else {
-								console.error(
-									"Video compression failed:",
-									compressionResult.error,
-								);
-								try {
-									(await Bun.file(tempInputPath).exists()) &&
-										(await fsPromises.unlink(tempInputPath));
-									(await Bun.file(tempOutputPath).exists()) &&
-										(await fsPromises.unlink(tempOutputPath));
-								} catch (cleanupError) {
-									console.error("Cleanup error:", cleanupError);
-								}
-								return {
-									error: "Video compression failed. Please try a smaller file.",
-								};
-							}
-						}
-
-						try {
-							(await Bun.file(tempInputPath).exists()) &&
-								(await fsPromises.unlink(tempInputPath));
-							(await Bun.file(tempOutputPath).exists()) &&
-								(await fsPromises.unlink(tempOutputPath));
-						} catch (cleanupError) {
-							console.error("Cleanup error:", cleanupError);
-						}
-					} catch (videoError) {
-						console.error("Video processing error:", videoError);
-						try {
-							(await Bun.file(tempInputPath).exists()) &&
-								(await fsPromises.unlink(tempInputPath));
-							(await Bun.file(tempOutputPath).exists()) &&
-								(await fsPromises.unlink(tempOutputPath));
-						} catch (cleanupError) {
-							console.error("Cleanup error:", cleanupError);
-						}
-						return { error: "Video processing failed. Please try again." };
-					}
-				}
-
-				if (finalArrayBuffer.byteLength > MAX_COMPRESSED_SIZE) {
-					return {
-						error: `File too large after processing. Maximum size is ${
-							MAX_COMPRESSED_SIZE / 1024 / 1024
-						}MB`,
-					};
+					// No processing needed, just use original file
 				}
 
 				const hasher = new Bun.CryptoHasher("sha256");
