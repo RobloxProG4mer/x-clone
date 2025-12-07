@@ -1052,6 +1052,11 @@
                                 <textarea class="form-control font-monospace" id="badgeModalJs" rows="4" placeholder="// Runs when modal opens&#10;console.log('Modal opened');"></textarea>
                                 <div class="form-text">JavaScript executed when the modal opens. Has access to modalEl variable.</div>
                               </div>
+                              <div class="mb-3 form-check">
+                                <input type="checkbox" class="form-check-input" id="badgeAllowRawHtml">
+                                <label class="form-check-label" for="badgeAllowRawHtml">Allow raw HTML (bypass sanitization)</label>
+                                <div class="form-text text-warning">⚠️ Only enable for trusted content. Allows &lt;script&gt;, iframes, etc.</div>
+                              </div>
                             </div>
                           </div>
                         </div>

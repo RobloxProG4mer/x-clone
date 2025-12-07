@@ -208,10 +208,10 @@ WHERE u.id = ?
 	getBadges: db.prepare("SELECT * FROM custom_badges ORDER BY created_at DESC"),
 	getBadgeById: db.prepare("SELECT * FROM custom_badges WHERE id = ?"),
 	createBadge: db.prepare(
-		"INSERT INTO custom_badges (id, name, svg_content, image_url, color, action_type, action_value, description, created_by) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+		"INSERT INTO custom_badges (id, name, svg_content, image_url, color, action_type, action_value, allow_raw_html, description, created_by) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
 	),
 	updateBadge: db.prepare(
-		"UPDATE custom_badges SET name = ?, svg_content = ?, image_url = ?, color = ?, action_type = ?, action_value = ?, description = ? WHERE id = ?",
+		"UPDATE custom_badges SET name = ?, svg_content = ?, image_url = ?, color = ?, action_type = ?, action_value = ?, allow_raw_html = ?, description = ? WHERE id = ?",
 	),
 	deleteBadge: db.prepare("DELETE FROM custom_badges WHERE id = ?"),
 	getUserBadges: db.prepare(
@@ -1722,6 +1722,7 @@ export default new Elysia({ prefix: "/admin", tags: ["Admin"] })
 				color,
 				action_type,
 				action_value,
+				allow_raw_html,
 				description,
 			} = body;
 			if (!name || (!svg_content && !image_url)) {
@@ -1737,6 +1738,7 @@ export default new Elysia({ prefix: "/admin", tags: ["Admin"] })
 				color || null,
 				normalizedAction,
 				action_value || null,
+				allow_raw_html ? 1 : 0,
 				description || null,
 				user.id,
 			);
@@ -1759,6 +1761,7 @@ export default new Elysia({ prefix: "/admin", tags: ["Admin"] })
 					]),
 				),
 				action_value: t.Optional(t.Union([t.String(), t.Null()])),
+				allow_raw_html: t.Optional(t.Boolean()),
 				description: t.Optional(t.Union([t.String(), t.Null()])),
 			}),
 		},
@@ -1776,6 +1779,7 @@ export default new Elysia({ prefix: "/admin", tags: ["Admin"] })
 				color,
 				action_type,
 				action_value,
+				allow_raw_html,
 				description,
 			} = body;
 			adminQueries.updateBadge.run(
@@ -1785,6 +1789,7 @@ export default new Elysia({ prefix: "/admin", tags: ["Admin"] })
 				color !== undefined ? color : badge.color,
 				action_type !== undefined ? action_type : badge.action_type,
 				action_value !== undefined ? action_value : badge.action_value,
+				allow_raw_html !== undefined ? (allow_raw_html ? 1 : 0) : badge.allow_raw_html,
 				description !== undefined ? description : badge.description,
 				params.id,
 			);
@@ -1809,6 +1814,7 @@ export default new Elysia({ prefix: "/admin", tags: ["Admin"] })
 					]),
 				),
 				action_value: t.Optional(t.Union([t.String(), t.Null()])),
+				allow_raw_html: t.Optional(t.Boolean()),
 				description: t.Optional(t.Union([t.String(), t.Null()])),
 			}),
 		},

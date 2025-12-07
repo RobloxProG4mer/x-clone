@@ -214,7 +214,7 @@ const getBadgesForUsers = (userIds) => {
 	if (uniqueIds.length === 0) return new Map();
 	const placeholders = uniqueIds.map(() => "?").join(",");
 	const stmt = db.query(
-		`SELECT ucb.user_id, cb.id, cb.name, cb.svg_content, cb.image_url, cb.color, cb.action_type, cb.action_value, cb.description
+		`SELECT ucb.user_id, cb.id, cb.name, cb.svg_content, cb.image_url, cb.color, cb.action_type, cb.action_value, cb.description, cb.allow_raw_html
 		FROM user_custom_badges ucb
 		JOIN custom_badges cb ON ucb.badge_id = cb.id
 		WHERE ucb.user_id IN (${placeholders})
@@ -233,6 +233,7 @@ const getBadgesForUsers = (userIds) => {
 			action_type: row.action_type || "none",
 			action_value: row.action_value,
 			description: row.description,
+			allow_raw_html: !!row.allow_raw_html,
 		});
 	}
 	return map;

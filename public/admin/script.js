@@ -9147,6 +9147,7 @@ class AdminPanel {
 			const imageUrl = document.getElementById("badgeImageUrl")?.value.trim() || "";
 			const actionType = document.getElementById("badgeActionType")?.value || "none";
 			const actionValue = this.collectBadgeActionValue(actionType, "");
+			const allowRawHtml = document.getElementById("badgeAllowRawHtml")?.checked || false;
 			if (!name || (!svgContent && !imageUrl)) return;
 			try {
 				await this.apiCall("/api/admin/badges", {
@@ -9158,6 +9159,7 @@ class AdminPanel {
 						image_url: imageUrl || null,
 						action_type: actionType,
 						action_value: actionValue || null,
+						allow_raw_html: allowRawHtml,
 					}),
 				});
 				this.showSuccess("Badge created");
@@ -9189,10 +9191,13 @@ class AdminPanel {
 				<option value="url" ${entry.type === "url" || !entry.type ? "selected" : ""}>URL</option>
 				<option value="js" ${entry.type === "js" ? "selected" : ""}>JS</option>
 			</select>
-			<input type="text" class="form-control form-control-sm popup-entry-value" placeholder="https:// or JS code" value="${this.escapeHtml(entry.value || "")}">
+			<textarea class="form-control form-control-sm popup-entry-value" rows="3" placeholder="https:// or JS code"></textarea>
 			<button type="button" class="btn btn-outline-danger btn-sm popup-entry-remove"><i class="bi bi-x"></i></button>
 		`;
 		row.querySelector(".popup-entry-remove").addEventListener("click", () => row.remove());
+		// set textarea value programmatically so multi-line JS is preserved
+		const valueEl = row.querySelector(".popup-entry-value");
+		if (valueEl) valueEl.value = entry.value || "";
 		container.appendChild(row);
 	}
 
@@ -9205,7 +9210,7 @@ class AdminPanel {
 			const label = row.querySelector(".popup-entry-label")?.value.trim() || "";
 			const icon = row.querySelector(".popup-entry-icon")?.value.trim() || "";
 			const type = row.querySelector(".popup-entry-type")?.value || "url";
-			const value = row.querySelector(".popup-entry-value")?.value.trim() || "";
+			const value = row.querySelector(".popup-entry-value")?.value || "";
 			if (label || value) {
 				entries.push({ label, icon, type, value });
 			}
@@ -9341,6 +9346,7 @@ class AdminPanel {
 										<div class="mb-3"><label class="form-label">Modal Content (Markdown supported)</label><textarea class="form-control" id="editBadgeModalContent" rows="5" placeholder="**Bold**, *italic*, [links](url)"></textarea></div>
 										<div class="mb-3"><label class="form-label">Custom CSS (optional)</label><textarea class="form-control font-monospace" id="editBadgeModalCss" rows="3" placeholder=".badge-modal-content { color: gold; }"></textarea></div>
 										<div class="mb-3"><label class="form-label">Custom JS (optional)</label><textarea class="form-control font-monospace" id="editBadgeModalJs" rows="4" placeholder="// Runs when modal opens"></textarea></div>
+										<div class="mb-3 form-check"><input type="checkbox" class="form-check-input" id="editBadgeAllowRawHtml"><label class="form-check-label" for="editBadgeAllowRawHtml">Allow raw HTML (bypass sanitization)</label><div class="form-text text-warning">⚠️ Only enable for trusted content.</div></div>
 									</div>
 								</div>
 							</div>
@@ -9374,6 +9380,7 @@ class AdminPanel {
 		document.getElementById("editBadgeSvgContent").value = badge.svg_content || "";
 		document.getElementById("editBadgeImageUrl").value = badge.image_url || "";
 		document.getElementById("editBadgeActionType").value = badge.action_type || "none";
+		document.getElementById("editBadgeAllowRawHtml").checked = !!badge.allow_raw_html;
 
 		this.populateBadgeActionFields(badge.action_type || "none", badge.action_value || "", "edit");
 
@@ -9470,6 +9477,7 @@ class AdminPanel {
 			try {
 				const actionType = document.getElementById("editBadgeActionType").value;
 				const actionValue = this.collectBadgeActionValue(actionType, "edit");
+				const allowRawHtml = document.getElementById("editBadgeAllowRawHtml").checked;
 				await this.apiCall(`/api/admin/badges/${badge.id}`, {
 					method: "PATCH",
 					body: JSON.stringify({
@@ -9479,6 +9487,7 @@ class AdminPanel {
 						image_url: document.getElementById("editBadgeImageUrl").value.trim() || null,
 						action_type: actionType,
 						action_value: actionValue || null,
+						allow_raw_html: allowRawHtml,
 					}),
 				});
 				this.showSuccess("Badge updated");

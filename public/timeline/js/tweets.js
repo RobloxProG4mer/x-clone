@@ -103,7 +103,13 @@ const handleCustomBadgeAction = (badge, badgeEl, userId, username) => {
 		}
 		const contentDiv = document.createElement("div");
 		if (config.content) {
-			if (typeof marked !== "undefined") {
+			if (badge?.allow_raw_html) {
+				if (typeof marked !== "undefined") {
+					contentDiv.innerHTML = marked.parse(config.content);
+				} else {
+					contentDiv.innerHTML = config.content;
+				}
+			} else if (typeof marked !== "undefined") {
 				contentDiv.innerHTML = DOMPurify.sanitize(
 					marked.parse(config.content),
 					DOMPURIFY_CONFIG,
