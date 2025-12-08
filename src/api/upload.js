@@ -181,7 +181,6 @@ export const uploadRoutes = new Elysia({
 				remaining + extension,
 			);
 
-
 			set.headers["Cache-Control"] = "public, max-age=31536000, immutable";
 
 			const file = Bun.file(filePath);
