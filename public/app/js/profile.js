@@ -3123,14 +3123,44 @@ export const handleProfileDropdown = (triggerEl) => {
 			try {
 				const baseItems = [
 					{
-						title: "Copy link",
+						title: "Share",
+						icon: `<svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M10.2171 2.2793L10.2171 12.9745M10.2171 2.2793L13.333 4.99984M10.2171 2.2793L7.08301 4.99984M2.49967 10.9925L2.49967 14.1592C2.49967 16.011 4.00084 17.5121 5.85261 17.5121L14.9801 17.5121C16.8318 17.5121 18.333 16.011 18.333 14.1592L18.333 10.9925" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>`,
+						onClick: async () => {
+							const profileUrl = `${location.origin}/@${currentUsername}`;
+
+							const shareData = {
+								title: `${currentUsername} on Tweetapus`,
+								text: `Follow ${currentUsername} on Tweetapus, the best way to keep up with what's happening in.`,
+								url: profileUrl,
+							};
+
+							try {
+								if (
+									navigator.share &&
+									navigator.canShare &&
+									navigator.canShare(shareData)
+								) {
+									await navigator.share(shareData);
+								} else {
+									await navigator.clipboard.writeText(profileUrl);
+									toastQueue.add(`<h1>Link copied to clipboard!</h1>`);
+								}
+							} catch {
+								toastQueue.add(`<h1>Unable to share tweet</h1>`);
+							}
+						},
+					},
+					{
+						id: "copy-link",
 						icon: `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-link"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg>`,
+						title: "Copy link",
 						onClick: () => {
 							const profileUrl = `${location.origin}/@${currentUsername}`;
 
 							navigator.clipboard.writeText(profileUrl);
 						},
 					},
+
 					{
 						id: "request-affiliate",
 						icon: `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M18.6471 15.3333V18.6667M18.6471 18.6667L18.6471 22M18.6471 18.6667H22M18.6471 18.6667H15.2941M3 22C3 17.7044 6.69722 14.2222 11.258 14.2222C12.0859 14.2222 12.8854 14.3369 13.6394 14.5505M16.4118 6.44444C16.4118 8.89904 14.4102 10.8889 11.9412 10.8889C9.47214 10.8889 7.47059 8.89904 7.47059 6.44444C7.47059 3.98985 9.47214 2 11.9412 2C14.4102 2 16.4118 3.98985 16.4118 6.44444Z"></path></svg>`,
