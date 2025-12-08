@@ -583,7 +583,6 @@ function createNotificationElement(group) {
 				clickToOpen: false,
 				showTopReply: false,
 				isTopReply: false,
-				size: "preview",
 			});
 			const tweetPreviewEl = document.createElement("div");
 			tweetPreviewEl.className = "notification-tweet-preview";

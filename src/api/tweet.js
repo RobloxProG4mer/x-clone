@@ -4,10 +4,7 @@ import { rateLimit } from "elysia-rate-limit";
 import db from "./../db.js";
 import { generateAIResponse } from "../helpers/ai-assistant.js";
 import { checkMultipleRateLimits } from "../helpers/customRateLimit.js";
-import {
-	extractUrls,
-	getOrFetchLinkPreview,
-} from "../helpers/link-preview.js";
+import { extractUrls, getOrFetchLinkPreview } from "../helpers/link-preview.js";
 import ratelimit from "../helpers/ratelimit.js";
 import { updateUserSpamScore } from "../helpers/spam-detection.js";
 import { addNotification } from "./notifications.js";
@@ -849,7 +846,6 @@ export default new Elysia({ prefix: "/tweets", tags: ["Tweets"] })
 				}
 			}
 			if (quote_tweet_id) {
-				// If the quoted tweet's author is suspended, do not update counts or notify.
 				const quotedTweet = getTweetById.get(quote_tweet_id);
 				if (quotedTweet && !isUserSuspendedById(quotedTweet.user_id)) {
 					updateQuoteCount.run(1, quote_tweet_id);
@@ -1140,10 +1136,7 @@ export default new Elysia({ prefix: "/tweets", tags: ["Tweets"] })
 				);
 
 				if (externalUrls.length > 0) {
-					linkPreview = await getOrFetchLinkPreview(
-						externalUrls[0],
-						tweetId,
-					);
+					linkPreview = await getOrFetchLinkPreview(externalUrls[0], tweetId);
 				}
 			}
 

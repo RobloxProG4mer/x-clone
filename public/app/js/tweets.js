@@ -1874,7 +1874,10 @@ export const createTweetElement = (tweet, config = {}) => {
 
 					const url = new URL(attachment.file_url);
 					labelEl.textContent = url.pathname
-						.replace("/s/", "").split("_").map(decodeURIComponent).join(" + ");
+						.replace("/s/", "")
+						.split("_")
+						.map(decodeURIComponent)
+						.join(" + ");
 
 					imgWrapper.appendChild(labelEl);
 					tweetEl.appendChild(imgWrapper);

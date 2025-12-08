@@ -97,11 +97,12 @@ export async function getOrFetchLinkPreview(url, postId) {
 }
 
 export function extractUrls(content) {
-	const urlRegex = /(?:https?:\/\/)?(?:www\.)?[a-zA-Z0-9-]+\.[a-zA-Z]{2,}(?:\/[^\s]*)?/g;
+	const urlRegex =
+		/(?:https?:\/\/)?(?:www\.)?[a-zA-Z0-9-]+\.[a-zA-Z]{2,}(?:\/[^\s]*)?/g;
 	const urls = content.match(urlRegex) || [];
-	return [...new Set(urls)].map(url => {
-		if (!url.startsWith('http://') && !url.startsWith('https://')) {
-			return 'https://' + url;
+	return [...new Set(urls)].map((url) => {
+		if (!url.startsWith("http://") && !url.startsWith("https://")) {
+			return "https://" + url;
 		}
 		return url;
 	});
