@@ -65,14 +65,19 @@ const settingsPages = [
 		content: () => createDelegatesContent(),
 	},
 	{
-		key: "others",
-		title: "Others",
-		content: () => createOthersContent(),
-	},
-	{
 		key: "blocked-causes",
 		title: "Blocked causes",
 		content: () => createBlockedCausesContent(),
+	},
+	{
+		key: "custom-css",
+		title: "Custom CSS",
+		content: () => createCustomCSSContent(),
+	},
+	{
+		key: "others",
+		title: "Others",
+		content: () => createOthersContent(),
 	},
 ];
 
@@ -152,6 +157,48 @@ const createBlockedCausesContent = () => {
 			container.appendChild(errorDiv);
 		}
 	})();
+
+	return section;
+};
+
+const createCustomCSSContent = () => {
+	const section = document.createElement("div");
+	section.className = "settings-section";
+
+	const h1 = document.createElement("h1");
+	h1.textContent = "Custom CSS";
+	section.appendChild(h1);
+
+	const description = document.createElement("p");
+	description.className = "settings-description";
+	description.textContent =
+		"Customize Tweetapus' appearance with your own CSS code. This isn't synced to your account.";
+	section.appendChild(description);
+
+	const editorContainer = document.createElement("textarea");
+	editorContainer.style.cssText = `
+		width: 100%;
+		height: 400px;
+		font-family: monospace;
+		font-size: 14px;
+		resize: vertical;
+		border: 1px solid var(--border-secondary);
+		padding: 8px;
+		border-radius: 8px;
+		background-color: transparent;
+		outline: none;
+	`;
+
+	section.appendChild(editorContainer);
+
+	editorContainer.value = localStorage.getItem("customCSS") || "";
+
+	editorContainer.addEventListener("input", () => {
+		localStorage.setItem("customCSS", editorContainer.value);
+
+		document.querySelector("style#custom-css-style").innerHTML =
+			editorContainer.value;
+	});
 
 	return section;
 };
@@ -2510,7 +2557,6 @@ const initializeSettings = () => {
 };
 
 const setupSettingsEventHandlers = async () => {
-	// Ensure we have the latest user data so toggles/modals reflect server state.
 	ensureAccountModals();
 
 	const user = await ensureCurrentUser();
@@ -3539,7 +3585,7 @@ async function showSpamScoreDetails(username) {
 		};
 
 		const modal = document.createElement("div");
-		
+
 		modal.style.cssText =
 			"display: flex; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 10000; align-items: center; justify-content: center; animation: fadeIn 0.2s;";
 

@@ -252,7 +252,11 @@
         <img
           alt="User avatar"
           id="user-avatar"
-          style="opacity:0;transition: opacity .1s, filter .1s;filter:blur(1px)"
+          style="
+            opacity: 0;
+            transition: opacity 0.1s, filter 0.1s;
+            filter: blur(1px);
+          "
         />
         <svg
           width="18"
@@ -991,23 +995,23 @@
       </div>
 
       <div class="profile">
-          <button class="back-button" onclick="history.back()">
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              width="24"
-              height="24"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              stroke-width="2.25"
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              class="lucide lucide-arrow-left-icon lucide-arrow-left"
-            >
-              <path d="m12 19-7-7 7-7" />
-              <path d="M19 12H5" />
-            </svg>
-          </button>
+        <button class="back-button" onclick="history.back()">
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            width="24"
+            height="24"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2.25"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            class="lucide lucide-arrow-left-icon lucide-arrow-left"
+          >
+            <path d="m12 19-7-7 7-7" />
+            <path d="M19 12H5" />
+          </svg>
+        </button>
 
         <div id="profileContainer" style="display: none">
           <div class="profile-banner"></div>
@@ -1624,6 +1628,12 @@
           </div>
         </div>
       </div>
+
+      <style id="custom-css-style"></style>
+      <script>
+        document.querySelector("style#custom-css-style").innerHTML =
+          localStorage.getItem("customCSS") || "";
+      </script>
 
       <script src="/public/shared/darkmode.js" defer></script>
       <script src="/public/shared/extensions.js" type="module" defer></script>

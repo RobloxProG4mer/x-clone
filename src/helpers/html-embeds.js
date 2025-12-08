@@ -52,9 +52,14 @@ export const htmlEmbeds = new Elysia({
 })
 	.options("/:id", ({ set }) => {
 		set.headers["access-control-allow-origin"] = "*";
-		set.headers["access-control-allow-headers"] = "authorization";
 		set.headers["access-control-allow-methods"] = "GET, OPTIONS";
 		return new Response("OK", { status: 200 });
+	})
+	.get("/share.css", ({ set }) => {
+		set.headers["access-control-allow-origin"] = "*";
+		set.headers["access-control-allow-methods"] = "GET, OPTIONS";
+
+		return Bun.file("./public/shared/assets/css/compose-button.css");
 	})
 	.get("/:id", async ({ set, params }) => {
 		const { id } = params;
@@ -70,7 +75,6 @@ export const htmlEmbeds = new Elysia({
 		const tweetId = id.split(".")[0];
 
 		set.headers["access-control-allow-origin"] = "*";
-		set.headers["access-control-allow-headers"] = "authorization";
 		set.headers["access-control-allow-methods"] = "GET, OPTIONS";
 		set.headers["content-type"] = "application/javascript; charset=utf-8";
 

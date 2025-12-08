@@ -48,3 +48,32 @@ an independent, fully-featured Twitter/X clone built with Bun. badly vibe-coded.
 - barely decent antibot and ratelimit+challenge system
 - translating tweets
 - gray checks
+
+## docs
+
+### compose prefill intent
+
+```html
+<link rel="stylesheet" href="<your instance>/embed/share.css" />
+<a
+  class="tweetapus-share-button"
+  href="<your instance>/?compose=Hello%20world"
+  target="_blank"
+>
+  Tweet
+</a>
+```
+
+you can also set size using `data-size="large"`:
+
+```html
+<link rel="stylesheet" href="<your instance>/embed/share.css" />
+<a
+  class="tweetapus-share-button"
+  href="<your instance>/?compose=Hello%20world"
+  data-size="large"
+  target="_blank"
+>
+  Tweet
+</a>
+```

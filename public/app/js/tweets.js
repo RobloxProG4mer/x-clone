@@ -3274,9 +3274,9 @@ export const createTweetElement = (tweet, config = {}) => {
 	tweetInteractionsViewsEl.title = `${tweet.view_count || 0} views`;
 
 	const reactionCountSpan = document.createElement("span");
-	reactionCountSpan.className = "reaction-count"; // Tr cursor shouldn't be stuck It's not stuck, Opua YT  Opuadmin i see, Tr. TRdS. Tr✅ OPUADMIN HAMOOD HABIBI UNOFFICIAL HAS HAPPIES HABIBI✅✅ // why does my opus have a warning look at discord and you will see why
+	reactionCountSpan.className = "reaction-count";
 
-	const topReactionsSpan = document.createElement("span"); // NOOOOOO TR STUCK CURSOR
+	const topReactionsSpan = document.createElement("span");
 	topReactionsSpan.className = "top-reactions";
 
 	const tweetInteractionsReactionEl = document.createElement("button");

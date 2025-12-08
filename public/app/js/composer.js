@@ -179,7 +179,7 @@ export const useComposer = (
 		if (pollToggle) pollToggle.style.display = "none";
 	}
 
-	textarea.addEventListener("input", () => {
+	const updateTextarea = () => {
 		updateCharacterCount();
 
 		textarea.style.height = "0px";
@@ -195,28 +195,9 @@ export const useComposer = (
 		} else {
 			textarea.style.overflow = "auto";
 		}
-	});
-
-	const beforeUnloadHandler = (e) => {
-		const hasContent =
-			textarea.value.trim().length > 0 ||
-			pendingFiles.length > 0 ||
-			selectedGif ||
-			selectedUnsplashImages.length > 0 ||
-			emojiKitchenUrl;
-
-		if (hasContent) {
-			e.preventDefault();
-			e.returnValue = "";
-			return "";
-		}
 	};
 
-	window.addEventListener("beforeunload", beforeUnloadHandler);
-
-	const cleanupBeforeUnload = () => {
-		window.removeEventListener("beforeunload", beforeUnloadHandler);
-	};
+	textarea.addEventListener("input", updateTextarea);
 
 	if (pollToggle) {
 		pollToggle.addEventListener("click", togglePoll);
@@ -1823,8 +1804,6 @@ export const useComposer = (
 				return;
 			}
 
-			cleanupBeforeUnload();
-
 			textarea.value = "";
 			tweetButton.disabled = true;
 			charCount.textContent = "0";
@@ -1867,6 +1846,7 @@ export const useComposer = (
 	});
 
 	updateCharacterCount();
+	updateTextarea();
 };
 
 export const createComposer = async ({
@@ -1878,6 +1858,7 @@ export const createComposer = async ({
 	autofocus = false,
 	interactiveCard = null,
 	cardOnly = false,
+	prefill = "",
 }) => {
 	const el = document.createElement("div");
 	el.classList.add("compose-tweet");
@@ -2016,6 +1997,7 @@ export const createComposer = async ({
           </div>
         </div>`;
 	el.querySelector("#tweet-textarea").placeholder = placeholder;
+	el.querySelector("#tweet-textarea").value = prefill;
 
 	if (quoteTweet) {
 		const { createTweetElement } = await import("./tweets.js");
@@ -2028,19 +2010,12 @@ export const createComposer = async ({
 		el.querySelector("#quoted-tweet-container").appendChild(quotedTweetEl);
 	}
 
-	try {
-		const user = await getUser();
-		const avatarImg = el.querySelector(".compose-header img");
-		avatarImg.src = user?.avatar || "/public/shared/assets/default-avatar.svg";
+	const user = await getUser();
+	const avatarImg = el.querySelector(".compose-header img");
+	avatarImg.src = user?.avatar || "/public/shared/assets/default-avatar.svg";
 
-		const radius = user?.avatar_radius ?? (user?.gold ? 4 : 50);
-		avatarImg.style.borderRadius = `${radius}%`;
-	} catch (error) {
-		console.error("Error loading user avatar:", error);
-		const avatarImg = el.querySelector(".compose-header img");
-		avatarImg.src = "/public/shared/assets/default-avatar.svg";
-		avatarImg.style.borderRadius = "50%";
-	}
+	const radius = user?.avatar_radius ?? (user?.gold ? 4 : 50);
+	avatarImg.style.borderRadius = `${radius}%`;
 
 	try {
 		const user = await getUser();
@@ -2106,3 +2081,27 @@ export const createComposer = async ({
 
 	return el;
 };
+
+if (location.search.includes("compose=")) {
+	(async () => {
+		const { createModal } = await import("../../shared/ui-utils.js");
+
+		const params = new URLSearchParams(location.search);
+		const composePrefill = params.get("compose");
+
+		const { modal } = createModal({
+			content: await createComposer({
+				autofocus: true,
+				prefill: composePrefill,
+
+				callback: async () => {
+					setTimeout(() => {
+						modal.close();
+					}, 10);
+				},
+			}),
+		});
+
+		modal.querySelector("textarea")?.focus();
+	})();
+}

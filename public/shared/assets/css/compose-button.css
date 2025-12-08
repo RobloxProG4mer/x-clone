@@ -1,0 +1,47 @@
+.tweetapus-share-button,
+.tweetapus-share-button::before {
+  box-sizing: border-box;
+}
+
+.tweetapus-share-button {
+  position: relative;
+  display: inline-flex;
+  width: fit-content;
+  align-items: center;
+  gap: 6px;
+  height: 24px;
+  padding: 1px 12px 1px 12px;
+  background-color: #AC97FF;
+  color: black;
+  border-radius: 9999px;
+  font-weight: 500;
+  cursor: pointer;
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+  text-decoration: none;
+  font-size: 13px;
+  transition: background-color 0.1s ease, transform 0.2s ease;
+}
+
+.tweetapus-share-button:hover {
+  background-color: #a08dee;
+}
+
+.tweetapus-share-button:active {
+  transform: scale(.95)
+}
+
+.tweetapus-share-button[data-size="large"] {
+  height: 28px;
+  border-radius: 9999px;
+  padding: 1px 12px 1px 12px;
+  font-size: 14px;
+}
+
+.tweetapus-share-button::before {
+  content: "";
+  width: 14px;
+  height: 14px;
+
+  background-image: url("data:image/svg+xml,%3C%3Fxml%20version%3D'1.0'%20encoding%3D'utf-8'%3F%3E%3Csvg%20width%3D%22408%22%20height%3D%22408%22%20viewBox%3D%220%200%20408%20408%22%20fill%3D%22none%22%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%3E%3Cg%20clip-path%3D%22url(%23clip0_181_3)%22%3E%3Cpath%20d%3D%22M373.267%2067.8673C373.267%2067.8673%20361.39%20103.497%20339.334%20125.554C366.48%20295.221%20179.847%20419.077%2033.9336%20322.367C71.2603%20324.064%20108.587%20312.187%20135.734%20288.434C50.9003%20262.984%208.48359%20162.881%2050.9003%2084.834C88.2269%20128.947%20145.914%20154.397%20203.6%20152.701C188.33%2081.4407%20271.467%2040.7206%20322.367%2088.2273C341.03%2088.2273%20373.267%2067.8673%20373.267%2067.8673Z%22%20fill%3D%22black%22%20stroke%3D%22black%22%20stroke-width%3D%2233.9333%22%2F%3E%3C%2Fg%3E%3Cdefs%3E%3CclipPath%20id%3D%22clip0_181_3%22%3E%3Crect%20width%3D%22407.2%22%20height%3D%22407.2%22%20fill%3D%22white%22%2F%3E%3C%2FclipPath%3E%3C%2Fdefs%3E%3C%2Fsvg%3E");
+  background-size: 100%;
+}
