@@ -83,16 +83,17 @@ const attachCheckmarkPopup = (badgeEl, type) => {
 	if (!badgeEl) return;
 	const message =
 		type === "gold"
-			? "This user has a gold checkmark and is verified."
+			? "This account is verified because it's an official organization on Tweetapus."
 			: type === "gray"
-				? "This user has a gray checkmark and is verified"
-				: "This user is verified.";
+				? "This account is verified because it is a government or multilateral organization account."
+				: "This account is verified.";
 	const showPopup = (evt) => {
 		evt.preventDefault();
 		evt.stopPropagation();
 		createPopup({
 			items: [
 				{
+					icon: badgeEl.innerHTML,
 					title: message,
 					onClick: () => {},
 				},

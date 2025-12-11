@@ -2534,6 +2534,7 @@ class AdminPanel {
       `;
 
 			this.toggleEditMode(false);
+			document.querySelector("#editProfileBtn").click();
 
 			const createdInput = document.getElementById("editProfileCreatedAt");
 			if (createdInput) {

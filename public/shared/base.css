@@ -204,7 +204,7 @@ img {
   width: calc(100% - 8px);
   background: transparent;
   border: none;
-  padding: 12px;
+  padding: 6.7px 12px;
   display: flex;
   align-items: center;
   gap: 8px;
@@ -213,8 +213,9 @@ img {
   font-family: inherit;
   text-align: left;
   border-radius: 7px;
-  height: 35px;
   margin: 4px;
+  max-width: 300px;
+  line-height: 1.5;
 
   &:hover {
     background-color: var(--bg-overlay-light);

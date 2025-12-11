@@ -2042,6 +2042,11 @@ async function handleFileUpload(files) {
 				continue;
 			}
 
+			if (!data.file) {
+				toastQueue.add("Upload failed - no file returned");
+				continue;
+			}
+
 			pendingFiles.push({
 				hash: data.file.hash,
 				name: processedFile.name,
@@ -2146,72 +2151,84 @@ document.addEventListener("DOMContentLoaded", () => {
 	startConversationBtn?.addEventListener("click", startConversation);
 	dmSendBtn?.addEventListener("click", sendMessage);
 
-	dmAttachmentBtn?.addEventListener("click", (e) => {
-		e.stopPropagation();
-
-		const menuItems = [
-			{
-				title: "Upload from device",
-				icon: `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>`,
-				onClick: () => {
-					if (
-						pendingFiles.length > 0 &&
-						pendingFiles.some((f) => f.type === "image/gif" && f.hash === null)
-					) {
-						toastQueue.add("Remove the GIF first to upload files");
-						return;
-					}
-					dmFileInput?.click();
-				},
-			},
-			{
-				title: "Search GIFs",
-				icon: `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 256 256"><path d="M144,72V184a8,8,0,0,1-16,0V72a8,8,0,0,1,16,0Zm88-8H176a8,8,0,0,0-8,8V184a8,8,0,0,0,16,0V136h40a8,8,0,0,0,0-16H184V80h48a8,8,0,0,0,0-16ZM96,120H72a8,8,0,0,0,0,16H88v16a24,24,0,0,1-48,0V104A24,24,0,0,1,64,80c11.19,0,21.61,7.74,24.25,18a8,8,0,0,0,15.5-4C99.27,76.62,82.56,64,64,64a40,40,0,0,0-40,40v48a40,40,0,0,0,80,0V128A8,8,0,0,0,96,120Z"></path></svg>`,
-				onClick: () => {
-					if (
-						pendingFiles.length > 0 &&
-						pendingFiles.some((f) => f.hash !== null)
-					) {
-						toastQueue.add("Remove uploaded files first to select a GIF");
-						return;
-					}
-					const isVisible = dmGifPicker.style.display === "block";
-					dmGifPicker.style.display = isVisible ? "none" : "block";
-					if (!isVisible) {
-						dmGifSearchInput.focus();
-					}
-				},
-			},
-			{
-				title: "Search Unsplash",
-				icon: `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>`,
-				onClick: () => {
-					if (
-						pendingFiles.length > 0 &&
-						pendingFiles.some((f) => f.hash === null)
-					) {
-						toastQueue.add("Remove the GIF first to select a photo");
-						return;
-					}
-					showUnsplashPicker();
-				},
-			},
-		];
-
-		createPopup({
-			items: menuItems,
-			triggerElement: dmAttachmentBtn,
-		});
-	});
-
 	const dmGifPicker = document.getElementById("dmGifPicker");
 	const dmGifSearchInput = document.getElementById("dmGifSearchInput");
 	const dmGifResults = document.getElementById("dmGifResults");
 	const dmGifPickerClose = document.getElementById("dmGifPickerClose");
+
+	if (dmAttachmentBtn) {
+		dmAttachmentBtn.addEventListener("click", (e) => {
+			e.stopPropagation();
+			e.preventDefault();
+
+			const fileInput = document.getElementById("dmFileInput");
+			const gifPicker = document.getElementById("dmGifPicker");
+			const gifSearchInput = document.getElementById("dmGifSearchInput");
+
+			const menuItems = [
+				{
+					title: "Upload from device",
+					icon: `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>`,
+					onClick: () => {
+						if (
+							pendingFiles.length > 0 &&
+							pendingFiles.some((f) => f.type === "image/gif" && f.hash === null)
+						) {
+							toastQueue.add("Remove the GIF first to upload files");
+							return;
+						}
+						if (fileInput) {
+							fileInput.click();
+						}
+					},
+				},
+				{
+					title: "Search GIFs",
+					icon: `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 256 256"><path d="M144,72V184a8,8,0,0,1-16,0V72a8,8,0,0,1,16,0Zm88-8H176a8,8,0,0,0-8,8V184a8,8,0,0,0,16,0V136h40a8,8,0,0,0,0-16H184V80h48a8,8,0,0,0,0-16ZM96,120H72a8,8,0,0,0,0,16H88v16a24,24,0,0,1-48,0V104A24,24,0,0,1,64,80c11.19,0,21.61,7.74,24.25,18a8,8,0,0,0,15.5-4C99.27,76.62,82.56,64,64,64a40,40,0,0,0-40,40v48a40,40,0,0,0,80,0V128A8,8,0,0,0,96,120Z"></path></svg>`,
+					onClick: () => {
+						if (
+							pendingFiles.length > 0 &&
+							pendingFiles.some((f) => f.hash !== null)
+						) {
+							toastQueue.add("Remove uploaded files first to select a GIF");
+							return;
+						}
+						if (gifPicker) {
+							const isVisible = gifPicker.style.display === "block";
+							gifPicker.style.display = isVisible ? "none" : "block";
+							if (!isVisible && gifSearchInput) {
+								gifSearchInput.focus();
+							}
+						}
+					},
+				},
+				{
+					title: "Search Unsplash",
+					icon: `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>`,
+					onClick: () => {
+						if (
+							pendingFiles.length > 0 &&
+							pendingFiles.some((f) => f.hash === null)
+						) {
+							toastQueue.add("Remove the GIF first to select a photo");
+							return;
+						}
+						showUnsplashPicker();
+					},
+				},
+			];
+
+			createPopup({
+				items: menuItems,
+				triggerElement: dmAttachmentBtn,
+			});
+		});
+	}
+
 	let gifSearchTimeout;
 
 	dmGifPickerClose?.addEventListener("click", () => {
-		dmGifPicker.style.display = "none";
+		if (dmGifPicker) dmGifPicker.style.display = "none";
 	});
 
 	dmGifSearchInput?.addEventListener("input", (e) => {
@@ -2223,11 +2240,11 @@ document.addEventListener("DOMContentLoaded", () => {
 
 	async function searchDMGifs(q) {
 		if (!q || q.trim().length === 0) {
-			dmGifResults.innerHTML = "";
+			if (dmGifResults) dmGifResults.innerHTML = "";
 			return;
 		}
 
-		dmGifResults.innerHTML = `
+		if (dmGifResults) dmGifResults.innerHTML = `
 			<div style="grid-column: 1 / -1; text-align: center; padding: 40px;">
 				<svg width="24" height="24" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><style>.spinner_z9k8 {transform-origin: center;animation: spinner_StKS 0.75s infinite linear;}@keyframes spinner_StKS {100% {transform: rotate(360deg);}}</style><path d="M12,1A11,11,0,1,0,23,12,11,11,0,0,0,12,1Zm0,19a8,8,0,1,1,8-8A8,8,0,0,1,12,20Z" opacity=".25" fill="currentColor"></path><path d="M12,4a8,8,0,0,1,7.89,6.7A1.53,1.53,0,0,0,21.38,12h0a1.5,1.5,0,0,0,1.48-1.75,11,11,0,0,0-21.72,0A1.5,1.5,0,0,0,2.62,12h0a1.53,1.53,0,0,0,1.49-1.3A8,8,0,0,1,12,4Z" class="spinner_z9k8" fill="currentColor"></path></svg>
 			</div>
@@ -2239,7 +2256,7 @@ document.addEventListener("DOMContentLoaded", () => {
 			);
 
 			if (error || !results || results.length === 0) {
-				dmGifResults.innerHTML = `
+				if (dmGifResults) dmGifResults.innerHTML = `
 					<div style="grid-column: 1 / -1; text-align: center; padding: 40px; color: var(--text-secondary);">
 						<p>${error ? "Failed to load GIFs" : "No GIFs found"}</p>
 					</div>
@@ -2247,7 +2264,7 @@ document.addEventListener("DOMContentLoaded", () => {
 				return;
 			}
 
-			dmGifResults.innerHTML = "";
+			if (dmGifResults) dmGifResults.innerHTML = "";
 			for (const gif of results) {
 				const gifUrl =
 					gif.media_formats?.tinygif?.url || gif.media_formats?.gif?.url;
@@ -2273,15 +2290,15 @@ document.addEventListener("DOMContentLoaded", () => {
 					});
 					renderAttachmentPreviews();
 					updateSendButton();
-					dmGifPicker.style.display = "none";
-					dmGifSearchInput.value = "";
+					if (dmGifPicker) dmGifPicker.style.display = "none";
+					if (dmGifSearchInput) dmGifSearchInput.value = "";
 				});
 
-				dmGifResults.appendChild(gifEl);
+				if (dmGifResults) dmGifResults.appendChild(gifEl);
 			}
 		} catch (error) {
 			console.error("GIF search error:", error);
-			dmGifResults.innerHTML = `
+			if (dmGifResults) dmGifResults.innerHTML = `
 				<div style="grid-column: 1 / -1; text-align: center; padding: 40px; color: var(--text-secondary);">
 					<p>Failed to load GIFs</p>
 				</div>
