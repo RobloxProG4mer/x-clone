@@ -52,7 +52,8 @@ CREATE TABLE IF NOT EXISTS users (
   ip_address TEXT DEFAULT NULL,
   gray BOOLEAN DEFAULT FALSE,
   checkmark_outline TEXT DEFAULT NULL,
-  avatar_outline TEXT DEFAULT NULL
+  avatar_outline TEXT DEFAULT NULL,
+  ghost_followers INTEGER DEFAULT 0
 );
 
 CREATE INDEX IF NOT EXISTS idx_users_username ON users(username);

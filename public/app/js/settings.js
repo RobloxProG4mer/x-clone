@@ -2330,7 +2330,7 @@ const createChangePasswordModal = () => {
 	description.id = "passwordModalDescription";
 	description.className = "modal-description";
 	description.textContent =
-		"Set a password for your account to enable traditional username/password login.";
+		"Set a password for your account";
 
 	const form = document.createElement("form");
 	form.id = "changePasswordForm";

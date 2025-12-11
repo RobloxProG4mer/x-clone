@@ -285,7 +285,7 @@ const getPendingFollowRequests = db.prepare(`
 const getFollowCounts = db.prepare(`
 	SELECT 
 		((SELECT COUNT(*) FROM follows WHERE follower_id = ?) + (SELECT COUNT(*) FROM ghost_follows WHERE follower_type = 'following' AND target_id = ?)) AS following_count,
-		((SELECT COUNT(*) FROM follows WHERE following_id = ?) + (SELECT COUNT(*) FROM ghost_follows WHERE follower_type = 'follower' AND target_id = ?)) AS follower_count,
+		((SELECT COUNT(*) FROM follows WHERE following_id = ?) + COALESCE((SELECT ghost_followers FROM users WHERE id = ?), 0)) AS follower_count,
 		(SELECT COUNT(*) FROM posts WHERE user_id = ? AND reply_to IS NULL) AS post_count
 `);
 

@@ -6413,7 +6413,8 @@ html:has(.direct-messages.page-active, .dm-conversation.page-active) {
           color: var(--text-primary);
         }
 
-        #addParticipantTo {
+        #addParticipantTo,
+        #newMessageTo {
           width: 100%;
           padding: 12px 16px;
           border: 1px solid var(--border-primary);

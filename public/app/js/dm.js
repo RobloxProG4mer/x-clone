@@ -1305,19 +1305,199 @@ async function openDMList() {
 }
 
 function openNewMessageModal() {
-	const modal = document.getElementById("newMessageModal");
-	if (modal) {
-		modal.style.display = "flex";
-		selectedUsers = [];
-		renderSelectedUsers();
-		document.getElementById("newMessageTo").value = "";
-		document.getElementById("startConversation").disabled = true;
+	selectedUsers = [];
+	
+	const content = document.createElement("div");
+	content.className = "dm-modal-content";
+	content.innerHTML = `
+		<div class="form-group">
+			<label for="modalNewMessageTo">To:</label>
+			<input
+				type="text"
+				id="modalNewMessageTo"
+				placeholder="Enter username..."
+				autocomplete="off"
+				style="width: 100%; padding: 12px 16px; border: 1px solid var(--border-primary); border-radius: 8px; background-color: var(--bg-secondary); color: var(--text-primary); font-size: 14px; outline: none; transition: border-color 0.2s;"
+			/>
+			<div class="search-suggestions" id="modalUserSuggestions" style="position: absolute; top: 100%; left: 0; right: 0; background-color: var(--bg-primary); border: 1px solid var(--border-primary); border-top: none; border-radius: 0 0 8px 8px; max-height: 200px; overflow-y: auto; z-index: 10; display: none;"></div>
+		</div>
+		<div class="selected-users" id="modalSelectedUsers" style="display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 16px;"></div>
+		<div class="group-chat-options">
+			<label class="checkbox-label" style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+				<input type="checkbox" id="modalGroupChatToggle" />
+				<span>Create group chat</span>
+			</label>
+			<input
+				type="text"
+				id="modalGroupTitleInput"
+				placeholder="Group name (optional)"
+				style="display: none; width: 100%; padding: 12px 16px; border: 1px solid var(--border-primary); border-radius: 8px; background-color: var(--bg-secondary); color: var(--text-primary); font-size: 14px; outline: none; margin-top: 12px;"
+			/>
+		</div>
+		<div class="modal-actions" style="display: flex; gap: 12px; margin-top: 20px;">
+			<button type="button" class="btn-secondary" id="modalCancelNewMessage" style="flex: 1; padding: 12px 24px; border: 1px solid var(--border-primary); border-radius: 8px; background-color: transparent; color: var(--text-primary); font-size: 14px; font-weight: 600; cursor: pointer;">
+				Cancel
+			</button>
+			<button
+				type="button"
+				class="btn-primary"
+				id="modalStartConversation"
+				disabled
+				style="flex: 1; padding: 12px 24px; border: none; border-radius: 8px; background-color: var(--primary); color: var(--primary-fg); font-size: 14px; font-weight: 600; cursor: pointer;"
+			>
+				Start
+			</button>
+		</div>
+	`;
 
-		const groupToggle = document.getElementById("groupChatToggle");
-		if (groupToggle) {
-			groupToggle.checked = false;
+	const modal = createModal({
+		title: "New Message",
+		content,
+		className: "dm-new-message-modal",
+		closeOnOverlayClick: true,
+	});
+
+	const modalInput = document.getElementById("modalNewMessageTo");
+	const modalSuggestionsEl = document.getElementById("modalUserSuggestions");
+	const modalSelectedUsersEl = document.getElementById("modalSelectedUsers");
+	const modalStartBtn = document.getElementById("modalStartConversation");
+	const modalCancelBtn = document.getElementById("modalCancelNewMessage");
+	const modalGroupToggle = document.getElementById("modalGroupChatToggle");
+	const modalGroupTitleInput = document.getElementById("modalGroupTitleInput");
+
+	modalCancelBtn.addEventListener("click", () => modal.close());
+
+	modalStartBtn.addEventListener("click", async () => {
+		if (selectedUsers.length === 0) return;
+
+		const isGroup = modalGroupToggle?.checked || selectedUsers.length > 1;
+		const title = modalGroupTitleInput?.value?.trim() || null;
+
+		try {
+			const data = await query("/dm/conversations", {
+				method: "POST",
+				headers: { "Content-Type": "application/json" },
+				body: JSON.stringify({
+					participantUsernames: selectedUsers.map((u) => u.username),
+					title,
+					isGroup,
+				}),
+			});
+
+			if (data.error) {
+				toastQueue.add(data.error);
+				return;
+			}
+
+			modal.close();
+			await loadConversations();
+			openConversation(data.conversation.id);
+		} catch (error) {
+			console.error("Failed to start conversation:", error);
+			toastQueue.add("Failed to start conversation");
 		}
-	}
+	});
+
+	modalGroupToggle?.addEventListener("change", () => {
+		if (modalGroupTitleInput) {
+			modalGroupTitleInput.style.display = modalGroupToggle.checked ? "block" : "none";
+		}
+	});
+
+	const renderModalSelectedUsers = () => {
+		modalSelectedUsersEl.innerHTML = selectedUsers
+			.map(
+				(user) => `
+			<div class="selected-user" style="display: flex; align-items: center; gap: 8px; background-color: var(--bg-secondary); padding: 6px 12px; border-radius: 16px; font-size: 14px; color: var(--text-primary);">
+				${user.name || user.username}
+				<button class="remove-user" data-username="${user.username}" style="background-color: transparent; border: none; cursor: pointer; color: var(--text-secondary); font-size: 16px; line-height: 1;">&times;</button>
+			</div>
+		`,
+			)
+			.join("");
+		
+		modalSelectedUsersEl.querySelectorAll(".remove-user").forEach((btn) => {
+			btn.addEventListener("click", (e) => {
+				const username = e.target.dataset.username;
+				selectedUsers = selectedUsers.filter((u) => u.username !== username);
+				renderModalSelectedUsers();
+				modalStartBtn.disabled = selectedUsers.length === 0;
+
+				if (selectedUsers.length > 1 && modalGroupToggle && !modalGroupToggle.checked) {
+					modalGroupToggle.checked = true;
+					if (modalGroupTitleInput) modalGroupTitleInput.style.display = "block";
+				}
+			});
+		});
+	};
+
+	const renderModalSuggestions = (users) => {
+		if (users.length === 0) {
+			modalSuggestionsEl.style.display = "none";
+			return;
+		}
+
+		modalSuggestionsEl.innerHTML = users
+			.map((user) => {
+				const radius =
+					user.avatar_radius !== null && user.avatar_radius !== undefined
+						? `${user.avatar_radius}px`
+						: user.gold || user.gray
+							? `4px`
+							: `50px`;
+				return `
+					<div class="suggestion-item" data-username="${user.username}" data-name="${user.name || ""}" data-avatar="${user.avatar || ""}" style="display: flex; align-items: center; gap: 12px; padding: 12px 16px; cursor: pointer; transition: background-color 0.2s;">
+						<img src="${user.avatar || "/public/shared/assets/default-avatar.svg"}" alt="${user.name || user.username}" style="width: 32px; height: 32px; border-radius: ${radius}; object-fit: cover; background-color: var(--bg-tertiary);" />
+						<div class="user-info" style="flex: 1;">
+							<p class="username" style="font-size: 14px; font-weight: 600; color: var(--text-primary); margin: 0;">${user.name || user.username}</p>
+							<p class="name" style="font-size: 12px; color: var(--text-secondary); margin: 0;">@${user.username}</p>
+						</div>
+					</div>
+				`;
+			})
+			.join("");
+
+		modalSuggestionsEl.style.display = "block";
+		
+		modalSuggestionsEl.querySelectorAll(".suggestion-item").forEach((item) => {
+			item.addEventListener("click", () => {
+				const username = item.dataset.username;
+				const name = item.dataset.name;
+				const avatar = item.dataset.avatar;
+
+				if (selectedUsers.find((u) => u.username === username)) return;
+
+				selectedUsers.push({ username, name, avatar });
+				renderModalSelectedUsers();
+				modalInput.value = "";
+				modalSuggestionsEl.style.display = "none";
+				modalStartBtn.disabled = selectedUsers.length === 0;
+
+				if (selectedUsers.length > 1 && modalGroupToggle && !modalGroupToggle.checked) {
+					modalGroupToggle.checked = true;
+					if (modalGroupTitleInput) modalGroupTitleInput.style.display = "block";
+				}
+			});
+		});
+	};
+
+	let searchTimeout;
+	modalInput.addEventListener("input", async () => {
+		clearTimeout(searchTimeout);
+		const searchQuery = modalInput.value.trim();
+
+		if (!searchQuery) {
+			modalSuggestionsEl.style.display = "none";
+			return;
+		}
+
+		searchTimeout = setTimeout(async () => {
+			const users = await searchUsers(searchQuery);
+			renderModalSuggestions(users);
+		}, 300);
+	});
+
+	renderModalSelectedUsers();
 }
 
 function goBackToDMList() {
@@ -1344,44 +1524,225 @@ function openGroupSettings() {
 		return;
 	}
 
-	const modal = document.getElementById("groupSettingsModal");
-	const groupNameInput = document.getElementById("groupNameInput");
-	const disappearingEnabled = document.getElementById("disappearingEnabled");
-	const disappearingDuration = document.getElementById("disappearingDuration");
-	const disappearingDurationSelect = document.getElementById(
-		"disappearingDurationSelect",
-	);
+	const content = document.createElement("div");
+	content.className = "dm-modal-content";
+	content.innerHTML = `
+		<div class="form-group">
+			<label for="modalGroupNameInput">Group Name:</label>
+			<input
+				type="text"
+				id="modalGroupNameInput"
+				placeholder="Enter group name..."
+				value="${currentConversation.title || ""}"
+				style="width: 100%; padding: 12px 16px; border: 1px solid var(--border-primary); border-radius: 8px; background-color: var(--bg-secondary); color: var(--text-primary); font-size: 14px; outline: none;"
+			/>
+		</div>
 
-	if (modal && groupNameInput) {
-		groupNameInput.value = currentConversation.title || "";
+		<div class="form-group">
+			<label>Disappearing Messages:</label>
+			<div class="disappearing-settings">
+				<label class="checkbox-label" style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+					<input type="checkbox" id="modalDisappearingEnabled" ${!!currentConversation.disappearing_enabled ? "checked" : ""} />
+					Enable disappearing messages
+				</label>
+				<div
+					class="disappearing-duration"
+					id="modalDisappearingDuration"
+					style="display: ${!!currentConversation.disappearing_enabled ? "block" : "none"}; margin-top: 12px;"
+				>
+					<label for="modalDisappearingDurationSelect">
+						Messages disappear after:
+					</label>
+					<select id="modalDisappearingDurationSelect" style="width: 100%; padding: 8px; border: 1px solid var(--border-primary); border-radius: 8px; background-color: var(--bg-secondary); color: var(--text-primary);">
+						<option value="60" ${currentConversation.disappearing_duration === 60 ? "selected" : ""}>1 minute</option>
+						<option value="300" ${currentConversation.disappearing_duration === 300 ? "selected" : ""}>5 minutes</option>
+						<option value="900" ${currentConversation.disappearing_duration === 900 ? "selected" : ""}>15 minutes</option>
+						<option value="3600" ${currentConversation.disappearing_duration === 3600 ? "selected" : ""}>1 hour</option>
+						<option value="86400" ${currentConversation.disappearing_duration === 86400 ? "selected" : ""}>24 hours</option>
+						<option value="604800" ${currentConversation.disappearing_duration === 604800 ? "selected" : ""}>7 days</option>
+					</select>
+				</div>
+			</div>
+		</div>
 
-		if (disappearingEnabled) {
-			disappearingEnabled.checked = !!currentConversation.disappearing_enabled;
-			if (disappearingDuration) {
-				disappearingDuration.style.display = disappearingEnabled.checked
-					? "block"
-					: "none";
+		<div class="form-group">
+			<label>Participants:</label>
+			<div class="participants-list" id="modalParticipantsList" style="max-height: 300px; overflow-y: auto; border: 1px solid var(--border-primary); border-radius: 8px; margin-bottom: 12px;"></div>
+			<button class="btn-secondary" id="modalAddParticipantBtn" type="button" style="width: 100%; padding: 10px; border: 1px solid var(--border-primary); border-radius: 8px; background-color: var(--bg-secondary); color: var(--text-primary); cursor: pointer;">
+				Add Participant
+			</button>
+		</div>
+		
+		<div class="modal-actions" style="display: flex; gap: 12px; margin-top: 20px;">
+			<button
+				type="button"
+				class="btn-secondary"
+				id="modalCancelGroupSettings"
+				style="flex: 1; padding: 12px 24px; border: 1px solid var(--border-primary); border-radius: 8px; background-color: transparent; color: var(--text-primary); font-size: 14px; font-weight: 600; cursor: pointer;"
+			>
+				Cancel
+			</button>
+			<button type="button" class="btn-primary" id="modalSaveGroupSettings" style="flex: 1; padding: 12px 24px; border: none; border-radius: 8px; background-color: var(--primary); color: var(--primary-fg); font-size: 14px; font-weight: 600; cursor: pointer;">
+				Save
+			</button>
+		</div>
+	`;
+
+	const modal = createModal({
+		title: "Settings",
+		content,
+		className: "dm-group-settings-modal",
+		closeOnOverlayClick: true,
+	});
+
+	const modalGroupNameInput = document.getElementById("modalGroupNameInput");
+	const modalDisappearingEnabled = document.getElementById("modalDisappearingEnabled");
+	const modalDisappearingDuration = document.getElementById("modalDisappearingDuration");
+	const modalDisappearingDurationSelect = document.getElementById("modalDisappearingDurationSelect");
+	const modalParticipantsList = document.getElementById("modalParticipantsList");
+	const modalAddParticipantBtn = document.getElementById("modalAddParticipantBtn");
+	const modalCancelBtn = document.getElementById("modalCancelGroupSettings");
+	const modalSaveBtn = document.getElementById("modalSaveGroupSettings");
+
+	const renderModalParticipantsList = () => {
+		const currentUsername = getCurrentUsername();
+		const allParticipants = currentConversation.participants;
+
+		modalParticipantsList.innerHTML = allParticipants
+			.map((participant) => {
+				const isCurrentUser = participant.username === currentUsername;
+				return `
+					<div class="participant-item" style="display: flex; align-items: center; padding: 12px; border-bottom: 1px solid var(--border-primary);">
+						<img src="${participant.avatar || "/public/shared/assets/default-avatar.svg"}" alt="${participant.name || participant.username}" style="width: 40px; height: 40px; border-radius: 50%; object-fit: cover; margin-right: 12px;" />
+						<div class="participant-info" style="flex: 1;">
+							<span class="participant-name" style="display: block; font-weight: 600; color: var(--text-primary);">${participant.name || participant.username}</span>
+							<span class="participant-username" style="display: block; font-size: 12px; color: var(--text-secondary);">@${participant.username}</span>
+						</div>
+						${
+							!isCurrentUser
+								? `<button class="remove-participant-btn" data-user-id="${participant.id}" data-username="${participant.username}" style="padding: 6px 12px; border: 1px solid var(--border-danger); border-radius: 4px; background-color: transparent; color: var(--text-danger); cursor: pointer;">Remove</button>`
+								: '<span class="current-user-badge" style="padding: 4px 8px; background-color: var(--bg-tertiary); color: var(--text-secondary); border-radius: 4px; font-size: 12px;">You</span>'
+						}
+					</div>
+				`;
+			})
+			.join("");
+
+		modalParticipantsList.querySelectorAll(".remove-participant-btn").forEach((btn) => {
+			btn.addEventListener("click", async () => {
+				const userId = btn.dataset.userId;
+				const username = btn.dataset.username;
+				if (!confirm(`Remove ${username} from this group?`)) return;
+
+				try {
+					const data = await query(
+						`/dm/conversations/${currentConversation.id}/participants/${userId}`,
+						{ method: "DELETE" },
+					);
+
+					if (data.error) {
+						toastQueue.add(data.error);
+						return;
+					}
+
+					currentConversation.participants = currentConversation.participants.filter((p) => p.id !== userId);
+					renderModalParticipantsList();
+					renderConversationHeader();
+					loadConversations();
+				} catch (error) {
+					console.error("Failed to remove participant:", error);
+					toastQueue.add("Failed to remove participant");
+				}
+			});
+		});
+	};
+
+	modalDisappearingEnabled?.addEventListener("change", () => {
+		if (modalDisappearingDuration) {
+			modalDisappearingDuration.style.display = modalDisappearingEnabled.checked ? "block" : "none";
+		}
+	});
+
+	modalAddParticipantBtn?.addEventListener("click", () => {
+		modal.close();
+		openAddParticipantModal();
+	});
+
+	modalCancelBtn.addEventListener("click", () => modal.close());
+
+	modalSaveBtn.addEventListener("click", async () => {
+		const newTitle = modalGroupNameInput?.value?.trim() || null;
+
+		if (newTitle !== (currentConversation.title || "")) {
+			try {
+				const data = await query(
+					`/dm/conversations/${currentConversation.id}/title`,
+					{
+						method: "PATCH",
+						headers: { "Content-Type": "application/json" },
+						body: JSON.stringify({ title: newTitle }),
+					},
+				);
+
+				if (data.error) {
+					toastQueue.add(data.error);
+					return;
+				}
+
+				currentConversation.title = newTitle;
+				renderConversationHeader();
+			} catch (error) {
+				console.error("Failed to update group settings:", error);
+				return;
 			}
 		}
 
-		if (
-			disappearingDurationSelect &&
-			currentConversation.disappearing_duration
-		) {
-			disappearingDurationSelect.value =
-				currentConversation.disappearing_duration.toString();
+		if (modalDisappearingEnabled && modalDisappearingDurationSelect) {
+			const enabled = modalDisappearingEnabled.checked;
+			const duration = enabled ? parseInt(modalDisappearingDurationSelect.value) : null;
+
+			if (
+				enabled !== currentConversation.disappearing_enabled ||
+				duration !== currentConversation.disappearing_duration
+			) {
+				try {
+					const data = await query(
+						`/dm/conversations/${currentConversation.id}/disappearing`,
+						{
+							method: "PATCH",
+							headers: { "Content-Type": "application/json" },
+							body: JSON.stringify({ enabled, duration }),
+						},
+					);
+
+					if (data.error) {
+						toastQueue.add(data.error);
+						return;
+					}
+
+					currentConversation.disappearing_enabled = enabled;
+					currentConversation.disappearing_duration = duration;
+
+					const statusText = enabled
+						? `Disappearing messages enabled (${formatDisappearingDuration(duration)})`
+						: "Disappearing messages disabled";
+					toastQueue.add(statusText);
+				} catch (error) {
+					console.error("Failed to update disappearing messages:", error);
+					toastQueue.add("Failed to update disappearing messages");
+					return;
+				}
+			}
 		}
 
-		renderParticipantsList();
-		modal.style.display = "flex";
-	}
+		modal.close();
+		loadConversations();
+	});
+
+	renderModalParticipantsList();
 }
 
 function closeGroupSettings() {
-	const modal = document.getElementById("groupSettingsModal");
-	if (modal) {
-		modal.style.display = "none";
-	}
 }
 
 function openDirectSettings() {
@@ -1390,220 +1751,116 @@ function openDirectSettings() {
 		return;
 	}
 
-	const modal = document.getElementById("directSettingsModal");
-	const disappearingEnabled = document.getElementById(
-		"directDisappearingEnabled",
-	);
-	const disappearingDuration = document.getElementById(
-		"directDisappearingDuration",
-	);
-	const disappearingDurationSelect = document.getElementById(
-		"directDisappearingDurationSelect",
-	);
+	const content = document.createElement("div");
+	content.className = "dm-modal-content";
+	content.innerHTML = `
+		<div class="form-group">
+			<label>Disappearing Messages:</label>
+			<div class="disappearing-settings">
+				<label class="checkbox-label" style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+					<input type="checkbox" id="modalDirectDisappearingEnabled" ${!!currentConversation.disappearing_enabled ? "checked" : ""} />
+					Enable disappearing messages
+				</label>
+				<div
+					class="disappearing-duration"
+					id="modalDirectDisappearingDuration"
+					style="display: ${!!currentConversation.disappearing_enabled ? "block" : "none"}; margin-top: 12px;"
+				>
+					<label for="modalDirectDisappearingDurationSelect">
+						Messages disappear after:
+					</label>
+					<select id="modalDirectDisappearingDurationSelect" style="width: 100%; padding: 8px; border: 1px solid var(--border-primary); border-radius: 8px; background-color: var(--bg-secondary); color: var(--text-primary);">
+						<option value="60" ${currentConversation.disappearing_duration === 60 ? "selected" : ""}>1 minute</option>
+						<option value="300" ${currentConversation.disappearing_duration === 300 ? "selected" : ""}>5 minutes</option>
+						<option value="900" ${currentConversation.disappearing_duration === 900 ? "selected" : ""}>15 minutes</option>
+						<option value="3600" ${currentConversation.disappearing_duration === 3600 ? "selected" : ""}>1 hour</option>
+						<option value="86400" ${currentConversation.disappearing_duration === 86400 ? "selected" : ""}>24 hours</option>
+						<option value="604800" ${currentConversation.disappearing_duration === 604800 ? "selected" : ""}>7 days</option>
+					</select>
+				</div>
+			</div>
+		</div>
+		<div class="modal-actions" style="display: flex; gap: 12px; margin-top: 20px;">
+			<button
+				type="button"
+				class="btn-secondary"
+				id="modalCancelDirectSettings"
+				style="flex: 1; padding: 12px 24px; border: 1px solid var(--border-primary); border-radius: 8px; background-color: transparent; color: var(--text-primary); font-size: 14px; font-weight: 600; cursor: pointer;"
+			>
+				Cancel
+			</button>
+			<button type="button" class="btn-primary" id="modalSaveDirectSettings" style="flex: 1; padding: 12px 24px; border: none; border-radius: 8px; background-color: var(--primary); color: var(--primary-fg); font-size: 14px; font-weight: 600; cursor: pointer;">
+				Save
+			</button>
+		</div>
+	`;
 
-	if (modal) {
-		if (disappearingEnabled) {
-			disappearingEnabled.checked = !!currentConversation.disappearing_enabled;
-			if (disappearingDuration) {
-				disappearingDuration.style.display = disappearingEnabled.checked
-					? "block"
-					: "none";
+	const modal = createModal({
+		title: "Settings",
+		content,
+		className: "dm-direct-config-modal",
+		closeOnOverlayClick: true,
+	});
+
+	const modalDirectDisappearingEnabled = document.getElementById("modalDirectDisappearingEnabled");
+	const modalDirectDisappearingDuration = document.getElementById("modalDirectDisappearingDuration");
+	const modalDirectDisappearingDurationSelect = document.getElementById("modalDirectDisappearingDurationSelect");
+	const modalCancelBtn = document.getElementById("modalCancelDirectSettings");
+	const modalSaveBtn = document.getElementById("modalSaveDirectSettings");
+
+	modalDirectDisappearingEnabled?.addEventListener("change", () => {
+		if (modalDirectDisappearingDuration) {
+			modalDirectDisappearingDuration.style.display = modalDirectDisappearingEnabled.checked ? "block" : "none";
+		}
+	});
+
+	modalCancelBtn.addEventListener("click", () => modal.close());
+
+	modalSaveBtn.addEventListener("click", async () => {
+		if (modalDirectDisappearingEnabled && modalDirectDisappearingDurationSelect) {
+			const enabled = modalDirectDisappearingEnabled.checked;
+			const duration = enabled ? parseInt(modalDirectDisappearingDurationSelect.value) : null;
+
+			if (
+				enabled !== currentConversation.disappearing_enabled ||
+				duration !== currentConversation.disappearing_duration
+			) {
+				try {
+					const data = await query(
+						`/dm/conversations/${currentConversation.id}/disappearing`,
+						{
+							method: "PATCH",
+							headers: { "Content-Type": "application/json" },
+							body: JSON.stringify({ enabled, duration }),
+						},
+					);
+
+					if (data.error) {
+						toastQueue.add(data.error);
+						return;
+					}
+
+					currentConversation.disappearing_enabled = enabled;
+					currentConversation.disappearing_duration = duration;
+
+					const statusText = enabled
+						? `Disappearing messages enabled (${formatDisappearingDuration(duration)})`
+						: "Disappearing messages disabled";
+					toastQueue.add(statusText);
+				} catch (error) {
+					console.error("Failed to update disappearing messages:", error);
+					toastQueue.add("Failed to update disappearing messages");
+					return;
+				}
 			}
 		}
 
-		if (
-			disappearingDurationSelect &&
-			currentConversation.disappearing_duration
-		) {
-			disappearingDurationSelect.value =
-				currentConversation.disappearing_duration.toString();
-		}
-
-		modal.style.display = "flex";
-	}
+		modal.close();
+		loadConversations();
+	});
 }
 
 function closeDirectSettings() {
-	const modal = document.getElementById("directSettingsModal");
-	if (modal) {
-		modal.style.display = "none";
-	}
-}
-
-async function saveDirectSettings() {
-	if (!currentConversation) return;
-
-	const disappearingEnabled = document.getElementById(
-		"directDisappearingEnabled",
-	);
-	const disappearingDurationSelect = document.getElementById(
-		"directDisappearingDurationSelect",
-	);
-
-	if (disappearingEnabled && disappearingDurationSelect) {
-		const enabled = disappearingEnabled.checked;
-		const duration = enabled
-			? parseInt(disappearingDurationSelect.value)
-			: null;
-
-		if (
-			enabled !== currentConversation.disappearing_enabled ||
-			duration !== currentConversation.disappearing_duration
-		) {
-			try {
-				const data = await query(
-					`/dm/conversations/${currentConversation.id}/disappearing`,
-					{
-						method: "PATCH",
-						headers: {
-							"Content-Type": "application/json",
-						},
-						body: JSON.stringify({ enabled, duration }),
-					},
-				);
-
-				if (data.error) {
-					toastQueue.add(data.error);
-					return;
-				}
-
-				currentConversation.disappearing_enabled = enabled;
-				currentConversation.disappearing_duration = duration;
-
-				const statusText = enabled
-					? `Disappearing messages enabled (${formatDisappearingDuration(duration)})`
-					: "Disappearing messages disabled";
-				toastQueue.add(statusText);
-			} catch (error) {
-				console.error("Failed to update disappearing messages:", error);
-				toastQueue.add("Failed to update disappearing messages");
-				return;
-			}
-		}
-	}
-
-	closeDirectSettings();
-	loadConversations();
-}
-
-function renderParticipantsList() {
-	if (!currentConversation) return;
-
-	const participantsList = document.getElementById("participantsList");
-	if (!participantsList) return;
-
-	const currentUsername = getCurrentUsername();
-	const allParticipants = currentConversation.participants;
-
-	participantsList.innerHTML = allParticipants
-		.map((participant) => {
-			const isCurrentUser = participant.username === currentUsername;
-			return `
-        <div class="participant-item">
-          <img src="${
-						participant.avatar || "/public/shared/assets/default-avatar.svg"
-					}" alt="${participant.name || participant.username}" />
-          <div class="participant-info">
-            <span class="participant-name">${
-							participant.name || participant.username
-						}</span>
-            <span class="participant-username">@${participant.username}</span>
-          </div>
-          ${
-						!isCurrentUser
-							? `
-            <button class="remove-participant-btn" onclick="removeParticipantFromGroup('${participant.id}', '${participant.username}')">
-              Remove
-            </button>
-          `
-							: '<span class="current-user-badge">You</span>'
-					}
-        </div>
-      `;
-		})
-		.join("");
-}
-
-async function saveGroupSettings() {
-	if (!currentConversation) return;
-
-	const groupNameInput = document.getElementById("groupNameInput");
-	const newTitle = groupNameInput?.value?.trim() || null;
-	const disappearingEnabled = document.getElementById("disappearingEnabled");
-	const disappearingDurationSelect = document.getElementById(
-		"disappearingDurationSelect",
-	);
-
-	if (newTitle !== (currentConversation.title || "")) {
-		try {
-			const data = await query(
-				`/dm/conversations/${currentConversation.id}/title`,
-				{
-					method: "PATCH",
-					headers: {
-						"Content-Type": "application/json",
-					},
-					body: JSON.stringify({ title: newTitle }),
-				},
-			);
-
-			if (data.error) {
-				toastQueue.add(data.error);
-				return;
-			}
-
-			currentConversation.title = newTitle;
-			renderConversationHeader();
-		} catch (error) {
-			console.error("Failed to update group settings:", error);
-			return;
-		}
-	}
-
-	if (disappearingEnabled && disappearingDurationSelect) {
-		const enabled = disappearingEnabled.checked;
-		const duration = enabled
-			? parseInt(disappearingDurationSelect.value)
-			: null;
-
-		if (
-			enabled !== currentConversation.disappearing_enabled ||
-			duration !== currentConversation.disappearing_duration
-		) {
-			try {
-				const data = await query(
-					`/dm/conversations/${currentConversation.id}/disappearing`,
-					{
-						method: "PATCH",
-						headers: {
-							"Content-Type": "application/json",
-						},
-						body: JSON.stringify({ enabled, duration }),
-					},
-				);
-
-				if (data.error) {
-					toastQueue.add(data.error);
-					return;
-				}
-
-				currentConversation.disappearing_enabled = enabled;
-				currentConversation.disappearing_duration = duration;
-
-				const statusText = enabled
-					? `Disappearing messages enabled (${formatDisappearingDuration(duration)})`
-					: "Disappearing messages disabled";
-				toastQueue.add(statusText);
-			} catch (error) {
-				console.error("Failed to update disappearing messages:", error);
-				toastQueue.add("Failed to update disappearing messages");
-				return;
-			}
-		}
-	}
-
-	closeGroupSettings();
-	loadConversations();
 }
 
 async function removeParticipantFromGroup(userId, username) {
@@ -2017,6 +2274,11 @@ async function handleFileUpload(files) {
 	const maxSize = 10 * 1024 * 1024;
 
 	for (const file of files) {
+		if (!file || !file.type) {
+			toastQueue.add("Invalid file");
+			continue;
+		}
+
 		if (!isConvertibleImage(file)) {
 			toastQueue.add("Only image files are allowed");
 			continue;
@@ -2028,22 +2290,31 @@ async function handleFileUpload(files) {
 		}
 
 		try {
-			const processedFile = await convertToWebP(file);
+			let processedFile = file;
+			if (file.type !== "image/webp" && file.type !== "image/gif") {
+				processedFile = await convertToWebP(file);
+			}
+
 			const formData = new FormData();
 			formData.append("file", processedFile);
 
-			const data = await query("/upload", {
+			const response = await fetch("/api/upload", {
 				method: "POST",
+				headers: {
+					Authorization: `Bearer ${localStorage.getItem("authToken")}`,
+				},
 				body: formData,
 			});
 
-			if (data.error) {
-				toastQueue.add(data.error);
+			const data = await response.json();
+
+			if (!response.ok || data.error) {
+				toastQueue.add(data.error || "Upload failed");
 				continue;
 			}
 
-			if (!data.file) {
-				toastQueue.add("Upload failed - no file returned");
+			if (!data.file || !data.file.url) {
+				toastQueue.add("Upload failed - invalid response");
 				continue;
 			}
 
@@ -2054,8 +2325,7 @@ async function handleFileUpload(files) {
 				size: processedFile.size,
 				url: data.file.url,
 			});
-		} catch (error) {
-			console.error("Failed to upload file:", error);
+		} catch {
 			toastQueue.add("Failed to upload file");
 		}
 	}
@@ -2172,7 +2442,9 @@ document.addEventListener("DOMContentLoaded", () => {
 					onClick: () => {
 						if (
 							pendingFiles.length > 0 &&
-							pendingFiles.some((f) => f.type === "image/gif" && f.hash === null)
+							pendingFiles.some(
+								(f) => f.type === "image/gif" && f.hash === null,
+							)
 						) {
 							toastQueue.add("Remove the GIF first to upload files");
 							return;
@@ -2244,7 +2516,8 @@ document.addEventListener("DOMContentLoaded", () => {
 			return;
 		}
 
-		if (dmGifResults) dmGifResults.innerHTML = `
+		if (dmGifResults)
+			dmGifResults.innerHTML = `
 			<div style="grid-column: 1 / -1; text-align: center; padding: 40px;">
 				<svg width="24" height="24" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><style>.spinner_z9k8 {transform-origin: center;animation: spinner_StKS 0.75s infinite linear;}@keyframes spinner_StKS {100% {transform: rotate(360deg);}}</style><path d="M12,1A11,11,0,1,0,23,12,11,11,0,0,0,12,1Zm0,19a8,8,0,1,1,8-8A8,8,0,0,1,12,20Z" opacity=".25" fill="currentColor"></path><path d="M12,4a8,8,0,0,1,7.89,6.7A1.53,1.53,0,0,0,21.38,12h0a1.5,1.5,0,0,0,1.48-1.75,11,11,0,0,0-21.72,0A1.5,1.5,0,0,0,2.62,12h0a1.53,1.53,0,0,0,1.49-1.3A8,8,0,0,1,12,4Z" class="spinner_z9k8" fill="currentColor"></path></svg>
 			</div>
@@ -2256,7 +2529,8 @@ document.addEventListener("DOMContentLoaded", () => {
 			);
 
 			if (error || !results || results.length === 0) {
-				if (dmGifResults) dmGifResults.innerHTML = `
+				if (dmGifResults)
+					dmGifResults.innerHTML = `
 					<div style="grid-column: 1 / -1; text-align: center; padding: 40px; color: var(--text-secondary);">
 						<p>${error ? "Failed to load GIFs" : "No GIFs found"}</p>
 					</div>
@@ -2298,7 +2572,8 @@ document.addEventListener("DOMContentLoaded", () => {
 			}
 		} catch (error) {
 			console.error("GIF search error:", error);
-			if (dmGifResults) dmGifResults.innerHTML = `
+			if (dmGifResults)
+				dmGifResults.innerHTML = `
 				<div style="grid-column: 1 / -1; text-align: center; padding: 40px; color: var(--text-secondary);">
 					<p>Failed to load GIFs</p>
 				</div>
@@ -2407,13 +2682,23 @@ document.addEventListener("DOMContentLoaded", () => {
 						const formData = new FormData();
 						formData.append("file", webpFile);
 
-						const data = await query("/upload", {
+						const uploadResponse = await fetch("/api/upload", {
 							method: "POST",
+							headers: {
+								Authorization: `Bearer ${localStorage.getItem("authToken")}`,
+							},
 							body: formData,
 						});
 
-						if (data.error) {
-							toastQueue.add(data.error);
+						const data = await uploadResponse.json();
+
+						if (!uploadResponse.ok || data.error) {
+							toastQueue.add(data.error || "Upload failed");
+							return;
+						}
+
+						if (!data.file || !data.file.url) {
+							toastQueue.add("Upload failed - invalid response");
 							return;
 						}
 
@@ -2428,8 +2713,7 @@ document.addEventListener("DOMContentLoaded", () => {
 						await query(
 							`/unsplash/download?download_location=${encodeURIComponent(img.download_location)}`,
 						);
-					} catch (err) {
-						console.error("Failed to process Unsplash image:", err);
+					} catch {
 						toastQueue.add("Failed to add image");
 						return;
 					}
@@ -2678,7 +2962,6 @@ window.removeUser = removeUser;
 window.removePendingFile = removePendingFile;
 window.goBackToDMList = goBackToDMList;
 window.openGroupSettings = openGroupSettings;
-window.saveGroupSettings = saveGroupSettings;
 window.removeParticipantFromGroup = removeParticipantFromGroup;
 window.addParticipantUser = addParticipantUser;
 window.removeParticipantUser = removeParticipantUser;
@@ -2881,7 +3164,6 @@ async function editMessage(messageId) {
     font-size: 14px;
     resize: vertical;
     margin-bottom: 12px;
-    box-sizing: border-box;
   `;
 
 	const buttonContainer = document.createElement("div");

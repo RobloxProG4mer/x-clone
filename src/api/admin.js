@@ -131,7 +131,7 @@ SELECT u.*,
        (SELECT COUNT(*) FROM posts WHERE user_id = u.id) as actual_post_count,
        (SELECT COUNT(*) FROM follows WHERE following_id = u.id) as actual_follower_count,
        (SELECT COUNT(*) FROM follows WHERE follower_id = u.id) as actual_following_count,
-       (SELECT COUNT(*) FROM ghost_follows WHERE target_id = u.id AND follower_type = 'follower') as ghost_follower_count,
+       u.ghost_followers as ghost_follower_count,
        (SELECT COUNT(*) FROM ghost_follows WHERE target_id = u.id AND follower_type = 'following') as ghost_following_count,
        (SELECT COUNT(*) FROM likes WHERE user_id = u.id) as likes_given,
        (SELECT COUNT(*) FROM retweets WHERE user_id = u.id) as retweets_given,
@@ -1679,6 +1679,79 @@ export default new Elysia({ prefix: "/admin", tags: ["Admin"] })
 		return { success: true };
 	})
 
+	.post(
+		"/users/:id/mass-follow",
+		async ({ params, body, user }) => {
+			const targetUser = adminQueries.findUserById.get(params.id);
+			if (!targetUser) return { error: "User not found" };
+
+			const { percentage } = body;
+			if (typeof percentage !== "number" || percentage <= 0 || percentage > 100) {
+				return { error: "Invalid percentage. Must be between 0 and 100." };
+			}
+
+			const totalUsersResult = db.query("SELECT COUNT(*) as count FROM users").get();
+			const totalUsers = totalUsersResult?.count || 0;
+
+			if (totalUsers === 0) {
+				return { error: "No users found in the database" };
+			}
+
+			const followersToCreate = Math.ceil((totalUsers * percentage) / 100);
+			
+			const eligibleUsers = db.query(`
+				SELECT id FROM users 
+				WHERE id != ? 
+				AND id NOT IN (
+					SELECT follower_id FROM follows WHERE following_id = ?
+				)
+				AND NOT EXISTS (
+					SELECT 1 FROM blocks 
+					WHERE (blocker_id = id AND blocked_id = ?) 
+					OR (blocker_id = ? AND blocked_id = id)
+				)
+				ORDER BY RANDOM()
+				LIMIT ?
+			`).all(params.id, params.id, params.id, params.id, followersToCreate);
+
+			let followsCreated = 0;
+			for (const eligibleUser of eligibleUsers) {
+				try {
+					const followId = Bun.randomUUIDv7();
+					db.query(
+						"INSERT INTO follows (id, follower_id, following_id) VALUES (?, ?, ?)"
+					).run(followId, eligibleUser.id, params.id);
+					followsCreated++;
+				} catch (err) {
+					console.error(`Failed to create follow for user ${eligibleUser.id}:`, err);
+				}
+			}
+
+			logModerationAction(user.id, "mass_follow", "user", params.id, {
+				username: targetUser?.username,
+				percentage,
+				followsCreated,
+				followersToCreate,
+			});
+
+			return { 
+				success: true, 
+				followsCreated,
+				requestedPercentage: percentage,
+				totalUsers,
+			};
+		},
+		{
+			detail: {
+				description: "Make a percentage of users follow this profile",
+			},
+			body: t.Object({
+				percentage: t.Number(),
+			}),
+			response: t.Any(),
+		},
+	)
+
 	.get("/users/:id/permissions", async ({ params }) => {
 		const targetUser = adminQueries.findUserById.get(params.id);
 		if (!targetUser) return { error: "User not found" };
@@ -3081,35 +3154,13 @@ export default new Elysia({ prefix: "/admin", tags: ["Admin"] })
 			}
 
 			if (body.ghost_followers !== undefined) {
-				const currentGhostFollowers = db
-					.query(
-						"SELECT COUNT(*) as count FROM ghost_follows WHERE follower_type = 'follower' AND target_id = ?",
-					)
-					.get(params.id).count;
+				const currentGhostFollowers = user.ghost_followers || 0;
 
 				if (body.ghost_followers !== currentGhostFollowers) {
-					const diff = body.ghost_followers - currentGhostFollowers;
-
-					if (diff > 0) {
-						const values = [];
-						for (let i = 0; i < diff; i++) {
-							values.push(
-								`('${Bun.randomUUIDv7()}', 'follower', '${params.id}')`,
-							);
-						}
-						if (values.length > 0) {
-							db.exec(
-								`INSERT INTO ghost_follows (id, follower_type, target_id) VALUES ${values.join(
-									",",
-								)}`,
-							);
-						}
-					} else if (diff < 0) {
-						const toRemove = Math.abs(diff);
-						db.exec(
-							`DELETE FROM ghost_follows WHERE id IN (SELECT id FROM ghost_follows WHERE follower_type = 'follower' AND target_id = '${params.id}' LIMIT ${toRemove})`,
-						);
-					}
+					db.query("UPDATE users SET ghost_followers = ? WHERE id = ?").run(
+						body.ghost_followers,
+						params.id,
+					);
 
 					changes.ghost_followers = {
 						old: currentGhostFollowers,

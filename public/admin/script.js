@@ -2058,6 +2058,15 @@ class AdminPanel {
                 <input type="text" class="form-control" id="editProfileForceFollow" placeholder="user1,user2,user3">
                 <small class="text-muted">Make specified users automatically follow this user (creates real follows, works even if target doesn't exist yet)</small>
               </div>
+              <div class="mb-3">
+                <label class="form-label">Mass Follow - Make X% of Users Follow This Profile</label>
+                <div class="input-group">
+                  <input type="number" class="form-control" id="editProfileMassFollowPercentage" placeholder="0-100" min="0" max="100" step="0.1">
+                  <span class="input-group-text">%</span>
+                  <button type="button" class="btn btn-warning" id="executeMassFollow">Execute Mass Follow</button>
+                </div>
+                <small class="text-muted">Make a percentage of the total userbase automatically follow this profile</small>
+              </div>
               <div class="form-check form-switch mb-3">
                 <input class="form-check-input" type="checkbox" id="editProfileVerified" ${
 									this.isFlagSet(user.verified) ? "checked" : ""
@@ -2665,9 +2674,53 @@ class AdminPanel {
 			await this.loadBadgeSelector();
 			this.setupBadgeAssignButton(userId);
 			this.setupAvatarBannerControls(userId);
+
+			const massFollowBtn = document.getElementById("executeMassFollow");
+			if (massFollowBtn) {
+				massFollowBtn.addEventListener("click", async () => {
+					await this.executeMassFollow(userId);
+				});
+			}
 		} catch (err) {
 			console.error("showUserModal error:", err);
 			this.showError(err.message || "Failed to load user details");
+		}
+	}
+
+	async executeMassFollow(userId) {
+		const percentageInput = document.getElementById("editProfileMassFollowPercentage");
+		const percentage = parseFloat(percentageInput?.value);
+
+		if (!percentage || percentage <= 0 || percentage > 100) {
+			this.showError("Please enter a valid percentage (0-100)");
+			return;
+		}
+
+		const user = this.userCache.get(userId);
+		const username = user?.user?.username || "this user";
+
+		if (!confirm(`Make ${percentage}% of all users follow @${username}?\n\nThis action cannot be undone and may take a while.`)) {
+			return;
+		}
+
+		try {
+			const data = await this.apiCall(`/api/admin/users/${userId}/mass-follow`, {
+				method: "POST",
+				body: JSON.stringify({ percentage }),
+			});
+
+			if (data.error) {
+				this.showError(data.error);
+				return;
+			}
+
+			this.showSuccess(`Successfully made ${data.followsCreated || 0} users follow @${username}`);
+			if (percentageInput) percentageInput.value = "";
+			
+			await this.showUserModal(userId);
+		} catch (error) {
+			console.error("Mass follow error:", error);
+			this.showError(error.message || "Failed to execute mass follow");
 		}
 	}
 
