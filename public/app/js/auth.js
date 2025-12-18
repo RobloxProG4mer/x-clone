@@ -132,7 +132,15 @@ function saveAccountToStorage(user, token) {
 		});
 
 		okayBtn.addEventListener("click", async () => {
-			await query("/warning/acknowledge", { method: "POST" });
+			okayBtn.disabled = true;
+			okayBtn.textContent = "...";
+			const result = await query("/warning/acknowledge", { method: "POST" });
+			if (result.error) {
+				okayBtn.disabled = false;
+				okayBtn.textContent = "Okay";
+				toastQueue.add(`<h1>Error</h1><p>${result.error}</p>`);
+				return;
+			}
 			close();
 		});
 	}

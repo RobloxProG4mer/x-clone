@@ -303,6 +303,7 @@ CREATE TABLE IF NOT EXISTS suspensions (
 );
 
 CREATE INDEX IF NOT EXISTS idx_suspensions_action ON suspensions(action);
+CREATE INDEX IF NOT EXISTS idx_suspensions_user_status_action ON suspensions(user_id, status, action);
 
 CREATE TABLE IF NOT EXISTS conversations (
   id TEXT PRIMARY KEY,
