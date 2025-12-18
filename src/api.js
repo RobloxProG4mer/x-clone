@@ -392,40 +392,6 @@ export default new Elysia({
 			html: `<script src="${process.env.BASE_URL}/embed/${id}.js" async charset="utf-8"></script>`,
 		};
 	})
-	.get(
-		"/warning",
-		async ({ headers }) => {
-			const authorization = headers.authorization;
-			if (!authorization) return { warning: null };
-
-			const token = authorization.replace("Bearer ", "");
-			try {
-				const parts = token.split(".");
-				if (parts.length !== 3) return { warning: null };
-				const payload = JSON.parse(atob(parts[1]));
-				if (!payload || !payload.userId) return { warning: null };
-
-				const warning = getActiveWarningQuery.get(payload.userId);
-				if (!warning) return { warning: null };
-
-				return {
-					warning: {
-						id: warning.id,
-						reason: warning.reason,
-						created_at: warning.created_at,
-					},
-				};
-			} catch {
-				return { warning: null };
-			}
-		},
-		{
-			detail: {
-				description: "Check if user has an active warning",
-				tags: ["Warnings"],
-			},
-		},
-	)
 	.post(
 		"/warning/acknowledge",
 		async ({ headers }) => {

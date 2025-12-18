@@ -53,7 +53,7 @@ function saveAccountToStorage(user, token) {
 		return;
 	}
 
-	const { user, error, suspension, restricted } = await query("/auth/me");
+	const { user, error, suspension, restricted, warning } = await query("/auth/me");
 
 	if (error && suspension) {
 		document.documentElement.innerHTML = suspension;
@@ -104,7 +104,6 @@ function saveAccountToStorage(user, token) {
 		user.restricted = true;
 	}
 
-	const { warning } = await query("/warning");
 	if (warning) {
 		const { createModal } = await import("../../shared/ui-utils.js");
 		const contentEl = document.createElement("div");

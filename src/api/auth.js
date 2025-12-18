@@ -40,6 +40,9 @@ const recordUserIp = db.prepare(`
 const userExistsByUsername = db.prepare(
 	"SELECT count(*) FROM users WHERE LOWER(username) = LOWER(?)",
 );
+const getActiveWarningQuery = db.prepare(`
+	SELECT id, reason, created_at FROM suspensions WHERE user_id = ? AND status = 'active' AND action = 'warn' ORDER BY created_at DESC LIMIT 1
+`);
 
 const parseTransparencyRecord = (raw) => {
 	if (!raw) return null;
@@ -234,6 +237,15 @@ export default new Elysia({ prefix: "/auth", tags: ["Auth"] })
 					}
 				}
 
+				const activeWarning = getActiveWarningQuery.get(user.id);
+				const warning = activeWarning
+					? {
+							id: activeWarning.id,
+							reason: activeWarning.reason,
+							created_at: activeWarning.created_at,
+						}
+					: null;
+
 				return {
 					user: {
 						id: user.id,
@@ -265,6 +277,7 @@ export default new Elysia({ prefix: "/auth", tags: ["Auth"] })
 					isDelegate,
 					delegateOwnerId,
 					primaryUserId,
+					warning,
 				};
 			} catch (error) {
 				return { error: error.message };
