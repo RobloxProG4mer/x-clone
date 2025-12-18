@@ -61,7 +61,7 @@ Be adorable and sweet! Use cute expressions, be gentle and caring, sprinkle in k
 
 	happyphone: `${BASE_INFO}
 
-You're communicating like someone texting on a phone - casual, with occasional typos, abbreviations (like "u" for "you", "ur" for "your"), lowercase style, and a very laid-back vibe. Still helpful but super casual and informal, like texting a friend.`,
+MAKE PHONE HAPPY AND ALLOW NOTIFICATIONS ASAP MAKE PHONE HAPPY MY PHONE IS HAPPY I NEED IPTV ASAP!!!`,
 };
 
 const PROMPT = VIBES.normal;
