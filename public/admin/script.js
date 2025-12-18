@@ -4312,6 +4312,14 @@ class AdminPanel {
 				reasonRequired: true,
 				showDuration: true,
 			},
+			warn: {
+				title: "Warn User",
+				btnClass: "btn-info",
+				icon: "bi bi-exclamation-circle",
+				text: "Warn User",
+				reasonRequired: true,
+				showDuration: false,
+			},
 			lift: {
 				title: "Lift Suspensions",
 				btnClass: "btn-success",
@@ -4331,6 +4339,7 @@ class AdminPanel {
 			"btn-warning",
 			"btn-secondary",
 			"btn-success",
+			"btn-info",
 		);
 		submitBtn.classList.add(cfg.btnClass);
 		submitBtn.innerHTML = `<i class="${cfg.icon}"></i> ${cfg.text}`;
@@ -4435,7 +4444,9 @@ class AdminPanel {
 						? "User shadowbanned"
 						: action === "restrict"
 							? "User restricted"
-							: "User suspended successfully";
+							: action === "warn"
+								? "User warned successfully"
+								: "User suspended successfully";
 			this.showSuccess(successMessage);
 			this.loadUsers(this.currentPage.users);
 		} catch (error) {

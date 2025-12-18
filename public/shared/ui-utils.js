@@ -417,6 +417,8 @@ export function createModal(options) {
 		className = "",
 		onClose = () => {},
 		closeOnOverlayClick = true,
+		showCloseButton = true,
+		allowEscape = true,
 	} = options;
 
 	const overlay = document.createElement("div");
@@ -445,10 +447,12 @@ export function createModal(options) {
 		}, 200);
 	};
 
-	closeButton.addEventListener("click", closeModal);
+	if (showCloseButton) {
+		closeButton.addEventListener("click", closeModal);
+	}
 
 	const handleKeyDown = (e) => {
-		if (e.key === "Escape") {
+		if (e.key === "Escape" && allowEscape) {
 			closeModal();
 		}
 	};
@@ -462,9 +466,11 @@ export function createModal(options) {
 		h2.textContent = title;
 		modalHeader.appendChild(h2);
 
-		modalHeader.appendChild(closeButton);
+		if (showCloseButton) {
+			modalHeader.appendChild(closeButton);
+		}
 		modal.appendChild(modalHeader);
-	} else {
+	} else if (showCloseButton) {
 		modal.appendChild(closeButton);
 	}
 

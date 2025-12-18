@@ -78,6 +78,14 @@ const isRestrictedQuery = db.prepare(`
   SELECT * FROM suspensions WHERE user_id = ? AND status = 'active' AND action = 'restrict' AND (expires_at IS NULL OR expires_at > datetime('now'))
 `);
 
+const getActiveWarningQuery = db.prepare(`
+  SELECT * FROM suspensions WHERE user_id = ? AND status = 'active' AND action = 'warn' ORDER BY created_at DESC LIMIT 1
+`);
+
+const acknowledgeWarningQuery = db.prepare(`
+  UPDATE suspensions SET status = 'acknowledged' WHERE id = ? AND action = 'warn'
+`);
+
 const liftSuspension = db.prepare(`
   UPDATE suspensions SET status = 'lifted' WHERE id = ?
 `);
@@ -384,6 +392,69 @@ export default new Elysia({
 			html: `<script src="${process.env.BASE_URL}/embed/${id}.js" async charset="utf-8"></script>`,
 		};
 	})
+	.get(
+		"/warning",
+		async ({ headers }) => {
+			const authorization = headers.authorization;
+			if (!authorization) return { warning: null };
+
+			const token = authorization.replace("Bearer ", "");
+			try {
+				const parts = token.split(".");
+				if (parts.length !== 3) return { warning: null };
+				const payload = JSON.parse(atob(parts[1]));
+				if (!payload || !payload.userId) return { warning: null };
+
+				const warning = getActiveWarningQuery.get(payload.userId);
+				if (!warning) return { warning: null };
+
+				return {
+					warning: {
+						id: warning.id,
+						reason: warning.reason,
+						created_at: warning.created_at,
+					},
+				};
+			} catch {
+				return { warning: null };
+			}
+		},
+		{
+			detail: {
+				description: "Check if user has an active warning",
+				tags: ["Warnings"],
+			},
+		},
+	)
+	.post(
+		"/warning/acknowledge",
+		async ({ headers }) => {
+			const authorization = headers.authorization;
+			if (!authorization) return { error: "Unauthorized" };
+
+			const token = authorization.replace("Bearer ", "");
+			try {
+				const parts = token.split(".");
+				if (parts.length !== 3) return { error: "Unauthorized" };
+				const payload = JSON.parse(atob(parts[1]));
+				if (!payload || !payload.userId) return { error: "Unauthorized" };
+
+				const warning = getActiveWarningQuery.get(payload.userId);
+				if (!warning) return { error: "No active warning" };
+
+				acknowledgeWarningQuery.run(warning.id);
+				return { success: true };
+			} catch {
+				return { error: "Failed to acknowledge warning" };
+			}
+		},
+		{
+			detail: {
+				description: "Acknowledge and dismiss a warning",
+				tags: ["Warnings"],
+			},
+		},
+	)
 	.use(auth)
 	.use(admin)
 	.use(blocking)

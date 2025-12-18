@@ -104,6 +104,39 @@ function saveAccountToStorage(user, token) {
 		user.restricted = true;
 	}
 
+	const { warning } = await query("/warning");
+	if (warning) {
+		const { createModal } = await import("../../shared/ui-utils.js");
+		const contentEl = document.createElement("div");
+		contentEl.className = "warning-modal-content";
+
+		const messageEl = document.createElement("p");
+		messageEl.className = "warning-message";
+		messageEl.textContent = warning.reason;
+
+		const okayBtn = document.createElement("button");
+		okayBtn.type = "button";
+		okayBtn.className = "warning-okay-btn";
+		okayBtn.textContent = "Okay";
+
+		contentEl.appendChild(messageEl);
+		contentEl.appendChild(okayBtn);
+
+		const { close } = createModal({
+			title: "Warning from Tweetapus",
+			content: contentEl,
+			className: "warning-modal",
+			showCloseButton: false,
+			allowEscape: false,
+			closeOnOverlayClick: false,
+		});
+
+		okayBtn.addEventListener("click", async () => {
+			await query("/warning/acknowledge", { method: "POST" });
+			close();
+		});
+	}
+
 	const accountBtn = document.querySelector(".account");
 	accountBtn.addEventListener("click", (e) => {
 		e.stopPropagation();

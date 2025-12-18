@@ -2111,13 +2111,16 @@ export default new Elysia({ prefix: "/admin", tags: ["Admin"] })
 				);
 				db.query("DELETE FROM dm_messages WHERE sender_id = ?").run(params.id);
 			}
+			// warn action: just creates the suspension record, no user flag changes
 
 			const moderationActionName =
 				(action || "suspend") === "restrict"
 					? "restrict_user"
 					: (action || "suspend") === "shadowban"
 						? "shadowban_user"
-						: "suspend_user";
+						: (action || "suspend") === "warn"
+							? "warn_user"
+							: "suspend_user";
 			logModerationAction(user.id, moderationActionName, "user", params.id, {
 				username: targetUser?.username,
 				reason,
@@ -2136,6 +2139,7 @@ export default new Elysia({ prefix: "/admin", tags: ["Admin"] })
 						t.Literal("suspend"),
 						t.Literal("restrict"),
 						t.Literal("shadowban"),
+						t.Literal("warn"),
 						t.Literal("lift"),
 					]),
 				),

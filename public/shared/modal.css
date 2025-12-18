@@ -448,3 +448,42 @@
   color: var(--text-primary);
   font-weight: 600;
 }
+
+.warning-modal {
+  max-width: 420px;
+}
+
+.warning-modal-content {
+  padding: 24px;
+  text-align: center;
+}
+
+.warning-message {
+  font-size: 15px;
+  line-height: 1.6;
+  color: var(--text-primary);
+  margin: 0 0 24px;
+  word-break: break-word;
+}
+
+.warning-okay-btn {
+  padding: 12px 32px;
+  border-radius: 9999px;
+  font-family: inherit;
+  font-size: 15px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border: none;
+  background-color: var(--primary);
+  color: var(--primary-fg);
+}
+
+.warning-okay-btn:hover {
+  opacity: 0.9;
+  transform: scale(1.02);
+}
+
+.warning-okay-btn:active {
+  transform: scale(0.98);
+}
