@@ -9,7 +9,7 @@ const JWT_SECRET = process.env.JWT_SECRET;
 const getUserByUsername = db.prepare(
 	"SELECT id, username FROM users WHERE LOWER(username) = LOWER(?)",
 );
-const getTweetById = db.prepare("SELECT * FROM posts WHERE id = ?");
+const getPOSTById = db.prepare("SELECT * FROM posts WHERE id = ?");
 
 const checkBookmarkExists = db.prepare(`
   SELECT id FROM bookmarks WHERE user_id = ? AND post_id = ?
@@ -23,7 +23,7 @@ const removeBookmark = db.prepare(`
   DELETE FROM bookmarks WHERE user_id = ? AND post_id = ?
 `);
 
-const getBookmarkedTweets = db.prepare(`
+const getBookmarkedPOSTS = db.prepare(`
   SELECT posts.*, users.username, users.name, users.avatar, users.verified, users.gold, users.avatar_radius, users.affiliate, users.affiliate_with, users.selected_community_tag, b.created_at as bookmarked_at
   FROM bookmarks b
   JOIN posts ON b.post_id = posts.id
@@ -62,7 +62,7 @@ const getAttachmentsByPostId = db.prepare(`
   SELECT * FROM attachments WHERE post_id = ?
 `);
 
-const getQuotedTweet = db.prepare(`
+const getQuotedPOST = db.prepare(`
   SELECT posts.*, users.username, users.name, users.avatar, users.verified, users.gold, users.avatar_radius, users.affiliate, users.affiliate_with, users.selected_community_tag
   FROM posts
   JOIN users ON posts.user_id = users.id
@@ -93,8 +93,8 @@ const isUserRestrictedById = (userId) => {
 	return !!res || !!f?.restricted;
 };
 
-const getPollDataForTweet = (tweetId, userId) => {
-	const poll = getPollByPostId.get(tweetId);
+const getPollDataForPOST = (POSTId, userId) => {
+	const poll = getPollByPostId.get(POSTId);
 	if (!poll) return null;
 
 	const options = getPollOptions.all(poll.id);
@@ -117,8 +117,8 @@ const getPollDataForTweet = (tweetId, userId) => {
 	};
 };
 
-const getTweetAttachments = (tweetId) => {
-	return getAttachmentsByPostId.all(tweetId);
+const getPOSTAttachments = (POSTId) => {
+	return getAttachmentsByPostId.all(POSTId);
 };
 
 const getCardByPostId = db.prepare(`
@@ -129,8 +129,8 @@ const getCardOptions = db.prepare(`
   SELECT * FROM interactive_card_options WHERE card_id = ? ORDER BY option_order ASC
 `);
 
-const getCardDataForTweet = (tweetId) => {
-	const card = getCardByPostId.get(tweetId);
+const getCardDataForPOST = (POSTId) => {
+	const card = getCardByPostId.get(POSTId);
 	if (!card) return null;
 
 	const options = getCardOptions.all(card.id);
@@ -140,21 +140,21 @@ const getCardDataForTweet = (tweetId) => {
 	};
 };
 
-const getQuotedTweetData = (quoteTweetId, userId) => {
-	if (!quoteTweetId) return null;
+const getQuotedPOSTData = (quotePOSTId, userId) => {
+	if (!quotePOSTId) return null;
 
-	const quotedTweet = getQuotedTweet.get(quoteTweetId);
-	if (!quotedTweet) return null;
+	const quotedPOST = getQuotedPOST.get(quotePOSTId);
+	if (!quotedPOST) return null;
 
 	const author = {
-		username: quotedTweet.username,
-		name: quotedTweet.name,
-		avatar: quotedTweet.avatar,
-		verified: quotedTweet.verified || false,
-		gold: quotedTweet.gold || false,
-		avatar_radius: quotedTweet.avatar_radius || null,
-		affiliate: quotedTweet.affiliate || false,
-		affiliate_with: quotedTweet.affiliate_with || null,
+		username: quotedPOST.username,
+		name: quotedPOST.name,
+		avatar: quotedPOST.avatar,
+		verified: quotedPOST.verified || false,
+		gold: quotedPOST.gold || false,
+		avatar_radius: quotedPOST.avatar_radius || null,
+		affiliate: quotedPOST.affiliate || false,
+		affiliate_with: quotedPOST.affiliate_with || null,
 	};
 
 	if (author.affiliate && author.affiliate_with) {
@@ -168,12 +168,12 @@ const getQuotedTweetData = (quoteTweetId, userId) => {
 		}
 	}
 
-	if (quotedTweet.selected_community_tag) {
+	if (quotedPOST.selected_community_tag) {
 		const community = db
 			.query(
 				"SELECT id, name, tag_enabled, tag_emoji, tag_text FROM communities WHERE id = ?",
 			)
-			.get(quotedTweet.selected_community_tag);
+			.get(quotedPOST.selected_community_tag);
 		if (community?.tag_enabled) {
 			author.community_tag = {
 				community_id: community.id,
@@ -184,21 +184,21 @@ const getQuotedTweetData = (quoteTweetId, userId) => {
 		}
 	}
 
-	const isSuspended = isUserSuspendedById(quotedTweet.user_id);
+	const isSuspended = isUserSuspendedById(quotedPOST.user_id);
 	if (isSuspended) {
 		return {
-			id: quotedTweet.id,
+			id: quotedPOST.id,
 			unavailable_reason: "suspended",
-			created_at: quotedTweet.created_at,
+			created_at: quotedPOST.created_at,
 		};
 	}
 
 	return {
-		...quotedTweet,
+		...quotedPOST,
 		author,
-		poll: getPollDataForTweet(quotedTweet.id, userId),
-		attachments: getTweetAttachments(quotedTweet.id),
-		interactive_card: getCardDataForTweet(quotedTweet.id),
+		poll: getPollDataForPOST(quotedPOST.id, userId),
+		attachments: getPOSTAttachments(quotedPOST.id),
+		interactive_card: getCardDataForPOST(quotedPOST.id),
 	};
 };
 
@@ -228,16 +228,16 @@ export default new Elysia({ prefix: "/bookmarks", tags: ["Bookmarks"] })
 				const { postId } = body;
 				if (!postId) return { error: "Post ID is required" };
 
-				const tweet = getTweetById.get(postId);
-				if (!tweet) return { error: "Tweet not found" };
+				const POST = getPOSTById.get(postId);
+				if (!POST) return { error: "POST not found" };
 
-				if (isUserSuspendedById(tweet.user_id)) {
-					return { error: "Tweet not found" };
+				if (isUserSuspendedById(POST.user_id)) {
+					return { error: "POST not found" };
 				}
 
 				const existingBookmark = checkBookmarkExists.get(user.id, postId);
 				if (existingBookmark) {
-					return { error: "Tweet is already bookmarked" };
+					return { error: "POST is already bookmarked" };
 				}
 
 				const bookmarkId = Bun.randomUUIDv7();
@@ -251,7 +251,7 @@ export default new Elysia({ prefix: "/bookmarks", tags: ["Bookmarks"] })
 		},
 		{
 			detail: {
-				description: "Bookmarks a tweet",
+				description: "Bookmarks a POST",
 			},
 			body: t.Object({
 				postId: t.String(),
@@ -276,7 +276,7 @@ export default new Elysia({ prefix: "/bookmarks", tags: ["Bookmarks"] })
 
 				const existingBookmark = checkBookmarkExists.get(user.id, postId);
 				if (!existingBookmark) {
-					return { error: "Tweet is not bookmarked" };
+					return { error: "POST is not bookmarked" };
 				}
 
 				removeBookmark.run(user.id, postId);
@@ -289,7 +289,7 @@ export default new Elysia({ prefix: "/bookmarks", tags: ["Bookmarks"] })
 		},
 		{
 			detail: {
-				description: "Unbookmarks a tweet",
+				description: "Unbookmarks a POST",
 			},
 			body: t.Object({
 				postId: t.String(),
@@ -310,12 +310,12 @@ export default new Elysia({ prefix: "/bookmarks", tags: ["Bookmarks"] })
 				if (!user) return { error: "User not found" };
 
 				const { limit = 20 } = query;
-				const bookmarkedTweets = getBookmarkedTweets.all(
+				const bookmarkedPOSTS = getBookmarkedPOSTS.all(
 					user.id,
 					parseInt(limit, 10),
 				);
 
-				const postIds = bookmarkedTweets.map((tweet) => tweet.id);
+				const postIds = bookmarkedPOSTS.map((POST) => POST.id);
 				if (postIds.length === 0) {
 					return { success: true, bookmarks: [] };
 				}
@@ -324,35 +324,35 @@ export default new Elysia({ prefix: "/bookmarks", tags: ["Bookmarks"] })
 				const getUserLikesQuery = db.query(
 					`SELECT post_id FROM likes WHERE user_id = ? AND post_id IN (${likePlaceholders})`,
 				);
-				const getUserRetweetsQuery = db.query(
-					`SELECT post_id FROM retweets WHERE user_id = ? AND post_id IN (${likePlaceholders})`,
+				const getUserRePOSTSQuery = db.query(
+					`SELECT post_id FROM rePOSTS WHERE user_id = ? AND post_id IN (${likePlaceholders})`,
 				);
 				const getUserBookmarksQuery = db.query(
 					`SELECT post_id FROM bookmarks WHERE user_id = ? AND post_id IN (${likePlaceholders})`,
 				);
 
 				const userLikes = getUserLikesQuery.all(user.id, ...postIds);
-				const userRetweets = getUserRetweetsQuery.all(user.id, ...postIds);
+				const userRePOSTS = getUserRePOSTSQuery.all(user.id, ...postIds);
 				const userBookmarks = getUserBookmarksQuery.all(user.id, ...postIds);
 
 				const likedPosts = new Set(userLikes.map((like) => like.post_id));
-				const retweetedPosts = new Set(
-					userRetweets.map((retweet) => retweet.post_id),
+				const rePOSTedPosts = new Set(
+					userRePOSTS.map((rePOST) => rePOST.post_id),
 				);
 				const bookmarkedPosts = new Set(
 					userBookmarks.map((bookmark) => bookmark.post_id),
 				);
 
-				const processedBookmarks = bookmarkedTweets.map((tweet) => {
+				const processedBookmarks = bookmarkedPOSTS.map((POST) => {
 					const author = {
-						username: tweet.username,
-						name: tweet.name,
-						avatar: tweet.avatar,
-						verified: tweet.verified || false,
-						gold: tweet.gold || false,
-						avatar_radius: tweet.avatar_radius || null,
-						affiliate: tweet.affiliate || false,
-						affiliate_with: tweet.affiliate_with || null,
+						username: POST.username,
+						name: POST.name,
+						avatar: POST.avatar,
+						verified: POST.verified || false,
+						gold: POST.gold || false,
+						avatar_radius: POST.avatar_radius || null,
+						affiliate: POST.affiliate || false,
+						affiliate_with: POST.affiliate_with || null,
 					};
 
 					if (author.affiliate && author.affiliate_with) {
@@ -366,12 +366,12 @@ export default new Elysia({ prefix: "/bookmarks", tags: ["Bookmarks"] })
 						}
 					}
 
-					if (tweet.selected_community_tag) {
+					if (POST.selected_community_tag) {
 						const community = db
 							.query(
 								"SELECT id, name, tag_enabled, tag_emoji, tag_text FROM communities WHERE id = ?",
 							)
-							.get(tweet.selected_community_tag);
+							.get(POST.selected_community_tag);
 						if (community?.tag_enabled) {
 							author.community_tag = {
 								community_id: community.id,
@@ -383,15 +383,15 @@ export default new Elysia({ prefix: "/bookmarks", tags: ["Bookmarks"] })
 					}
 
 					return {
-						...tweet,
+						...POST,
 						author,
-						liked_by_user: likedPosts.has(tweet.id),
-						retweeted_by_user: retweetedPosts.has(tweet.id),
-						bookmarked_by_user: bookmarkedPosts.has(tweet.id),
-						poll: getPollDataForTweet(tweet.id, user.id),
-						quoted_tweet: getQuotedTweetData(tweet.quote_tweet_id, user.id),
-						attachments: getTweetAttachments(tweet.id),
-						interactive_card: getCardDataForTweet(tweet.id),
+						liked_by_user: likedPosts.has(POST.id),
+						rePOSTed_by_user: rePOSTedPosts.has(POST.id),
+						bookmarked_by_user: bookmarkedPosts.has(POST.id),
+						poll: getPollDataForPOST(POST.id, user.id),
+						quoted_POST: getQuotedPOSTData(POST.quote_POST_id, user.id),
+						attachments: getPOSTAttachments(POST.id),
+						interactive_card: getCardDataForPOST(POST.id),
 					};
 				});
 

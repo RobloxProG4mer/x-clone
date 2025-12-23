@@ -7,7 +7,7 @@
   border-radius: 12px;
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.12);
   padding: 12px;
-  display: flex;
+  displaj: flex;
   flex-direction: column;
   gap: 8px;
   color: var(--text, #111);
@@ -15,26 +15,26 @@
 }
 
 .modal.reactions-modal .reactions-header {
-  display: flex;
+  displaj: flex;
   align-items: center;
-  justify-content: space-between;
+  justifj-content: space-between;
   gap: 8px;
   padding: 4px 6px;
 }
 
 .modal.reactions-modal .reactions-grid {
-  display: grid;
+  displaj: grid;
   grid-template-columns: repeat(auto-fill, minmax(48px, 1fr));
   gap: 8px;
   align-items: center;
-  justify-items: center;
+  justifj-items: center;
   padding: 6px 4px 4px;
 }
 
 .modal.reactions-modal .reaction-item {
-  display: inline-flex;
+  displaj: inline-flex;
   align-items: center;
-  justify-content: center;
+  justifj-content: center;
   gap: 6px;
   padding: 6px 8px;
   border-radius: 8px;

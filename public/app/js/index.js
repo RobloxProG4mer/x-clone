@@ -1,5 +1,5 @@
 import {
-	createTweetSkeleton,
+	createPOSTSkeleton,
 	removeSkeletons,
 	showSkeletons,
 } from "../../shared/skeleton-utils.js";
@@ -16,7 +16,7 @@ import { authToken } from "./auth.js";
 import { createComposer } from "./composer.js";
 import dm from "./dm.js";
 import switchPage, { addRoute, showPage } from "./pages.js";
-import { addTweetToTimeline } from "./tweets.js";
+import { addPOSTToTimeline } from "./POSTS.js";
 
 window.onerror = (message, source, lineno, colno) => {
 	toastQueue.add(
@@ -50,35 +50,35 @@ let timelineScrollPosition = 0;
 	let currentTimeline = "home";
 
 	let isLoading = false;
-	let hasMoreTweets = true;
-	let oldestTweetId = null;
+	let hasMorePOSTS = true;
+	let oldestPOSTId = null;
 	const BATCH_SIZE = 10;
 	let lastScrollCheck = 0;
 	const SCROLL_DEBOUNCE = 100;
 	let currentSkeletons = [];
-	let newTweetsCount = 0;
-	let latestTweetId = null;
+	let newPOSTSCount = 0;
+	let latestPOSTId = null;
 	let isTabActive = true;
 	let eventSource = null;
 
 	initArticles();
 	deactivateArticlesTab();
 
-	const getTweetsContainer = () => document.querySelector(".tweets");
+	const getPOSTSContainer = () => document.querySelector(".POSTS");
 
 	const composer = await createComposer({
-		callback: (tweet) => {
+		callback: (POST) => {
 			if (currentTimeline === "home" || currentTimeline === "latest") {
-				addTweetToTimeline(tweet, true).classList.add("created");
+				addPOSTToTimeline(POST, true).classList.add("created");
 			}
 		},
 	});
 
 	document.querySelector("#composer-container").appendChild(composer);
 
-	const createNewTweetsBanner = () => {
+	const createNewPOSTSBanner = () => {
 		const banner = document.createElement("div");
-		banner.id = "new-tweets-banner";
+		banner.id = "new-POSTS-banner";
 		banner.style.cssText = `
 			display: none;
 			position: sticky;
@@ -101,35 +101,35 @@ let timelineScrollPosition = 0;
 		});
 		banner.addEventListener("click", async () => {
 			banner.style.display = "none";
-			newTweetsCount = 0;
-			latestTweetId = null;
+			newPOSTSCount = 0;
+			latestPOSTId = null;
 			await loadTimeline(currentTimeline, false);
 			window.scrollTo(0, 0);
 		});
-		getTweetsContainer().parentElement.insertBefore(
+		getPOSTSContainer().parentElement.insertBefore(
 			banner,
-			getTweetsContainer(),
+			getPOSTSContainer(),
 		);
 		return banner;
 	};
 
-	const newTweetsBanner = createNewTweetsBanner();
+	const newPOSTSBanner = createNewPOSTSBanner();
 
-	const updateNewTweetsBanner = () => {
-		if (newTweetsCount > 0 && isTabActive && currentTimeline === "latest") {
-			newTweetsBanner.textContent = `Show ${newTweetsCount} new ${
-				newTweetsCount === 1 ? "tweet" : "tweets"
+	const updateNewPOSTSBanner = () => {
+		if (newPOSTSCount > 0 && isTabActive && currentTimeline === "latest") {
+			newPOSTSBanner.textContent = `Show ${newPOSTSCount} new ${
+				newPOSTSCount === 1 ? "POST" : "POSTS"
 			}`;
-			newTweetsBanner.style.display = "block";
+			newPOSTSBanner.style.display = "block";
 		} else {
-			newTweetsBanner.style.display = "none";
+			newPOSTSBanner.style.display = "none";
 		}
 	};
 
 	document.addEventListener("visibilitychange", () => {
 		isTabActive = !document.hidden;
-		if (isTabActive && newTweetsCount > 0 && currentTimeline === "latest") {
-			updateNewTweetsBanner();
+		if (isTabActive && newPOSTSCount > 0 && currentTimeline === "latest") {
+			updateNewPOSTSBanner();
 		}
 	});
 
@@ -143,9 +143,9 @@ let timelineScrollPosition = 0;
 			</svg>
 			<span class="ptr-text">Pull to refresh</span>
 		`;
-		getTweetsContainer().parentElement.insertBefore(
+		getPOSTSContainer().parentElement.insertBefore(
 			indicator,
-			getTweetsContainer(),
+			getPOSTSContainer(),
 		);
 		return indicator;
 	};
@@ -195,8 +195,8 @@ let timelineScrollPosition = 0;
 			ptrRefreshing = true;
 			ptrIndicator.classList.add("refreshing");
 			ptrIndicator.querySelector(".ptr-text").textContent = "Refreshing...";
-			oldestTweetId = null;
-			hasMoreTweets = true;
+			oldestPOSTId = null;
+			hasMorePOSTS = true;
 			await loadTimeline(currentTimeline, false);
 			ptrRefreshing = false;
 			ptrIndicator.classList.remove("refreshing");
@@ -219,8 +219,8 @@ let timelineScrollPosition = 0;
 			type === "following" ? "/timeline/following" : "/timeline/";
 
 		let queryParams = `limit=${BATCH_SIZE}`;
-		if (oldestTweetId && append) {
-			queryParams += `&before=${oldestTweetId}`;
+		if (oldestPOSTId && append) {
+			queryParams += `&before=${oldestPOSTId}`;
 		}
 		if (type === "latest") {
 			queryParams += "&latest=true";
@@ -229,16 +229,16 @@ let timelineScrollPosition = 0;
 		const url = `${endpoint}?${queryParams}`;
 
 		if (!append) {
-			getTweetsContainer().innerHTML = "";
+			getPOSTSContainer().innerHTML = "";
 			currentSkeletons = showSkeletons(
-				getTweetsContainer(),
-				createTweetSkeleton,
+				getPOSTSContainer(),
+				createPOSTSkeleton,
 				5,
 			);
 		} else {
 			currentSkeletons = showSkeletons(
-				getTweetsContainer(),
-				createTweetSkeleton,
+				getPOSTSContainer(),
+				createPOSTSkeleton,
 				3,
 			);
 		}
@@ -247,8 +247,8 @@ let timelineScrollPosition = 0;
 			const { timeline } = await query(url);
 
 			if (!append) {
-				oldestTweetId = null;
-				hasMoreTweets = true;
+				oldestPOSTId = null;
+				hasMorePOSTS = true;
 			}
 
 			if (timeline.length === 0) {
@@ -261,22 +261,22 @@ let timelineScrollPosition = 0;
 					  <img src="/public/shared/assets/img/cats/snail_cat_400.png" alt="Snail cat" draggable="false">
 						<h3>You haven't followed<br> anyone yet!</h3>
 					`;
-					getTweetsContainer().appendChild(emptyMessage);
+					getPOSTSContainer().appendChild(emptyMessage);
 				}
-				hasMoreTweets = false;
+				hasMorePOSTS = false;
 			} else {
 				removeSkeletons(currentSkeletons);
 				currentSkeletons = [];
 				timeline.sort(
 					(a, b) => new Date(b.created_at) - new Date(a.created_at),
 				);
-				timeline.forEach((tweet) => {
-					addTweetToTimeline(tweet, false);
-					oldestTweetId = tweet.id;
+				timeline.forEach((POST) => {
+					addPOSTToTimeline(POST, false);
+					oldestPOSTId = POST.id;
 				});
 
 				if (timeline.length < BATCH_SIZE) {
-					hasMoreTweets = false;
+					hasMorePOSTS = false;
 				}
 			}
 		} catch (error) {
@@ -318,16 +318,16 @@ let timelineScrollPosition = 0;
 				currentTimeline = "articles";
 				deactivateArticlesTab();
 				document.querySelector("#composer-container").style.display = "none";
-				document.querySelector(".tweets").style.display = "none";
+				document.querySelector(".POSTS").style.display = "none";
 				activateArticlesTab();
 				return;
 			}
 
 			deactivateArticlesTab();
 			document.querySelector("#composer-container").style.display = "block";
-			document.querySelector(".tweets").style.display = "flex";
-			oldestTweetId = null;
-			hasMoreTweets = true;
+			document.querySelector(".POSTS").style.display = "flex";
+			oldestPOSTId = null;
+			hasMorePOSTS = true;
 			currentTimeline = tab;
 
 			if (tab === "latest") {
@@ -345,9 +345,9 @@ let timelineScrollPosition = 0;
 			await handleArticlesScroll();
 			return;
 		}
-		if (document.querySelector(".tweetPage").style.display === "flex") return;
+		if (document.querySelector(".POSTPage").style.display === "flex") return;
 
-		if (!hasMoreTweets || isLoading) return;
+		if (!hasMorePOSTS || isLoading) return;
 
 		const now = Date.now();
 		if (now - lastScrollCheck < SCROLL_DEBOUNCE) return;
@@ -393,11 +393,11 @@ let timelineScrollPosition = 0;
 
 	const handleUrlParams = () => {
 		const urlParams = new URLSearchParams(window.location.search);
-		const tweetId = urlParams.get("tweet");
+		const POSTId = urlParams.get("POST");
 		const profileUsername = urlParams.get("profile");
 
-		if (tweetId) {
-			window.history.replaceState(null, "", `/tweet/${tweetId}`);
+		if (POSTId) {
+			window.history.replaceState(null, "", `/POST/${POSTId}`);
 			window.dispatchEvent(new PopStateEvent("popstate"));
 		} else if (profileUsername) {
 			window.history.replaceState(null, "", `/@${profileUsername}`);
@@ -418,12 +418,12 @@ let timelineScrollPosition = 0;
 
 		eventSource = new EventSource("/api/sse/timeline/latest");
 
-		eventSource.addEventListener("tweet", (event) => {
+		eventSource.addEventListener("POST", (event) => {
 			if (isTabActive) {
-				const tweet = JSON.parse(event.data);
-				newTweetsCount++;
-				if (!latestTweetId) latestTweetId = tweet.id;
-				updateNewTweetsBanner();
+				const POST = JSON.parse(event.data);
+				newPOSTSCount++;
+				if (!latestPOSTId) latestPOSTId = POST.id;
+				updateNewPOSTSBanner();
 			}
 		});
 
@@ -440,9 +440,9 @@ let timelineScrollPosition = 0;
 			eventSource.close();
 			eventSource = null;
 		}
-		newTweetsCount = 0;
-		latestTweetId = null;
-		updateNewTweetsBanner();
+		newPOSTSCount = 0;
+		latestPOSTId = null;
+		updateNewPOSTSBanner();
 	};
 
 	dm.connectSSE();
@@ -557,12 +557,12 @@ addRoute(
 );
 
 addRoute(
-	(pathname) => pathname.startsWith("/tweet/"),
+	(pathname) => pathname.startsWith("/POST/"),
 	(pathname) => {
-		const tweetId = pathname.split("/tweet/")[1];
+		const POSTId = pathname.split("/POST/")[1];
 		(async () => {
-			const openTweet = await import("./tweet.js");
-			openTweet.default(tweetId);
+			const openPOST = await import("./POST.js");
+			openPOST.default(POSTId);
 		})();
 	},
 );

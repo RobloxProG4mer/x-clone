@@ -111,7 +111,7 @@ cleanupExpiredMessages();
 export default new Elysia({ name: "sse" }).get(
 	"/api/sse",
 	async ({ jwt, query, set, cookie }) => {
-		const token = query?.token || cookie?.__TWEETAPUS_SECRET_SSE_TOKEN__?.value;
+		const token = query?.token || cookie?.__Xeetapus_SECRET_SSE_TOKEN__?.value;
 
 		if (!token) {
 			set.status = 401;

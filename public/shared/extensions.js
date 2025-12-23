@@ -1,6 +1,6 @@
 (() => {
 	const EXTENSIONS_ENDPOINT = "/api/extensions";
-	const loaderFlag = "__tweetapusExtensionsLoaderActive";
+	const loaderFlag = "__XeetapusExtensionsLoaderActive";
 	const rootWindow = window;
 
 	if (rootWindow[loaderFlag]) return;
@@ -32,11 +32,11 @@
 			try {
 				callback([...state.entries]);
 			} catch (error) {
-				console.error("tweetapus extension callback failed", error);
+				console.error("Xeetapus extension callback failed", error);
 			}
 		}
 		rootWindow.dispatchEvent(
-			new CustomEvent("tweetapus:extensions-ready", {
+			new CustomEvent("Xeetapus:extensions-ready", {
 				detail: [...state.entries],
 			}),
 		);
@@ -48,19 +48,19 @@
 		const safeId = extension.id;
 		const stylePaths = Array.isArray(extension.styles) ? extension.styles : [];
 		stylePaths.forEach((stylePath) => {
-			const selector = `link[data-tweetapus-extension="${safeId}"][data-ext-path="${stylePath}"]`;
+			const selector = `link[data-Xeetapus-extension="${safeId}"][data-ext-path="${stylePath}"]`;
 			if (document.querySelector(selector)) return;
 			const href = buildFileUrl(extension, stylePath);
 			if (!href) return;
 			const link = document.createElement("link");
 			link.rel = "stylesheet";
 			link.href = href;
-			link.dataset.tweetapusExtension = safeId;
+			link.dataset.XeetapusExtension = safeId;
 			link.dataset.extPath = stylePath;
 			document.head.appendChild(link);
 		});
 
-		const scriptSelector = `script[data-tweetapus-extension="${safeId}"][data-ext-path="${extension.rootFile}"]`;
+		const scriptSelector = `script[data-Xeetapus-extension="${safeId}"][data-ext-path="${extension.rootFile}"]`;
 		if (document.querySelector(scriptSelector)) return;
 
 		const scriptUrl = buildFileUrl(extension, extension.rootFile);
@@ -69,7 +69,7 @@
 		script.type =
 			extension.entryType === "script" ? "text/javascript" : "module";
 		script.src = scriptUrl;
-		script.dataset.tweetapusExtension = safeId;
+		script.dataset.XeetapusExtension = safeId;
 		script.dataset.extPath = extension.rootFile;
 		script.addEventListener("error", () => {
 			console.error(`Failed to load extension ${extension.name || safeId}`);
@@ -95,7 +95,7 @@
 			state.entries.forEach(injectExtensionAssets);
 			markReady();
 		} catch (error) {
-			console.error("Unable to load tweetapus extensions", error);
+			console.error("Unable to load Xeetapus extensions", error);
 			state.errors.push(error.message);
 			markReady();
 		}
@@ -121,8 +121,8 @@
 		},
 	};
 
-	if (!rootWindow.tweetapusExtensions) {
-		Object.defineProperty(rootWindow, "tweetapusExtensions", {
+	if (!rootWindow.XeetapusExtensions) {
+		Object.defineProperty(rootWindow, "XeetapusExtensions", {
 			value: api,
 			enumerable: false,
 			configurable: false,

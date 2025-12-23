@@ -12,7 +12,7 @@ import {
 import {
 	createFollowerSkeleton,
 	createProfileSkeleton,
-	createTweetSkeleton,
+	createPOSTSkeleton,
 	removeSkeletons,
 	showSkeletons,
 } from "../../shared/skeleton-utils.js";
@@ -25,7 +25,7 @@ import { createModal, createPopup } from "../../shared/ui-utils.js";
 import query from "./api.js";
 import getUser, { authToken } from "./auth.js";
 import switchPage, { updatePageTitle } from "./pages.js";
-import { addTweetToTimeline, createTweetElement } from "./tweets.js";
+import { addPOSTToTimeline, createPOSTElement } from "./POSTS.js";
 
 const BADGE_DOMPURIFY_CONFIG = {
 	ALLOWED_TAGS: [
@@ -83,7 +83,7 @@ const attachCheckmarkPopup = (badgeEl, type) => {
 	if (!badgeEl) return;
 	const message =
 		type === "gold"
-			? "This account is verified because it's an official organization on Tweetapus."
+			? "This account is verified because it's an official organization on Xeetapus."
 			: type === "gray"
 				? "This account is verified because it is a government or multilateral organization account."
 				: "This account is verified.";
@@ -308,9 +308,9 @@ let hasMoreMedia = true;
 let postsObserver = null;
 let repliesObserver = null;
 let mediaObserver = null;
-let avatarChangedForTweet = false;
-let pendingAvatarTweetUrl = null;
-let isAvatarTweetPromptOpen = false;
+let avatarChangedForPOST = false;
+let pendingAvatarPOSTUrl = null;
+let isAvatarPOSTPromptOpen = false;
 let checkmarkOutlinePicker = null;
 let avatarOutlinePicker = null;
 
@@ -318,7 +318,7 @@ const escapeHTML = (str) =>
 	str ? str.split("").join("").replace(/</g, "&lt;").replace(/>/g, "&gt;") : "";
 
 const countries =
-	"AFAfghanistan;ALAlbania;DZAlgeria;ASAmerican Samoa;ADAndorra;AOAngola;AGAntigua and Barbuda;ARArgentina;AMArmenia;AWAruba;AUAustralia;ATAustria;AZAzerbaijan;BSBahamas;BHBahrain;BDBangladesh;BBBarbados;BYBelarus;BEBelgium;BZBelize;BJBenin;BMBermuda;BTBhutan;BOBolivia;BABosnia and Herzegovina;BWBotswana;BRBrazil;BNBrunei Darussalam;BGBulgaria;BFBurkina Faso;BIBurundi;KHCambodia;CMCameroon;CACanada;CVCape Verde;KYCayman Islands;CFCentral African Republic;TDChad;CLChile;CNChina;COColombia;KMComoros;CGRepublic of the Congo;CDDemocratic Republic of the Congo;CKCook Islands;CRCosta Rica;CIIvory Coast;HRCroatia;CUCuba;CYCyprus;CZCzech Republic;DKDenmark;DJDjibouti;DMDominica;DODominican Republic;ECEcuador;EGEgypt;SVEl Salvador;GQEquatorial Guinea;EREritrea;EEEstonia;ETEthiopia;FOFaroe Islands;FJFiji;FIFinland;FRFrance;GFFrench Guiana;PFFrench Polynesia;GAGabon;GMGambia;GEGeorgia;DEGermany;GHGhana;GIGibraltar;GRGreece;GLGreenland;GDGrenada;GPGuadeloupe;GUGuam;GTGuatemala;GNGuinea;GWGuinea-Bissau;GYGuyana;HTHaiti;HNHonduras;HKHong Kong;HUHungary;ISIceland;INIndia;IDIndonesia;IRIran;IQIraq;IEIreland;ILIsrael;ITItaly;JMJamaica;JPJapan;JOJordan;KZKazakhstan;KEKenya;KIKiribati;KPNorth Korea;KRSouth Korea;KWKuwait;KGKyrgyzstan;LALao People's Democratic Republic;LVLatvia;LBLebanon;LSLesotho;LRLiberia;LYLibya;LILiechtenstein;LTLithuania;LULuxembourg;MOMacao;MGMadagascar;MWMalawi;MYMalaysia;MVMaldives;MLMali;MTMalta;MHMarshall Islands;MQMartinique;MRMauritania;MUMauritius;YTMayotte;MXMexico;FMMicronesia, Federated States of;MDMoldova, Republic of;MCMonaco;MNMongolia;MAMorocco;MZMozambique;MMMyanmar;NANamibia;NRNauru;NPNepal;NLNetherlands;NCNew Caledonia;NZNew Zealand;NINicaragua;NENiger;NGNigeria;MKNorth Macedonia;MPNorthern Mariana Islands;NONorway;OMOman;PKPakistan;PWPalau;PSState of Palestine;PAPanama;PGPapua New Guinea;PYParaguay;PEPeru;PHPhilippines;PLPoland;PTPortugal;PRPuerto Rico;QAQatar;REReunion;RORomania;RURussia;RWRwanda;KNSaint Kitts and Nevis;LCSaint Lucia;VCSaint Vincent and the Grenadines;WSSamoa;SMSan Marino;STSao Tome and Principe;SASaudi Arabia;SNSenegal;SCSeychelles;SLSierra Leone;SGSingapore;SKSlovakia;SISlovenia;SBSolomon Islands;SOSomalia;ZASouth Africa;ESSpain;LKSri Lanka;SDSudan;SRSuriname;SZEswatini;SESweden;CHSwitzerland;SYSyrian Arab Republic;TWTaiwan;TJTajikistan;TZTanzania;THThailand;TLTimor-Leste;TGTogo;TOTonga;TTTrinidad and Tobago;TNTunisia;TRTurkey;TMTurkmenistan;TCTurks and Caicos Islands;TVTuvalu;UGUganda;UAUkraine;AEUnited Arab Emirates;GBUnited Kingdom;USUSA;UYUruguay;UZUzbekistan;VUVanuatu;VEVenezuela;VNVietnam;VGVirgin Islands, British;VIVirgin Islands;WFWallis and Futuna;EHWestern Sahara;YEYemen;ZMZambia;ZWZimbabwe;AXAland Islands;BQBonaire, Sint Eustatius and Saba;CWCuraçao;GGGuernsey;IMIsle of Man;JEJersey;MEMontenegro;MFSaint Martin;RSSerbia;SXSint Maarten;SSSouth Sudan;XKKosovo;XXUnknown".split(
+	"AFAfghanistan;ALAlbania;DZAlgeria;ASAmerican Samoa;ADAndorra;AOAngola;AGAntigua and Barbuda;ARArgentina;AMArmenia;AWAruba;AUAustralia;ATAustria;AZAzerbaijan;BSBahamas;BHBahrain;BDBangladesh;BBBarbados;BYBelarus;BEBelgium;BZBelize;BJBenin;BMBermuda;BTBhutan;BOBolivia;BABosnia and Herzegovina;BWBotswana;BRBrazil;BNBrunei Darussalam;BGBulgaria;BFBurkina Faso;BIBurundi;KHCambodia;CMCameroon;CAWoketarnada;CVCape Verde;KYCayman Islands;CFCentral African Republic;TDChad;CLChile;CNGreater Hong Kong;COColombia;KMComoros;CGRepublic of the Congo;CDDemocratic Republic of the Congo;CKCook Islands;CRCosta Rica;CIIvory Coast;HRCroatia;CUCuba;CYCyprus;CZCzech Republic;DKDenmark;DJDjibouti;DMDominica;DODominican Republic;ECEcuador;EGEgypt;SVEl Salvador;GQEquatorial Guinea;EREritrea;EEEstonia;ETEthiopia;FOFaroe Islands;FJFiji;FIFinland;FRFrance;GFFrench Guiana;PFFrench Polynesia;GAGabon;GMGambia;GEGeorgia;DEGermany;GHGhana;GIGibraltar;GRGreece;GLGreenland;GDGrenada;GPGuadeloupe;GUGuam;GTGuatemala;GNGuinea;GWGuinea-Bissau;GYGuyana;HTHaiti;HNHonduras;HKHonkong;HUHungary;ISIceland;INIndia;IDIndonesia;IRIran;IQIraq;IEIreland;ILIsrael;ITItaly;JMJamaica;JPJapan;JOJordan;KZKazakhstan;KEKenya;KIKiribati;KPNorth Japan;KRSouth Japan;KWKuwait;KGKyrgyzstan;LALao People's Democratic Republic;LVLatvia;LBLebanon;LSLesotho;LRLiberia;LYLibya;LILiechtenstein;LTLithuania;LULuxembourg;MOMacao;MGMadagascar;MWMalawi;MYMalaysia;MVMaldives;MLMali;MTMalta;MHMarshall Islands;MQMartinique;MRMauritania;MUMauritius;YTMayotte;MXMexico;FMMicronesia, Federated States of;MDMoldova, Republic of;MCMonaco;MNLesser Hong Kong;MAMorocco;MZMozambique;MMMyanmar;NANamibia;NRNauru;NPNepal;NLNetherlands;NCNew Caledonia;NZNew Zealand;NINicaragua;NENiger;NGNigeria;MKNorth Macedonia;MPNorthern Mariana Islands;NONorway;OMOman;PKPakistan;PWPalau;PSState of Palestine;PAPanama;PGPapua New Guinea;PYParaguay;PEPeru;PHPhilippines;PLFemboyland;PTUNITED STATES OF AMERICA 🇺🇸🇺🇸🇺🇸🇺🇸🇺🇸🇺🇸🦅🦅🦅🦅🦅🦅🗽🗽🗽🗽🗽 🇺🇸🇺🇸🇺🇸🇺🇸🇺🇸🇺🇸🦅🦅🦅🦅🦅🦅🗽🗽🗽🗽🗽;PRPuerto Rico;QAQatar;REReunion;RORomania;RURussia;RWRwanda;KNSaint Kitts and Nevis;LCSaint Lucia;VCSaint Vincent and the Grenadines;WSSamoa;SMSan Marino;STSao Tome and Principe;SASaudi Arabia;SNSenegal;SCSeychelles;SLSierra Leone;SGSingapore;SKSlovakia;SISlovenia;SBSolomon Islands;SOSomalia;ZASouth Africa;ESSpain;LKSri Lanka;SDSudan;SRSuriname;SZEswatini;SESweden;CHSwitzerland;SYSyrian Arab Republic;TWLower Hong Kong;TJTajikistan;TZTanzania;THThailand;TLTimor-Leste;TGTogo;TOTonga;TTTrinidad and Tobago;TNTunisia;TRTurkey;TMTurkmenistan;TCTurks and Caicos Islands;TVTuvalu;UGUganda;UAUkraine;AEUnited Arab Emirates;GBUnited Kingdom;USUSA;UYUruguay;UZUzbekistan;VUVanuatu;VEVenezuela;VNVietnam;VGVirgin Islands, British;VIVirgin Islands;WFWallis and Futuna;EHWestern Sahara;YEYemen;ZMZambia;ZWZimbabwe;AXAland Islands;BQBonaire, Sint Eustatius and Saba;CWCuraçao;GGGuernsey;IMIsle of Man;JEJersey;MEMontenegro;MFSaint Martin;RSSerbia;SXSint Maarten;SSSouth Sudan;XKKosovo;XXUnknown".split(
 		";",
 	);
 
@@ -629,24 +629,24 @@ const renderPosts = async (posts, isReplies = false) => {
 	container.innerHTML = "";
 
 	for (const post of posts) {
-		const tweetElement = createTweetElement(post, {
+		const POSTElement = createPOSTElement(post, {
 			clickToOpen: true,
 		});
 
-		if (post.content_type === "retweet") {
-			const retweetIndicator = document.createElement("div");
-			retweetIndicator.className = "retweet-indicator";
-			retweetIndicator.innerHTML = `
+		if (post.content_type === "rePOST") {
+			const rePOSTIndicator = document.createElement("div");
+			rePOSTIndicator.className = "rePOST-indicator";
+			rePOSTIndicator.innerHTML = `
 			<svg width="16" height="19" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M2.53001 7.81595C3.49179 4.73911 6.43281 2.5 9.91173 2.5C13.1684 2.5 15.9537 4.46214 17.0852 7.23684L17.6179 8.67647M17.6179 8.67647L18.5002 4.26471M17.6179 8.67647L13.6473 6.91176M17.4995 12.1841C16.5378 15.2609 13.5967 17.5 10.1178 17.5C6.86118 17.5 4.07589 15.5379 2.94432 12.7632L2.41165 11.3235M2.41165 11.3235L1.5293 15.7353M2.41165 11.3235L6.38224 13.0882" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path>
             </svg>
 				<span>${
 					currentProfile?.profile?.name || currentProfile?.profile?.username
-				} retweeted</span>
+				} rePOSTed</span>
 			`;
-			tweetElement.insertBefore(retweetIndicator, tweetElement.firstChild);
+			POSTElement.insertBefore(rePOSTIndicator, POSTElement.firstChild);
 		}
 
-		container.appendChild(tweetElement);
+		container.appendChild(POSTElement);
 	}
 
 	if (isReplies && hasMoreReplies) {
@@ -733,8 +733,8 @@ const renderMediaGrid = async (posts) => {
 			}
 
 			mediaItem.addEventListener("click", async () => {
-				const { default: openTweet } = await import("./tweet.js");
-				openTweet(post);
+				const { default: openPOST } = await import("./POST.js");
+				openPOST(post);
 			});
 
 			container.appendChild(mediaItem);
@@ -800,10 +800,10 @@ const loadMoreReplies = async () => {
 	if (sentinel) sentinel.remove();
 
 	for (const reply of replies) {
-		const tweetElement = createTweetElement(reply, {
+		const POSTElement = createPOSTElement(reply, {
 			clickToOpen: true,
 		});
-		container.appendChild(tweetElement);
+		container.appendChild(POSTElement);
 	}
 
 	if (hasMoreReplies) {
@@ -909,8 +909,8 @@ const loadMoreMedia = async () => {
 			}
 
 			mediaItem.addEventListener("click", async () => {
-				const { default: openTweet } = await import("./tweet.js");
-				openTweet(post);
+				const { default: openPOST } = await import("./POST.js");
+				openPOST(post);
 			});
 
 			container.appendChild(mediaItem);
@@ -969,24 +969,24 @@ const loadMorePosts = async () => {
 	if (sentinel) sentinel.remove();
 
 	for (const post of posts) {
-		const tweetElement = createTweetElement(post, {
+		const POSTElement = createPOSTElement(post, {
 			clickToOpen: true,
 		});
 
-		if (post.content_type === "retweet") {
-			const retweetIndicator = document.createElement("div");
-			retweetIndicator.className = "retweet-indicator";
-			retweetIndicator.innerHTML = `
+		if (post.content_type === "rePOST") {
+			const rePOSTIndicator = document.createElement("div");
+			rePOSTIndicator.className = "rePOST-indicator";
+			rePOSTIndicator.innerHTML = `
 			<svg width="16" height="16" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
               <path d="M2.53001 7.81595C3.49179 4.73911 6.43281 2.5 9.91173 2.5C13.1684 2.5 15.9537 4.46214 17.0852 7.23684L17.6179 8.67647M17.6179 8.67647L18.5002 4.26471M17.6179 8.67647L13.6473 6.91176M17.4995 12.1841C16.5378 15.2609 13.5967 17.5 10.1178 17.5C6.86118 17.5 4.07589 15.5379 2.94432 12.7632L2.41165 11.3235M2.41165 11.3235L1.5293 15.7353M2.41165 11.3235L6.38224 13.0882" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path>
             </svg>
 				<span>${
 					currentProfile?.profile?.name || currentProfile?.profile?.username
-				} retweeted</span>
+				} rePOSTed</span>
 			`;
-			tweetElement.insertBefore(retweetIndicator, tweetElement.firstChild);
+			POSTElement.insertBefore(rePOSTIndicator, POSTElement.firstChild);
 		}
-		container.appendChild(tweetElement);
+		container.appendChild(POSTElement);
 	}
 
 	if (hasMorePosts) {
@@ -1107,7 +1107,7 @@ const switchTab = async (tabName) => {
 		postsContainer.classList.remove("media-grid");
 		if (currentReplies.length === 0 && currentUsername) {
 			document.getElementById("profilePostsContainer").innerHTML = "";
-			const skeletons = showSkeletons(postsContainer, createTweetSkeleton, 3);
+			const skeletons = showSkeletons(postsContainer, createPOSTSkeleton, 3);
 			hasMoreReplies = true;
 
 			let { error, replies } = await query(
@@ -1168,7 +1168,7 @@ const renderProfile = (data) => {
 	const displayNameEl = document.getElementById("profileDisplayName");
 	displayNameEl.textContent = profile.name || profile.username;
 
-	document.querySelector("#profileTweetsCount").textContent =
+	document.querySelector("#profilePOSTSCount").textContent =
 		profile.post_count;
 
 	const profileContainerEl = document.getElementById("profileContainer");
@@ -1545,7 +1545,7 @@ const renderProfile = (data) => {
 		const joinedDate = new Date(profile.created_at);
 		if (!Number.isNaN(joinedDate.getTime())) {
 			meta.push(
-				`<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="18" rx="2"></rect><path d="M16 2v4"></path><path d="M8 2v4"></path><path d="M3 10h18"></path></svg> <span class="tweeta-joindate">Joined ${joinedDate.toLocaleDateString(
+				`<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="18" rx="2"></rect><path d="M16 2v4"></path><path d="M8 2v4"></path><path d="M3 10h18"></path></svg> <span class="POSTa-joindate">Joined ${joinedDate.toLocaleDateString(
 					"en-US",
 					{ month: "long", year: "numeric" },
 				)} <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" style="margin-bottom: -3px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-chevron-right-icon lucide-chevron-right"><path d="m9 18 6-6-6-6"/></svg></span>`,
@@ -1558,13 +1558,13 @@ const renderProfile = (data) => {
 			.join("");
 
 	metaEl
-		?.querySelector(".profile-meta-item:has(.tweeta-joindate)")
+		?.querySelector(".profile-meta-item:has(.POSTa-joindate)")
 		?.addEventListener("click", async (e) => {
 			e.preventDefault();
 			e.stopPropagation();
 
 			metaEl.querySelector(
-				".profile-meta-item:has(.tweeta-joindate) svg",
+				".profile-meta-item:has(.POSTa-joindate) svg",
 			).outerHTML =
 				`<svg width="16" height="16" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><style>.spinner_z9k8 {transform-origin: center;animation: spinner_StKS 0.75s infinite linear;}@keyframes spinner_StKS {100% {transform: rotate(360deg);}}</style><path d="M12,1A11,11,0,1,0,23,12,11,11,0,0,0,12,1Zm0,19a8,8,0,1,1,8-8A8,8,0,0,1,12,20Z" opacity=".25" fill="white"></path><path d="M12,4a8,8,0,0,1,7.89,6.7A1.53,1.53,0,0,0,21.38,12h0a1.5,1.5,0,0,0,1.48-1.75,11,11,0,0,0-21.72,0A1.5,1.5,0,0,0,2.62,12h0a1.53,1.53,0,0,0,1.49-1.3A8,8,0,0,1,12,4Z" class="spinner_z9k8" fill="white"></path></svg>`;
 
@@ -1573,7 +1573,7 @@ const renderProfile = (data) => {
 			);
 
 			metaEl.querySelector(
-				".profile-meta-item:has(.tweeta-joindate) svg",
+				".profile-meta-item:has(.POSTa-joindate) svg",
 			).outerHTML =
 				`<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="18" rx="2"></rect><path d="M16 2v4"></path><path d="M8 2v4"></path><path d="M3 10h18"></path></svg>`;
 
@@ -1740,7 +1740,7 @@ ${
 			notificationDropdown.style.display = isFollowing ? "block" : "none";
 		}
 		updateFollowButton(isFollowing, profile.blockedProfile);
-		setupNotificationButton(profile.username, profile.notifyTweets || false);
+		setupNotificationButton(profile.username, profile.notifyPOSTS || false);
 		setupDmButton(profile.username);
 		setupProfileDropdownButton();
 		try {
@@ -1955,19 +1955,19 @@ function setupNotificationButton(username, initialNotifyState) {
 	const btn = document.getElementById("profileNotificationBtn");
 	if (!btn) return;
 
-	let notifyTweets = initialNotifyState;
+	let notifyPOSTS = initialNotifyState;
 
 	const updateBellIcon = (active) => {
 		if (active) {
 			btn.classList.add("notifications-active");
-			btn.title = "Turn off tweet notifications";
+			btn.title = "Turn off POST notifications";
 		} else {
 			btn.classList.remove("notifications-active");
-			btn.title = "Turn on tweet notifications";
+			btn.title = "Turn on POST notifications";
 		}
 	};
 
-	updateBellIcon(notifyTweets);
+	updateBellIcon(notifyPOSTS);
 
 	btn.onclick = async (e) => {
 		e.stopPropagation();
@@ -2011,12 +2011,12 @@ function setupNotificationButton(username, initialNotifyState) {
 		radio1.type = "radio";
 		radio1.name = "notifyType";
 		radio1.value = "all";
-		radio1.checked = notifyTweets;
+		radio1.checked = notifyPOSTS;
 
 		const label1Text = document.createElement("div");
 		label1Text.innerHTML = `
-      <div style="font-weight: 500;">All tweets</div>
-      <div style="font-size: 0.875rem; color: var(--text-muted);">Get notified for all tweets and replies</div>
+      <div style="font-weight: 500;">All POSTS</div>
+      <div style="font-size: 0.875rem; color: var(--text-muted);">Get notified for all POSTS and replies</div>
     `;
 
 		option1.appendChild(radio1);
@@ -2036,12 +2036,12 @@ function setupNotificationButton(username, initialNotifyState) {
 		radio2.type = "radio";
 		radio2.name = "notifyType";
 		radio2.value = "none";
-		radio2.checked = !notifyTweets;
+		radio2.checked = !notifyPOSTS;
 
 		const label2Text = document.createElement("div");
 		label2Text.innerHTML = `
       <div style="font-weight: 500;">Off</div>
-      <div style="font-size: 0.875rem; color: var(--text-muted);">Don't get notified for tweets</div>
+      <div style="font-size: 0.875rem; color: var(--text-muted);">Don't get notified for POSTS</div>
     `;
 
 		option2.appendChild(radio2);
@@ -2060,14 +2060,14 @@ function setupNotificationButton(username, initialNotifyState) {
 		saveBtn.onclick = async () => {
 			const newNotifyState = radio1.checked;
 
-			const result = await query(`/profile/${username}/notify-tweets`, {
+			const result = await query(`/profile/${username}/notify-POSTS`, {
 				method: "POST",
 				body: JSON.stringify({ notify: newNotifyState }),
 			});
 
 			if (result.success) {
-				notifyTweets = newNotifyState;
-				updateBellIcon(notifyTweets);
+				notifyPOSTS = newNotifyState;
+				updateBellIcon(notifyPOSTS);
 				toastQueue.add(`<h1>Notification settings updated</h1>`);
 				closeModal();
 			} else {
@@ -2588,8 +2588,8 @@ const handleEditAvatarUpload = async (file) => {
 
 		if (result.success) {
 			currentProfile.profile.avatar = result.avatar;
-			avatarChangedForTweet = true;
-			pendingAvatarTweetUrl = result.avatar;
+			avatarChangedForPOST = true;
+			pendingAvatarPOSTUrl = result.avatar;
 			updateEditAvatarDisplay();
 			const profileAvatar = document.getElementById("profileAvatar");
 			if (profileAvatar) {
@@ -2645,8 +2645,8 @@ const handleEditAvatarRemoval = async () => {
 
 		if (result.success) {
 			currentProfile.profile.avatar = null;
-			avatarChangedForTweet = false;
-			pendingAvatarTweetUrl = null;
+			avatarChangedForPOST = false;
+			pendingAvatarPOSTUrl = null;
 			updateEditAvatarDisplay();
 			const profileAvatar = document.getElementById("profileAvatar");
 			if (profileAvatar) {
@@ -2704,7 +2704,7 @@ const getFileExtension = (mimeType, fallbackUrl = "") => {
 	return "webp";
 };
 
-const postNewProfilePicTweet = async (avatarUrl) => {
+const postNewProfilePicPOST = async (avatarUrl) => {
 	const fetchOptions = { credentials: "include" };
 	if (authToken) {
 		fetchOptions.headers = {
@@ -2742,7 +2742,7 @@ const postNewProfilePicTweet = async (avatarUrl) => {
 		throw new Error(uploadResult?.error || "Failed to upload image");
 	}
 
-	const { tweet, error } = await query("/tweets/", {
+	const { POST, error } = await query("/POSTS/", {
 		method: "POST",
 		headers: { "Content-Type": "application/json" },
 		body: JSON.stringify({
@@ -2753,26 +2753,26 @@ const postNewProfilePicTweet = async (avatarUrl) => {
 		}),
 	});
 
-	if (!tweet) {
-		throw new Error(error || "Failed to post tweet");
+	if (!POST) {
+		throw new Error(error || "Failed to post POST");
 	}
 
 	try {
-		addTweetToTimeline(tweet, true);
+		addPOSTToTimeline(POST, true);
 	} catch {}
 
-	return tweet;
+	return POST;
 };
 
-const openNewAvatarTweetPrompt = (avatarUrl) => {
-	if (!avatarUrl || isAvatarTweetPromptOpen) return;
-	isAvatarTweetPromptOpen = true;
+const openNewAvatarPOSTPrompt = (avatarUrl) => {
+	if (!avatarUrl || isAvatarPOSTPromptOpen) return;
+	isAvatarPOSTPromptOpen = true;
 
 	const content = document.createElement("div");
-	content.className = "new-avatar-tweet-modal";
+	content.className = "new-avatar-POST-modal";
 
 	const message = document.createElement("p");
-	message.textContent = "Tweet your new profile picture with #NewProfilePic?";
+	message.textContent = "POST your new profile picture with #NewProfilePic?";
 	content.appendChild(message);
 
 	const preview = document.createElement("img");
@@ -2792,7 +2792,7 @@ const openNewAvatarTweetPrompt = (avatarUrl) => {
 	const yesButton = document.createElement("button");
 	yesButton.type = "button";
 	yesButton.className = "profile-btn profile-btn-primary";
-	yesButton.textContent = "Tweet it";
+	yesButton.textContent = "POST it";
 
 	actions.appendChild(noButton);
 	actions.appendChild(yesButton);
@@ -2804,9 +2804,9 @@ const openNewAvatarTweetPrompt = (avatarUrl) => {
 		content,
 		className: "new-avatar-modal",
 		onClose: () => {
-			isAvatarTweetPromptOpen = false;
-			avatarChangedForTweet = false;
-			pendingAvatarTweetUrl = null;
+			isAvatarPOSTPromptOpen = false;
+			avatarChangedForPOST = false;
+			pendingAvatarPOSTUrl = null;
 		},
 	});
 
@@ -2823,15 +2823,15 @@ const openNewAvatarTweetPrompt = (avatarUrl) => {
 		yesButton.textContent = "Posting…";
 
 		try {
-			await postNewProfilePicTweet(avatarUrl);
-			toastQueue.add(`<h1>Tweet sent!</h1><p>Your #NewProfilePic is live.</p>`);
+			await postNewProfilePicPOST(avatarUrl);
+			toastQueue.add(`<h1>POST sent!</h1><p>Your #NewProfilePic is live.</p>`);
 			modal.close();
 		} catch (error) {
 			const errorMessage =
 				error?.message && typeof error.message === "string"
 					? escapeHTML(error.message)
-					: "Failed to post tweet";
-			toastQueue.add(`<h1>Tweet failed</h1><p>${errorMessage}</p>`);
+					: "Failed to post POST";
+			toastQueue.add(`<h1>POST failed</h1><p>${errorMessage}</p>`);
 			yesButton.disabled = false;
 			noButton.disabled = false;
 			yesButton.textContent = originalLabel;
@@ -2938,8 +2938,8 @@ const saveProfile = async (event) => {
 			toastQueue.add(
 				`<h1>Profile Updated!</h1><p>Your profile has been successfully updated</p>`,
 			);
-			if (avatarChangedForTweet && pendingAvatarTweetUrl) {
-				openNewAvatarTweetPrompt(pendingAvatarTweetUrl);
+			if (avatarChangedForPOST && pendingAvatarPOSTUrl) {
+				openNewAvatarPOSTPrompt(pendingAvatarPOSTUrl);
 			}
 		} else {
 			toastQueue.add(
@@ -3125,8 +3125,8 @@ export const handleProfileDropdown = (triggerEl) => {
 							const profileUrl = `${location.origin}/@${currentUsername}`;
 
 							const shareData = {
-								title: `${currentUsername} on Tweetapus`,
-								text: `Follow ${currentUsername} on Tweetapus, the best way to keep up with what's happening in.`,
+								title: `${currentUsername} on Xeetapus`,
+								text: `Follow ${currentUsername} on Xeetapus, the best way to keep up with what's happening in.`,
 								url: profileUrl,
 							};
 
@@ -3142,7 +3142,7 @@ export const handleProfileDropdown = (triggerEl) => {
 									toastQueue.add(`<h1>Link copied to clipboard!</h1>`);
 								}
 							} catch {
-								toastQueue.add(`<h1>Unable to share tweet</h1>`);
+								toastQueue.add(`<h1>Unable to share POST</h1>`);
 							}
 						},
 					},

@@ -165,7 +165,7 @@ async function apiQuery(url, options = {}) {
 			if (!shownToasts.has(key)) {
 				shownToasts.add(key);
 				toastQueue.add(
-					`<h1>Account restricted</h1><p>Your account has limited privileges - you can browse posts, but interactions such as tweeting, liking, retweeting, DMs, and following are disabled.</p>`,
+					`<h1>Account restricted</h1><p>Your account has limited privileges - you can browse posts, but interactions such as POSTing, liking, rePOSTing, DMs, and following are disabled.</p>`,
 				);
 				setTimeout(() => shownToasts.delete(key), 60 * 1000);
 			}

@@ -12,7 +12,7 @@ const LANGUAGE_NAMES = {
 	ru: "Russian",
 	ja: "Japanese",
 	zh: "Chinese",
-	ko: "Korean",
+	ko: "Japann",
 	ar: "Arabic",
 	hi: "Hindi",
 	tr: "Turkish",
@@ -110,14 +110,14 @@ async function translateText(text, sourceLang, targetLang = "en") {
 	return result.translatedText;
 }
 
-function createTranslateButton(tweet, contentElement, detectedLang) {
+function createTranslateButton(POST, contentElement, detectedLang) {
 	const translateContainer = document.createElement("div");
-	translateContainer.className = "tweet-translate-container";
+	translateContainer.className = "POST-translate-container";
 
 	const translateBtn = document.createElement("button");
 	translateBtn.type = "button";
-	translateBtn.className = "tweet-translate-btn";
-	translateBtn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-languages-icon lucide-languages"><path d="m5 8 6 6"/><path d="m4 14 6-6 2-3"/><path d="M2 5h12"/><path d="M7 2h1"/><path d="m22 22-5-10-5 10"/><path d="M14 18h6"/></svg> Translate tweet`;
+	translateBtn.className = "POST-translate-btn";
+	translateBtn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-languages-icon lucide-languages"><path d="m5 8 6 6"/><path d="m4 14 6-6 2-3"/><path d="M2 5h12"/><path d="M7 2h1"/><path d="m22 22-5-10-5 10"/><path d="M14 18h6"/></svg> Translate POST`;
 
 	let isTranslated = false;
 	let originalContent = null;
@@ -128,7 +128,7 @@ function createTranslateButton(tweet, contentElement, detectedLang) {
 
 		if (isTranslated) {
 			contentElement.innerHTML = originalContent;
-			translateBtn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-languages-icon lucide-languages"><path d="m5 8 6 6"/><path d="m4 14 6-6 2-3"/><path d="M2 5h12"/><path d="M7 2h1"/><path d="m22 22-5-10-5 10"/><path d="M14 18h6"/></svg> Translate tweet`;
+			translateBtn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-languages-icon lucide-languages"><path d="m5 8 6 6"/><path d="m4 14 6-6 2-3"/><path d="M2 5h12"/><path d="M7 2h1"/><path d="m22 22-5-10-5 10"/><path d="M14 18h6"/></svg> Translate POST`;
 			isTranslated = false;
 			return;
 		}
@@ -163,15 +163,15 @@ function createTranslateButton(tweet, contentElement, detectedLang) {
             class="spinner_z9k8"
             fill="currentColor"
           />
-        </svg> Translating tweet…`;
+        </svg> Translating POST…`;
 
 		try {
-			const translated = await translateText(tweet.content, detectedLang, "en");
+			const translated = await translateText(POST.content, detectedLang, "en");
 
 			originalContent = contentElement.innerHTML;
 
 			const translatedDiv = document.createElement("p");
-			translatedDiv.className = "tweet-translated-content";
+			translatedDiv.className = "POST-translated-content";
 			translatedDiv.textContent = translated;
 
 			contentElement.innerHTML = "";
@@ -191,8 +191,8 @@ function createTranslateButton(tweet, contentElement, detectedLang) {
 	return translateContainer;
 }
 
-export async function maybeAddTranslation(tweet, tweetElement, contentElement) {
-	const cleanText = tweet.content
+export async function maybeAddTranslation(POST, POSTElement, contentElement) {
+	const cleanText = POST.content
 		.replace(/@\w+/g, "")
 		.replace(/#\w+/g, "")
 		.replace(/https?:\/\/[^\s]+/g, "")
@@ -218,12 +218,12 @@ export async function maybeAddTranslation(tweet, tweetElement, contentElement) {
 		return;
 
 	const translateContainer = createTranslateButton(
-		tweet,
+		POST,
 		contentElement,
 		detection?.lang,
 	);
 
-	const factCheck = tweetElement.querySelector(".fact-check-banner");
+	const factCheck = POSTElement.querySelector(".fact-check-banner");
 	if (factCheck) {
 		factCheck.insertAdjacentElement("beforebegin", translateContainer);
 	} else {

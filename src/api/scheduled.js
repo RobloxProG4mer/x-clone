@@ -225,7 +225,7 @@ const processScheduledPosts = async () => {
 
 	for (const scheduledPost of pendingPosts) {
 		try {
-			const tweetId = Bun.randomUUIDv7();
+			const POSTId = Bun.randomUUIDv7();
 			const user = db
 				.query("SELECT id, username, restricted FROM users WHERE id = ?")
 				.get(scheduledPost.user_id);
@@ -250,7 +250,7 @@ const processScheduledPosts = async () => {
 
 				db.query(
 					"INSERT INTO polls (id, post_id, expires_at) VALUES (?, ?, ?)",
-				).run(pollId, tweetId, expiresAt);
+				).run(pollId, POSTId, expiresAt);
 
 				poll.options.forEach((option, index) => {
 					const optionId = Bun.randomUUIDv7();
@@ -264,7 +264,7 @@ const processScheduledPosts = async () => {
 				`INSERT INTO posts (id, user_id, content, source, poll_id, reply_restriction, scheduled_post_id)
          VALUES (?, ?, ?, ?, ?, ?, ?)`,
 			).run(
-				tweetId,
+				POSTId,
 				user.id,
 				scheduledPost.content,
 				"scheduled",
@@ -282,7 +282,7 @@ const processScheduledPosts = async () => {
              VALUES (?, ?, ?, ?, ?, ?, ?)`,
 					).run(
 						attachmentId,
-						tweetId,
+						POSTId,
 						file.hash,
 						file.name,
 						file.type,
@@ -322,7 +322,7 @@ const processScheduledPosts = async () => {
            VALUES (?, ?, ?, ?, ?, ?, ?)`,
 				).run(
 					attachmentId,
-					tweetId,
+					POSTId,
 					null,
 					"tenor.gif",
 					"image/gif",
@@ -334,7 +334,7 @@ const processScheduledPosts = async () => {
 			updateScheduledPostStatus.run("posted", scheduledPost.id);
 		} catch (error) {
 			console.error(
-				`Failed to post scheduled tweet ${scheduledPost.id}:`,
+				`Failed to post scheduled POST ${scheduledPost.id}:`,
 				error,
 			);
 			updateScheduledPostStatus.run("failed", scheduledPost.id);

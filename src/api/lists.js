@@ -103,7 +103,7 @@ const unfollowList = db.prepare(`
 	DELETE FROM list_followers WHERE list_id = ? AND user_id = ?
 `);
 
-const getListTweets = db.prepare(`
+const getListPOSTS = db.prepare(`
 	SELECT posts.*, users.username, users.name, users.avatar, users.verified, users.gold, users.avatar_radius, users.affiliate, users.affiliate_with, users.selected_community_tag
 	FROM posts
 	JOIN users ON posts.user_id = users.id
@@ -113,7 +113,7 @@ const getListTweets = db.prepare(`
 	LIMIT ?
 `);
 
-const getListTweetsBefore = db.prepare(`
+const getListPOSTSBefore = db.prepare(`
 	SELECT posts.*, users.username, users.name, users.avatar, users.verified, users.gold, users.avatar_radius, users.affiliate, users.affiliate_with, users.selected_community_tag
 	FROM posts
 	JOIN users ON posts.user_id = users.id
@@ -137,8 +137,8 @@ const getTotalPollVotes = db.prepare(
 	`SELECT SUM(vote_count) as total FROM poll_options WHERE poll_id = ?`,
 );
 
-const getPollDataForTweet = (tweetId, userId) => {
-	const poll = getPollByPostId.get(tweetId);
+const getPollDataForPOST = (POSTId, userId) => {
+	const poll = getPollByPostId.get(POSTId);
 	if (!poll) return null;
 	const options = getPollOptions.all(poll.id);
 	const totalVotes = getTotalPollVotes.get(poll.id)?.total || 0;
@@ -350,7 +350,7 @@ export default new Elysia({ prefix: "/lists", tags: ["Lists"] })
 		deleteList.run(id);
 		return { success: true };
 	})
-	.get("/:id/tweets", async ({ params, jwt, headers, query }) => {
+	.get("/:id/POSTS", async ({ params, jwt, headers, query }) => {
 		const { id } = params;
 		const { limit = 20, before } = query;
 
@@ -371,29 +371,29 @@ export default new Elysia({ prefix: "/lists", tags: ["Lists"] })
 			return { error: "This list is private" };
 		}
 
-		const tweets = before
-			? getListTweetsBefore.all(id, before, parseInt(limit, 10))
-			: getListTweets.all(id, parseInt(limit, 10));
+		const POSTS = before
+			? getListPOSTSBefore.all(id, before, parseInt(limit, 10))
+			: getListPOSTS.all(id, parseInt(limit, 10));
 
-		const enrichedTweets = tweets.map((tweet) => ({
-			...tweet,
+		const enrichedPOSTS = POSTS.map((POST) => ({
+			...POST,
 			author: {
-				username: tweet.username,
-				name: tweet.name,
-				avatar: tweet.avatar,
-				verified: tweet.verified,
-				gold: tweet.gold,
-				avatar_radius: tweet.avatar_radius,
-				affiliate: tweet.affiliate,
-				affiliate_with: tweet.affiliate_with,
+				username: POST.username,
+				name: POST.name,
+				avatar: POST.avatar,
+				verified: POST.verified,
+				gold: POST.gold,
+				avatar_radius: POST.avatar_radius,
+				affiliate: POST.affiliate,
+				affiliate_with: POST.affiliate_with,
 			},
-			attachments: getAttachmentsByPostId.all(tweet.id),
-			poll: getPollDataForTweet(tweet.id, currentUserId),
+			attachments: getAttachmentsByPostId.all(POST.id),
+			poll: getPollDataForPOST(POST.id, currentUserId),
 		}));
 
 		return {
-			tweets: enrichedTweets,
-			hasMore: tweets.length === parseInt(limit, 10),
+			POSTS: enrichedPOSTS,
+			hasMore: POSTS.length === parseInt(limit, 10),
 		};
 	})
 	.post("/:id/members", async ({ params, jwt, headers, body }) => {

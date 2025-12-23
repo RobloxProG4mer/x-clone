@@ -35,7 +35,7 @@ const getNotificationsBefore = db.prepare(`
   LIMIT ?
 `);
 
-const getTweetById = db.prepare(`
+const getPOSTById = db.prepare(`
   SELECT 
     p.*,
     u.username,
@@ -45,25 +45,25 @@ const getTweetById = db.prepare(`
     u.gold,
     u.avatar_radius,
     COALESCE(like_counts.count, 0) as like_count,
-    COALESCE(retweet_counts.count, 0) as retweet_count,
+    COALESCE(rePOST_counts.count, 0) as rePOST_count,
     COALESCE(reply_counts.count, 0) as reply_count,
     COALESCE(quote_counts.count, 0) as quote_count,
     EXISTS(SELECT 1 FROM likes WHERE user_id = ? AND post_id = p.id) as liked_by_user,
-    EXISTS(SELECT 1 FROM retweets WHERE user_id = ? AND post_id = p.id) as retweeted_by_user
+    EXISTS(SELECT 1 FROM rePOSTS WHERE user_id = ? AND post_id = p.id) as rePOSTed_by_user
   FROM posts p
   JOIN users u ON p.user_id = u.id
   LEFT JOIN (
     SELECT post_id, COUNT(*) as count FROM likes GROUP BY post_id
   ) like_counts ON p.id = like_counts.post_id
   LEFT JOIN (
-    SELECT post_id, COUNT(*) as count FROM retweets GROUP BY post_id
-  ) retweet_counts ON p.id = retweet_counts.post_id
+    SELECT post_id, COUNT(*) as count FROM rePOSTS GROUP BY post_id
+  ) rePOST_counts ON p.id = rePOST_counts.post_id
   LEFT JOIN (
     SELECT reply_to, COUNT(*) as count FROM posts WHERE reply_to IS NOT NULL GROUP BY reply_to
   ) reply_counts ON p.id = reply_counts.reply_to
   LEFT JOIN (
-    SELECT quote_tweet_id, COUNT(*) as count FROM posts WHERE quote_tweet_id IS NOT NULL GROUP BY quote_tweet_id
-  ) quote_counts ON p.id = quote_counts.quote_tweet_id
+    SELECT quote_POST_id, COUNT(*) as count FROM posts WHERE quote_POST_id IS NOT NULL GROUP BY quote_POST_id
+  ) quote_counts ON p.id = quote_counts.quote_POST_id
   WHERE p.id = ?
 `);
 
@@ -154,19 +154,19 @@ export function addNotification(
 function getPushTitle(type, actorName) {
 	switch (type) {
 		case "like":
-			return `${actorName} liked your tweet`;
-		case "retweet":
-			return `${actorName} retweeted your tweet`;
+			return `${actorName} liked your POST`;
+		case "rePOST":
+			return `${actorName} rePOSTed your POST`;
 		case "follow":
 			return `${actorName} followed you`;
 		case "reply":
-			return `${actorName} replied to your tweet`;
+			return `${actorName} replied to your POST`;
 		case "mention":
 			return `${actorName} mentioned you`;
 		case "quote":
-			return `${actorName} quoted your tweet`;
+			return `${actorName} quoted your POST`;
 		case "reaction":
-			return `${actorName} reacted to your tweet`;
+			return `${actorName} reacted to your POST`;
 		case "dm_message":
 			return `New message from ${actorName}`;
 		default:
@@ -220,7 +220,7 @@ export default new Elysia({ prefix: "/notifications", tags: ["Notifications"] })
 							);
 							const decoded = Buffer.from(encoded, "base64").toString("utf8");
 							if (enhanced.content !== decoded)
-								enhanced.tweet = { content: decoded };
+								enhanced.POST = { content: decoded };
 						} else if (notification.related_id.startsWith("meta:")) {
 							const encoded = notification.related_id.substring("meta:".length);
 							const json = Buffer.from(encoded, "base64").toString("utf8");
@@ -228,7 +228,7 @@ export default new Elysia({ prefix: "/notifications", tags: ["Notifications"] })
 								const meta = JSON.parse(json);
 								if (meta.subtitle) {
 									if (enhanced.content !== meta.subtitle) {
-										enhanced.tweet = { content: meta.subtitle };
+										enhanced.POST = { content: meta.subtitle };
 									}
 								}
 								if (meta.url) enhanced.url = meta.url;
@@ -249,7 +249,7 @@ export default new Elysia({ prefix: "/notifications", tags: ["Notifications"] })
 					!notification.related_id.startsWith("subtitle:") &&
 					[
 						"like",
-						"retweet",
+						"rePOST",
 						"reply",
 						"quote",
 						"mention",
@@ -257,32 +257,32 @@ export default new Elysia({ prefix: "/notifications", tags: ["Notifications"] })
 					].includes(notification.type)
 				) {
 					try {
-						const tweet = getTweetById.get(
+						const POST = getPOSTById.get(
 							user.id,
 							user.id,
 							notification.related_id,
 						);
-						if (tweet) {
-							enhanced.tweet = {
-								id: tweet.id,
-								content: tweet.content,
-								created_at: tweet.created_at,
+						if (POST) {
+							enhanced.POST = {
+								id: POST.id,
+								content: POST.content,
+								created_at: POST.created_at,
 								user: {
-									username: tweet.username,
-									name: tweet.name,
-									avatar: tweet.avatar,
-									verified: tweet.verified,
-									gold: tweet.gold,
-									avatar_radius: tweet.avatar_radius,
+									username: POST.username,
+									name: POST.name,
+									avatar: POST.avatar,
+									verified: POST.verified,
+									gold: POST.gold,
+									avatar_radius: POST.avatar_radius,
 								},
-								like_count: tweet.like_count,
-								retweet_count: tweet.retweet_count,
-								reply_count: tweet.reply_count,
-								quote_count: tweet.quote_count,
+								like_count: POST.like_count,
+								rePOST_count: POST.rePOST_count,
+								reply_count: POST.reply_count,
+								quote_count: POST.quote_count,
 							};
 						}
 					} catch (error) {
-						console.error("Error fetching tweet for notification:", error);
+						console.error("Error fetching POST for notification:", error);
 					}
 				}
 

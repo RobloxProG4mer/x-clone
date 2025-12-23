@@ -1,7 +1,7 @@
 import { jwt } from "@elysiajs/jwt";
 import { Elysia } from "elysia";
 import { rateLimit } from "elysia-rate-limit";
-import { isAlgorithmAvailable, rankTweets } from "../algo/algorithm.js";
+import { isAlgorithmAvailable, rankPOSTS } from "../algo/algorithm.js";
 import db from "./../db.js";
 import ratelimit from "../helpers/ratelimit.js";
 
@@ -17,8 +17,8 @@ const normalizeContent = (value) => {
 const stripInternalFields = (obj) => {
 	if (!obj) return obj;
 	const {
-		super_tweeter: _super_tweeter,
-		super_tweeter_boost: _super_tweeter_boost,
+		super_POSTer: _super_POSTer,
+		super_POSTer_boost: _super_POSTer_boost,
 		_normalized_content,
 		...rest
 	} = obj;
@@ -28,7 +28,7 @@ const stripInternalFields = (obj) => {
 const JWT_SECRET = process.env.JWT_SECRET;
 
 const getTimelinePosts = db.query(`
-  SELECT posts.*, users.username, users.name, users.avatar, users.verified, users.gold, users.gray, users.checkmark_outline, users.avatar_outline, users.avatar_radius, users.affiliate, users.affiliate_with, users.selected_community_tag, users.super_tweeter, users.super_tweeter_boost, users.label_type
+  SELECT posts.*, users.username, users.name, users.avatar, users.verified, users.gold, users.gray, users.checkmark_outline, users.avatar_outline, users.avatar_radius, users.affiliate, users.affiliate_with, users.selected_community_tag, users.super_POSTer, users.super_POSTer_boost, users.label_type
   FROM posts 
   JOIN users ON posts.user_id = users.id
   LEFT JOIN blocks ON (posts.user_id = blocks.blocked_id AND blocks.blocker_id = ?)
@@ -40,7 +40,7 @@ const getTimelinePosts = db.query(`
 `);
 
 const getTimelinePostsBefore = db.query(`
-  SELECT posts.*, users.username, users.name, users.avatar, users.verified, users.gold, users.gray, users.checkmark_outline, users.avatar_outline, users.avatar_radius, users.affiliate, users.affiliate_with, users.selected_community_tag, users.super_tweeter, users.super_tweeter_boost, users.label_type
+  SELECT posts.*, users.username, users.name, users.avatar, users.verified, users.gold, users.gray, users.checkmark_outline, users.avatar_outline, users.avatar_radius, users.affiliate, users.affiliate_with, users.selected_community_tag, users.super_POSTer, users.super_POSTer_boost, users.label_type
   FROM posts 
   JOIN users ON posts.user_id = users.id
   LEFT JOIN blocks ON (posts.user_id = blocks.blocked_id AND blocks.blocker_id = ?)
@@ -53,7 +53,7 @@ const getTimelinePostsBefore = db.query(`
 `);
 
 const getFollowingTimelinePosts = db.query(`
-  SELECT posts.*, users.username, users.name, users.avatar, users.verified, users.gold, users.gray, users.checkmark_outline, users.avatar_outline, users.avatar_radius, users.affiliate, users.affiliate_with, users.selected_community_tag, users.super_tweeter, users.super_tweeter_boost, users.label_type
+  SELECT posts.*, users.username, users.name, users.avatar, users.verified, users.gold, users.gray, users.checkmark_outline, users.avatar_outline, users.avatar_radius, users.affiliate, users.affiliate_with, users.selected_community_tag, users.super_POSTer, users.super_POSTer_boost, users.label_type
   FROM posts 
   JOIN follows ON posts.user_id = follows.following_id
   JOIN users ON posts.user_id = users.id
@@ -64,7 +64,7 @@ const getFollowingTimelinePosts = db.query(`
 `);
 
 const getFollowingTimelinePostsBefore = db.query(`
-  SELECT posts.*, users.username, users.name, users.avatar, users.verified, users.gold, users.gray, users.checkmark_outline, users.avatar_outline, users.avatar_radius, users.affiliate, users.affiliate_with, users.selected_community_tag, users.super_tweeter, users.super_tweeter_boost, users.label_type
+  SELECT posts.*, users.username, users.name, users.avatar, users.verified, users.gold, users.gray, users.checkmark_outline, users.avatar_outline, users.avatar_radius, users.affiliate, users.affiliate_with, users.selected_community_tag, users.super_POSTer, users.super_POSTer_boost, users.label_type
   FROM posts 
   JOIN follows ON posts.user_id = follows.following_id
   JOIN users ON posts.user_id = users.id
@@ -81,15 +81,15 @@ const getUserByUsername = db.query(
 	"SELECT id, username, admin FROM users WHERE LOWER(username) = LOWER(?)",
 );
 
-const getSeenTweets = db.query(`
-  SELECT tweet_id, seen_at FROM seen_tweets 
+const getSeenPOSTS = db.query(`
+  SELECT POST_id, seen_at FROM seen_POSTS 
   WHERE user_id = ? AND seen_at > datetime('now', '-7 days')
 `);
 
-const markTweetsAsSeen = db.prepare(`
-  INSERT INTO seen_tweets (id, user_id, tweet_id, seen_at)
+const markPOSTSAsSeen = db.prepare(`
+  INSERT INTO seen_POSTS (id, user_id, POST_id, seen_at)
   VALUES (?, ?, ?, datetime('now', 'utc'))
-  ON CONFLICT(user_id, tweet_id)
+  ON CONFLICT(user_id, POST_id)
   DO UPDATE SET seen_at = excluded.seen_at
 `);
 
@@ -143,7 +143,7 @@ const getAttachmentsByPostId = db.query(`
   SELECT * FROM attachments WHERE post_id = ?
 `);
 
-const getQuotedTweet = db.query(`
+const getQuotedPOST = db.query(`
   SELECT posts.*, users.username, users.name, users.avatar, users.verified, users.gold, users.gray, users.checkmark_outline, users.avatar_outline, users.avatar_radius, users.affiliate, users.affiliate_with, users.label_type
   FROM posts
   JOIN users ON posts.user_id = users.id
@@ -155,7 +155,7 @@ const getTopReply = db.query(`
   FROM posts
   JOIN users ON posts.user_id = users.id
   WHERE posts.reply_to = ? AND users.suspended = 0 AND users.shadowbanned = 0
-  ORDER BY posts.like_count DESC, posts.retweet_count DESC, posts.created_at ASC
+  ORDER BY posts.like_count DESC, posts.rePOST_count DESC, posts.created_at ASC
   LIMIT 1
 `);
 
@@ -184,8 +184,8 @@ const getAuthorReplyToReply = db.query(`
   LIMIT 1
 `);
 
-const getPollDataForTweet = (tweetId, userId) => {
-	const poll = getPollByPostId.get(tweetId);
+const getPollDataForPOST = (POSTId, userId) => {
+	const poll = getPollByPostId.get(POSTId);
 	if (!poll) return null;
 
 	const options = getPollOptions.all(poll.id);
@@ -208,8 +208,8 @@ const getPollDataForTweet = (tweetId, userId) => {
 	};
 };
 
-const getTweetAttachments = (tweetId) => {
-	return getAttachmentsByPostId.all(tweetId);
+const getPOSTAttachments = (POSTId) => {
+	return getAttachmentsByPostId.all(POSTId);
 };
 
 const getBadgesForUsers = (userIds) => {
@@ -251,8 +251,8 @@ const getCardOptions = db.query(`
   SELECT * FROM interactive_card_options WHERE card_id = ? ORDER BY option_order ASC
 `);
 
-const getCardDataForTweet = (tweetId) => {
-	const card = getCardByPostId.get(tweetId);
+const getCardDataForPOST = (POSTId) => {
+	const card = getCardByPostId.get(POSTId);
 	if (!card) return null;
 
 	const options = getCardOptions.all(card.id);
@@ -266,14 +266,14 @@ const getLinkPreviewByPostId = db.query(`
   SELECT * FROM link_previews WHERE post_id = ?
 `);
 
-const getLinkPreviewForTweet = (tweetId) => {
-	return getLinkPreviewByPostId.get(tweetId) || null;
+const getLinkPreviewForPOST = (POSTId) => {
+	return getLinkPreviewByPostId.get(POSTId) || null;
 };
 
 const getTimelinePostsByIds = (ids, userId, isAdmin) => {
 	if (!ids || ids.length === 0) return [];
 	const placeholders = ids.map(() => "?").join(",");
-	const query = `SELECT posts.*, users.username, users.name, users.avatar, users.verified, users.gold, users.gray, users.checkmark_outline, users.avatar_outline, users.avatar_radius, users.affiliate, users.affiliate_with, users.selected_community_tag, users.super_tweeter, users.super_tweeter_boost, users.label_type
+	const query = `SELECT posts.*, users.username, users.name, users.avatar, users.verified, users.gold, users.gray, users.checkmark_outline, users.avatar_outline, users.avatar_radius, users.affiliate, users.affiliate_with, users.selected_community_tag, users.super_POSTer, users.super_POSTer_boost, users.label_type
 			FROM posts
 			JOIN users ON posts.user_id = users.id
 			LEFT JOIN blocks ON (posts.user_id = blocks.blocked_id AND blocks.blocker_id = ?)
@@ -284,29 +284,29 @@ const getTimelinePostsByIds = (ids, userId, isAdmin) => {
 	return stmt.all(userId, userId, userId, isAdmin ? 1 : 0, userId, ...ids);
 };
 
-const getQuotedTweetData = (quoteTweetId, userId, badgesMap = null) => {
-	if (!quoteTweetId) return null;
+const getQuotedPOSTData = (quotePOSTId, userId, badgesMap = null) => {
+	if (!quotePOSTId) return null;
 
-	const quotedTweet = getQuotedTweet.get(quoteTweetId);
-	if (!quotedTweet) return null;
+	const quotedPOST = getQuotedPOST.get(quotePOSTId);
+	if (!quotedPOST) return null;
 
 	const author = {
-		username: quotedTweet.username,
-		name: quotedTweet.name,
-		avatar: quotedTweet.avatar,
-		verified: quotedTweet.verified || false,
-		gold: quotedTweet.gold || false,
-		gray: quotedTweet.gray || false,
-		avatar_radius: quotedTweet.avatar_radius || null,
-		checkmark_outline: quotedTweet.checkmark_outline || null,
-		avatar_outline: quotedTweet.avatar_outline || null,
-		affiliate: quotedTweet.affiliate || false,
-		affiliate_with: quotedTweet.affiliate_with || null,
-		label_type: quotedTweet.label_type || null,
+		username: quotedPOST.username,
+		name: quotedPOST.name,
+		avatar: quotedPOST.avatar,
+		verified: quotedPOST.verified || false,
+		gold: quotedPOST.gold || false,
+		gray: quotedPOST.gray || false,
+		avatar_radius: quotedPOST.avatar_radius || null,
+		checkmark_outline: quotedPOST.checkmark_outline || null,
+		avatar_outline: quotedPOST.avatar_outline || null,
+		affiliate: quotedPOST.affiliate || false,
+		affiliate_with: quotedPOST.affiliate_with || null,
+		label_type: quotedPOST.label_type || null,
 	};
 
-	if (badgesMap?.has(quotedTweet.user_id)) {
-		author.custom_badges = badgesMap.get(quotedTweet.user_id);
+	if (badgesMap?.has(quotedPOST.user_id)) {
+		author.custom_badges = badgesMap.get(quotedPOST.user_id);
 	}
 
 	if (author.affiliate && author.affiliate_with) {
@@ -321,41 +321,41 @@ const getQuotedTweetData = (quoteTweetId, userId, badgesMap = null) => {
 	}
 
 	return {
-		...quotedTweet,
+		...quotedPOST,
 		author,
-		poll: getPollDataForTweet(quotedTweet.id, userId),
-		attachments: getTweetAttachments(quotedTweet.id),
-		interactive_card: getCardDataForTweet(quotedTweet.id),
+		poll: getPollDataForPOST(quotedPOST.id, userId),
+		attachments: getPOSTAttachments(quotedPOST.id),
+		interactive_card: getCardDataForPOST(quotedPOST.id),
 	};
 };
 
 const getTopReplyData = (
-	tweetId,
+	POSTId,
 	userId,
-	tweetAuthorId = null,
+	POSTAuthorId = null,
 	badgesMap = null,
 ) => {
 	let topReply = null;
 	let authorReplied = false;
 	let authorReply = null;
 
-	if (tweetAuthorId) {
+	if (POSTAuthorId) {
 		const replyWithAuthorResponse = getReplyWithAuthorResponse.get(
-			tweetId,
-			tweetAuthorId,
+			POSTId,
+			POSTAuthorId,
 		);
 		if (replyWithAuthorResponse) {
 			topReply = replyWithAuthorResponse;
 			authorReplied = true;
 			authorReply = getAuthorReplyToReply.get(
 				replyWithAuthorResponse.id,
-				tweetAuthorId,
+				POSTAuthorId,
 			);
 		}
 	}
 
 	if (!topReply) {
-		topReply = getTopReply.get(tweetId);
+		topReply = getTopReply.get(POSTId);
 	}
 
 	if (!topReply) return null;
@@ -393,10 +393,10 @@ const getTopReplyData = (
 	const result = {
 		...topReply,
 		author,
-		poll: getPollDataForTweet(topReply.id, userId),
-		quoted_tweet: getQuotedTweetData(topReply.quote_tweet_id, userId),
-		attachments: getTweetAttachments(topReply.id),
-		interactive_card: getCardDataForTweet(topReply.id),
+		poll: getPollDataForPOST(topReply.id, userId),
+		quoted_POST: getQuotedPOSTData(topReply.quote_POST_id, userId),
+		attachments: getPOSTAttachments(topReply.id),
+		interactive_card: getCardDataForPOST(topReply.id),
 		author_replied: authorReplied,
 	};
 
@@ -431,7 +431,7 @@ const getTopReplyData = (
 		result.author_response = {
 			...authorReply,
 			author: arAuthor,
-			attachments: getTweetAttachments(authorReply.id),
+			attachments: getPOSTAttachments(authorReply.id),
 		};
 	}
 
@@ -563,9 +563,9 @@ export default new Elysia({ prefix: "/timeline", tags: ["Timeline"] })
 				});
 			}
 
-			const seenTweets = getSeenTweets.all(user.id);
+			const seenPOSTS = getSeenPOSTS.all(user.id);
 			const seenMeta = new Map(
-				seenTweets.map((row) => [row.tweet_id, row.seen_at]),
+				seenPOSTS.map((row) => [row.POST_id, row.seen_at]),
 			);
 
 			// Ask the C algorithm for globally-ranked candidate IDs from DB
@@ -594,7 +594,7 @@ export default new Elysia({ prefix: "/timeline", tags: ["Timeline"] })
 				// If the ordered result is insufficient, fall back to JS ranking to fill remaining slots
 				if (ordered.length < limit) {
 					// Use earlier posts as fallback
-					const fallback = rankTweets(posts, seenMeta, limit);
+					const fallback = rankPOSTS(posts, seenMeta, limit);
 					// Merge ordered and fallback while removing duplicates
 					const seen = new Set(ordered.map((p) => p.id));
 					for (const f of fallback) {
@@ -605,11 +605,11 @@ export default new Elysia({ prefix: "/timeline", tags: ["Timeline"] })
 				posts = ordered.slice(0, Math.min(limit, ordered.length));
 			} else {
 				// If C failed or returned nothing, fallback to current JS ranking
-				posts = rankTweets(posts, seenMeta, limit);
+				posts = rankPOSTS(posts, seenMeta, limit);
 			}
 
 			for (const post of posts.slice(0, Math.min(limit, posts.length))) {
-				markTweetsAsSeen.run(Bun.randomUUIDv7(), user.id, post.id);
+				markPOSTSAsSeen.run(Bun.randomUUIDv7(), user.id, post.id);
 			}
 			posts = posts.slice(0, limit);
 		}
@@ -765,13 +765,13 @@ export default new Elysia({ prefix: "/timeline", tags: ["Timeline"] })
 		const userLikes = getUserLikesQuery.all(user.id, ...combinedIds);
 		const userLikedPosts = new Set(userLikes.map((like) => like.post_id));
 
-		const getUserRetweetsQuery = db.query(
-			`SELECT post_id FROM retweets WHERE user_id = ? AND post_id IN (${likePlaceholders})`,
+		const getUserRePOSTSQuery = db.query(
+			`SELECT post_id FROM rePOSTS WHERE user_id = ? AND post_id IN (${likePlaceholders})`,
 		);
 
-		const userRetweets = getUserRetweetsQuery.all(user.id, ...combinedIds);
-		const userRetweetedPosts = new Set(
-			userRetweets.map((retweet) => retweet.post_id),
+		const userRePOSTS = getUserRePOSTSQuery.all(user.id, ...combinedIds);
+		const userrePOSTedPosts = new Set(
+			userRePOSTS.map((rePOST) => rePOST.post_id),
 		);
 
 		const getUserBookmarksQuery = db.query(
@@ -799,7 +799,7 @@ export default new Elysia({ prefix: "/timeline", tags: ["Timeline"] })
 
 				if (topReply) {
 					topReply.liked_by_user = userLikedPosts.has(topReply.id);
-					topReply.retweeted_by_user = userRetweetedPosts.has(topReply.id);
+					topReply.rePOSTed_by_user = userrePOSTedPosts.has(topReply.id);
 					topReply.bookmarked_by_user = userBookmarkedPosts.has(topReply.id);
 					topReply.article_preview = topReply.article_id
 						? articleMap.get(topReply.article_id) || null
@@ -813,24 +813,24 @@ export default new Elysia({ prefix: "/timeline", tags: ["Timeline"] })
 					...post,
 					author,
 					liked_by_user: userLikedPosts.has(post.id),
-					retweeted_by_user: userRetweetedPosts.has(post.id),
+					rePOSTed_by_user: userrePOSTedPosts.has(post.id),
 					bookmarked_by_user: userBookmarkedPosts.has(post.id),
 					reaction_count: countReactionsForPost.get(post.id)?.total || 0,
 					top_reactions: getTopReactionsForPost.all(post.id),
-					poll: getPollDataForTweet(post.id, user.id),
-					quoted_tweet: getQuotedTweetData(
-						post.quote_tweet_id,
+					poll: getPollDataForPOST(post.id, user.id),
+					quoted_POST: getQuotedPOSTData(
+						post.quote_POST_id,
 						user.id,
 						badgesMap,
 					),
 					top_reply: shouldShowTopReply ? topReply : null,
-					attachments: getTweetAttachments(post.id),
+					attachments: getPOSTAttachments(post.id),
 					article_preview: post.article_id
 						? articleMap.get(post.article_id) || null
 						: null,
 					fact_check: getFactCheckForPost.get(post.id) || null,
-					interactive_card: getCardDataForTweet(post.id),
-					link_preview: getLinkPreviewForTweet(post.id),
+					interactive_card: getCardDataForPOST(post.id),
+					link_preview: getLinkPreviewForPOST(post.id),
 				};
 			})
 			.filter(Boolean);
@@ -1030,13 +1030,13 @@ export default new Elysia({ prefix: "/timeline", tags: ["Timeline"] })
 		const userLikes = getUserLikesQuery.all(user.id, ...combinedIds);
 		const userLikedPosts = new Set(userLikes.map((like) => like.post_id));
 
-		const getUserRetweetsQuery = db.query(
-			`SELECT post_id FROM retweets WHERE user_id = ? AND post_id IN (${likePlaceholders})`,
+		const getUserRePOSTSQuery = db.query(
+			`SELECT post_id FROM rePOSTS WHERE user_id = ? AND post_id IN (${likePlaceholders})`,
 		);
 
-		const userRetweets = getUserRetweetsQuery.all(user.id, ...combinedIds);
-		const userRetweetedPosts = new Set(
-			userRetweets.map((retweet) => retweet.post_id),
+		const userRePOSTS = getUserRePOSTSQuery.all(user.id, ...combinedIds);
+		const userrePOSTedPosts = new Set(
+			userRePOSTS.map((rePOST) => rePOST.post_id),
 		);
 
 		const getUserBookmarksQuery = db.query(
@@ -1064,7 +1064,7 @@ export default new Elysia({ prefix: "/timeline", tags: ["Timeline"] })
 
 				if (topReply) {
 					topReply.liked_by_user = userLikedPosts.has(topReply.id);
-					topReply.retweeted_by_user = userRetweetedPosts.has(topReply.id);
+					topReply.rePOSTed_by_user = userrePOSTedPosts.has(topReply.id);
 					topReply.bookmarked_by_user = userBookmarkedPosts.has(topReply.id);
 					topReply.article_preview = topReply.article_id
 						? articleMap.get(topReply.article_id) || null
@@ -1078,24 +1078,24 @@ export default new Elysia({ prefix: "/timeline", tags: ["Timeline"] })
 					...post,
 					author,
 					liked_by_user: userLikedPosts.has(post.id),
-					retweeted_by_user: userRetweetedPosts.has(post.id),
+					rePOSTed_by_user: userrePOSTedPosts.has(post.id),
 					bookmarked_by_user: userBookmarkedPosts.has(post.id),
 					reaction_count: countReactionsForPost.get(post.id)?.total || 0,
 					top_reactions: getTopReactionsForPost.all(post.id),
-					poll: getPollDataForTweet(post.id, user.id),
-					quoted_tweet: getQuotedTweetData(
-						post.quote_tweet_id,
+					poll: getPollDataForPOST(post.id, user.id),
+					quoted_POST: getQuotedPOSTData(
+						post.quote_POST_id,
 						user.id,
 						badgesMap,
 					),
 					top_reply: shouldShowTopReply ? topReply : null,
-					attachments: getTweetAttachments(post.id),
+					attachments: getPOSTAttachments(post.id),
 					article_preview: post.article_id
 						? articleMap.get(post.article_id) || null
 						: null,
 					fact_check: getFactCheckForPost.get(post.id) || null,
-					interactive_card: getCardDataForTweet(post.id),
-					link_preview: getLinkPreviewForTweet(post.id),
+					interactive_card: getCardDataForPOST(post.id),
+					link_preview: getLinkPreviewForPOST(post.id),
 				};
 			})
 			.filter(Boolean);

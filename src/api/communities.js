@@ -1061,7 +1061,7 @@ export default new Elysia({ tags: ["Communities"] })
 		},
 	)
 	.get(
-		"/communities/:id/tweets",
+		"/communities/:id/POSTS",
 		async ({ user, params, query, set }) => {
 			const community = getCommunity.get(params.id);
 			if (!community) {
@@ -1072,7 +1072,7 @@ export default new Elysia({ tags: ["Communities"] })
 			const limit = Math.min(parseInt(query.limit, 10) || 20, 100);
 			const offset = parseInt(query.offset, 10) || 0;
 
-			const tweets = db
+			const POSTS = db
 				.query(
 					`
       SELECT posts.*, users.username, users.name, users.avatar, users.verified, users.gold, users.avatar_radius, users.affiliate, users.affiliate_with
@@ -1085,20 +1085,20 @@ export default new Elysia({ tags: ["Communities"] })
 				)
 				.all(params.id, limit, offset);
 
-			const enrichedTweets = tweets.map((tweet) => {
+			const enrichedPOSTS = POSTS.map((POST) => {
 				const attachments = db
 					.query("SELECT * FROM attachments WHERE post_id = ?")
-					.all(tweet.id);
+					.all(POST.id);
 
 				const author = {
-					username: tweet.username,
-					name: tweet.name,
-					avatar: tweet.avatar,
-					verified: tweet.verified || false,
-					gold: tweet.gold || false,
-					avatar_radius: tweet.avatar_radius || null,
-					affiliate: tweet.affiliate || false,
-					affiliate_with: tweet.affiliate_with || null,
+					username: POST.username,
+					name: POST.name,
+					avatar: POST.avatar,
+					verified: POST.verified || false,
+					gold: POST.gold || false,
+					avatar_radius: POST.avatar_radius || null,
+					affiliate: POST.affiliate || false,
+					affiliate_with: POST.affiliate_with || null,
 				};
 
 				if (author.affiliate && author.affiliate_with) {
@@ -1113,36 +1113,36 @@ export default new Elysia({ tags: ["Communities"] })
 				}
 
 				return {
-					...tweet,
+					...POST,
 					author,
 					attachments: attachments || [],
 					liked_by_user: user
 						? !!db
 								.query("SELECT 1 FROM likes WHERE user_id = ? AND post_id = ?")
-								.get(user.userId, tweet.id)
+								.get(user.userId, POST.id)
 						: false,
-					retweeted_by_user: user
+					rePOSTed_by_user: user
 						? !!db
 								.query(
-									"SELECT 1 FROM retweets WHERE user_id = ? AND post_id = ?",
+									"SELECT 1 FROM rePOSTS WHERE user_id = ? AND post_id = ?",
 								)
-								.get(user.userId, tweet.id)
+								.get(user.userId, POST.id)
 						: false,
 					bookmarked_by_user: user
 						? !!db
 								.query(
 									"SELECT 1 FROM bookmarks WHERE user_id = ? AND post_id = ?",
 								)
-								.get(user.userId, tweet.id)
+								.get(user.userId, POST.id)
 						: false,
 				};
 			});
 
-			return { tweets: enrichedTweets };
+			return { POSTS: enrichedPOSTS };
 		},
 		{
 			detail: {
-				description: "Gets a list of tweets in a community",
+				description: "Gets a list of POSTS in a community",
 			},
 			params: t.Object({
 				id: t.String(),

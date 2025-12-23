@@ -53,12 +53,12 @@ function getNotificationUrl(data) {
 
 	switch (data.type) {
 		case "like":
-		case "retweet":
+		case "rePOST":
 		case "reply":
 		case "quote":
 		case "mention":
 		case "reaction":
-			return data.relatedId ? `/tweet/${data.relatedId}` : "/notifications";
+			return data.relatedId ? `/POST/${data.relatedId}` : "/notifications";
 		case "follow":
 			return data.actorUsername ? `/@${data.actorUsername}` : "/notifications";
 		case "dm":

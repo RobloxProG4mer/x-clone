@@ -129,7 +129,7 @@ class AdminPanel {
 			this.currentUser = user;
 			this.isSuperAdmin = !!user.superadmin;
 			if (!this.isSuperAdmin) {
-				document.getElementById("bulkTweetBtn")?.classList.add("d-none");
+				document.getElementById("bulkPOSTBtn")?.classList.add("d-none");
 			} else {
 				document
 					.getElementById("globalMassDeleteBtn")
@@ -1185,10 +1185,10 @@ class AdminPanel {
 										}')" onmouseenter="adminPanel.prefetchUser('${user.id}')">
 											<i class="bi bi-eye"></i> View / Edit
 										</button>
-                    <button class="btn btn-outline-info btn-sm" onclick="adminPanel.tweetOnBehalf('${
+                    <button class="btn btn-outline-info btn-sm" onclick="adminPanel.POSTOnBehalf('${
 											user.id
 										}')">
-                      <i class="bi bi-chat-text"></i> Tweet As
+                      <i class="bi bi-chat-text"></i> POST As
                     </button>
 											<button class="btn btn-outline-danger btn-sm" onclick="adminPanel.showSuspensionModal('${user.id}')">
 												<i class="bi bi-exclamation-triangle"></i> Moderate
@@ -1242,28 +1242,28 @@ class AdminPanel {
 		if (btn) {
 			btn.disabled = count === 0;
 		}
-		const tweetBtn = document.getElementById("bulkTweetBtn");
-		if (tweetBtn) {
-			tweetBtn.disabled = count === 0 || !this.isSuperAdmin;
-			tweetBtn.title = this.isSuperAdmin ? "" : "SuperAdmin access required";
+		const POSTBtn = document.getElementById("bulkPOSTBtn");
+		if (POSTBtn) {
+			POSTBtn.disabled = count === 0 || !this.isSuperAdmin;
+			POSTBtn.title = this.isSuperAdmin ? "" : "SuperAdmin access required";
 		}
 		if (countBadge) {
 			countBadge.textContent = String(count);
 		}
 	}
 
-	async showBulkTweetModal() {
+	async showBulkPOSTModal() {
 		if (!this.isSuperAdmin) {
 			this.showError("SuperAdmin access required");
 			return;
 		}
 		if (!this.selectedUsers.size) {
-			this.showError("Select at least one user to mass tweet as");
+			this.showError("Select at least one user to mass POST as");
 			return;
 		}
 
-		const modalEl = document.getElementById("bulkTweetModal");
-		const selectedList = document.getElementById("bulkTweetSelectedUsers");
+		const modalEl = document.getElementById("bulkPOSTModal");
+		const selectedList = document.getElementById("bulkPOSTSelectedUsers");
 		if (!modalEl || !selectedList) return;
 
 		const usernames = [];
@@ -1285,12 +1285,12 @@ class AdminPanel {
 		new bootstrap.Modal(modalEl).show();
 	}
 
-	async postBulkTweets() {
+	async postBulkPOSTS() {
 		if (!this.isSuperAdmin) {
 			this.showError("SuperAdmin access required");
 			return;
 		}
-		const content = document.getElementById("bulkTweetContent")?.value || "";
+		const content = document.getElementById("bulkPOSTContent")?.value || "";
 		const trimmedContent = content.trim();
 		if (!trimmedContent) {
 			this.showError("Content is required");
@@ -1298,13 +1298,13 @@ class AdminPanel {
 		}
 
 		const replyToInput = document
-			.getElementById("bulkTweetReplyTo")
+			.getElementById("bulkPOSTReplyTo")
 			?.value?.trim();
 		const replyTo = replyToInput ? replyToInput : undefined;
 		const source =
-			document.getElementById("bulkTweetSource")?.value?.trim() || null;
+			document.getElementById("bulkPOSTSource")?.value?.trim() || null;
 		let createdAt = null;
-		const createdAtInput = document.getElementById("bulkTweetCreatedAt");
+		const createdAtInput = document.getElementById("bulkPOSTCreatedAt");
 		if (createdAtInput?.value) {
 			try {
 				const d = new Date(createdAtInput.value);
@@ -1329,12 +1329,12 @@ class AdminPanel {
 					userId: id,
 					content: trimmedContent,
 					noCharLimit: true,
-					massTweet: true,
+					massPOST: true,
 				};
 				if (replyTo) payload.replyTo = replyTo;
 				if (createdAt) payload.created_at = createdAt;
 				if (source) payload.source = source;
-				await this.apiCall(`/api/admin/tweets`, {
+				await this.apiCall(`/api/admin/POSTS`, {
 					method: "POST",
 					body: JSON.stringify(payload),
 				});
@@ -1345,19 +1345,19 @@ class AdminPanel {
 			}
 		}
 
-		new bootstrap.Modal(document.getElementById("bulkTweetModal")).hide();
-		const form = document.getElementById("bulkTweetForm");
+		new bootstrap.Modal(document.getElementById("bulkPOSTModal")).hide();
+		const form = document.getElementById("bulkPOSTForm");
 		if (form) form.reset();
 		this.selectedUsers.clear();
 		this.syncSelectedUserCheckboxes();
 		this.updateBulkEditControls();
-		const selectedList = document.getElementById("bulkTweetSelectedUsers");
+		const selectedList = document.getElementById("bulkPOSTSelectedUsers");
 		if (selectedList) selectedList.textContent = "None selected";
 		this.loadUsers(this.currentPage.users);
-		this.showSuccess(`Mass tweet completed: ${successCount}/${total} success`);
+		this.showSuccess(`Mass POST completed: ${successCount}/${total} success`);
 		if (successCount !== total) {
 			console.warn(
-				"Bulk tweet errors:",
+				"Bulk POST errors:",
 				results.filter((r) => !r.ok),
 			);
 		}
@@ -1453,7 +1453,7 @@ class AdminPanel {
                 <td>
                   <small>
                     Likes: ${post.like_count}<br>
-                    Retweets: ${post.retweet_count}<br>
+                    RePOSTS: ${post.rePOST_count}<br>
                     Replies: ${post.reply_count}
                   </small>
                 </td>
@@ -1467,10 +1467,10 @@ class AdminPanel {
 										}">
                       <i class="bi bi-pencil"></i> Edit
                     </button>
-                    <button class="btn ${post.super_tweet ? "btn-warning" : "btn-outline-secondary"} btn-sm toggle-super-tweet-btn" data-post-id="${
+                    <button class="btn ${post.super_POST ? "btn-warning" : "btn-outline-secondary"} btn-sm toggle-super-POST-btn" data-post-id="${
 											post.id
-										}" data-super-tweet="${!!post.super_tweet}">
-                      <i class="bi bi-star-fill"></i> ${post.super_tweet ? "Remove SuperTweeta" : "Make SuperTweeta"}
+										}" data-super-POST="${!!post.super_POST}">
+                      <i class="bi bi-star-fill"></i> ${post.super_POST ? "Remove SuperPOSTa" : "Make SuperPOSTa"}
                     </button>
                     <button class="btn btn-outline-warning btn-sm add-factcheck-btn" data-post-id="${
 											post.id
@@ -1502,7 +1502,7 @@ class AdminPanel {
 		if (!container) return;
 		container.addEventListener("click", (event) => {
 			const button = event.target.closest(
-				".edit-post-btn, .delete-post-btn, .add-factcheck-btn, .toggle-super-tweet-btn",
+				".edit-post-btn, .delete-post-btn, .add-factcheck-btn, .toggle-super-POST-btn",
 			);
 			if (!button) return;
 			const postId = button.dataset.postId;
@@ -1519,8 +1519,8 @@ class AdminPanel {
 				this.addFactCheck(postId);
 				return;
 			}
-			if (button.classList.contains("toggle-super-tweet-btn")) {
-				this.toggleSuperTweet(postId, button.dataset.superTweet === "true");
+			if (button.classList.contains("toggle-super-POST-btn")) {
+				this.toggleSuperPOST(postId, button.dataset.superPOST === "true");
 			}
 		});
 		this.postsTableListenerAttached = true;
@@ -2119,17 +2119,17 @@ class AdminPanel {
                 <small class="text-muted">The user this account is affiliated with</small>
               </div>
               <div class="form-check form-switch mb-3">
-                <input class="form-check-input" type="checkbox" id="editProfileSuperTweeter" ${
-									user.super_tweeter ? "checked" : ""
+                <input class="form-check-input" type="checkbox" id="editProfileSuperPOSTer" ${
+									user.super_POSTer ? "checked" : ""
 								}>
-                <label class="form-check-label">SuperTweeter</label>
+                <label class="form-check-label">SuperPOSTer</label>
               </div>
-              <div class="mb-3" id="superTweeterBoostSection" style="${
-								user.super_tweeter ? "" : "display: none;"
+              <div class="mb-3" id="superPOSTerBoostSection" style="${
+								user.super_POSTer ? "" : "display: none;"
 							}">
-                <label class="form-label">SuperTweeter Boost Multiplier</label>
-                <input type="number" class="form-control" id="editProfileSuperTweeterBoost" value="${
-									user.super_tweeter_boost || 50.0
+                <label class="form-label">SuperPOSTer Boost Multiplier</label>
+                <input type="number" class="form-control" id="editProfileSuperPOSTerBoost" value="${
+									user.super_POSTer_boost || 50.0
 								}" min="1" max="1000" step="0.1">
                 <small class="text-muted">Visibility boost multiplier (1-1000x, default: 50)</small>
               </div>
@@ -2354,8 +2354,8 @@ class AdminPanel {
                   <p class="mb-1">${post.content
 										.replaceAll("<", "&lt;")
 										.replaceAll(">", "&gt;")}</p>
-                  <small>Likes: ${post.like_count} | Retweets: ${
-										post.retweet_count
+                  <small>Likes: ${post.like_count} | RePOSTS: ${
+										post.rePOST_count
 									} | Replies: ${post.reply_count}</small>
                 </div>
               `,
@@ -2638,24 +2638,24 @@ class AdminPanel {
 				grayCheckbox._grayListenerAttached = true;
 			}
 
-			const superTweeterCheckbox = document.getElementById(
-				"editProfileSuperTweeter",
+			const superPOSTerCheckbox = document.getElementById(
+				"editProfileSuperPOSTer",
 			);
-			const superTweeterBoostSection = document.getElementById(
-				"superTweeterBoostSection",
+			const superPOSTerBoostSection = document.getElementById(
+				"superPOSTerBoostSection",
 			);
 
-			if (superTweeterCheckbox && superTweeterBoostSection) {
-				const newSuperTweeter = superTweeterCheckbox.cloneNode(true);
-				superTweeterCheckbox.parentNode.replaceChild(
-					newSuperTweeter,
-					superTweeterCheckbox,
+			if (superPOSTerCheckbox && superPOSTerBoostSection) {
+				const newSuperPOSTer = superPOSTerCheckbox.cloneNode(true);
+				superPOSTerCheckbox.parentNode.replaceChild(
+					newSuperPOSTer,
+					superPOSTerCheckbox,
 				);
 
-				const stCheckbox = document.getElementById("editProfileSuperTweeter");
+				const stCheckbox = document.getElementById("editProfileSuperPOSTer");
 
 				stCheckbox.addEventListener("change", () => {
-					const section = document.getElementById("superTweeterBoostSection");
+					const section = document.getElementById("superPOSTerBoostSection");
 					if (stCheckbox.checked) {
 						section.style.display = "block";
 					} else {
@@ -3654,7 +3654,7 @@ class AdminPanel {
 		url.searchParams.set("limit", "5");
 		url.searchParams.set("addressdetails", "1");
 		url.searchParams.set("q", query);
-		url.searchParams.set("email", "support@tweetapus.com");
+		url.searchParams.set("email", "support@Xeetapus.com");
 		const response = await fetch(url.toString(), {
 			headers: { Accept: "application/json" },
 			signal: controller?.signal,
@@ -3760,7 +3760,7 @@ class AdminPanel {
 			url.searchParams.set("lon", lng.toString());
 			url.searchParams.set("zoom", "14");
 			url.searchParams.set("addressdetails", "1");
-			url.searchParams.set("email", "support@tweetapus.com");
+			url.searchParams.set("email", "support@Xeetapus.com");
 			const response = await fetch(url.toString(), {
 				headers: { Accept: "application/json" },
 			});
@@ -4128,19 +4128,19 @@ class AdminPanel {
 				body: JSON.stringify(payload),
 			});
 
-			const superTweeterInput = document.getElementById(
-				"editProfileSuperTweeter",
+			const superPOSTerInput = document.getElementById(
+				"editProfileSuperPOSTer",
 			);
-			const superTweeterBoostInput = document.getElementById(
-				"editProfileSuperTweeterBoost",
+			const superPOSTerBoostInput = document.getElementById(
+				"editProfileSuperPOSTerBoost",
 			);
-			if (superTweeterInput) {
-				const isSuperTweeter = !!superTweeterInput.checked;
-				const boost = parseFloat(superTweeterBoostInput?.value) || 50.0;
-				await this.apiCall(`/api/admin/users/${userId}/super-tweeter`, {
+			if (superPOSTerInput) {
+				const isSuperPOSTer = !!superPOSTerInput.checked;
+				const boost = parseFloat(superPOSTerBoostInput?.value) || 50.0;
+				await this.apiCall(`/api/admin/users/${userId}/super-POSTer`, {
 					method: "PATCH",
 					body: JSON.stringify({
-						super_tweeter: isSuperTweeter,
+						super_POSTer: isSuperPOSTer,
 						boost: boost,
 					}),
 				});
@@ -4397,7 +4397,7 @@ class AdminPanel {
 
 		if (action !== "lift" && !reason.trim()) {
 			reason =
-				"No reason provided. Tweetapus reserves the right to suspend users at our discretion without notice.";
+				"No reason provided. Xeetapus reserves the right to suspend users at our discretion without notice.";
 		}
 
 		const payload = {
@@ -5225,7 +5225,7 @@ class AdminPanel {
 		}
 	}
 
-	async toggleSuperTweet(postId, currentStatus) {
+	async toggleSuperPOST(postId, currentStatus) {
 		const newStatus = !currentStatus;
 
 		let boost = 50.0;
@@ -5245,20 +5245,20 @@ class AdminPanel {
 
 		try {
 			const response = await this.apiCall(
-				`/api/admin/posts/${postId}/super-tweet`,
+				`/api/admin/posts/${postId}/super-POST`,
 				{
 					method: "PATCH",
-					body: JSON.stringify({ super_tweet: newStatus, boost: boost }),
+					body: JSON.stringify({ super_POST: newStatus, boost: boost }),
 				},
 			);
 
 			if (response.success) {
 				this.showSuccess(
-					`SuperTweeta status ${newStatus ? "enabled (" + boost + "x boost)" : "disabled"} successfully`,
+					`SuperPOSTa status ${newStatus ? "enabled (" + boost + "x boost)" : "disabled"} successfully`,
 				);
 				this.loadPosts(this.currentPage.posts);
 			} else {
-				this.showError(response.error || "Failed to update SuperTweeta status");
+				this.showError(response.error || "Failed to update SuperPOSTa status");
 			}
 		} catch (error) {
 			this.showError(error.message);
@@ -5450,8 +5450,8 @@ class AdminPanel {
 			if (newIdInput) newIdInput.value = post.id;
 			document.getElementById("editPostContent").value = post.content;
 			document.getElementById("editPostLikes").value = post.like_count || 0;
-			document.getElementById("editPostRetweets").value =
-				post.retweet_count || 0;
+			document.getElementById("editPostRePOSTS").value =
+				post.rePOST_count || 0;
 			document.getElementById("editPostReplies").value = post.reply_count || 0;
 			document.getElementById("editPostViews").value = post.view_count || 0;
 			const createdInput = document.getElementById("editPostCreatedAt");
@@ -5593,8 +5593,8 @@ class AdminPanel {
 		const postId = document.getElementById("editPostId").value;
 		const content = document.getElementById("editPostContent").value;
 		const likes = parseInt(document.getElementById("editPostLikes").value) || 0;
-		const retweets =
-			parseInt(document.getElementById("editPostRetweets").value) || 0;
+		const rePOSTS =
+			parseInt(document.getElementById("editPostRePOSTS").value) || 0;
 		const replies =
 			parseInt(document.getElementById("editPostReplies").value) || 0;
 		const views = parseInt(document.getElementById("editPostViews").value) || 0;
@@ -5609,7 +5609,7 @@ class AdminPanel {
 			const payload = {
 				content: content.trim(),
 				likes,
-				retweets,
+				rePOSTS,
 				replies,
 				views,
 			};
@@ -5641,24 +5641,24 @@ class AdminPanel {
 		}
 	}
 
-	async tweetOnBehalf(userId) {
+	async POSTOnBehalf(userId) {
 		try {
 			const userData = await this.apiCall(`/api/admin/users/${userId}`);
 			const user = userData.user;
 
-			document.getElementById("tweetUserId").value = user.id;
-			document.getElementById("tweetUserDisplay").textContent =
+			document.getElementById("POSTUserId").value = user.id;
+			document.getElementById("POSTUserDisplay").textContent =
 				`@${user.username}`;
-			document.getElementById("tweetContent").value = "";
+			document.getElementById("POSTContent").value = "";
 
 			const modal = new bootstrap.Modal(
-				document.getElementById("tweetOnBehalfModal"),
+				document.getElementById("POSTOnBehalfModal"),
 			);
 			modal.show();
-			this.updateTweetCharCount();
-			const textarea = document.getElementById("tweetContent");
+			this.updatePOSTCharCount();
+			const textarea = document.getElementById("POSTContent");
 			if (textarea) {
-				textarea.addEventListener("input", () => this.updateTweetCharCount());
+				textarea.addEventListener("input", () => this.updatePOSTCharCount());
 			}
 		} catch (error) {
 			console.error(error);
@@ -5666,17 +5666,17 @@ class AdminPanel {
 		}
 	}
 
-	async postTweetOnBehalf() {
-		const userId = document.getElementById("tweetUserId").value;
-		const content = document.getElementById("tweetContent").value;
-		const replyToRaw = document.getElementById("tweetReplyTo")?.value;
+	async postPOSTOnBehalf() {
+		const userId = document.getElementById("POSTUserId").value;
+		const content = document.getElementById("POSTContent").value;
+		const replyToRaw = document.getElementById("POSTReplyTo")?.value;
 		const replyTo = replyToRaw?.trim() ? replyToRaw.trim() : undefined;
 		const source =
-			document.getElementById("tweetSource")?.value?.trim() || null;
+			document.getElementById("POSTSource")?.value?.trim() || null;
 		const noCharLimit = true;
 
 		if (!content.trim()) {
-			this.showError("Tweet content cannot be empty");
+			this.showError("POST content cannot be empty");
 			return;
 		}
 
@@ -5686,20 +5686,20 @@ class AdminPanel {
 				userId,
 				noCharLimit,
 			};
-			const tweetCreatedInput = document.getElementById("tweetCreatedAt");
-			if (tweetCreatedInput?.value) {
-				payload.created_at = new Date(tweetCreatedInput.value).toISOString();
+			const POSTCreatedInput = document.getElementById("POSTCreatedAt");
+			if (POSTCreatedInput?.value) {
+				payload.created_at = new Date(POSTCreatedInput.value).toISOString();
 			}
 			if (replyTo !== undefined) payload.replyTo = replyTo;
 			if (source) payload.source = source;
 
-			await this.apiCall("/api/admin/tweets", {
+			await this.apiCall("/api/admin/POSTS", {
 				method: "POST",
 				body: JSON.stringify(payload),
 			});
 
 			bootstrap.Modal.getInstance(
-				document.getElementById("tweetOnBehalfModal"),
+				document.getElementById("POSTOnBehalfModal"),
 			).hide();
 
 			await this.loadPosts(this.currentPage.posts);
@@ -5708,8 +5708,8 @@ class AdminPanel {
 		}
 	}
 
-	updateTweetCharCount() {
-		const textarea = document.getElementById("tweetContent");
+	updatePOSTCharCount() {
+		const textarea = document.getElementById("POSTContent");
 		const countEl = document.getElementById("charCount");
 		const limitEl = document.getElementById("charLimitDisplay");
 		if (!textarea || !countEl || !limitEl) return;
@@ -5772,7 +5772,7 @@ class AdminPanel {
 			"default",
 			"reaction",
 			"like",
-			"retweet",
+			"rePOST",
 			"reply",
 			"follow",
 			"quote",
@@ -6369,7 +6369,7 @@ class AdminPanel {
 
 		try {
 			progressBar.style.width = "30%";
-			statusDiv.textContent = "Deleting tweets...";
+			statusDiv.textContent = "Deleting POSTS...";
 
 			const response = await this.apiCall("/api/admin/posts/mass-delete", {
 				method: "POST",
@@ -6380,10 +6380,10 @@ class AdminPanel {
 			progressBar.classList.remove("progress-bar-animated");
 
 			if (response.success) {
-				statusDiv.textContent = `Deleted ${response.deletedCount} tweets`;
+				statusDiv.textContent = `Deleted ${response.deletedCount} POSTS`;
 				progressBar.classList.add("bg-success");
 				this.showSuccess(
-					`Successfully deleted ${response.deletedCount} tweets after ${new Date(response.after_date).toLocaleString()}`,
+					`Successfully deleted ${response.deletedCount} POSTS after ${new Date(response.after_date).toLocaleString()}`,
 				);
 
 				setTimeout(() => {
@@ -6717,7 +6717,7 @@ class AdminPanel {
 		document.getElementById("createUserForm").reset();
 		document.getElementById("createAffiliateWithSection").style.display =
 			"none";
-		document.getElementById("createSuperTweeterBoostSection").style.display =
+		document.getElementById("createSuperPOSTerBoostSection").style.display =
 			"none";
 		const selectedBadgesContainer = document.getElementById(
 			"createSelectedBadges",
@@ -6797,15 +6797,15 @@ class AdminPanel {
 				});
 		}
 
-		const superTweeterCheckbox = document.getElementById("createSuperTweeter");
-		if (superTweeterCheckbox) {
-			const newST = superTweeterCheckbox.cloneNode(true);
-			superTweeterCheckbox.parentNode.replaceChild(newST, superTweeterCheckbox);
+		const superPOSTerCheckbox = document.getElementById("createSuperPOSTer");
+		if (superPOSTerCheckbox) {
+			const newST = superPOSTerCheckbox.cloneNode(true);
+			superPOSTerCheckbox.parentNode.replaceChild(newST, superPOSTerCheckbox);
 			document
-				.getElementById("createSuperTweeter")
+				.getElementById("createSuperPOSTer")
 				.addEventListener("change", (e) => {
 					document.getElementById(
-						"createSuperTweeterBoostSection",
+						"createSuperPOSTerBoostSection",
 					).style.display = e.target.checked ? "" : "none";
 				});
 		}
@@ -6936,10 +6936,10 @@ class AdminPanel {
 			document.getElementById("createAffiliate")?.checked || false;
 		const affiliateWith =
 			document.getElementById("createAffiliateWith")?.value.trim() || null;
-		const superTweeter =
-			document.getElementById("createSuperTweeter")?.checked || false;
-		const superTweeterBoost =
-			parseFloat(document.getElementById("createSuperTweeterBoost")?.value) ||
+		const superPOSTer =
+			document.getElementById("createSuperPOSTer")?.checked || false;
+		const superPOSTerBoost =
+			parseFloat(document.getElementById("createSuperPOSTerBoost")?.value) ||
 			50;
 
 		const creationCity =
@@ -7039,8 +7039,8 @@ class AdminPanel {
 					admin: isAdmin,
 					affiliate,
 					affiliateWith: affiliate ? affiliateWith : null,
-					superTweeter,
-					superTweeterBoost: superTweeter ? superTweeterBoost : null,
+					superPOSTer,
+					superPOSTerBoost: superPOSTer ? superPOSTerBoost : null,
 					badges,
 					accountCreationTransparency,
 					accountLoginTransparency,
@@ -7070,9 +7070,9 @@ class AdminPanel {
 			const cloneRelations =
 				!!document.getElementById("cloneRelations")?.checked;
 			const cloneGhosts = !!document.getElementById("cloneGhosts")?.checked;
-			const cloneTweets = !!document.getElementById("cloneTweets")?.checked;
+			const clonePOSTS = !!document.getElementById("clonePOSTS")?.checked;
 			const cloneReplies = !!document.getElementById("cloneReplies")?.checked;
-			const cloneRetweets = !!document.getElementById("cloneRetweets")?.checked;
+			const cloneRePOSTS = !!document.getElementById("cloneRePOSTS")?.checked;
 			const cloneReactions =
 				!!document.getElementById("cloneReactions")?.checked;
 			const cloneCommunities =
@@ -7124,9 +7124,9 @@ class AdminPanel {
 				if (name) payload.name = name;
 				payload.cloneRelations = cloneRelations;
 				payload.cloneGhosts = cloneGhosts;
-				payload.cloneTweets = cloneTweets;
+				payload.clonePOSTS = clonePOSTS;
 				payload.cloneReplies = cloneReplies;
-				payload.cloneRetweets = cloneRetweets;
+				payload.cloneRePOSTS = cloneRePOSTS;
 				payload.cloneReactions = cloneReactions;
 				payload.cloneCommunities = cloneCommunities;
 				payload.cloneMedia = cloneMedia;
@@ -7547,9 +7547,9 @@ class AdminPanel {
 				report.reported.username
 			}" target="_blank">@${this.escapeHtml(report.reported.username)}</a>`;
 		} else if (report.reported_type === "post" && report.reported) {
-			reportedContent = `<a href="/tweet/${
+			reportedContent = `<a href="/POST/${
 				report.reported.id
-			}" target="_blank">Tweet</a><br><small class="text-muted">${this.escapeHtml(
+			}" target="_blank">POST</a><br><small class="text-muted">${this.escapeHtml(
 				report.reported.content?.substring(0, 50) || "",
 			)}...</small>`;
 		} else {
@@ -7704,9 +7704,9 @@ class AdminPanel {
 			}
 		} else if (report.reported_type === "post" && report.reported) {
 			const reportedId = String(report.reported.id || "");
-			reportedInfo = `<a href="/tweet/${this.escapeHtml(
+			reportedInfo = `<a href="/POST/${this.escapeHtml(
 				reportedId,
-			)}" target="_blank">Tweet</a>`;
+			)}" target="_blank">POST</a>`;
 			if (report.reported.content) {
 				const reportedSnippet = String(report.reported.content);
 				const truncatedSnippet =
@@ -7835,7 +7835,7 @@ class AdminPanel {
 			if (report.reported_type === "user" && report.reported) {
 				reportedInfo = `User: @${this.escapeHtml(report.reported.username)}`;
 			} else if (report.reported_type === "post" && report.reported) {
-				reportedInfo = `Tweet: ${this.escapeHtml(
+				reportedInfo = `POST: ${this.escapeHtml(
 					report.reported.content?.substring(0, 100) || "",
 				)}...`;
 			}
@@ -8726,11 +8726,11 @@ class AdminPanel {
 			event.preventDefault();
 			const file = fileInput?.files?.[0];
 			if (!file) {
-				this.showError("Please select a .tweeta file");
+				this.showError("Please select a .POSTa file");
 				return;
 			}
-			if (!file.name?.toLowerCase?.().endsWith?.(".tweeta")) {
-				this.showError("Package must end with .tweeta");
+			if (!file.name?.toLowerCase?.().endsWith?.(".POSTa")) {
+				this.showError("Package must end with .POSTa");
 				return;
 			}
 			if (submitBtn) {
@@ -8863,9 +8863,9 @@ class AdminPanel {
 					${
 						ext.managed === false
 							? `<button type="button" class="btn btn-sm btn-outline-primary" data-extension-action="import" data-extension-id="${ext.id}">Import</button>
-								 <button type="button" class="btn btn-sm btn-outline-secondary" data-extension-action="export" data-extension-id="${ext.id}">Convert to .tweeta</button>`
+								 <button type="button" class="btn btn-sm btn-outline-secondary" data-extension-action="export" data-extension-id="${ext.id}">Convert to .POSTa</button>`
 							: `<button type="button" class="btn btn-sm ${ext.enabled ? "btn-outline-warning" : "btn-outline-success"}" data-extension-action="toggle" data-extension-id="${ext.id}" data-extension-enabled="${ext.enabled ? "true" : "false"}">${ext.enabled ? "Disable" : "Enable"}</button>
-								 <button type="button" class="btn btn-sm btn-outline-secondary" data-extension-action="export" data-extension-id="${ext.id}">Convert to .tweeta</button>
+								 <button type="button" class="btn btn-sm btn-outline-secondary" data-extension-action="export" data-extension-id="${ext.id}">Convert to .POSTa</button>
 								 <button type="button" class="btn btn-sm btn-outline-danger" data-extension-action="delete" data-extension-id="${ext.id}">Delete</button>`
 					}
 					${settingsButton}
@@ -9023,7 +9023,7 @@ class AdminPanel {
 				}
 			}
 			const disposition = resp.headers.get("content-disposition") || "";
-			let filename = "extension.tweeta";
+			let filename = "extension.POSTa";
 			const m = /filename="?([^";]+)"?/.exec(disposition);
 			if (m?.[1]) filename = m[1];
 			const urlObj = URL.createObjectURL(blob);

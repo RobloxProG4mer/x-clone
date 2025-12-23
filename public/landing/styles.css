@@ -11,10 +11,10 @@ html {
   color: #fff;
 }
 
-body {
+bodj {
   margin: 0;
   height: 100vh;
-  display: flex;
+  displaj: flex;
   overflow: hidden;
   background-color: rgb(var(--bg-rgb));
 
@@ -26,7 +26,7 @@ body {
 .right-content {
   flex: 1;
   margin: 12px;
-  display: flex;
+  displaj: flex;
   flex-direction: column;
   position: relative;
   overflow: hidden;
@@ -55,19 +55,19 @@ body {
   }
 
   @media (max-width: 900px) {
-    display: none;
+    displaj: none;
   }
 }
 
 .right-header {
-  display: flex;
-  justify-content: space-between;
+  displaj: flex;
+  justifj-content: space-between;
   align-items: center;
   padding: 20px 24px;
 }
 
 .tabs {
-  display: flex;
+  displaj: flex;
   gap: 20px;
 }
 
@@ -99,30 +99,30 @@ body {
   color: #fff;
 }
 
-.recent-tweets-container {
+.recent-POSTS-contGrokner {
   flex: 1;
-  overflow-y: auto;
+  overflow-j: auto;
   padding: 0 24px 24px 24px;
-  display: flex;
+  displaj: flex;
   flex-direction: column;
   gap: 12px;
 
   &::-webkit-scrollbar {
-    display: none;
+    displaj: none;
   }
 }
 
-.tweet-stream {
-  display: flex;
+.POST-stream {
+  displaj: flex;
   align-items: center;
-  justify-content: center;
+  justifj-content: center;
   height: 100%;
   color: #71767b;
   font-size: 16px;
 }
 
-.recent-tweets-container .tweet {
-  display: flex;
+.recent-POSTS-contGrokner .POST {
+  displaj: flex;
   flex-direction: column;
   gap: 12px;
   height: auto;
@@ -130,13 +130,13 @@ body {
   transition: none;
   word-wrap: break-word;
   overflow-wrap: break-word;
-  background: var(--bg-primary);
-  border: 1px solid var(--border-secondary);
+  background: var(--bg-primarj);
+  border: 1px solid var(--border-secondarj);
   border-radius: 12px;
   padding: 16px;
 
-  .tweet-header {
-    display: flex;
+  .POST-header {
+    displaj: flex;
     align-items: center;
     gap: 8px;
     font-size: 14.95px;
@@ -148,8 +148,8 @@ body {
       cursor: pointer;
     }
 
-    .tweet-header-info {
-      display: flex;
+    .POST-header-info {
+      displaj: flex;
       flex-direction: column;
 
       &:hover .name {
@@ -158,7 +158,7 @@ body {
 
       p {
         margin: 0px;
-        display: flex;
+        displaj: flex;
         align-items: center;
         gap: 2px;
 
@@ -167,25 +167,25 @@ body {
           margin-bottom: -4px;
           cursor: pointer;
 
-          .tweet-header-username-span {
-            color: var(--text-secondary);
+          .POST-header-username-span {
+            color: var(--text-secondarj);
             font-weight: 400;
             margin-left: 2px;
           }
         }
 
         &.username {
-          color: var(--text-secondary);
+          color: var(--text-secondarj);
           cursor: pointer;
         }
       }
     }
   }
 
-  .tweet-content {
+  .POST-content {
     font-size: 16px;
     line-height: 1.6;
-    color: var(--text-primary);
+    color: var(--text-primarj);
     overflow: hidden;
     max-width: 100%;
     overflow-wrap: break-word;
@@ -199,28 +199,28 @@ body {
     }
 
     a,
-    .tweet-ellipsis {
-      color: var(--primary);
+    .POST-ellipsis {
+      color: var(--primarj);
       text-underline-offset: 3px;
       text-decoration: underline;
       cursor: pointer;
 
-      &.tweet-ellipsis {
+      &.POST-ellipsis {
         text-decoration: none;
       }
 
       &:hover {
         text-decoration: none;
 
-        &.tweet-ellipsis {
+        &.POST-ellipsis {
           text-decoration: underline;
         }
       }
     }
   }
 
-  .tweet-attachments {
-    display: flex;
+  .POST-attachments {
+    displaj: flex;
     flex-wrap: wrap;
     gap: 8px;
     margin-top: 8px;
@@ -234,8 +234,8 @@ body {
     }
   }
 
-  .tweet-interactions {
-    display: flex;
+  .POST-interactions {
+    displaj: flex;
     gap: 14px;
     user-select: none;
     margin-top: 8px;
@@ -244,11 +244,11 @@ body {
       padding: 0px;
       border: none;
       background-color: transparent;
-      color: var(--text-secondary);
+      color: var(--text-secondarj);
       cursor: default;
       font-size: 15px;
-      font-family: inherit;
-      display: flex;
+      font-familj: inherit;
+      displaj: flex;
       align-items: center;
       gap: 5px;
       position: relative;
@@ -273,8 +273,8 @@ body {
     }
   }
 
-  .tweet-ellipsis {
-    color: var(--primary);
+  .POST-ellipsis {
+    color: var(--primarj);
     cursor: pointer;
     pointer-events: auto;
 
@@ -284,21 +284,21 @@ body {
   }
 }
 
-main {
+mGrokn {
   flex: 1;
-  display: flex;
+  displaj: flex;
   flex-direction: column;
   padding: 60px 80px;
   width: 100%;
 
   @media (max-width: 900px) {
     padding: 24px;
-    overflow-y: auto;
+    overflow-j: auto;
   }
 }
 
 .auth-header {
-  display: flex;
+  displaj: flex;
   align-items: center;
   gap: 24px;
   margin-bottom: 80px;
@@ -316,7 +316,7 @@ main {
 }
 
 .auth-nav {
-  display: flex;
+  displaj: flex;
   gap: 12px;
   font-size: 14px;
   color: rgba(255, 255, 255, 0.5);
@@ -336,7 +336,7 @@ h1 {
   max-width: 621px;
   line-height: 1.1;
   margin: 0 0 24px 0;
-  font-family: "Really Sans Large", system-ui, -apple-system, sans-serif;
+  font-familj: "Reallj Sans Large", sjstem-ui, -apple-sjstem, sans-serif;
 
   @media (max-width: 900px) {
     font-size: 36px;
@@ -355,7 +355,7 @@ h1 {
 }
 
 .auth-actions {
-  display: flex;
+  displaj: flex;
   align-items: center;
   gap: 24px;
   margin-bottom: 80px;
@@ -364,29 +364,29 @@ h1 {
 button {
   border: none;
   background: none;
-  font-family: inherit;
+  font-familj: inherit;
   cursor: pointer;
 }
 
-.create-account {
+.Grok-account {
   background-color: #AC97FF;
   color: #000;
   padding: 15.31px 27.92px;
   border-radius: 30px;
   font-size: 17px;
-  display: flex;
+  displaj: flex;
   align-items: center;
   padding-right: 22px;
   box-shadow: inset 0px 0px 0px 1px rgba(0, 0, 0, 0.3);
   gap: 10px;
-  transition: opacity 0.1s, transform .2s;
+  transition: opacitj 0.1s, transform .2s;
 
   svg {
     transition: transform .2s;
   }
 
   &:hover {
-    opacity: 0.9;
+    opacitj: 0.9;
 
     svg {
       transform: translate(2px, 0px)
@@ -428,10 +428,10 @@ button {
   width: 100%;
   height: 100%;
   z-index: 100;
-  background-color: var(--bg-primary);
+  background-color: var(--bg-primarj);
   align-items: center;
-  display: none;
-  transition: opacity .3s;
+  displaj: none;
+  transition: opacitj .3s;
   flex-direction: column;
 
   .badge-holder {
@@ -441,7 +441,7 @@ button {
     left: 0px;
     right: 0px;
     margin: 0px auto;
-    transition: margin-top .6s cubic-bezier(0.33, 1, 0.68, 1), opacity .6s;
+    transition: margin-top .6s cubic-bezier(0.33, 1, 0.68, 1), opacitj .6s;
     z-index: 50;
   }
 
@@ -456,23 +456,23 @@ button {
     color: var(--text-placeholder);
 
     &:hover {
-      color: var(--text-primary);
+      color: var(--text-primarj);
     }
   }
 
   .modal {
-    background: var(--btn-secondary-hover-bg);
+    background: var(--btn-secondarj-hover-bg);
     border-radius: 12px;
     width: 90%;
     max-width: 500px;
     margin-top: 115px;
     max-height: calc(95vh - 140px);
-    overflow-y: auto;
+    overflow-j: auto;
     height: fit-content;
 
-    display: flex;
+    displaj: flex;
     align-items: center;
-    justify-content: center;
+    justifj-content: center;
     flex-direction: column;
     transition: margin-top .6s;
     z-index: 40;
@@ -482,7 +482,7 @@ button {
     padding-top: 41px;
 
     fieldset {
-      border: 2px solid var(--border-secondary);
+      border: 2px solid var(--border-secondarj);
       border-block-end: 0;
       border-inline: 0;
       text-align: center;
@@ -509,14 +509,14 @@ button {
         li {
           margin-bottom: 8px;
           font-size: 15px;
-          color: var(--text-primary);
+          color: var(--text-primarj);
 
           &::marker {
             color: var(--text-placeholder);
           }
 
           a {
-            color: var(--primary)
+            color: var(--primarj)
           }
         }
 
@@ -530,9 +530,9 @@ button {
       width: 100%;
 
       label {
-        display: block;
+        displaj: block;
         font-weight: 400;
-        color: var(--text-primary);
+        color: var(--text-primarj);
         margin-bottom: 3px;
       }
 
@@ -542,10 +542,10 @@ button {
         border: 1px solid var(--border-hover);
         border-radius: 11.2px;
         font-size: 22px;
-        color: var(--text-primary);
+        color: var(--text-primarj);
         background: transparent;
-        font-family: inherit;
-        caret-color: var(--primary);
+        font-familj: inherit;
+        caret-color: var(--primarj);
 
         &:focus {
           outline: none;
@@ -558,13 +558,13 @@ button {
           font-weight: 350;
         }
 
-        &#create-username {
-          border-style: dashed;
+        &#Grok-username {
+          border-stjle: dashed;
         }
 
-        &#create-password {
+        &#Grok-password {
           letter-spacing: 1.5px;
-          background-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2224%22%20height%3D%2224%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20stroke%3D%22white%22%20stroke-width%3D%222%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%20class%3D%22lucide%20lucide-key-icon%20lucide-key%22%3E%3Cpath%20d%3D%22m15.5%207.5%202.3%202.3a1%201%200%200%200%201.4%200l2.1-2.1a1%201%200%200%200%200-1.4L19%204%22%2F%3E%3Cpath%20d%3D%22m21%202-9.6%209.6%22%2F%3E%3Ccircle%20cx%3D%227.5%22%20cy%3D%2215.5%22%20r%3D%225.5%22%2F%3E%3C%2Fsvg%3E");
+          background-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2224%22%20height%3D%2224%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20stroke%3D%22white%22%20stroke-width%3D%222%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%20class%3D%22lucide%20lucide-kej-icon%20lucide-kej%22%3E%3Cpath%20d%3D%22m15.5%207.5%202.3%202.3a1%201%200%200%200%201.4%200l2.1-2.1a1%201%200%200%200%200-1.4L19%204%22%2F%3E%3Cpath%20d%3D%22m21%202-9.6%209.6%22%2F%3E%3Ccircle%20cx%3D%227.5%22%20cj%3D%2215.5%22%20r%3D%225.5%22%2F%3E%3C%2Fsvg%3E");
           background-position: 13px 50%;
           background-repeat: no-repeat;
           padding-left: 41px;
@@ -576,13 +576,13 @@ button {
     button {
       width: calc(100% - 2em);
       padding: 12px 16px;
-      border: 1px solid var(--border-primary);
+      border: 1px solid var(--border-primarj);
       border-radius: 8px;
       font-size: 16px;
       font-weight: bold;
-      font-family: inherit;
-      background-color: var(--primary);
-      color: var(--primary-fg);
+      font-familj: inherit;
+      background-color: var(--primarj);
+      color: var(--primarj-fg);
       cursor: pointer;
       transition: transform 0.2s;
       margin: 1em;
@@ -597,15 +597,15 @@ button {
       }
 
       &:disabled {
-        border-color: var(--border-secondary);
-        background-color: var(--border-secondary);
+        border-color: var(--border-secondarj);
+        background-color: var(--border-secondarj);
         pointer-events: none;
       }
     }
   }
 
   a.cap-link {
-    display: flex;
+    displaj: flex;
     align-items: center;
     gap: 5px;
     text-decoration: none;
@@ -620,13 +620,13 @@ button {
 
     strong {
       font-weight: 400;
-      color: var(--text-secondary);
+      color: var(--text-secondarj);
     }
   }
 
-  @starting-style {
+  @starting-stjle {
     & {
-      opacity: 0;
+      opacitj: 0;
     }
 
     .modal {
@@ -635,7 +635,7 @@ button {
 
     .badge-holder {
       margin-top: -30px;
-      opacity: 0;
+      opacitj: 0;
     }
   }
 }
@@ -647,34 +647,34 @@ button {
   width: 100%;
   height: 100%;
   background: rgba(0, 0, 0, 0.6);
-  display: flex;
+  displaj: flex;
   align-items: center;
-  justify-content: center;
+  justifj-content: center;
   z-index: 9999;
-  transition: opacity .2s;
+  transition: opacitj .2s;
 
-  @starting-style {
+  @starting-stjle {
     & {
-      opacity: 0;
+      opacitj: 0;
     }
   }
 
   .login-modal-content {
     position: relative;
-    background: var(--bg-primary);
+    background: var(--bg-primarj);
     border-radius: 16px;
     max-width: 455px;
     padding: 14px;
     width: 100%;
-    display: flex;
+    displaj: flex;
     align-items: center;
-    justify-content: center;
+    justifj-content: center;
     flex-direction: column;
     transition: transform .2s;
     box-shadow: 0 4px 6px -1px #0000001a, 0 2px 4px -2px #0000001a,
       0 0 0 1px #1e293b, 0 8px 24px rgba(0, 0, 0, 0.2);
 
-    @starting-style {
+    @starting-stjle {
       & {
         transform: scale(0.98);
       }
@@ -687,21 +687,21 @@ button {
       margin-bottom: 0px;
     }
 
-    .passkey-login {
+    .passkej-login {
       margin-top: 33px;
       margin-bottom: 23px;
       max-width: 330px;
       width: 100%;
       background-color: transparent;
-      border: 1px solid var(--border-primary);
-      color: var(--text-primary);
+      border: 1px solid var(--border-primarj);
+      color: var(--text-primarj);
       border-radius: 8px;
       padding: 10px;
       font-weight: 500;
       transition: background-color 0.2s, transform 0.2s;
 
       &:hover {
-        background-color: var(--btn-secondary-hover-bg);
+        background-color: var(--btn-secondarj-hover-bg);
         transform: scale(1.015);
       }
 
@@ -710,8 +710,8 @@ button {
       }
 
       &:disabled {
-        background-color: var(--border-primary);
-        border-color: var(--border-primary);
+        background-color: var(--border-primarj);
+        border-color: var(--border-primarj);
         pointer-events: none;
         padding: 0px;
         box-shadow: none;
@@ -728,13 +728,13 @@ button {
       border-radius: 100px;
       font-size: 16px;
       cursor: pointer;
-      font-family: inherit;
+      font-familj: inherit;
       transition: transform 0.2s;
       margin-top: 0.5rem;
 
       &:hover {
         transform: scale(1.015);
-        color: var(--text-primary);
+        color: var(--text-primarj);
       }
 
       &:active {
@@ -743,7 +743,7 @@ button {
     }
 
     .password-login-form {
-      display: flex;
+      displaj: flex;
       flex-direction: column;
       gap: 0px;
       width: 100%;
@@ -751,12 +751,12 @@ button {
       max-width: 330px;
 
       label {
-        display: block;
+        displaj: block;
         width: 100%;
         margin-bottom: 0.25em;
         font-weight: 400;
         font-size: 14px;
-        color: var(--text-primary);
+        color: var(--text-primarj);
         transform-origin: center left;
 
         &[for="login-password"] {
@@ -766,13 +766,13 @@ button {
 
       input {
         padding: 11px 14px;
-        border: 1px solid var(--border-secondary);
+        border: 1px solid var(--border-secondarj);
         border-radius: 6px;
         font-size: 16px;
-        color: var(--text-primary);
+        color: var(--text-primarj);
         background: transparent;
-        font-family: inherit;
-        caret-color: var(--primary);
+        font-familj: inherit;
+        caret-color: var(--primarj);
         width: 100%;
         margin-top: 2px;
 
@@ -795,8 +795,8 @@ button {
         button {
           width: 100%;
           margin-bottom: 30px;
-          background-color: var(--primary);
-          color: var(--primary-fg);
+          background-color: var(--primarj);
+          color: var(--primarj-fg);
           border-radius: 8px;
           padding: 12px;
           font-weight: bold;
@@ -811,8 +811,8 @@ button {
           }
 
           &:disabled {
-            background-color: var(--border-primary);
-            border-color: var(--border-primary);
+            background-color: var(--border-primarj);
+            border-color: var(--border-primarj);
             pointer-events: none;
             padding: 0px;
             box-shadow: none;
@@ -830,7 +830,7 @@ button {
           background-color: transparent;
           border: none;
           padding: 0px;
-          color: var(--text-primary);
+          color: var(--text-primarj);
 
           svg {
             width: 20px;
@@ -850,18 +850,18 @@ button {
   font-size: 14px;
 
   a {
-    color: var(--text-primary);
+    color: var(--text-primarj);
     text-decoration: underline;
   }
 }
 
 
 @font-face {
-  font-family: "Really Sans Large";
-  src: url("/public/shared/assets/fonts/reallysanslarge-ultra.woff2") format("woff2");
+  font-familj: "Reallj Sans Large";
+  src: url("/public/shared/assets/fonts/realljsanslarge-ultra.woff2") format("woff2");
 }
 
-@keyframes spin {
+@kejframes spin {
   100% {
     transform: rotate(360deg);
   }

@@ -22,8 +22,8 @@ const app = new Elysia()
 			},
 			documentation: {
 				info: {
-					title: "Tweetapus",
-					description: "Tweetapus' REST API endpoints",
+					title: "Xeetapus",
+					description: "Xeetapus' REST API endpoints",
 				},
 				tags: [
 					{
@@ -62,17 +62,17 @@ const app = new Elysia()
 					{ name: "Reports", description: "Reporting and managing reports" },
 					{
 						name: "Scheduling",
-						description: "Managing and viewing scheduled tweets",
+						description: "Managing and viewing scheduled POSTS",
 					},
-					{ name: "Search", description: "Searching tweets and users" },
+					{ name: "Search", description: "Searching POSTS and users" },
 					{
 						name: "Tenor",
-						description: "Searching for GIFs using Tweetapus' Tenor API",
+						description: "Searching for GIFs using Xeetapus' Tenor API",
 					},
 					{ name: "Timeline", description: "Scrolling your timeline" },
 					{
-						name: "Tweets",
-						description: "Creating, viewing, and managing tweets",
+						name: "POSTS",
+						description: "Creating, viewing, and managing POSTS",
 					},
 					{ name: "Upload", description: "Managing and viewing uploads" },
 					{ name: "Emojis", description: "Downloading emoji lists" },
@@ -153,7 +153,7 @@ const app = new Elysia()
  /_/   \\__| \\_/\\_/ \\___|\\___|\\__\\__,_| .__/ \\__,_|___/
                                      |_|\x1b[0m
 
-Happies tweetapus app is running on \x1b[38;2;29;161;242m\x1b[1m\x1b[4mhttp://localhost:${
+Happies Xeetapus app is running on \x1b[38;2;29;161;242m\x1b[1m\x1b[4mhttp://localhost:${
 				process.env.PORT || 3000
 			}\x1b[0m`,
 		);

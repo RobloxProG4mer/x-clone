@@ -3,7 +3,7 @@
   "configVersion": 1,
   "workspaces": {
     "": {
-      "name": "tweetapus",
+      "name": "Xeetapus",
       "dependencies": {
         "@cap.js/server": "^4.0.4",
         "@elysiajs/jwt": "^1.4.0",

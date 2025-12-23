@@ -12,7 +12,7 @@ import extensions from "./api/extensions.js";
 import lists from "./api/lists.js";
 import notifications from "./api/notifications.js";
 import profile from "./api/profile.js";
-import publicTweets from "./api/public-tweets.js";
+import publicPOSTS from "./api/public-POSTS.js";
 import push from "./api/push.js";
 import reports from "./api/reports.js";
 import scheduled from "./api/scheduled.js";
@@ -21,7 +21,7 @@ import tenor from "./api/tenor.js";
 import timeline from "./api/timeline.js";
 import translate from "./api/translate.js";
 import trends from "./api/trends.js";
-import tweet from "./api/tweet.js";
+import POST from "./api/POST.js";
 import unsplash from "./api/unsplash.js";
 import upload, { uploadRoutes } from "./api/upload.js";
 import db from "./db.js";
@@ -382,7 +382,7 @@ export default new Elysia({
 			author_name: `${author} (@${handle})`,
 			author_url: `${process.env.BASE_URL}/@${handle}`,
 
-			provider_name: `Tweetapus`,
+			provider_name: `Xeetapus`,
 			provider_url: process.env.BASE_URL,
 
 			cache_age: 86400,
@@ -427,11 +427,11 @@ export default new Elysia({
 	.use(bookmarks)
 	.use(communities)
 	.use(delegates)
-	.use(tweet)
+	.use(POST)
 	.use(articles)
 	.use(profile)
 	.use(timeline)
-	.use(publicTweets)
+	.use(publicPOSTS)
 	.use(search)
 	.use(upload)
 	.use(extensions)

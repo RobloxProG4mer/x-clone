@@ -1,21 +1,21 @@
 import {
 	createNewsSkeleton,
-	createTweetSkeleton,
+	createPOSTSkeleton,
 	createUserSkeleton,
 	removeSkeletons,
 	showSkeletons,
 } from "../../shared/skeleton-utils.js";
 import { updateTabIndicator } from "../../shared/tab-indicator.js";
 import query from "./api.js";
-import { createTweetElement } from "./tweets.js";
+import { createPOSTElement } from "./POSTS.js";
 
 const searchPageInput = document.getElementById("searchPageInput");
 const filterBtns = document.querySelectorAll(".filter-btn");
 const searchEmpty = document.getElementById("searchEmpty");
 const usersSection = document.getElementById("usersSection");
-const tweetsSection = document.getElementById("tweetsSection");
+const POSTSSection = document.getElementById("POSTSSection");
 const usersResults = document.querySelector(".users-results-page");
-const tweetsResults = document.querySelector(".tweets-results-page");
+const POSTSResults = document.querySelector(".POSTS-results-page");
 
 let currentFilter = "all";
 let searchTimeout;
@@ -39,7 +39,7 @@ const performSearch = async (q) => {
 	searchEmpty.style.display = "none";
 
 	let userSkeletons = [];
-	let tweetSkeletons = [];
+	let POSTSkeletons = [];
 
 	if (currentFilter === "all" || currentFilter === "users") {
 		usersSection.style.display = "block";
@@ -47,10 +47,10 @@ const performSearch = async (q) => {
 		userSkeletons = showSkeletons(usersResults, createUserSkeleton, 3);
 	}
 
-	if (currentFilter === "all" || currentFilter === "tweets") {
-		tweetsSection.style.display = "block";
-		tweetsResults.innerHTML = "";
-		tweetSkeletons = showSkeletons(tweetsResults, createTweetSkeleton, 3);
+	if (currentFilter === "all" || currentFilter === "POSTS") {
+		POSTSSection.style.display = "block";
+		POSTSResults.innerHTML = "";
+		POSTSkeletons = showSkeletons(POSTSResults, createPOSTSkeleton, 3);
 	}
 
 	try {
@@ -66,7 +66,7 @@ const performSearch = async (q) => {
 			);
 		}
 
-		if (currentFilter === "all" || currentFilter === "tweets") {
+		if (currentFilter === "all" || currentFilter === "POSTS") {
 			promises.push(
 				query(`/search/posts?q=${encoded}`, {
 					signal: controller.signal,
@@ -77,7 +77,7 @@ const performSearch = async (q) => {
 		const results = await Promise.all(promises);
 
 		removeSkeletons(userSkeletons);
-		removeSkeletons(tweetSkeletons);
+		removeSkeletons(POSTSkeletons);
 
 		if (controller.signal.aborted || searchId !== lastSearchId) return;
 
@@ -99,7 +99,7 @@ const performSearch = async (q) => {
 			posts = postsData?.posts || [];
 		} else if (currentFilter === "users") {
 			users = results[0]?.users || [];
-		} else if (currentFilter === "tweets") {
+		} else if (currentFilter === "POSTS") {
 			posts = results[0]?.posts || [];
 		}
 
@@ -111,7 +111,7 @@ const performSearch = async (q) => {
 		displayResults(users, posts);
 	} catch (error) {
 		removeSkeletons(userSkeletons);
-		removeSkeletons(tweetSkeletons);
+		removeSkeletons(POSTSkeletons);
 		if (controller.signal.aborted) return;
 		console.error("Search error:", error);
 	} finally {
@@ -124,13 +124,13 @@ const displayResults = (users, posts) => {
 
 	if (currentFilter === "all") {
 		usersSection.style.display = users.length > 0 ? "block" : "none";
-		tweetsSection.style.display = posts.length > 0 ? "block" : "none";
+		POSTSSection.style.display = posts.length > 0 ? "block" : "none";
 	} else if (currentFilter === "users") {
 		usersSection.style.display = "block";
-		tweetsSection.style.display = "none";
-	} else if (currentFilter === "tweets") {
+		POSTSSection.style.display = "none";
+	} else if (currentFilter === "POSTS") {
 		usersSection.style.display = "none";
-		tweetsSection.style.display = "block";
+		POSTSSection.style.display = "block";
 	}
 
 	const escapeHtml = (str) => {
@@ -161,13 +161,13 @@ const displayResults = (users, posts) => {
 		})
 		.join("");
 
-	tweetsResults.innerHTML = "";
+	POSTSResults.innerHTML = "";
 	posts.forEach((post) => {
-		const tweetEl = createTweetElement(post, {
+		const POSTEl = createPOSTElement(post, {
 			clickToOpen: true,
 			showTopReply: true,
 		});
-		tweetsResults.appendChild(tweetEl);
+		POSTSResults.appendChild(POSTEl);
 	});
 
 	if (users.length === 0 && posts.length === 0) {
@@ -178,7 +178,7 @@ const displayResults = (users, posts) => {
 const showEmptyState = async () => {
 	searchEmpty.style.display = "block";
 	usersSection.style.display = "none";
-	tweetsSection.style.display = "none";
+	POSTSSection.style.display = "none";
 
 	searchEmpty.innerHTML = "";
 	const skeletons = showSkeletons(searchEmpty, createNewsSkeleton, 4);
@@ -291,7 +291,7 @@ ${
 const showNoResultsState = () => {
 	searchEmpty.style.display = "block";
 	usersSection.style.display = "none";
-	tweetsSection.style.display = "none";
+	POSTSSection.style.display = "none";
 
 	searchEmpty.innerHTML = `
 			<svg class="search-empty-icon" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">

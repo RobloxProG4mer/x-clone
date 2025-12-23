@@ -16,18 +16,18 @@ import getUser from "./auth.js";
 import switchPage from "./pages.js";
 import { searchQuery } from "./search.js";
 import { maybeAddTranslation } from "./translate.js";
-import openTweet from "./tweet.js";
+import openPOST from "./POST.js";
 
-const tweetStateStore = new Map();
+const POSTStateStore = new Map();
 
-export function updateTweetState(tweetId, updates) {
-	if (!tweetStateStore.has(tweetId)) {
-		tweetStateStore.set(tweetId, {});
+export function updatePOSTState(POSTId, updates) {
+	if (!POSTStateStore.has(POSTId)) {
+		POSTStateStore.set(POSTId, {});
 	}
-	const state = tweetStateStore.get(tweetId);
+	const state = POSTStateStore.get(POSTId);
 	Object.assign(state, updates);
 
-	document.querySelectorAll(`[data-tweet-id="${tweetId}"]`).forEach((el) => {
+	document.querySelectorAll(`[data-POST-id="${POSTId}"]`).forEach((el) => {
 		if (updates.liked_by_user !== undefined) {
 			const likeBtn = el.querySelector(".engagement[data-liked]");
 			if (likeBtn) {
@@ -51,32 +51,32 @@ export function updateTweetState(tweetId, updates) {
 			}
 		}
 
-		if (updates.retweeted_by_user !== undefined) {
-			const retweetBtn = el.querySelector(".engagement[data-retweeted]");
-			if (retweetBtn) {
-				const svgPaths = retweetBtn.querySelectorAll("svg path");
-				const retweetCountSpan = retweetBtn.querySelector(".retweet-count");
-				retweetBtn.dataset.retweeted = updates.retweeted_by_user;
+		if (updates.rePOSTed_by_user !== undefined) {
+			const rePOSTBtn = el.querySelector(".engagement[data-rePOSTed]");
+			if (rePOSTBtn) {
+				const svgPaths = rePOSTBtn.querySelectorAll("svg path");
+				const rePOSTCountSpan = rePOSTBtn.querySelector(".rePOST-count");
+				rePOSTBtn.dataset.rePOSTed = updates.rePOSTed_by_user;
 
-				const color = updates.retweeted_by_user ? "#00BA7C" : "currentColor";
+				const color = updates.rePOSTed_by_user ? "#00BA7C" : "currentColor";
 				svgPaths.forEach((path) => {
 					path.setAttribute("stroke", color);
 				});
 
-				if (updates.retweet_count !== undefined) {
-					retweetBtn.dataset.retweetCount = updates.retweet_count;
-					retweetCountSpan.textContent =
-						updates.retweet_count === 0
+				if (updates.rePOST_count !== undefined) {
+					rePOSTBtn.dataset.rePOSTCount = updates.rePOST_count;
+					rePOSTCountSpan.textContent =
+						updates.rePOST_count === 0
 							? ""
-							: formatNumber(updates.retweet_count);
+							: formatNumber(updates.rePOST_count);
 				}
 			}
 		}
 	});
 }
 
-export function getTweetState(tweetId) {
-	return tweetStateStore.get(tweetId) || {};
+export function getPOSTState(POSTId) {
+	return POSTStateStore.get(POSTId) || {};
 }
 
 function formatNumber(num) {
@@ -129,7 +129,7 @@ const attachCheckmarkPopup = (badgeEl, type) => {
 	if (!badgeEl) return;
 	const message =
 		type === "gold"
-			? "This account is verified because it's an official organization on Tweetapus."
+			? "This account is verified because it's an official organization on Xeetapus."
 			: type === "gray"
 				? "This account is verified because it is a government or multilateral organization account."
 				: "This account is verified.";
@@ -347,16 +347,16 @@ const createBlockedModal = () => {
 <p style="margin: 0; color: var(--text-secondary); line-height: 1.5;text-align:left">
 <strong>What this means for you:</strong></p>
 <ul style="margin-top:6px;text-align:left;display:flex;gap:6px;flex-direction: column;    padding-left: 18px;">
-<li>You will not be able to interact with tweets from this user</li>
+<li>You will not be able to interact with POSTS from this user</li>
 <li>You will not be able to follow or DM this user</li>
 <li>This may impact your engagement and algorithm score negatively. You can learn more about your score in "Algorithm Impact" in Settings.</li>
 </ul>
 <p style="margin: 0; color: var(--text-secondary); line-height: 1.5;text-align:left">
 <strong>What this means for the user:</strong></p>
 <ul style="margin-top:6px;text-align:left;display:flex;gap:6px;flex-direction: column;    padding-left: 18px;">
-<li>They will not be able to see your tweets in their timeline</li>
+<li>They will not be able to see your POSTS in their timeline</li>
 <li>They won't be able to interact with your profile either</li>
-<li>They won't get notifications for your tweets</li>
+<li>They won't get notifications for your POSTS</li>
 </ul>
 <p style="margin: 0; color: var(--text-secondary); line-height: 1.5;text-align:left">If you believe this is part of an algorithm manipulation campaign, please contact us.</p>
 </div>`,
@@ -504,9 +504,9 @@ function avatarPxToPercent(px) {
 	return `${clamped}%`;
 }
 
-async function checkReplyPermissions(tweet, replyRestriction) {
+async function checkReplyPermissions(POST, replyRestriction) {
 	try {
-		const data = await query(`/tweets/can-reply/${tweet.id}`);
+		const data = await query(`/POSTS/can-reply/${POST.id}`);
 
 		if (data.error) {
 			return {
@@ -518,10 +518,10 @@ async function checkReplyPermissions(tweet, replyRestriction) {
 		let restrictionText = "";
 		switch (replyRestriction) {
 			case "following":
-				restrictionText = `Only people @${tweet.author.username} follows can reply`;
+				restrictionText = `Only people @${POST.author.username} follows can reply`;
 				break;
 			case "followers":
-				restrictionText = `Only people who follow @${tweet.author.username} can reply`;
+				restrictionText = `Only people who follow @${POST.author.username} can reply`;
 				break;
 			case "verified":
 				restrictionText = "Only verified users can reply";
@@ -529,7 +529,7 @@ async function checkReplyPermissions(tweet, replyRestriction) {
 			default:
 				restrictionText = data.canReply
 					? "You can reply"
-					: "You cannot reply to this tweet";
+					: "You cannot reply to this POST";
 		}
 
 		return { canReply: data.canReply, restrictionText };
@@ -621,11 +621,11 @@ const linkifyText = (text) => {
 
 	let processedHtml = html.replace(
 		/<span data-mention="([^"]+)">@\1<\/span>/g,
-		'<a href="javascript:" class="tweet-mention" data-username="$1">@$1</a>',
+		'<a href="javascript:" class="POST-mention" data-username="$1">@$1</a>',
 	);
 	processedHtml = processedHtml.replace(
 		/<span data-hashtag="([^"]+)">#\1<\/span>/g,
-		'<a href="javascript:" class="tweet-hashtag" data-hashtag="$1">#$1</a>',
+		'<a href="javascript:" class="POST-hashtag" data-hashtag="$1">#$1</a>',
 	);
 
 	processedHtml = processCustomMarkdown(processedHtml);
@@ -732,11 +732,11 @@ const formatTimeRemaining = (expiresAt) => {
 	return `${minutes}m left`;
 };
 
-const createPollElement = (poll, tweet) => {
+const createPollElement = (poll, POST) => {
 	if (!poll) return null;
 
 	const pollEl = document.createElement("div");
-	pollEl.className = "tweet-poll";
+	pollEl.className = "POST-poll";
 
 	const pollOptionsEl = document.createElement("div");
 	pollOptionsEl.className = "poll-options";
@@ -775,7 +775,7 @@ const createPollElement = (poll, tweet) => {
 			optionEl.addEventListener("click", (e) => {
 				e.preventDefault();
 				e.stopPropagation();
-				votePoll(tweet.id, option.id, pollEl);
+				votePoll(POST.id, option.id, pollEl);
 			});
 		}
 
@@ -833,9 +833,9 @@ const createPollElement = (poll, tweet) => {
 	return pollEl;
 };
 
-const votePoll = async (tweetId, optionId, pollElement) => {
+const votePoll = async (POSTId, optionId, pollElement) => {
 	try {
-		const result = await query(`/tweets/${tweetId}/poll/vote`, {
+		const result = await query(`/POSTS/${POSTId}/poll/vote`, {
 			method: "POST",
 			headers: {
 				"Content-Type": "application/json",
@@ -928,12 +928,12 @@ const updatePollDisplay = (pollElement, poll) => {
 	metaContainer.appendChild(pollTimeEl);
 };
 
-async function showInteractionsModal(tweetId, initialTab = "likes") {
+async function showInteractionsModal(POSTId, initialTab = "likes") {
 	const { observeTabContainer, updateTabIndicator } = await import(
 		"../../shared/tab-indicator.js"
 	);
 	const {
-		createTweetSkeleton,
+		createPOSTSkeleton,
 		createUserSkeleton,
 		removeSkeletons,
 		showSkeletons,
@@ -947,7 +947,7 @@ async function showInteractionsModal(tweetId, initialTab = "likes") {
 
 	const tabs = [
 		{ id: "likes", label: "Likes" },
-		{ id: "retweets", label: "Retweets" },
+		{ id: "rePOSTS", label: "RePOSTS" },
 		{ id: "quotes", label: "Quotes" },
 	];
 
@@ -963,30 +963,30 @@ async function showInteractionsModal(tweetId, initialTab = "likes") {
 		if (currentSkeletons.length) removeSkeletons(currentSkeletons);
 
 		const isQuotes = tabId === "quotes";
-		const skeletonCreator = isQuotes ? createTweetSkeleton : createUserSkeleton;
+		const skeletonCreator = isQuotes ? createPOSTSkeleton : createUserSkeleton;
 
 		currentSkeletons = showSkeletons(contentContainer, skeletonCreator, 3);
 
 		try {
-			const data = await query(`/tweets/${tweetId}/${tabId}`);
+			const data = await query(`/POSTS/${POSTId}/${tabId}`);
 
 			contentContainer.innerHTML = "";
 			currentSkeletons = [];
 
 			if (isQuotes) {
-				if (!data.tweets || data.tweets.length === 0) {
+				if (!data.POSTS || data.POSTS.length === 0) {
 					contentContainer.innerHTML = `<div class="empty-state">No quotes yet</div>`;
 					return;
 				}
 
-				data.tweets.forEach((tweet) => {
-					const tweetEl = createTweetElement(tweet, {
+				data.POSTS.forEach((POST) => {
+					const POSTEl = createPOSTElement(POST, {
 						clickToOpen: true,
 						showTopReply: false,
 						isTopReply: false,
 						size: "normal",
 					});
-					contentContainer.appendChild(tweetEl);
+					contentContainer.appendChild(POSTEl);
 				});
 			} else {
 				if (!data.users || data.users.length === 0) {
@@ -1004,8 +1004,8 @@ async function showInteractionsModal(tweetId, initialTab = "likes") {
 					const timeText =
 						tabId === "likes"
 							? `liked ${formatInteractionTime(new Date(user.liked_at))}`
-							: `retweeted ${formatInteractionTime(
-									new Date(user.retweeted_at),
+							: `rePOSTed ${formatInteractionTime(
+									new Date(user.rePOSTed_at),
 								)}`;
 
 					userItem.innerHTML = `
@@ -1083,9 +1083,9 @@ async function showInteractionsModal(tweetId, initialTab = "likes") {
 	await loadTabContent(activeTab);
 }
 
-export const createTweetElement = (tweet, config = {}) => {
-	if (!tweet || !tweet.author) {
-		console.error("Invalid tweet object provided to createTweetElement");
+export const createPOSTElement = (POST, config = {}) => {
+	if (!POST || !POST.author) {
+		console.error("Invalid POST object provided to createPOSTElement");
 		return document.createElement("div");
 	}
 
@@ -1096,9 +1096,9 @@ export const createTweetElement = (tweet, config = {}) => {
 		size = "normal",
 	} = config;
 
-	if (tweet.author.blocked_by_user) {
+	if (POST.author.blocked_by_user) {
 		const blockedEl = document.createElement("div");
-		blockedEl.className = "tweet blocked-tweet";
+		blockedEl.className = "POST blocked-POST";
 		blockedEl.style.cssText =
 			"display: flex; align-items: center; justify-content: space-between; padding: 16px; color: var(--text-secondary); background: var(--bg-secondary); border-radius: 12px; margin-bottom: 1px;";
 		blockedEl.innerHTML = `
@@ -1118,12 +1118,12 @@ export const createTweetElement = (tweet, config = {}) => {
 					const result = await query("/blocking/unblock", {
 						method: "POST",
 						headers: { "Content-Type": "application/json" },
-						body: JSON.stringify({ userId: tweet.author.id }),
+						body: JSON.stringify({ userId: POST.author.id }),
 					});
 					if (result.success) {
 						toastQueue.add("<h1>Unblocked user</h1>");
-						tweet.author.blocked_by_user = false;
-						const newEl = createTweetElement(tweet, config);
+						POST.author.blocked_by_user = false;
+						const newEl = createPOSTElement(POST, config);
 						blockedEl.replaceWith(newEl);
 					} else {
 						toastQueue.add(`<h1>${result.error || "Failed to unblock"}</h1>`);
@@ -1136,191 +1136,191 @@ export const createTweetElement = (tweet, config = {}) => {
 		return blockedEl;
 	}
 
-	if (!tweet.reaction_count) {
-		if (typeof tweet.total_reactions === "number") {
-			tweet.reaction_count = tweet.total_reactions;
-		} else if (typeof tweet.reactions_count === "number") {
-			tweet.reaction_count = tweet.reactions_count;
-		} else if (Array.isArray(tweet.reactions)) {
-			tweet.reaction_count = tweet.reactions.length;
+	if (!POST.reaction_count) {
+		if (typeof POST.total_reactions === "number") {
+			POST.reaction_count = POST.total_reactions;
+		} else if (typeof POST.reactions_count === "number") {
+			POST.reaction_count = POST.reactions_count;
+		} else if (Array.isArray(POST.reactions)) {
+			POST.reaction_count = POST.reactions.length;
 		}
 	}
 
-	const tweetEl = document.createElement("div");
-	tweetEl.className = isTopReply ? "tweet top-reply" : "tweet";
-	tweetEl.setAttribute("data-tweet-id", tweet.id);
+	const POSTEl = document.createElement("div");
+	POSTEl.className = isTopReply ? "POST top-reply" : "POST";
+	POSTEl.setAttribute("data-POST-id", POST.id);
 
 	if (size === "preview") {
-		tweetEl.classList.add("tweet-preview");
-		tweetEl.classList.add("clickable");
+		POSTEl.classList.add("POST-preview");
+		POSTEl.classList.add("clickable");
 	}
 
-	if (tweet.outline && tweet.author.gray) {
-		if (tweet.outline.includes("gradient")) {
-			tweetEl.style.setProperty("border", "2px solid transparent", "important");
-			tweetEl.style.setProperty(
+	if (POST.outline && POST.author.gray) {
+		if (POST.outline.includes("gradient")) {
+			POSTEl.style.setProperty("border", "2px solid transparent", "important");
+			POSTEl.style.setProperty(
 				"border-image",
-				`${tweet.outline} 1`,
+				`${POST.outline} 1`,
 				"important",
 			);
 		} else {
-			tweetEl.style.setProperty(
+			POSTEl.style.setProperty(
 				"border",
-				`2px solid ${tweet.outline}`,
+				`2px solid ${POST.outline}`,
 				"important",
 			);
 		}
-		tweetEl.style.setProperty("border-radius", "12px", "important");
+		POSTEl.style.setProperty("border-radius", "12px", "important");
 	}
 
-	const tweetHeaderEl = document.createElement("div");
-	tweetHeaderEl.className = "tweet-header";
+	const POSTHeaderEl = document.createElement("div");
+	POSTHeaderEl.className = "POST-header";
 
-	const tweetHeaderAvatarEl = document.createElement("img");
-	tweetHeaderAvatarEl.src =
-		tweet.author.avatar || `/public/shared/assets/default-avatar.svg`;
-	tweetHeaderAvatarEl.alt = tweet.author.name || tweet.author.username;
-	tweetHeaderAvatarEl.classList.add("tweet-header-avatar");
-	tweetHeaderAvatarEl.setAttribute("loading", "lazy");
-	tweetHeaderAvatarEl.loading = "lazy";
-	tweetHeaderAvatarEl.width = 48;
-	tweetHeaderAvatarEl.height = 48;
-	tweetHeaderAvatarEl.draggable = false;
+	const POSTHeaderAvatarEl = document.createElement("img");
+	POSTHeaderAvatarEl.src =
+		POST.author.avatar || `/public/shared/assets/default-avatar.svg`;
+	POSTHeaderAvatarEl.alt = POST.author.name || POST.author.username;
+	POSTHeaderAvatarEl.classList.add("POST-header-avatar");
+	POSTHeaderAvatarEl.setAttribute("loading", "lazy");
+	POSTHeaderAvatarEl.loading = "lazy";
+	POSTHeaderAvatarEl.width = 48;
+	POSTHeaderAvatarEl.height = 48;
+	POSTHeaderAvatarEl.draggable = false;
 
 	let avatarRadiusValue;
 	if (
-		tweet.author.avatar_radius !== null &&
-		tweet.author.avatar_radius !== undefined
+		POST.author.avatar_radius !== null &&
+		POST.author.avatar_radius !== undefined
 	) {
-		avatarRadiusValue = avatarPxToPercent(tweet.author.avatar_radius);
-	} else if (tweet.author.gold || tweet.author.gray) {
+		avatarRadiusValue = avatarPxToPercent(POST.author.avatar_radius);
+	} else if (POST.author.gold || POST.author.gray) {
 		avatarRadiusValue = "4px";
 	} else {
 		avatarRadiusValue = "50px";
 	}
 
-	tweetHeaderAvatarEl.style.setProperty(
+	POSTHeaderAvatarEl.style.setProperty(
 		"border-radius",
 		avatarRadiusValue,
 		"important",
 	);
 
-	if (tweet.author.gray) {
+	if (POST.author.gray) {
 		applyAvatarOutline(
-			tweetHeaderAvatarEl,
-			tweet.author.avatar_outline || "",
+			POSTHeaderAvatarEl,
+			POST.author.avatar_outline || "",
 			avatarRadiusValue,
 			2,
 		);
 	} else {
-		applyAvatarOutline(tweetHeaderAvatarEl, "", avatarRadiusValue, 2);
+		applyAvatarOutline(POSTHeaderAvatarEl, "", avatarRadiusValue, 2);
 	}
-	tweetHeaderAvatarEl.setAttribute("loading", "lazy");
-	tweetHeaderAvatarEl.addEventListener("click", (e) => {
+	POSTHeaderAvatarEl.setAttribute("loading", "lazy");
+	POSTHeaderAvatarEl.addEventListener("click", (e) => {
 		e.stopPropagation();
 
-		if (tweet.author?.suspended) {
+		if (POST.author?.suspended) {
 			switchPage("timeline", { path: "/" });
 			return;
 		}
 		import("./profile.js").then(({ default: openProfile }) => {
-			openProfile(tweet.author.username);
+			openProfile(POST.author.username);
 		});
 	});
 
-	attachHoverCard(tweetHeaderAvatarEl, tweet.author.username);
+	attachHoverCard(POSTHeaderAvatarEl, POST.author.username);
 
-	tweetHeaderEl.appendChild(tweetHeaderAvatarEl);
+	POSTHeaderEl.appendChild(POSTHeaderAvatarEl);
 
-	const tweetHeaderInfoEl = document.createElement("div");
-	tweetHeaderInfoEl.className = "tweet-header-info";
+	const POSTHeaderInfoEl = document.createElement("div");
+	POSTHeaderInfoEl.className = "POST-header-info";
 
-	const tweetHeaderNameEl = document.createElement("p");
-	tweetHeaderNameEl.className = "name";
-	tweetHeaderNameEl.textContent =
-		tweet.author.name || `@${tweet.author.username}`;
-	tweetHeaderNameEl.classList.add("tweet-header-name");
-	tweetHeaderNameEl.addEventListener("click", (e) => {
+	const POSTHeaderNameEl = document.createElement("p");
+	POSTHeaderNameEl.className = "name";
+	POSTHeaderNameEl.textContent =
+		POST.author.name || `@${POST.author.username}`;
+	POSTHeaderNameEl.classList.add("POST-header-name");
+	POSTHeaderNameEl.addEventListener("click", (e) => {
 		const isMobile = "ontouchstart" in window || navigator.maxTouchPoints > 0;
 		const isExpandedView = clickToOpen === false && size !== "preview";
 		if (isMobile && isExpandedView) {
 			return;
 		}
 		e.stopPropagation();
-		if (tweet.author?.suspended) {
+		if (POST.author?.suspended) {
 			switchPage("timeline", { path: "/" });
 			return;
 		}
 		import("./profile.js").then(({ default: openProfile }) => {
-			openProfile(tweet.author.username);
+			openProfile(POST.author.username);
 		});
 	});
 
-	attachHoverCard(tweetHeaderNameEl, tweet.author.username);
+	attachHoverCard(POSTHeaderNameEl, POST.author.username);
 
-	if (tweet.author.gold) {
+	if (POST.author.gold) {
 		const badge = createVerificationBadge({ type: "gold" });
-		tweetHeaderNameEl.appendChild(badge);
+		POSTHeaderNameEl.appendChild(badge);
 		attachCheckmarkPopup(badge, "gold");
-	} else if (tweet.author.gray) {
+	} else if (POST.author.gray) {
 		const badge = createVerificationBadge({
 			type: "gray",
-			checkmarkOutline: tweet.author.checkmark_outline || "",
+			checkmarkOutline: POST.author.checkmark_outline || "",
 		});
-		tweetHeaderNameEl.appendChild(badge);
+		POSTHeaderNameEl.appendChild(badge);
 		attachCheckmarkPopup(badge, "gray");
-	} else if (tweet.author.verified) {
+	} else if (POST.author.verified) {
 		const badge = createVerificationBadge({ type: "verified" });
-		tweetHeaderNameEl.appendChild(badge);
+		POSTHeaderNameEl.appendChild(badge);
 		attachCheckmarkPopup(badge, "verified");
 	}
 
-	if (Array.isArray(tweet.author.custom_badges)) {
-		for (const badge of tweet.author.custom_badges) {
+	if (Array.isArray(POST.author.custom_badges)) {
+		for (const badge of POST.author.custom_badges) {
 			const badgeEl = renderCustomBadge(
 				badge,
-				tweet.author.id,
-				tweet.author.username,
+				POST.author.id,
+				POST.author.username,
 			);
-			tweetHeaderNameEl.appendChild(badgeEl);
+			POSTHeaderNameEl.appendChild(badgeEl);
 		}
 	}
 
-	if (tweet.author.affiliate && tweet.author.affiliate_with_profile) {
+	if (POST.author.affiliate && POST.author.affiliate_with_profile) {
 		const affiliateEl = document.createElement("a");
-		affiliateEl.href = `/@${tweet.author.affiliate_with_profile.username}`;
+		affiliateEl.href = `/@${POST.author.affiliate_with_profile.username}`;
 		affiliateEl.className = "role-badge affiliate-with";
-		affiliateEl.title = `Affiliated with @${tweet.author.affiliate_with_profile.username}`;
+		affiliateEl.title = `Affiliated with @${POST.author.affiliate_with_profile.username}`;
 
 		affiliateEl.addEventListener("click", (e) => {
 			e.preventDefault();
 			e.stopPropagation();
 			import("./profile.js").then(({ default: openProfile }) => {
-				openProfile(tweet.author.affiliate_with_profile.username);
+				openProfile(POST.author.affiliate_with_profile.username);
 			});
 		});
 
 		const affiliateImg = document.createElement("img");
 		affiliateImg.src =
-			tweet.author.affiliate_with_profile.avatar ||
+			POST.author.affiliate_with_profile.avatar ||
 			"/public/shared/assets/default-avatar.svg";
 		affiliateImg.alt =
-			tweet.author.affiliate_with_profile.name ||
-			tweet.author.affiliate_with_profile.username;
+			POST.author.affiliate_with_profile.name ||
+			POST.author.affiliate_with_profile.username;
 		affiliateImg.className = "affiliate-with-avatar";
 		affiliateImg.draggable = false;
 
 		if (
-			tweet.author.affiliate_with_profile.avatar_radius !== null &&
-			tweet.author.affiliate_with_profile.avatar_radius !== undefined
+			POST.author.affiliate_with_profile.avatar_radius !== null &&
+			POST.author.affiliate_with_profile.avatar_radius !== undefined
 		) {
 			affiliateImg.style.setProperty(
 				"border-radius",
-				`${tweet.author.affiliate_with_profile.avatar_radius}px`,
+				`${POST.author.affiliate_with_profile.avatar_radius}px`,
 			);
 		} else if (
-			tweet.author.affiliate_with_profile.gold ||
-			tweet.author.affiliate_with_profile.gray
+			POST.author.affiliate_with_profile.gold ||
+			POST.author.affiliate_with_profile.gray
 		) {
 			affiliateImg.style.setProperty("border-radius", "4px");
 		} else {
@@ -1328,27 +1328,27 @@ export const createTweetElement = (tweet, config = {}) => {
 		}
 
 		affiliateEl.appendChild(affiliateImg);
-		tweetHeaderNameEl.appendChild(affiliateEl);
+		POSTHeaderNameEl.appendChild(affiliateEl);
 	}
 
-	if (tweet.author.label_type) {
+	if (POST.author.label_type) {
 		const labelEl = document.createElement("span");
-		labelEl.className = `tweet-label label-${tweet.author.label_type}`;
+		labelEl.className = `POST-label label-${POST.author.label_type}`;
 		const labelText =
-			tweet.author.label_type.charAt(0).toUpperCase() +
-			tweet.author.label_type.slice(1);
+			POST.author.label_type.charAt(0).toUpperCase() +
+			POST.author.label_type.slice(1);
 		labelEl.textContent = labelText;
-		tweetHeaderNameEl.appendChild(labelEl);
+		POSTHeaderNameEl.appendChild(labelEl);
 	}
 
-	if (tweet.author.community_tag) {
+	if (POST.author.community_tag) {
 		const communityTagEl = document.createElement("a");
-		communityTagEl.href = `/communities/${tweet.author.community_tag.community_id}`;
+		communityTagEl.href = `/communities/${POST.author.community_tag.community_id}`;
 		communityTagEl.className = "community-tag";
-		communityTagEl.title = `Member of ${tweet.author.community_tag.community_name}`;
+		communityTagEl.title = `Member of ${POST.author.community_tag.community_name}`;
 		communityTagEl.textContent = [
-			tweet.author.community_tag.emoji || "",
-			tweet.author.community_tag.text,
+			POST.author.community_tag.emoji || "",
+			POST.author.community_tag.text,
 		]
 			.join(" ")
 			.trim();
@@ -1357,60 +1357,60 @@ export const createTweetElement = (tweet, config = {}) => {
 			e.preventDefault();
 			e.stopPropagation();
 			import("./communities.js").then(({ loadCommunityDetail }) => {
-				loadCommunityDetail(tweet.author.community_tag.community_id);
+				loadCommunityDetail(POST.author.community_tag.community_id);
 			});
 		});
 
-		tweetHeaderNameEl.appendChild(communityTagEl);
+		POSTHeaderNameEl.appendChild(communityTagEl);
 	}
 
-	if (tweet.author.username !== tweet.author.name && tweet.author.name) {
+	if (POST.author.username !== POST.author.name && POST.author.name) {
 		const usernameEl = document.createElement("span");
-		usernameEl.textContent = `@${tweet.author.username}`;
-		usernameEl.classList.add("tweet-header-username-span");
-		tweetHeaderNameEl.appendChild(usernameEl);
+		usernameEl.textContent = `@${POST.author.username}`;
+		usernameEl.classList.add("POST-header-username-span");
+		POSTHeaderNameEl.appendChild(usernameEl);
 	}
 
 	const source_icons = {
-		desktop_web: `<svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="tweet-source-icon lucide lucide-monitor-icon lucide-monitor"><rect width="20" height="14" x="2" y="3" rx="2"/><line x1="8" x2="16" y1="21" y2="21"/><line x1="12" x2="12" y1="17" y2="21"/></svg>`,
-		mobile_web: `<svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="tweet-source-icon lucide lucide-smartphone-icon lucide-smartphone"><rect width="14" height="20" x="5" y="2" rx="2" ry="2"/><path d="M12 18h.01"/></svg>`,
+		desktop_web: `<svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="POST-source-icon lucide lucide-monitor-icon lucide-monitor"><rect width="20" height="14" x="2" y="3" rx="2"/><line x1="8" x2="16" y1="21" y2="21"/><line x1="12" x2="12" y1="17" y2="21"/></svg>`,
+		mobile_web: `<svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="POST-source-icon lucide lucide-smartphone-icon lucide-smartphone"><rect width="14" height="20" x="5" y="2" rx="2" ry="2"/><path d="M12 18h.01"/></svg>`,
 		scheduled: `<svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-clock-icon lucide-clock"><path d="M12 6v6l4 2"/><circle cx="12" cy="12" r="10"/></svg>`,
 		articles: `<svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-newspaper-icon lucide-newspaper"><path d="M15 18h-5"/><path d="M18 14h-8"/><path d="M4 22h16a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2H8a2 2 0 0 0-2 2v16a2 2 0 0 1-4 0v-9a2 2 0 0 1 2-2h2"/><rect width="8" height="4" x="10" y="6" rx="1"/></svg>`,
 	};
 
-	const tweetHeaderUsernameEl = document.createElement("p");
-	tweetHeaderUsernameEl.className = "username";
-	tweetHeaderUsernameEl.textContent = timeAgo(tweet.created_at);
-	tweetHeaderUsernameEl.classList.add("tweet-header-username");
-	tweetHeaderUsernameEl.addEventListener("click", (e) => {
+	const POSTHeaderUsernameEl = document.createElement("p");
+	POSTHeaderUsernameEl.className = "username";
+	POSTHeaderUsernameEl.textContent = timeAgo(POST.created_at);
+	POSTHeaderUsernameEl.classList.add("POST-header-username");
+	POSTHeaderUsernameEl.addEventListener("click", (e) => {
 		e.stopPropagation();
-		if (tweet.author?.suspended) {
+		if (POST.author?.suspended) {
 			switchPage("timeline", { path: "/" });
 			return;
 		}
 		import("./profile.js").then(({ default: openProfile }) => {
-			openProfile(tweet.author.username);
+			openProfile(POST.author.username);
 		});
 	});
 
-	if (tweet.source && source_icons[tweet.source]) {
+	if (POST.source && source_icons[POST.source]) {
 		const sourceIconEl = document.createElement("span");
-		sourceIconEl.className = "tweet-source-icon-wrapper";
-		sourceIconEl.innerHTML = `${source_icons[tweet.source]}`;
-		tweetHeaderUsernameEl.appendChild(sourceIconEl);
-	} else if (tweet.source) {
-		tweetHeaderUsernameEl.textContent += ` · ${tweet.source}`;
+		sourceIconEl.className = "POST-source-icon-wrapper";
+		sourceIconEl.innerHTML = `${source_icons[POST.source]}`;
+		POSTHeaderUsernameEl.appendChild(sourceIconEl);
+	} else if (POST.source) {
+		POSTHeaderUsernameEl.textContent += ` · ${POST.source}`;
 	}
 
-	if (tweet.edited_at) {
+	if (POST.edited_at) {
 		const editedIndicator = document.createElement("span");
-		editedIndicator.className = "tweet-edited-indicator";
+		editedIndicator.className = "POST-edited-indicator";
 		editedIndicator.textContent = " (edited)";
 		editedIndicator.title = "Click to view edit history";
 		editedIndicator.addEventListener("click", async (e) => {
 			e.stopPropagation();
 			try {
-				const history = await query(`/tweets/${tweet.id}/edit-history`);
+				const history = await query(`/POSTS/${POST.id}/edit-history`);
 
 				if (history.error) {
 					toastQueue.add(`<h1>${history.error}</h1>`);
@@ -1495,15 +1495,15 @@ export const createTweetElement = (tweet, config = {}) => {
 				toastQueue.add(`<h1>Failed to load edit history</h1>`);
 			}
 		});
-		tweetHeaderUsernameEl.appendChild(editedIndicator);
+		POSTHeaderUsernameEl.appendChild(editedIndicator);
 	}
 
-	tweetHeaderInfoEl.appendChild(tweetHeaderNameEl);
-	tweetHeaderInfoEl.appendChild(tweetHeaderUsernameEl);
+	POSTHeaderInfoEl.appendChild(POSTHeaderNameEl);
+	POSTHeaderInfoEl.appendChild(POSTHeaderUsernameEl);
 
-	tweetHeaderEl.appendChild(tweetHeaderInfoEl);
+	POSTHeaderEl.appendChild(POSTHeaderInfoEl);
 
-	if (tweet.pinned) {
+	if (POST.pinned) {
 		const pinnedIndicatorEl = document.createElement("div");
 		pinnedIndicatorEl.className = "pinned-indicator";
 		pinnedIndicatorEl.innerHTML = `
@@ -1513,28 +1513,28 @@ export const createTweetElement = (tweet, config = {}) => {
 			</svg>
 			<span>Pinned</span>
 		`;
-		tweetEl.appendChild(pinnedIndicatorEl);
+		POSTEl.appendChild(pinnedIndicatorEl);
 	}
 
-	tweetEl.appendChild(tweetHeaderEl);
+	POSTEl.appendChild(POSTHeaderEl);
 
 	const isArticlePost = Boolean(
-		tweet.is_article && tweet.article_body_markdown,
+		POST.is_article && POST.article_body_markdown,
 	);
 	const showFullArticle = isArticlePost && clickToOpen === false;
 
 	if (isArticlePost) {
 		const articleContainer = document.createElement("div");
-		articleContainer.className = "tweet-content tweet-article";
+		articleContainer.className = "POST-content POST-article";
 
-		if (tweet.article_title) {
+		if (POST.article_title) {
 			const titleEl = document.createElement("h2");
-			titleEl.textContent = tweet.article_title;
+			titleEl.textContent = POST.article_title;
 			articleContainer.appendChild(titleEl);
 		}
 
-		const coverAttachment = Array.isArray(tweet.attachments)
-			? tweet.attachments.find((item) => item.file_type?.startsWith("image/"))
+		const coverAttachment = Array.isArray(POST.attachments)
+			? POST.attachments.find((item) => item.file_type?.startsWith("image/"))
 			: null;
 
 		if (coverAttachment) {
@@ -1551,9 +1551,9 @@ export const createTweetElement = (tweet, config = {}) => {
 
 		if (showFullArticle) {
 			const articleBody = document.createElement("div");
-			articleBody.className = "tweet-article-body";
+			articleBody.className = "POST-article-body";
 			articleBody.innerHTML = DOMPurify.sanitize(
-				marked.parse(tweet.article_body_markdown, {
+				marked.parse(POST.article_body_markdown, {
 					breaks: true,
 					gfm: true,
 					headerIds: false,
@@ -1576,11 +1576,11 @@ export const createTweetElement = (tweet, config = {}) => {
 			articleContainer.appendChild(articleBody);
 		} else {
 			const previewBody = document.createElement("div");
-			previewBody.className = "tweet-article-preview";
+			previewBody.className = "POST-article-preview";
 			const previewSource =
-				tweet.article_preview?.excerpt ||
-				tweet.article_title ||
-				tweet.content ||
+				POST.article_preview?.excerpt ||
+				POST.article_title ||
+				POST.content ||
 				"";
 			let previewText = previewSource.trim();
 			if (previewText.length > 260) {
@@ -1589,7 +1589,7 @@ export const createTweetElement = (tweet, config = {}) => {
 			previewBody.innerHTML = linkifyText(previewText);
 			replaceEmojiShortcodesInElement(previewBody);
 
-			previewBody.querySelectorAll("a.tweet-hashtag").forEach((tag) => {
+			previewBody.querySelectorAll("a.POST-hashtag").forEach((tag) => {
 				const hashtag = tag.getAttribute("data-hashtag");
 
 				tag.addEventListener("click", (e) => {
@@ -1605,52 +1605,52 @@ export const createTweetElement = (tweet, config = {}) => {
 			const readMoreButton = document.createElement("button");
 			readMoreButton.type = "button";
 			readMoreButton.textContent = "Read article";
-			readMoreButton.className = "tweet-article-read-more";
+			readMoreButton.className = "POST-article-read-more";
 			readMoreButton.addEventListener("click", async (event) => {
 				event.preventDefault();
 				event.stopPropagation();
-				await openTweet(tweet);
+				await openPOST(POST);
 			});
 			articleContainer.appendChild(readMoreButton);
 		}
 
-		tweetEl.appendChild(articleContainer);
+		POSTEl.appendChild(articleContainer);
 
-		if (tweet.fact_check) {
-			tweetEl.appendChild(createFactCheck(tweet.fact_check));
+		if (POST.fact_check) {
+			POSTEl.appendChild(createFactCheck(POST.fact_check));
 		}
 	} else {
-		const tweetContentEl = document.createElement("div");
-		tweetContentEl.className = "tweet-content";
+		const POSTContentEl = document.createElement("div");
+		POSTContentEl.className = "POST-content";
 
-		const rawContent = tweet.content ? tweet.content.trim() : "";
+		const rawContent = POST.content ? POST.content.trim() : "";
 
-		const tweetLinkRegex = new RegExp(
-			`https?://(?:www\\.)?(?:${location.host.replace(".", "\\.")})/tweet/([a-zA-Z0-9_-]+)`,
+		const POSTLinkRegex = new RegExp(
+			`https?://(?:www\\.)?(?:${location.host.replace(".", "\\.")})/POST/([a-zA-Z0-9_-]+)`,
 			"g",
 		);
 		let contentWithoutLinks = rawContent;
-		const extractedTweetIds = [];
-		let match = tweetLinkRegex.exec(rawContent);
+		const extractedPOSTIds = [];
+		let match = POSTLinkRegex.exec(rawContent);
 
 		while (match !== null) {
-			extractedTweetIds.push(match[1]);
+			extractedPOSTIds.push(match[1]);
 			contentWithoutLinks = contentWithoutLinks.replace(match[0], "").trim();
-			match = tweetLinkRegex.exec(rawContent);
+			match = POSTLinkRegex.exec(rawContent);
 		}
 
 		const isExpandedView = clickToOpen === false && size !== "preview";
 		const shouldTrim =
 			contentWithoutLinks.length > 300 &&
 			!isExpandedView &&
-			!tweet.extended &&
-			!tweet.isExpanded;
+			!POST.extended &&
+			!POST.isExpanded;
 
 		const applyLinkified = (text) => {
-			tweetContentEl.innerHTML = linkifyText(text);
-			replaceEmojiShortcodesInElement(tweetContentEl);
+			POSTContentEl.innerHTML = linkifyText(text);
+			replaceEmojiShortcodesInElement(POSTContentEl);
 
-			tweetContentEl.querySelectorAll("a.tweet-hashtag").forEach((tag) => {
+			POSTContentEl.querySelectorAll("a.POST-hashtag").forEach((tag) => {
 				const hashtag = tag.getAttribute("data-hashtag");
 
 				tag.addEventListener("click", (e) => {
@@ -1673,7 +1673,7 @@ export const createTweetElement = (tweet, config = {}) => {
 			applyLinkified(trimmed);
 
 			const ellipsis = document.createElement("span");
-			ellipsis.className = "tweet-ellipsis";
+			ellipsis.className = "POST-ellipsis";
 			ellipsis.innerText = "Show more…";
 			ellipsis.title = "Show more";
 			ellipsis.setAttribute("role", "button");
@@ -1684,17 +1684,17 @@ export const createTweetElement = (tweet, config = {}) => {
 				ellipsis.remove();
 
 				const collapse = document.createElement("span");
-				collapse.className = "tweet-ellipsis";
+				collapse.className = "POST-ellipsis";
 				collapse.innerText = "Show less";
 				collapse.addEventListener("click", (ev) => {
 					ev.preventDefault();
 					ev.stopPropagation();
 					applyLinkified(trimmed);
-					tweetContentEl.appendChild(ellipsis);
+					POSTContentEl.appendChild(ellipsis);
 					collapse.remove();
 				});
 
-				tweetContentEl.appendChild(collapse);
+				POSTContentEl.appendChild(collapse);
 			};
 
 			ellipsis.addEventListener("click", (e) => {
@@ -1709,13 +1709,13 @@ export const createTweetElement = (tweet, config = {}) => {
 				}
 			});
 
-			tweetContentEl.appendChild(ellipsis);
+			POSTContentEl.appendChild(ellipsis);
 		} else {
 			applyLinkified(contentWithoutLinks);
 		}
 
-		tweetContentEl.addEventListener("click", (e) => {
-			if (e.target.classList.contains("tweet-mention")) {
+		POSTContentEl.addEventListener("click", (e) => {
+			if (e.target.classList.contains("POST-mention")) {
 				e.preventDefault();
 				e.stopPropagation();
 				const username = e.target.dataset.username;
@@ -1725,46 +1725,46 @@ export const createTweetElement = (tweet, config = {}) => {
 			}
 		});
 
-		tweetEl.appendChild(tweetContentEl);
+		POSTEl.appendChild(POSTContentEl);
 
-		if (tweet.fact_check) {
-			tweetEl.appendChild(createFactCheck(tweet.fact_check));
+		if (POST.fact_check) {
+			POSTEl.appendChild(createFactCheck(POST.fact_check));
 		}
 
-		maybeAddTranslation(tweet, tweetEl, tweetContentEl);
+		maybeAddTranslation(POST, POSTEl, POSTContentEl);
 
-		if (extractedTweetIds.length > 0 && !tweet.quoted_tweet) {
-			const tweetId = extractedTweetIds[0];
-			query(`/tweets/${tweetId}`)
+		if (extractedPOSTIds.length > 0 && !POST.quoted_POST) {
+			const POSTId = extractedPOSTIds[0];
+			query(`/POSTS/${POSTId}`)
 				.then((response) => {
-					if (response?.tweet) {
-						const quotedTweetEl = createTweetElement(response.tweet, {
+					if (response?.POST) {
+						const quotedPOSTEl = createPOSTElement(response.POST, {
 							size: "preview",
 							clickToOpen: true,
 						});
-						quotedTweetEl.classList.add("tweet-preview");
+						quotedPOSTEl.classList.add("POST-preview");
 
-						const existingQuote = tweetEl.querySelector(".tweet-preview");
+						const existingQuote = POSTEl.querySelector(".POST-preview");
 						if (!existingQuote) {
-							const pollEl = tweetEl.querySelector(".poll-container");
-							const attachmentsEl = tweetEl.querySelector(".tweet-attachments");
+							const pollEl = POSTEl.querySelector(".poll-container");
+							const attachmentsEl = POSTEl.querySelector(".POST-attachments");
 
 							if (pollEl) {
-								tweetEl.insertBefore(quotedTweetEl, pollEl);
+								POSTEl.insertBefore(quotedPOSTEl, pollEl);
 							} else if (attachmentsEl) {
-								tweetEl.insertBefore(quotedTweetEl, attachmentsEl);
+								POSTEl.insertBefore(quotedPOSTEl, attachmentsEl);
 							} else {
-								tweetEl.appendChild(quotedTweetEl);
+								POSTEl.appendChild(quotedPOSTEl);
 							}
 						}
 					}
 				})
 				.catch((err) => {
-					console.error("Failed to load embedded tweet:", err);
+					console.error("Failed to load embedded POST:", err);
 				});
 		}
 
-		tweetContentEl.querySelectorAll("a").forEach((a) => {
+		POSTContentEl.querySelectorAll("a").forEach((a) => {
 			const url = new URL(a.href, location.origin);
 
 			if (url.host === "youtube.com" || url.host === "www.youtube.com") {
@@ -1775,7 +1775,7 @@ export const createTweetElement = (tweet, config = {}) => {
 					videoFrame.src = `https://www.youtube-nocookie.com/embed/${videoId}`;
 					videoFrame.width = "200";
 					videoFrame.height = "113";
-					videoFrame.classList.add("tweet-youtube-iframe");
+					videoFrame.classList.add("POST-youtube-iframe");
 					videoFrame.setAttribute("frameborder", "0");
 					videoFrame.setAttribute(
 						"allow",
@@ -1789,20 +1789,20 @@ export const createTweetElement = (tweet, config = {}) => {
 					videoFrame.title = "YouTube video player";
 					videoFrame.setAttribute("loading", "lazy");
 
-					tweetContentEl.appendChild(videoFrame);
+					POSTContentEl.appendChild(videoFrame);
 				}
 			}
 		});
 	}
 
-	if (tweet.poll) {
-		const pollEl = createPollElement(tweet.poll, tweet);
+	if (POST.poll) {
+		const pollEl = createPollElement(POST.poll, POST);
 		if (pollEl) {
-			tweetEl.appendChild(pollEl);
+			POSTEl.appendChild(pollEl);
 		}
 	}
 
-	if (tweet.interactive_card?.options) {
+	if (POST.interactive_card?.options) {
 		const cardEl = document.createElement("div");
 		cardEl.className = "interactive-card";
 
@@ -1810,17 +1810,17 @@ export const createTweetElement = (tweet, config = {}) => {
 		mediaEl.className = "card-media";
 
 		if (
-			tweet.interactive_card.media_type === "image" ||
-			tweet.interactive_card.media_type === "gif"
+			POST.interactive_card.media_type === "image" ||
+			POST.interactive_card.media_type === "gif"
 		) {
 			const img = document.createElement("img");
-			img.src = tweet.interactive_card.media_url;
+			img.src = POST.interactive_card.media_url;
 			img.alt = "Card media";
 			img.setAttribute("loading", "lazy");
 			mediaEl.appendChild(img);
-		} else if (tweet.interactive_card.media_type === "video") {
+		} else if (POST.interactive_card.media_type === "video") {
 			const video = document.createElement("video");
-			video.src = tweet.interactive_card.media_url;
+			video.src = POST.interactive_card.media_url;
 			video.controls = true;
 			video.setAttribute("loading", "lazy");
 			mediaEl.appendChild(video);
@@ -1831,11 +1831,11 @@ export const createTweetElement = (tweet, config = {}) => {
 		const optionsEl = document.createElement("div");
 		optionsEl.className = "card-options";
 
-		tweet.interactive_card.options.forEach((option) => {
+		POST.interactive_card.options.forEach((option) => {
 			const optionBtn = document.createElement("button");
 			optionBtn.type = "button";
 			optionBtn.className = "card-option-button";
-			optionBtn.textContent = `Tweet ${option.description}`;
+			optionBtn.textContent = `POST ${option.description}`;
 
 			optionBtn.addEventListener("click", async (e) => {
 				e.preventDefault();
@@ -1843,23 +1843,23 @@ export const createTweetElement = (tweet, config = {}) => {
 
 				const { createComposer } = await import("./composer.js");
 				const composer = await createComposer({
-					placeholder: "Confirm your tweet...",
+					placeholder: "Confirm your POST...",
 					autofocus: true,
-					interactiveCard: tweet.interactive_card,
+					interactiveCard: POST.interactive_card,
 					callback: async () => {
 						modal.close();
-						toastQueue.add(`<h1>Tweet posted!</h1>`);
+						toastQueue.add(`<h1>POST posted!</h1>`);
 					},
 				});
 
-				const textarea = composer.querySelector("#tweet-textarea");
+				const textarea = composer.querySelector("#POST-textarea");
 				if (textarea) {
-					textarea.value = option.tweet_text;
+					textarea.value = option.POST_text;
 					textarea.dispatchEvent(new Event("input"));
 				}
 
 				const modal = createModal({
-					title: "Confirm Tweet",
+					title: "Confirm POST",
 					content: composer,
 				});
 			});
@@ -1868,16 +1868,16 @@ export const createTweetElement = (tweet, config = {}) => {
 		});
 
 		cardEl.appendChild(optionsEl);
-		tweetEl.appendChild(cardEl);
+		POSTEl.appendChild(cardEl);
 	}
 
-	if (!isArticlePost && tweet.attachments && tweet.attachments.length > 0) {
+	if (!isArticlePost && POST.attachments && POST.attachments.length > 0) {
 		const attachmentsEl = document.createElement("div");
-		attachmentsEl.className = "tweet-attachments";
+		attachmentsEl.className = "POST-attachments";
 
-		tweet.attachments.forEach((attachment) => {
+		POST.attachments.forEach((attachment) => {
 			const attachmentEl = document.createElement("div");
-			attachmentEl.className = "tweet-attachment";
+			attachmentEl.className = "POST-attachment";
 
 			if (attachment.file_type.startsWith("image/")) {
 				const img = document.createElement("img");
@@ -1892,7 +1892,7 @@ export const createTweetElement = (tweet, config = {}) => {
 							const attributionEl = document.createElement("div");
 							attributionEl.className = "unsplash-attribution-badge";
 							attributionEl.innerHTML = `
-								via <a href="${attribution.user_link}?utm_source=tweetapus&utm_medium=referral" target="_blank" rel="noopener noreferrer" onclick="event.stopPropagation();">${attribution.user_name}</a> / <a href="https://unsplash.com/?utm_source=tweetapus&utm_medium=referral" target="_blank" rel="noopener noreferrer" onclick="event.stopPropagation();">Unsplash</a>
+								via <a href="${attribution.user_link}?utm_source=Xeetapus&utm_medium=referral" target="_blank" rel="noopener noreferrer" onclick="event.stopPropagation();">${attribution.user_name}</a> / <a href="https://unsplash.com/?utm_source=Xeetapus&utm_medium=referral" target="_blank" rel="noopener noreferrer" onclick="event.stopPropagation();">Unsplash</a>
 							`;
 							attachmentEl.appendChild(attributionEl);
 						}
@@ -1957,7 +1957,7 @@ export const createTweetElement = (tweet, config = {}) => {
 						.join(" + ");
 
 					imgWrapper.appendChild(labelEl);
-					tweetEl.appendChild(imgWrapper);
+					POSTEl.appendChild(imgWrapper);
 				} else {
 					attachmentEl.appendChild(img);
 				}
@@ -1972,23 +1972,23 @@ export const createTweetElement = (tweet, config = {}) => {
 		});
 
 		if (attachmentsEl.querySelectorAll("img, video").length)
-			tweetEl.appendChild(attachmentsEl);
+			POSTEl.appendChild(attachmentsEl);
 	}
 
-	if (tweet.link_preview && !tweet.attachments?.length && !tweet.quoted_tweet) {
+	if (POST.link_preview && !POST.attachments?.length && !POST.quoted_POST) {
 		const linkPreviewEl = document.createElement("a");
 		linkPreviewEl.className = "link-preview";
-		linkPreviewEl.href = tweet.link_preview.url;
+		linkPreviewEl.href = POST.link_preview.url;
 		linkPreviewEl.target = "_blank";
 		linkPreviewEl.rel = "noopener noreferrer";
 		linkPreviewEl.addEventListener("click", (e) => {
 			e.stopPropagation();
 		});
 
-		if (tweet.link_preview.image) {
+		if (POST.link_preview.image) {
 			const previewImg = document.createElement("img");
-			previewImg.src = tweet.link_preview.image;
-			previewImg.alt = tweet.link_preview.title || "Link preview";
+			previewImg.src = POST.link_preview.image;
+			previewImg.alt = POST.link_preview.title || "Link preview";
 			previewImg.className = "link-preview-image";
 			previewImg.loading = "lazy";
 			linkPreviewEl.appendChild(previewImg);
@@ -1997,153 +1997,153 @@ export const createTweetElement = (tweet, config = {}) => {
 		const previewContent = document.createElement("div");
 		previewContent.className = "link-preview-content";
 
-		if (tweet.link_preview.site_name) {
+		if (POST.link_preview.site_name) {
 			const siteName = document.createElement("div");
 			siteName.className = "link-preview-site";
-			siteName.textContent = tweet.link_preview.site_name;
+			siteName.textContent = POST.link_preview.site_name;
 			previewContent.appendChild(siteName);
 		}
 
-		if (tweet.link_preview.title) {
+		if (POST.link_preview.title) {
 			const title = document.createElement("div");
 			title.className = "link-preview-title";
-			title.textContent = tweet.link_preview.title;
+			title.textContent = POST.link_preview.title;
 			previewContent.appendChild(title);
 		}
 
-		if (tweet.link_preview.description) {
+		if (POST.link_preview.description) {
 			const description = document.createElement("div");
 			description.className = "link-preview-description";
-			const truncated = tweet.link_preview.description.slice(0, 150);
+			const truncated = POST.link_preview.description.slice(0, 150);
 			description.textContent =
-				truncated.length < tweet.link_preview.description.length
+				truncated.length < POST.link_preview.description.length
 					? `${truncated}…`
 					: truncated;
 			previewContent.appendChild(description);
 		}
 
 		linkPreviewEl.appendChild(previewContent);
-		tweetEl.appendChild(linkPreviewEl);
+		POSTEl.appendChild(linkPreviewEl);
 	}
 
-	if (tweet.quoted_tweet) {
-		if (tweet.quoted_tweet.unavailable_reason === "suspended") {
+	if (POST.quoted_POST) {
+		if (POST.quoted_POST.unavailable_reason === "suspended") {
 			const suspendedQuoteEl = document.createElement("div");
 			suspendedQuoteEl.className =
-				"tweet-preview unavailable-quote suspended-quote";
-			suspendedQuoteEl.textContent = "This tweet is from a suspended account.";
+				"POST-preview unavailable-quote suspended-quote";
+			suspendedQuoteEl.textContent = "This POST is from a suspended account.";
 
 			suspendedQuoteEl.addEventListener("click", (ev) => {
 				ev.preventDefault();
 				ev.stopPropagation();
 			});
 			suspendedQuoteEl.style.cursor = "default";
-			tweetEl.appendChild(suspendedQuoteEl);
-		} else if (!tweet.quoted_tweet.author) {
+			POSTEl.appendChild(suspendedQuoteEl);
+		} else if (!POST.quoted_POST.author) {
 			const unavailableQuoteEl = document.createElement("div");
-			unavailableQuoteEl.className = "tweet-preview unavailable-quote";
-			unavailableQuoteEl.textContent = "Quote tweet unavailable";
+			unavailableQuoteEl.className = "POST-preview unavailable-quote";
+			unavailableQuoteEl.textContent = "Quote POST unavailable";
 			unavailableQuoteEl.addEventListener("click", (ev) => {
 				ev.preventDefault();
 				ev.stopPropagation();
 			});
 			unavailableQuoteEl.style.cursor = "default";
-			tweetEl.appendChild(unavailableQuoteEl);
+			POSTEl.appendChild(unavailableQuoteEl);
 		} else {
-			const quotedTweetEl = createTweetElement(tweet.quoted_tweet, {
+			const quotedPOSTEl = createPOSTElement(POST.quoted_POST, {
 				clickToOpen: true,
 				showTopReply: false,
 				isTopReply: false,
 				size: "preview",
 			});
-			tweetEl.appendChild(quotedTweetEl);
+			POSTEl.appendChild(quotedPOSTEl);
 		}
 	}
 
-	const tweetInteractionsEl = document.createElement("div");
-	tweetInteractionsEl.className = "tweet-interactions";
+	const POSTInteractionsEl = document.createElement("div");
+	POSTInteractionsEl.className = "POST-interactions";
 
-	const tweetInteractionsLikeEl = document.createElement("button");
-	tweetInteractionsLikeEl.className = "engagement";
-	tweetInteractionsLikeEl.dataset.liked = tweet.liked_by_user;
-	tweetInteractionsLikeEl.dataset.likeCount = tweet.like_count || 0;
-	tweetInteractionsLikeEl.style.setProperty("--color", "249, 25, 128");
+	const POSTInteractionsLikeEl = document.createElement("button");
+	POSTInteractionsLikeEl.className = "engagement";
+	POSTInteractionsLikeEl.dataset.liked = POST.liked_by_user;
+	POSTInteractionsLikeEl.dataset.likeCount = POST.like_count || 0;
+	POSTInteractionsLikeEl.style.setProperty("--color", "249, 25, 128");
 
-	tweetInteractionsLikeEl.innerHTML = `<svg
+	POSTInteractionsLikeEl.innerHTML = `<svg
           width="19"
           height="19"
           viewBox="0 0 20 20"
-          fill="${tweet.liked_by_user ? "#F91980" : "none"}"
+          fill="${POST.liked_by_user ? "#F91980" : "none"}"
           xmlns="http://www.w3.org/2000/svg"
         >
           <path
             d="M5.00002 2.54822C8.00003 2.09722 9.58337 4.93428 10 5.87387C10.4167 4.93428 12 2.09722 15 2.54822C18 2.99923 18.75 5.66154 18.75 7.05826C18.75 9.28572 18.1249 10.9821 16.2499 13.244C14.3749 15.506 10 18.3333 10 18.3333C10 18.3333 5.62498 15.506 3.74999 13.244C1.875 10.9821 1.25 9.28572 1.25 7.05826C1.25 5.66154 2 2.99923 5.00002 2.54822Z"
-            stroke="${tweet.liked_by_user ? "#F91980" : "currentColor"}"
+            stroke="${POST.liked_by_user ? "#F91980" : "currentColor"}"
             stroke-width="1.5"
             stroke-linecap="round"
             stroke-linejoin="round"
           />
         </svg> <span class="like-count">${
-					tweet.like_count ? formatNumber(tweet.like_count) : ""
+					POST.like_count ? formatNumber(POST.like_count) : ""
 				}</span>`;
 
-	tweetInteractionsLikeEl.addEventListener("click", async (e) => {
+	POSTInteractionsLikeEl.addEventListener("click", async (e) => {
 		e.preventDefault();
 		e.stopPropagation();
 
-		const wasLiked = tweetInteractionsLikeEl.dataset.liked === "true";
+		const wasLiked = POSTInteractionsLikeEl.dataset.liked === "true";
 		const newIsLiked = !wasLiked;
-		tweetInteractionsLikeEl.dataset.liked = newIsLiked;
+		POSTInteractionsLikeEl.dataset.liked = newIsLiked;
 
-		const svg = tweetInteractionsLikeEl.querySelector("svg path");
-		const likeCountSpan = tweetInteractionsLikeEl.querySelector(".like-count");
+		const svg = POSTInteractionsLikeEl.querySelector("svg path");
+		const likeCountSpan = POSTInteractionsLikeEl.querySelector(".like-count");
 		const currentCount = parseInt(
-			tweetInteractionsLikeEl.dataset.likeCount || "0",
+			POSTInteractionsLikeEl.dataset.likeCount || "0",
 			10,
 		);
 
-		tweet.liked_by_user = newIsLiked;
-		tweet.like_count = newIsLiked
+		POST.liked_by_user = newIsLiked;
+		POST.like_count = newIsLiked
 			? currentCount + 1
 			: Math.max(0, currentCount - 1);
 
 		if (newIsLiked) {
 			svg.setAttribute("fill", "#F91980");
 			svg.setAttribute("stroke", "#F91980");
-			tweetInteractionsLikeEl.dataset.likeCount = currentCount + 1;
+			POSTInteractionsLikeEl.dataset.likeCount = currentCount + 1;
 			likeCountSpan.textContent =
 				currentCount + 1 === 0 ? "" : formatNumber(currentCount + 1);
 
-			tweetInteractionsLikeEl.querySelector("svg").classList.add("like-bump");
+			POSTInteractionsLikeEl.querySelector("svg").classList.add("like-bump");
 
 			setTimeout(() => {
-				tweetInteractionsLikeEl
+				POSTInteractionsLikeEl
 					.querySelector("svg")
 					.classList.remove("like-bump");
 			}, 500);
 		} else {
 			svg.setAttribute("fill", "none");
 			svg.setAttribute("stroke", "currentColor");
-			tweetInteractionsLikeEl.dataset.likeCount = Math.max(0, currentCount - 1);
+			POSTInteractionsLikeEl.dataset.likeCount = Math.max(0, currentCount - 1);
 			likeCountSpan.textContent =
 				Math.max(0, currentCount - 1) === 0
 					? ""
 					: formatNumber(Math.max(0, currentCount - 1));
 		}
 
-		updateTweetState(tweet.id, {
+		updatePOSTState(POST.id, {
 			liked_by_user: newIsLiked,
-			like_count: tweet.like_count,
+			like_count: POST.like_count,
 		});
 
-		const result = await query(`/tweets/${tweet.id}/like`, {
+		const result = await query(`/POSTS/${POST.id}/like`, {
 			method: "POST",
 		});
 
 		if (!result.success) {
 			if (result.error === "You cannot interact with this user") {
-				tweetInteractionsLikeEl.dataset.liked = wasLiked;
-				tweetInteractionsLikeEl.dataset.likeCount = currentCount;
+				POSTInteractionsLikeEl.dataset.liked = wasLiked;
+				POSTInteractionsLikeEl.dataset.likeCount = currentCount;
 
 				if (wasLiked) {
 					svg.setAttribute("fill", "#F91980");
@@ -2157,15 +2157,15 @@ export const createTweetElement = (tweet, config = {}) => {
 
 				createBlockedModal();
 			} else {
-				toastQueue.add(`<h1>${result.error || "Failed to like tweet"}</h1>`);
+				toastQueue.add(`<h1>${result.error || "Failed to like POST"}</h1>`);
 			}
 		}
 	});
 
-	const tweetInteractionsReplyEl = document.createElement("button");
-	tweetInteractionsReplyEl.className = "engagement";
-	tweetInteractionsReplyEl.style.setProperty("--color", "17, 133, 254");
-	tweetInteractionsReplyEl.innerHTML = `<svg
+	const POSTInteractionsReplyEl = document.createElement("button");
+	POSTInteractionsReplyEl.className = "engagement";
+	POSTInteractionsReplyEl.style.setProperty("--color", "17, 133, 254");
+	POSTInteractionsReplyEl.innerHTML = `<svg
           width="19"
           height="19"
           viewBox="0 0 20 20"
@@ -2179,32 +2179,32 @@ export const createTweetElement = (tweet, config = {}) => {
             stroke-linecap="round"
             stroke-linejoin="round"
           />
-        </svg> ${tweet.reply_count ? formatNumber(tweet.reply_count) : ""}`;
+        </svg> ${POST.reply_count ? formatNumber(POST.reply_count) : ""}`;
 
-	tweetInteractionsReplyEl.addEventListener("click", async (e) => {
+	POSTInteractionsReplyEl.addEventListener("click", async (e) => {
 		if (!clickToOpen) return;
 
 		e.stopPropagation();
 		e.preventDefault();
 
-		await openTweet(tweet);
+		await openPOST(POST);
 
 		requestAnimationFrame(() => {
-			if (document.querySelector(".tweetPage #tweet-textarea")) {
-				document.querySelector(".tweetPage #tweet-textarea").focus();
+			if (document.querySelector(".POSTPage #POST-textarea")) {
+				document.querySelector(".POSTPage #POST-textarea").focus();
 			}
 		});
 	});
 
-	const tweetInteractionsRetweetEl = document.createElement("button");
-	tweetInteractionsRetweetEl.className = "engagement";
-	tweetInteractionsRetweetEl.dataset.retweeted = tweet.retweeted_by_user;
-	tweetInteractionsRetweetEl.dataset.retweetCount = tweet.retweet_count || 0;
-	tweetInteractionsRetweetEl.style.setProperty("--color", "0, 186, 124");
+	const POSTInteractionsrePOSTEl = document.createElement("button");
+	POSTInteractionsrePOSTEl.className = "engagement";
+	POSTInteractionsrePOSTEl.dataset.rePOSTed = POST.rePOSTed_by_user;
+	POSTInteractionsrePOSTEl.dataset.rePOSTCount = POST.rePOST_count || 0;
+	POSTInteractionsrePOSTEl.style.setProperty("--color", "0, 186, 124");
 
-	const retweetColor = tweet.retweeted_by_user ? "#00BA7C" : "currentColor";
+	const rePOSTColor = POST.rePOSTed_by_user ? "#00BA7C" : "currentColor";
 
-	tweetInteractionsRetweetEl.innerHTML = `
+	POSTInteractionsrePOSTEl.innerHTML = `
             <svg
               width="19"
               height="19"
@@ -2214,82 +2214,82 @@ export const createTweetElement = (tweet, config = {}) => {
             >
               <path
                 d="M2.53001 7.81595C3.49179 4.73911 6.43281 2.5 9.91173 2.5C13.1684 2.5 15.9537 4.46214 17.0852 7.23684L17.6179 8.67647M17.6179 8.67647L18.5002 4.26471M17.6179 8.67647L13.6473 6.91176M17.4995 12.1841C16.5378 15.2609 13.5967 17.5 10.1178 17.5C6.86118 17.5 4.07589 15.5379 2.94432 12.7632L2.41165 11.3235M2.41165 11.3235L1.5293 15.7353M2.41165 11.3235L6.38224 13.0882"
-                stroke="${retweetColor}"
+                stroke="${rePOSTColor}"
                 stroke-width="1.5"
                 stroke-linecap="round"
                 stroke-linejoin="round"
               />
-            </svg> <span class="retweet-count">${
-							tweet.retweet_count ? formatNumber(tweet.retweet_count) : ""
+            </svg> <span class="rePOST-count">${
+							POST.rePOST_count ? formatNumber(POST.rePOST_count) : ""
 						}</span>`;
 
-	tweetInteractionsRetweetEl.addEventListener("click", async (e) => {
+	POSTInteractionsrePOSTEl.addEventListener("click", async (e) => {
 		e.preventDefault();
 		e.stopPropagation();
 
 		const menuItems = [
 			{
-				id: "retweet-option",
+				id: "rePOST-option",
 				icon: `<svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
           <path d="M2.53001 7.81595C3.49179 4.73911 6.43281 2.5 9.91173 2.5C13.1684 2.5 15.9537 4.46214 17.0852 7.23684L17.6179 8.67647M17.6179 8.67647L18.5002 4.26471M17.6179 8.67647L13.6473 6.91176M17.4995 12.1841C16.5378 15.2609 13.5967 17.5 10.1178 17.5C6.86118 17.5 4.07589 15.5379 2.94432 12.7632L2.41165 11.3235M2.41165 11.3235L1.5293 15.7353M2.41165 11.3235L6.38224 13.0882" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
         </svg>`,
-				title: "Retweet",
+				title: "rePOST",
 				onClick: async () => {
 					try {
 						const svgPaths =
-							tweetInteractionsRetweetEl.querySelectorAll("svg path");
-						const retweetCountSpan =
-							tweetInteractionsRetweetEl.querySelector(".retweet-count");
+							POSTInteractionsrePOSTEl.querySelectorAll("svg path");
+						const rePOSTCountSpan =
+							POSTInteractionsrePOSTEl.querySelector(".rePOST-count");
 						const currentCount = parseInt(
-							tweetInteractionsRetweetEl.dataset.retweetCount || "0",
+							POSTInteractionsrePOSTEl.dataset.rePOSTCount || "0",
 							10,
 						);
 
-						const result = await query(`/tweets/${tweet.id}/retweet`, {
+						const result = await query(`/POSTS/${POST.id}/rePOST`, {
 							method: "POST",
 						});
 
 						if (result.success) {
-							const newIsRetweeted = result.retweeted;
-							tweet.retweeted_by_user = newIsRetweeted;
-							tweet.retweet_count = newIsRetweeted
-								? tweet.retweet_count + 1
-								: tweet.retweet_count - 1;
-							tweetInteractionsRetweetEl.dataset.retweeted = newIsRetweeted;
+							const newIsrePOSTed = result.rePOSTed;
+							POST.rePOSTed_by_user = newIsrePOSTed;
+							POST.rePOST_count = newIsrePOSTed
+								? POST.rePOST_count + 1
+								: POST.rePOST_count - 1;
+							POSTInteractionsrePOSTEl.dataset.rePOSTed = newIsrePOSTed;
 
-							if (newIsRetweeted) {
+							if (newIsrePOSTed) {
 								svgPaths.forEach((path) => {
 									path.setAttribute("stroke", "#00BA7C");
 								});
-								tweetInteractionsRetweetEl.dataset.retweetCount =
+								POSTInteractionsrePOSTEl.dataset.rePOSTCount =
 									currentCount + 1;
-								retweetCountSpan.textContent =
+								rePOSTCountSpan.textContent =
 									currentCount + 1 === 0 ? "" : formatNumber(currentCount + 1);
 							} else {
 								svgPaths.forEach((path) => {
 									path.setAttribute("stroke", "currentColor");
 								});
 								const newCount = Math.max(0, currentCount - 1);
-								tweetInteractionsRetweetEl.dataset.retweetCount = newCount;
-								retweetCountSpan.textContent =
+								POSTInteractionsrePOSTEl.dataset.rePOSTCount = newCount;
+								rePOSTCountSpan.textContent =
 									newCount === 0 ? "" : formatNumber(newCount);
 							}
 
-							updateTweetState(tweet.id, {
-								retweeted_by_user: newIsRetweeted,
-								retweet_count: tweet.retweet_count,
+							updatePOSTState(POST.id, {
+								rePOSTed_by_user: newIsrePOSTed,
+								rePOST_count: POST.rePOST_count,
 							});
 						} else {
 							if (result.error === "You cannot interact with this user") {
 								createBlockedModal();
 							} else {
 								toastQueue.add(
-									`<h1>${result.error || "Failed to retweet"}</h1>`,
+									`<h1>${result.error || "Failed to rePOST"}</h1>`,
 								);
 							}
 						}
 					} catch (error) {
-						console.error("Error retweeting:", error);
+						console.error("Error rePOSTing:", error);
 						toastQueue.add(`<h1>Network error. Please try again.</h1>`);
 					}
 				},
@@ -2306,11 +2306,11 @@ export const createTweetElement = (tweet, config = {}) => {
 					let quoteModal = null;
 
 					const composer = await createComposer({
-						placeholder: "Add your thoughts about this tweet...",
-						quoteTweet: tweet,
+						placeholder: "Add your thoughts about this POST...",
+						quotePOST: POST,
 						autofocus: true,
-						callback: async (newTweet) => {
-							addTweetToTimeline(newTweet, true).classList.add("created");
+						callback: async (newPOST) => {
+							addPOSTToTimeline(newPOST, true).classList.add("created");
 							setTimeout(() => {
 								if (quoteModal?.close) quoteModal.close();
 							}, 10);
@@ -2326,7 +2326,7 @@ export const createTweetElement = (tweet, config = {}) => {
 			},
 		];
 
-		if (tweet.quote_count && tweet.quote_count > 0) {
+		if (POST.quote_count && POST.quote_count > 0) {
 			menuItems.push({
 				id: "view-quotes-option",
 				icon: `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -2335,24 +2335,24 @@ export const createTweetElement = (tweet, config = {}) => {
         </svg>`,
 				title: "View quotes",
 				onClick: async () => {
-					await showInteractionsModal(tweet.id, "quotes");
+					await showInteractionsModal(POST.id, "quotes");
 				},
 			});
 		}
 
 		createPopup({
-			triggerElement: tweetInteractionsRetweetEl,
+			triggerElement: POSTInteractionsrePOSTEl,
 			items: menuItems,
 		});
 	});
 
-	const tweetInteractionsOptionsEl = document.createElement("button");
-	tweetInteractionsOptionsEl.className = "engagement";
-	tweetInteractionsOptionsEl.style.setProperty("--color", "17, 133, 254");
+	const POSTInteractionsOptionsEl = document.createElement("button");
+	POSTInteractionsOptionsEl.className = "engagement";
+	POSTInteractionsOptionsEl.style.setProperty("--color", "17, 133, 254");
 
-	tweetInteractionsOptionsEl.innerHTML = `<svg width="19" height="19" viewBox="0 0 20 20" fill="currentColor" xmlns="http://www.w3.org/2000/svg" class="icon"><path d="M15.498 8.50159C16.3254 8.50159 16.9959 9.17228 16.9961 9.99963C16.9961 10.8271 16.3256 11.4987 15.498 11.4987C14.6705 11.4987 14 10.8271 14 9.99963C14.0002 9.17228 14.6706 8.50159 15.498 8.50159Z"></path><path d="M4.49805 8.50159C5.32544 8.50159 5.99689 9.17228 5.99707 9.99963C5.99707 10.8271 5.32555 11.4987 4.49805 11.4987C3.67069 11.4985 3 10.827 3 9.99963C3.00018 9.17239 3.6708 8.50176 4.49805 8.50159Z"></path><path d="M10.0003 8.50159C10.8276 8.50176 11.4982 9.17239 11.4984 9.99963C11.4984 10.827 10.8277 11.4985 10.0003 11.4987C9.17283 11.4987 8.50131 10.8271 8.50131 9.99963C8.50149 9.17228 9.17294 8.50159 10.0003 8.50159Z"></path></svg>`;
+	POSTInteractionsOptionsEl.innerHTML = `<svg width="19" height="19" viewBox="0 0 20 20" fill="currentColor" xmlns="http://www.w3.org/2000/svg" class="icon"><path d="M15.498 8.50159C16.3254 8.50159 16.9959 9.17228 16.9961 9.99963C16.9961 10.8271 16.3256 11.4987 15.498 11.4987C14.6705 11.4987 14 10.8271 14 9.99963C14.0002 9.17228 14.6706 8.50159 15.498 8.50159Z"></path><path d="M4.49805 8.50159C5.32544 8.50159 5.99689 9.17228 5.99707 9.99963C5.99707 10.8271 5.32555 11.4987 4.49805 11.4987C3.67069 11.4985 3 10.827 3 9.99963C3.00018 9.17239 3.6708 8.50176 4.49805 8.50159Z"></path><path d="M10.0003 8.50159C10.8276 8.50176 11.4982 9.17239 11.4984 9.99963C11.4984 10.827 10.8277 11.4985 10.0003 11.4987C9.17283 11.4987 8.50131 10.8271 8.50131 9.99963C8.50149 9.17228 9.17294 8.50159 10.0003 8.50159Z"></path></svg>`;
 
-	tweetInteractionsOptionsEl.addEventListener("click", async (e) => {
+	POSTInteractionsOptionsEl.addEventListener("click", async (e) => {
 		e.preventDefault();
 		e.stopPropagation();
 
@@ -2369,21 +2369,21 @@ export const createTweetElement = (tweet, config = {}) => {
         >
           <path
             d="M5.625 3.125H14.375C14.9963 3.125 15.5 3.62868 15.5 4.25V16.5073C15.5 16.959 15.0134 17.2422 14.6301 17.011L10 14.2222L5.36986 17.011C4.98664 17.2422 4.5 16.959 4.5 16.5073V4.25C4.5 3.62868 5.00368 3.125 5.625 3.125Z"
-            stroke="${tweet.bookmarked_by_user ? "#FFA900" : "currentColor"}"
+            stroke="${POST.bookmarked_by_user ? "#FFA900" : "currentColor"}"
             stroke-width="1.5"
             stroke-linecap="round"
             stroke-linejoin="round"
-            fill="${tweet.bookmarked_by_user ? "#FFA900" : "none"}"
+            fill="${POST.bookmarked_by_user ? "#FFA900" : "none"}"
           />
         </svg>`,
-				title: `${tweet.bookmarked_by_user ? "Un-b" : "B"}ookmark ${
-					tweet.bookmark_count ? `(${tweet.bookmark_count || "0"})` : ""
+				title: `${POST.bookmarked_by_user ? "Un-b" : "B"}ookmark ${
+					POST.bookmark_count ? `(${POST.bookmark_count || "0"})` : ""
 				}`,
 				onClick: async () => {
 					e.preventDefault();
 					e.stopPropagation();
 
-					const isBookmarked = tweet.bookmarked_by_user;
+					const isBookmarked = POST.bookmarked_by_user;
 
 					const result = await query(
 						isBookmarked ? "/bookmarks/remove" : "/bookmarks/add",
@@ -2392,15 +2392,15 @@ export const createTweetElement = (tweet, config = {}) => {
 							headers: {
 								"Content-Type": "application/json",
 							},
-							body: JSON.stringify({ postId: tweet.id }),
+							body: JSON.stringify({ postId: POST.id }),
 						},
 					);
 
 					if (result.success) {
-						tweet.bookmarked_by_user = result.bookmarked;
+						POST.bookmarked_by_user = result.bookmarked;
 					} else {
 						toastQueue.add(
-							`<h1>${result.error || "Failed to bookmark tweet"}</h1>`,
+							`<h1>${result.error || "Failed to bookmark POST"}</h1>`,
 						);
 					}
 				},
@@ -2413,17 +2413,17 @@ export const createTweetElement = (tweet, config = {}) => {
 				onClick: async () => {
 					await new Promise((resolve) => setTimeout(resolve, 20));
 					createPopup({
-						triggerElement: tweetInteractionsOptionsEl,
+						triggerElement: POSTInteractionsOptionsEl,
 						items: [
 							{
 								title: "Share",
 								icon: `<svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M10.2171 2.2793L10.2171 12.9745M10.2171 2.2793L13.333 4.99984M10.2171 2.2793L7.08301 4.99984M2.49967 10.9925L2.49967 14.1592C2.49967 16.011 4.00084 17.5121 5.85261 17.5121L14.9801 17.5121C16.8318 17.5121 18.333 16.011 18.333 14.1592L18.333 10.9925" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>`,
 								onClick: async () => {
-									const tweetUrl = `${window.location.origin}/tweet/${tweet.id}?ref=share`;
+									const POSTUrl = `${window.location.origin}/POST/${POST.id}?ref=share`;
 									const shareData = {
-										title: `${tweet.author.name || tweet.author.username} on Tweetapus`,
-										text: tweet.content,
-										url: tweetUrl,
+										title: `${POST.author.name || POST.author.username} on Xeetapus`,
+										text: POST.content,
+										url: POSTUrl,
 									};
 
 									try {
@@ -2434,11 +2434,11 @@ export const createTweetElement = (tweet, config = {}) => {
 										) {
 											await navigator.share(shareData);
 										} else {
-											await navigator.clipboard.writeText(tweetUrl);
+											await navigator.clipboard.writeText(POSTUrl);
 											toastQueue.add(`<h1>Link copied to clipboard!</h1>`);
 										}
 									} catch {
-										toastQueue.add(`<h1>Unable to share tweet</h1>`);
+										toastQueue.add(`<h1>Unable to share POST</h1>`);
 									}
 								},
 							},
@@ -2446,20 +2446,20 @@ export const createTweetElement = (tweet, config = {}) => {
 								title: "Share image",
 								icon: `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-image"><path d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>`,
 								onClick: async () => {
-									const tweetElClone = document.createElement("div");
-									tweetElClone.innerHTML = tweetEl.outerHTML;
+									const POSTElClone = document.createElement("div");
+									POSTElClone.innerHTML = POSTEl.outerHTML;
 
-									tweetElClone
-										.querySelectorAll(".tweet-actions")
+									POSTElClone
+										.querySelectorAll(".POST-actions")
 										.forEach((el) => {
 											el.remove();
 										});
-									tweetElClone
-										.querySelectorAll(".tweet-menu-btn")
+									POSTElClone
+										.querySelectorAll(".POST-menu-btn")
 										.forEach((el) => {
 											el.remove();
 										});
-									tweetElClone
+									POSTElClone
 										.querySelectorAll(".spoiler-overlay")
 										.forEach((el) => {
 											el.remove();
@@ -2483,7 +2483,7 @@ export const createTweetElement = (tweet, config = {}) => {
 											.getPropertyValue("--text-primary")
 											.trim() || "#0f1419";
 
-									tweetElClone
+									POSTElClone
 										.querySelectorAll(".verification-badge svg path")
 										.forEach((path) => {
 											const fill = path.getAttribute("fill");
@@ -2495,22 +2495,22 @@ export const createTweetElement = (tweet, config = {}) => {
 										});
 
 									const wrapper = document.createElement("div");
-									wrapper.className = "tweet-share-wrapper";
+									wrapper.className = "POST-share-wrapper";
 									wrapper.style.backgroundColor = computedPrimary;
 
 									const attribution = document.createElement("div");
-									attribution.className = "tweet-share-attribution";
-									attribution.innerHTML = `Tweetapus`;
+									attribution.className = "POST-share-attribution";
+									attribution.innerHTML = `Xeetapus`;
 									attribution.style.color = computedPrimaryFg;
 									wrapper.appendChild(attribution);
 
-									const tweetContainer = document.createElement("div");
-									tweetContainer.className = "tweet-share-container";
-									tweetContainer.style.backgroundColor = computedBgPrimary;
-									tweetContainer.style.color = computedTextPrimary;
+									const POSTContainer = document.createElement("div");
+									POSTContainer.className = "POST-share-container";
+									POSTContainer.style.backgroundColor = computedBgPrimary;
+									POSTContainer.style.color = computedTextPrimary;
 
-									tweetContainer.appendChild(tweetElClone);
-									wrapper.appendChild(tweetContainer);
+									POSTContainer.appendChild(POSTElClone);
+									wrapper.appendChild(POSTContainer);
 
 									document.body.appendChild(wrapper);
 
@@ -2543,7 +2543,7 @@ export const createTweetElement = (tweet, config = {}) => {
 													const url = URL.createObjectURL(blob);
 													const a = document.createElement("a");
 													a.href = url;
-													a.download = `tweetapus_${tweet.id}.png`;
+													a.download = `Xeetapus_${POST.id}.png`;
 													a.click();
 													wrapper.remove();
 												});
@@ -2565,15 +2565,15 @@ export const createTweetElement = (tweet, config = {}) => {
 								icon: `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-link"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg>`,
 								title: "Copy link",
 								onClick: () => {
-									const tweetUrl = `${window.location.origin}/tweet/${tweet.id}`;
+									const POSTUrl = `${window.location.origin}/POST/${POST.id}`;
 
-									navigator.clipboard.writeText(tweetUrl);
+									navigator.clipboard.writeText(POSTUrl);
 								},
 							},
 
 							{
 								icon: `<svg fill="none" viewBox="0 0 24 24" width="20" height="20"><path fill="currentColor" fill-rule="evenodd" clip-rule="evenodd" d="M14.242 3.03a1 1 0 0 1 .728 1.213l-4 16a1 1 0 1 1-1.94-.485l4-16a1 1 0 0 1 1.213-.728ZM6.707 7.293a1 1 0 0 1 0 1.414L3.414 12l3.293 3.293a1 1 0 1 1-1.414 1.414l-4-4a1 1 0 0 1 0-1.414l4-4a1 1 0 0 1 1.414 0Zm10.586 0a1 1 0 0 1 1.414 0l4 4a1 1 0 0 1 0 1.414l-4 4a1 1 0 1 1-1.414-1.414L20.586 12l-3.293-3.293a1 1 0 0 1 0-1.414Z"></path></svg>`,
-								title: "Embed tweet",
+								title: "Embed POST",
 								onClick: () => {
 									const content = document.createElement("div");
 									content.innerHTML = `<p style="margin: 15px;font-size: 15px;line-height: 23px;color: var(--text-secondary);">Embed this post in your website. Simply copy the following snippet and paste it into the HTML code of your website.</p>
@@ -2586,7 +2586,7 @@ export const createTweetElement = (tweet, config = {}) => {
 									</div>`;
 
 									content.querySelector("input").value =
-										`<script src="${window.location.origin}/embed/${tweet.id}.js" async charset="utf-8"></script>`;
+										`<script src="${window.location.origin}/embed/${POST.id}.js" async charset="utf-8"></script>`;
 
 									content
 										.querySelector("button")
@@ -2607,7 +2607,7 @@ export const createTweetElement = (tweet, config = {}) => {
 										});
 
 									createModal({
-										title: "Embed tweet",
+										title: "Embed POST",
 										content,
 									});
 								},
@@ -2622,15 +2622,15 @@ export const createTweetElement = (tweet, config = {}) => {
 				icon: `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>`,
 				title: "See interactions",
 				onClick: async () => {
-					await showInteractionsModal(tweet.id);
+					await showInteractionsModal(POST.id);
 				},
 			},
 		];
 
 		const userItems = [
 			{
-				id: tweet.pinned ? "unpin-option" : "pin-option",
-				icon: tweet.pinned
+				id: POST.pinned ? "unpin-option" : "pin-option",
+				icon: POST.pinned
 					? `<svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                   <path d="M12 17v5"></path>
                   <path d="M9 10.76a2 2 0 0 1-1.11 1.79l-1.78.9A2 2 0 0 0 7.89 17H16.1a2 2 0 0 0 1.78-2.55l-1.78-.9A2 2 0 0 1 15 10.76V7a1 1 0 0 0-1-1H10a1 1 0 0 0-1 1z"></path>
@@ -2639,23 +2639,23 @@ export const createTweetElement = (tweet, config = {}) => {
                   <path d="M12 17v5"></path>
                   <path d="M9 10.76a2 2 0 0 1-1.11 1.79l-1.78.9A2 2 0 0 0 7.89 17H16.1a2 2 0 0 0 1.78-2.55l-1.78-.9A2 2 0 0 1 15 10.76V7a1 1 0 0 0-1-1H10a1 1 0 0 0-1 1z"></path>
                 </svg>`,
-				title: tweet.pinned ? "Unpin from profile" : "Pin to profile",
+				title: POST.pinned ? "Unpin from profile" : "Pin to profile",
 				onClick: async () => {
 					try {
-						const method = tweet.pinned ? "DELETE" : "POST";
-						const result = await query(`/profile/pin/${tweet.id}`, {
+						const method = POST.pinned ? "DELETE" : "POST";
+						const result = await query(`/profile/pin/${POST.id}`, {
 							method,
 						});
 
 						if (result.success) {
-							tweet.pinned = !tweet.pinned;
+							POST.pinned = !POST.pinned;
 							toastQueue.add(
-								`<h1>Tweet ${
-									tweet.pinned ? "pinned" : "unpinned"
+								`<h1>POST ${
+									POST.pinned ? "pinned" : "unpinned"
 								} successfully</h1>`,
 							);
 
-							if (tweet.pinned) {
+							if (POST.pinned) {
 								const pinnedIndicatorEl = document.createElement("div");
 								pinnedIndicatorEl.className = "pinned-indicator";
 								pinnedIndicatorEl.innerHTML = `
@@ -2666,13 +2666,13 @@ export const createTweetElement = (tweet, config = {}) => {
                       <span>Pinned</span>
                     `;
 								const existingIndicator =
-									tweetEl.querySelector(".pinned-indicator");
+									POSTEl.querySelector(".pinned-indicator");
 								if (!existingIndicator) {
-									tweetEl.insertBefore(pinnedIndicatorEl, tweetEl.firstChild);
+									POSTEl.insertBefore(pinnedIndicatorEl, POSTEl.firstChild);
 								}
 							} else {
 								const pinnedIndicator =
-									tweetEl.querySelector(".pinned-indicator");
+									POSTEl.querySelector(".pinned-indicator");
 								if (pinnedIndicator) {
 									pinnedIndicator.remove();
 								}
@@ -2698,7 +2698,7 @@ export const createTweetElement = (tweet, config = {}) => {
         </svg>`,
 				title: "Change who can reply",
 				onClick: async () => {
-					const currentRestriction = tweet.reply_restriction || "everyone";
+					const currentRestriction = POST.reply_restriction || "everyone";
 
 					const restrictionMenu = document.createElement("div");
 					restrictionMenu.className = "reply-restriction-modal";
@@ -2786,7 +2786,7 @@ export const createTweetElement = (tweet, config = {}) => {
 						optionBtn.addEventListener("click", async () => {
 							try {
 								const result = await query(
-									`/tweets/${tweet.id}/reply-restriction`,
+									`/POSTS/${POST.id}/reply-restriction`,
 									{
 										method: "PATCH",
 										headers: { "Content-Type": "application/json" },
@@ -2795,7 +2795,7 @@ export const createTweetElement = (tweet, config = {}) => {
 								);
 
 								if (result.success) {
-									tweet.reply_restriction = option.value;
+									POST.reply_restriction = option.value;
 									closeModal();
 									toastQueue.add(`<h1>Reply restriction updated</h1>`);
 								} else {
@@ -2842,17 +2842,17 @@ export const createTweetElement = (tweet, config = {}) => {
               <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
               <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
             </svg>`,
-				title: "Edit tweet",
+				title: "Edit POST",
 				onClick: async () => {
-					if (tweet.poll_id) {
-						toastQueue.add(`<h1>Cannot edit tweets with polls</h1>`);
+					if (POST.poll_id) {
+						toastQueue.add(`<h1>Cannot edit POSTS with polls</h1>`);
 						return;
 					}
 
 					const currentUser = await getUser();
-					let maxTweetLength = currentUser.character_limit || 400;
+					let maxPOSTLength = currentUser.character_limit || 400;
 					if (!currentUser.character_limit) {
-						maxTweetLength = currentUser.gray
+						maxPOSTLength = currentUser.gray
 							? 37500
 							: currentUser.gold
 								? 16500
@@ -2862,18 +2862,18 @@ export const createTweetElement = (tweet, config = {}) => {
 					}
 
 					const editForm = document.createElement("form");
-					editForm.className = "edit-tweet-form";
+					editForm.className = "edit-POST-form";
 
 					const textarea = document.createElement("textarea");
-					textarea.className = "edit-tweet-textarea";
-					textarea.value = tweet.content || "";
+					textarea.className = "edit-POST-textarea";
+					textarea.value = POST.content || "";
 					textarea.placeholder = "What's happening?";
 
 					const charCounter = document.createElement("div");
-					charCounter.className = "edit-tweet-char-counter";
+					charCounter.className = "edit-POST-char-counter";
 
 					const updateCharCounter = () => {
-						const remaining = maxTweetLength - textarea.value.length;
+						const remaining = maxPOSTLength - textarea.value.length;
 						charCounter.textContent = `${remaining}`;
 						charCounter.classList.toggle(
 							"warning",
@@ -2886,16 +2886,16 @@ export const createTweetElement = (tweet, config = {}) => {
 					updateCharCounter();
 
 					const buttonContainer = document.createElement("div");
-					buttonContainer.className = "edit-tweet-buttons";
+					buttonContainer.className = "edit-POST-buttons";
 
 					const cancelButton = document.createElement("button");
 					cancelButton.type = "button";
-					cancelButton.className = "edit-tweet-cancel";
+					cancelButton.className = "edit-POST-cancel";
 					cancelButton.textContent = "Cancel";
 
 					const saveButton = document.createElement("button");
 					saveButton.type = "submit";
-					saveButton.className = "edit-tweet-save";
+					saveButton.className = "edit-POST-save";
 					saveButton.textContent = "Save";
 
 					buttonContainer.appendChild(cancelButton);
@@ -2907,9 +2907,9 @@ export const createTweetElement = (tweet, config = {}) => {
 
 					const { createModal } = await import("../../shared/ui-utils.js");
 					const editModal = createModal({
-						title: "Edit tweet",
+						title: "Edit POST",
 						content: editForm,
-						className: "edit-tweet-modal",
+						className: "edit-POST-modal",
 					});
 
 					cancelButton.addEventListener("click", () => editModal.close());
@@ -2919,52 +2919,52 @@ export const createTweetElement = (tweet, config = {}) => {
 
 						const newContent = textarea.value.trim();
 						if (!newContent) {
-							toastQueue.add(`<h1>Tweet content cannot be empty</h1>`);
+							toastQueue.add(`<h1>POST content cannot be empty</h1>`);
 							return;
 						}
 
-						if (newContent.length > maxTweetLength) {
-							toastQueue.add(`<h1>Tweet content is too long</h1>`);
+						if (newContent.length > maxPOSTLength) {
+							toastQueue.add(`<h1>POST content is too long</h1>`);
 							return;
 						}
 
 						saveButton.disabled = true;
 						saveButton.textContent = "Saving...";
 
-						const result = await query(`/tweets/${tweet.id}`, {
+						const result = await query(`/POSTS/${POST.id}`, {
 							method: "PUT",
 							headers: { "Content-Type": "application/json" },
 							body: JSON.stringify({ content: newContent }),
 						});
 
 						if (result.success) {
-							tweet.content = newContent;
-							tweet.edited_at = result.tweet.edited_at;
+							POST.content = newContent;
+							POST.edited_at = result.POST.edited_at;
 
-							const contentEl = tweetEl.querySelector(".tweet-content");
+							const contentEl = POSTEl.querySelector(".POST-content");
 							if (contentEl) {
 								contentEl.innerHTML = linkifyText(newContent);
 								replaceEmojiShortcodesInElement(contentEl);
 
 								const editedIndicator = document.createElement("span");
-								editedIndicator.className = "tweet-edited-indicator";
+								editedIndicator.className = "POST-edited-indicator";
 								editedIndicator.textContent = " (edited)";
-								const usernameEl = tweetEl.querySelector(
-									".tweet-header-username",
+								const usernameEl = POSTEl.querySelector(
+									".POST-header-username",
 								);
 								if (
 									usernameEl &&
-									!usernameEl.querySelector(".tweet-edited-indicator")
+									!usernameEl.querySelector(".POST-edited-indicator")
 								) {
 									usernameEl.appendChild(editedIndicator);
 								}
 							}
 
 							editModal.close();
-							toastQueue.add(`<h1>Tweet updated successfully</h1>`);
+							toastQueue.add(`<h1>POST updated successfully</h1>`);
 						} else {
 							toastQueue.add(
-								`<h1>${result.error || "Failed to update tweet"}</h1>`,
+								`<h1>${result.error || "Failed to update POST"}</h1>`,
 							);
 							saveButton.disabled = false;
 							saveButton.textContent = "Save";
@@ -2981,7 +2981,7 @@ export const createTweetElement = (tweet, config = {}) => {
               <path d="M12 2a7 7 0 0 1 7 7"></path>
               <path d="M12 22a7 7 0 0 0 7-7"></path>
             </svg>`,
-				title: "Change tweet outline",
+				title: "Change POST outline",
 				requiresGray: true,
 				onClick: async () => {
 					const { createModal } = await import("../../shared/ui-utils.js");
@@ -2998,7 +2998,7 @@ export const createTweetElement = (tweet, config = {}) => {
 					const input = document.createElement("input");
 					input.type = "text";
 					input.placeholder = "e.g. red, #ff0000, linear-gradient(...)";
-					input.value = tweet.outline || "";
+					input.value = POST.outline || "";
 					input.style.cssText =
 						"padding: 10px; border: 1px solid var(--border-primary); border-radius: 8px; background: var(--bg-secondary); color: var(--text-primary); font-size: 14px;";
 
@@ -3033,7 +3033,7 @@ export const createTweetElement = (tweet, config = {}) => {
 					formContainer.appendChild(buttonContainer);
 
 					const modal = createModal({
-						title: "Change Tweet Outline",
+						title: "Change POST Outline",
 						content: formContainer,
 						className: "change-outline-modal",
 					});
@@ -3045,26 +3045,26 @@ export const createTweetElement = (tweet, config = {}) => {
 						saveBtn.disabled = true;
 						saveBtn.textContent = "Saving...";
 
-						const result = await query(`/tweets/${tweet.id}/outline`, {
+						const result = await query(`/POSTS/${POST.id}/outline`, {
 							method: "PATCH",
 							headers: { "Content-Type": "application/json" },
 							body: JSON.stringify({ outline }),
 						});
 
 						if (result.success) {
-							tweet.outline = outline;
+							POST.outline = outline;
 							if (outline) {
-								tweetEl.style.border = `2px solid transparent`;
-								tweetEl.style.borderImage = outline.includes("gradient")
+								POSTEl.style.border = `2px solid transparent`;
+								POSTEl.style.borderImage = outline.includes("gradient")
 									? `${outline} 1`
 									: `linear-gradient(${outline}, ${outline}) 1`;
-								tweetEl.style.borderRadius = "16px";
+								POSTEl.style.borderRadius = "16px";
 							} else {
-								tweetEl.style.border = "";
-								tweetEl.style.borderImage = "";
+								POSTEl.style.border = "";
+								POSTEl.style.borderImage = "";
 							}
 							modal.close();
-							toastQueue.add(`<h1>Tweet outline updated</h1>`);
+							toastQueue.add(`<h1>POST outline updated</h1>`);
 						} else {
 							toastQueue.add(
 								`<h1>${result.error || "Failed to update outline"}</h1>`,
@@ -3083,25 +3083,25 @@ export const createTweetElement = (tweet, config = {}) => {
               <line x1="10" y1="11" x2="10" y2="17"></line>
               <line x1="14" y1="11" x2="14" y2="17"></line>
             </svg>`,
-				title: "Delete tweet",
+				title: "Delete POST",
 				onClick: async () => {
 					createConfirmModal({
-						title: "Delete tweet",
+						title: "Delete POST",
 						message:
-							"Are you sure you want to delete this tweet? This action cannot be undone.",
+							"Are you sure you want to delete this POST? This action cannot be undone.",
 						confirmText: "Delete",
 						cancelText: "Cancel",
 						danger: true,
 						onConfirm: async () => {
-							tweetEl.remove();
+							POSTEl.remove();
 
-							const result = await query(`/tweets/${tweet.id}`, {
+							const result = await query(`/POSTS/${POST.id}`, {
 								method: "DELETE",
 							});
 
 							if (!result.success) {
 								toastQueue.add(
-									`<h1>${result.error || "Failed to delete tweet"}</h1>`,
+									`<h1>${result.error || "Failed to delete POST"}</h1>`,
 								);
 							}
 						},
@@ -3111,37 +3111,37 @@ export const createTweetElement = (tweet, config = {}) => {
 		];
 
 		getUser().then(async (currentUser) => {
-			const isOwnTweet =
-				currentUser && String(currentUser.id) === String(tweet.author?.id);
+			const isOwnPOST =
+				currentUser && String(currentUser.id) === String(POST.author?.id);
 
 			let filteredUserItems = [];
-			if (isOwnTweet) {
+			if (isOwnPOST) {
 				filteredUserItems = userItems.filter((item) => {
 					if (item.requiresGray && !currentUser.gray) return false;
 					return true;
 				});
 			}
 
-			const items = isOwnTweet
+			const items = isOwnPOST
 				? [...defaultItems, ...filteredUserItems]
 				: [...defaultItems];
 
-			if (currentUser && tweet.author && !isOwnTweet) {
-				const checkResp = await query(`/blocking/check/${tweet.author.id}`);
+			if (currentUser && POST.author && !isOwnPOST) {
+				const checkResp = await query(`/blocking/check/${POST.author.id}`);
 				const isBlocked = checkResp?.blocked || false;
 
 				const blockItem = {
 					id: isBlocked ? "unblock-user" : "block-user",
 					icon: `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"></circle><line x1="15" y1="9" x2="9" y2="15"></line><line x1="9" y1="9" x2="15" y2="15"></line></svg>`,
 					title: isBlocked
-						? `Unblock @${tweet.author.username}`
-						: `Block @${tweet.author.username}`,
+						? `Unblock @${POST.author.username}`
+						: `Block @${POST.author.username}`,
 					onClick: async () => {
 						try {
 							if (
 								!confirm(
 									`${isBlocked ? "Unblock" : "Block"} @${
-										tweet.author.username
+										POST.author.username
 									}?`,
 								)
 							)
@@ -3153,8 +3153,8 @@ export const createTweetElement = (tweet, config = {}) => {
 								method: "POST",
 								headers: { "Content-Type": "application/json" },
 								body: JSON.stringify({
-									userId: tweet.author.id,
-									sourceTweetId: isBlocked ? undefined : tweet.id,
+									userId: POST.author.id,
+									sourcePOSTId: isBlocked ? undefined : POST.id,
 								}),
 							});
 
@@ -3178,18 +3178,18 @@ export const createTweetElement = (tweet, config = {}) => {
 			}
 
 			const reportItem = {
-				id: "report-tweet",
+				id: "report-POST",
 				icon: `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-flag-icon lucide-flag"><path d="M4 22V4a1 1 0 0 1 .4-.8A6 6 0 0 1 8 2c3 0 5 2 7.333 2q2 0 3.067-.8A1 1 0 0 1 20 4v10a1 1 0 0 1-.4.8A6 6 0 0 1 16 16c-3 0-5-2-8-2a6 6 0 0 0-4 1.528"/></svg>`,
-				title: "Report tweet",
+				title: "Report POST",
 				onClick: async () => {
 					const { showReportModal } = await import(
 						"../../shared/report-modal.js"
 					);
 					showReportModal({
 						type: "post",
-						id: tweet.id,
-						username: tweet.author.username,
-						content: tweet.content,
+						id: POST.id,
+						username: POST.author.username,
+						content: POST.content,
 					});
 				},
 			};
@@ -3197,13 +3197,13 @@ export const createTweetElement = (tweet, config = {}) => {
 			items.push(reportItem);
 
 			createPopup({
-				triggerElement: tweetInteractionsOptionsEl,
+				triggerElement: POSTInteractionsOptionsEl,
 				items,
 			});
 		});
 	});
 
-	const replyRestriction = tweet.reply_restriction || "everyone";
+	const replyRestriction = POST.reply_restriction || "everyone";
 	let restrictionEl = null;
 
 	const createRestrictionElement = () => {
@@ -3213,40 +3213,40 @@ export const createTweetElement = (tweet, config = {}) => {
 					const getUser = (await import("./auth.js")).default;
 					const currentUser = await getUser();
 
-					if (currentUser && currentUser.id === tweet.author.id) {
+					if (currentUser && currentUser.id === POST.author.id) {
 						if (!restrictionEl) {
 							restrictionEl = document.createElement("div");
 							restrictionEl.className = "reply-restriction-info";
-							const existingRestriction = tweetEl.querySelector(
+							const existingRestriction = POSTEl.querySelector(
 								".reply-restriction-info",
 							);
-							if (!existingRestriction && tweetInteractionsEl.parentNode) {
-								tweetEl.insertBefore(restrictionEl, tweetInteractionsEl);
+							if (!existingRestriction && POSTInteractionsEl.parentNode) {
+								POSTEl.insertBefore(restrictionEl, POSTInteractionsEl);
 							}
 						}
 						restrictionEl.innerHTML = `<svg width="19" height="19" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <path d="M18.7502 11V7.50097C18.7502 4.73917 16.5131 2.50033 13.7513 2.50042L6.25021 2.50044C3.48848 2.5004 1.25017 4.73875 1.2502 7.50048L1.25021 10.9971C1.2502 13.749 3.47395 15.9836 6.22586 15.9971L6.82888 16V19.0182L12.1067 16H13.7502C16.5116 16 18.7502 13.7614 18.7502 11Z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path></svg> You can reply to your own tweet`;
+          <path d="M18.7502 11V7.50097C18.7502 4.73917 16.5131 2.50033 13.7513 2.50042L6.25021 2.50044C3.48848 2.5004 1.25017 4.73875 1.2502 7.50048L1.25021 10.9971C1.2502 13.749 3.47395 15.9836 6.22586 15.9971L6.82888 16V19.0182L12.1067 16H13.7502C16.5116 16 18.7502 13.7614 18.7502 11Z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path></svg> You can reply to your own POST`;
 						return;
 					}
 
-					checkReplyPermissions(tweet, replyRestriction).then(
+					checkReplyPermissions(POST, replyRestriction).then(
 						({ canReply: allowed, restrictionText }) => {
 							if (!allowed) {
-								tweetInteractionsReplyEl.disabled = true;
-								tweetInteractionsReplyEl.classList.add("reply-restricted");
-								tweetInteractionsReplyEl.title =
-									"You cannot reply to this tweet";
+								POSTInteractionsReplyEl.disabled = true;
+								POSTInteractionsReplyEl.classList.add("reply-restricted");
+								POSTInteractionsReplyEl.title =
+									"You cannot reply to this POST";
 							}
 
 							if (restrictionText) {
 								if (!restrictionEl) {
 									restrictionEl = document.createElement("div");
 									restrictionEl.className = "reply-restriction-info";
-									const existingRestriction = tweetEl.querySelector(
+									const existingRestriction = POSTEl.querySelector(
 										".reply-restriction-info",
 									);
-									if (!existingRestriction && tweetInteractionsEl.parentNode) {
-										tweetEl.insertBefore(restrictionEl, tweetInteractionsEl);
+									if (!existingRestriction && POSTInteractionsEl.parentNode) {
+										POSTEl.insertBefore(restrictionEl, POSTInteractionsEl);
 									}
 								}
 								restrictionEl.innerHTML = `<svg width="19" height="19" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -3259,23 +3259,23 @@ export const createTweetElement = (tweet, config = {}) => {
 		}
 	};
 
-	tweetInteractionsEl.appendChild(tweetInteractionsLikeEl);
-	tweetInteractionsEl.appendChild(tweetInteractionsRetweetEl);
-	tweetInteractionsEl.appendChild(tweetInteractionsReplyEl);
+	POSTInteractionsEl.appendChild(POSTInteractionsLikeEl);
+	POSTInteractionsEl.appendChild(POSTInteractionsrePOSTEl);
+	POSTInteractionsEl.appendChild(POSTInteractionsReplyEl);
 
-	const tweetInteractionsRightEl = document.createElement("div");
-	tweetInteractionsRightEl.className = "tweet-interactions-right";
+	const POSTInteractionsRightEl = document.createElement("div");
+	POSTInteractionsRightEl.className = "POST-interactions-right";
 
-	const tweetInteractionsViewsEl = document.createElement("span");
-	tweetInteractionsViewsEl.className = "engagement views-count";
-	tweetInteractionsViewsEl.innerHTML = `
+	const POSTInteractionsViewsEl = document.createElement("span");
+	POSTInteractionsViewsEl.className = "engagement views-count";
+	POSTInteractionsViewsEl.innerHTML = `
     <svg width="19" height="19" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
       <path d="M10 5C5 5 2 10 2 10s3 5 8 5 8-5 8-5-3-5-8-5z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
       <circle cx="10" cy="10" r="2.5" stroke="currentColor" stroke-width="1.5" fill="none"/>
     </svg>
-    <span>${tweet.view_count > 0 ? formatNumber(tweet.view_count) : "1"}</span>`;
-	tweetInteractionsViewsEl.style.setProperty("--color", "119, 119, 119");
-	tweetInteractionsViewsEl.title = `${tweet.view_count || 0} views`;
+    <span>${POST.view_count > 0 ? formatNumber(POST.view_count) : "1"}</span>`;
+	POSTInteractionsViewsEl.style.setProperty("--color", "119, 119, 119");
+	POSTInteractionsViewsEl.title = `${POST.view_count || 0} views`;
 
 	const reactionCountSpan = document.createElement("span");
 	reactionCountSpan.className = "reaction-count";
@@ -3283,16 +3283,16 @@ export const createTweetElement = (tweet, config = {}) => {
 	const topReactionsSpan = document.createElement("span");
 	topReactionsSpan.className = "top-reactions";
 
-	const tweetInteractionsReactionEl = document.createElement("button");
-	tweetInteractionsReactionEl.className = "engagement reaction-btn";
-	tweetInteractionsReactionEl.dataset.bookmarked = "false";
-	tweetInteractionsReactionEl.title = "React";
-	tweetInteractionsReactionEl.style.setProperty("--color", "255, 180, 0");
-	tweetInteractionsReactionEl.innerHTML = `
+	const POSTInteractionsReactionEl = document.createElement("button");
+	POSTInteractionsReactionEl.className = "engagement reaction-btn";
+	POSTInteractionsReactionEl.dataset.bookmarked = "false";
+	POSTInteractionsReactionEl.title = "React";
+	POSTInteractionsReactionEl.style.setProperty("--color", "255, 180, 0");
+	POSTInteractionsReactionEl.innerHTML = `
     <svg xmlns="http://www.w3.org/2000/svg" width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-smile-plus-icon lucide-smile-plus"><path d="M22 11v1a10 10 0 1 1-9-10"/><path d="M8 14s1.5 2 4 2 4-2 4-2"/><line x1="9" x2="9.01" y1="9" y2="9"/><line x1="15" x2="15.01" y1="9" y2="9"/><path d="M16 5h6"/><path d="M19 2v6"/></svg>`;
 
 	const updateReactionDisplay = () => {
-		const topReactions = tweet.top_reactions || [];
+		const topReactions = POST.top_reactions || [];
 
 		if (topReactions.length > 0) {
 			topReactionsSpan.innerHTML = topReactions.map((r) => r.emoji).join("");
@@ -3304,8 +3304,8 @@ export const createTweetElement = (tweet, config = {}) => {
 			topReactionsSpan.style.display = "none";
 		}
 
-		if (tweet.reaction_count > 0) {
-			reactionCountSpan.textContent = String(tweet.reaction_count);
+		if (POST.reaction_count > 0) {
+			reactionCountSpan.textContent = String(POST.reaction_count);
 			reactionCountSpan.style.display = "inline";
 		} else {
 			reactionCountSpan.textContent = "";
@@ -3315,7 +3315,7 @@ export const createTweetElement = (tweet, config = {}) => {
 
 	updateReactionDisplay();
 
-	tweetInteractionsReactionEl.addEventListener("click", async (e) => {
+	POSTInteractionsReactionEl.addEventListener("click", async (e) => {
 		e.preventDefault();
 		e.stopPropagation();
 
@@ -3327,14 +3327,14 @@ export const createTweetElement = (tweet, config = {}) => {
 				"../../shared/reactions.js"
 			);
 
-			const rect = tweetInteractionsReactionEl.getBoundingClientRect();
+			const rect = POSTInteractionsReactionEl.getBoundingClientRect();
 			await showEmojiPickerPopup(
 				async (emoji) => {
 					try {
-						triggerReactionBurst(tweetInteractionsReactionEl, emoji, 6);
-						console.debug("React: sending", { tweetId: tweet.id, emoji });
+						triggerReactionBurst(POSTInteractionsReactionEl, emoji, 6);
+						console.debug("React: sending", { POSTId: POST.id, emoji });
 
-						const result = await query(`/tweets/${tweet.id}/reaction`, {
+						const result = await query(`/POSTS/${POST.id}/reaction`, {
 							method: "POST",
 							headers: { "Content-Type": "application/json" },
 							body: JSON.stringify({ emoji }),
@@ -3345,10 +3345,10 @@ export const createTweetElement = (tweet, config = {}) => {
 						if (result?.success) {
 							// Only update counts if the server returned numeric totals
 							if (typeof result.total_reactions === "number") {
-								tweet.reaction_count = result.total_reactions;
+								POST.reaction_count = result.total_reactions;
 							}
 							if (Array.isArray(result.top_reactions)) {
-								tweet.top_reactions = result.top_reactions;
+								POST.top_reactions = result.top_reactions;
 							}
 							updateReactionDisplay();
 						} else {
@@ -3368,17 +3368,17 @@ export const createTweetElement = (tweet, config = {}) => {
 		}
 	});
 
-	tweetInteractionsRightEl.appendChild(tweetInteractionsViewsEl);
+	POSTInteractionsRightEl.appendChild(POSTInteractionsViewsEl);
 
 	const reactionWrapper = document.createElement("div");
 	reactionWrapper.className = "reaction-wrapper";
 
-	reactionWrapper.appendChild(tweetInteractionsReactionEl);
+	reactionWrapper.appendChild(POSTInteractionsReactionEl);
 	reactionWrapper.appendChild(topReactionsSpan);
 	reactionWrapper.appendChild(reactionCountSpan);
 
 	const showReactionsModal = async () => {
-		const reactionsData = await query(`/tweets/${tweet.id}/reactions`);
+		const reactionsData = await query(`/POSTS/${POST.id}/reactions`);
 		const container = document.createElement("div");
 		container.className = "reactions-list";
 
@@ -3433,7 +3433,7 @@ export const createTweetElement = (tweet, config = {}) => {
 						e.stopPropagation();
 
 						try {
-							const result = await query(`/tweets/${tweet.id}/reaction`, {
+							const result = await query(`/POSTS/${POST.id}/reaction`, {
 								method: "POST",
 								body: { emoji },
 							});
@@ -3492,10 +3492,10 @@ export const createTweetElement = (tweet, config = {}) => {
 		showReactionsModal();
 	});
 
-	tweetInteractionsRightEl.appendChild(reactionWrapper);
-	tweetInteractionsRightEl.appendChild(tweetInteractionsOptionsEl);
+	POSTInteractionsRightEl.appendChild(reactionWrapper);
+	POSTInteractionsRightEl.appendChild(POSTInteractionsOptionsEl);
 
-	tweetInteractionsEl.appendChild(tweetInteractionsRightEl);
+	POSTInteractionsEl.appendChild(POSTInteractionsRightEl);
 
 	if (size !== "preview") {
 		(async () => {
@@ -3513,35 +3513,35 @@ export const createTweetElement = (tweet, config = {}) => {
 							btn.style.cursor = "not-allowed";
 						}
 					};
-					disableButton(tweetInteractionsLikeEl);
-					disableButton(tweetInteractionsRetweetEl);
-					disableButton(tweetInteractionsReplyEl);
-					disableButton(tweetInteractionsReactionEl);
-					disableButton(tweetInteractionsOptionsEl);
+					disableButton(POSTInteractionsLikeEl);
+					disableButton(POSTInteractionsrePOSTEl);
+					disableButton(POSTInteractionsReplyEl);
+					disableButton(POSTInteractionsReactionEl);
+					disableButton(POSTInteractionsOptionsEl);
 				}
 			} catch {}
 		})();
 
-		tweetEl.appendChild(tweetInteractionsEl);
+		POSTEl.appendChild(POSTInteractionsEl);
 		createRestrictionElement();
 	}
-	if (tweet.top_reply && showTopReply) {
-		const topReplyEl = createTweetElement(tweet.top_reply, {
+	if (POST.top_reply && showTopReply) {
+		const topReplyEl = createPOSTElement(POST.top_reply, {
 			clickToOpen: true,
 			showTopReply: false,
 			isTopReply: true,
 		});
 		topReplyEl.style.marginTop = "4px";
 
-		if (!tweet.top_reply.parentsCache) {
-			tweet.top_reply.parentsCache = [tweet, tweet.top_reply];
+		if (!POST.top_reply.parentsCache) {
+			POST.top_reply.parentsCache = [POST, POST.top_reply];
 		}
 
-		tweetEl.appendChild(topReplyEl);
+		POSTEl.appendChild(topReplyEl);
 
-		if (tweet.top_reply.author_response) {
-			const authorResponseEl = createTweetElement(
-				tweet.top_reply.author_response,
+		if (POST.top_reply.author_response) {
+			const authorResponseEl = createPOSTElement(
+				POST.top_reply.author_response,
 				{
 					clickToOpen: true,
 					showTopReply: false,
@@ -3549,22 +3549,22 @@ export const createTweetElement = (tweet, config = {}) => {
 				},
 			);
 
-			if (!tweet.top_reply.author_response.parentsCache) {
-				tweet.top_reply.author_response.parentsCache = [
-					tweet,
-					tweet.top_reply,
-					tweet.top_reply.author_response,
+			if (!POST.top_reply.author_response.parentsCache) {
+				POST.top_reply.author_response.parentsCache = [
+					POST,
+					POST.top_reply,
+					POST.top_reply.author_response,
 				];
 			}
 
-			tweetEl.appendChild(authorResponseEl);
+			POSTEl.appendChild(authorResponseEl);
 		}
 	}
 
 	if (clickToOpen) {
-		tweetEl.classList.add("clickable");
+		POSTEl.classList.add("clickable");
 
-		tweetEl.addEventListener("click", (e) => {
+		POSTEl.addEventListener("click", (e) => {
 			if (e.target.closest("button, a, .engagement")) {
 				return;
 			}
@@ -3572,65 +3572,65 @@ export const createTweetElement = (tweet, config = {}) => {
 				e.stopPropagation();
 			}
 
-			openTweet(tweet, { threadPostsCache: tweet.parentsCache });
+			openPOST(POST, { threadPostsCache: POST.parentsCache });
 		});
 	}
 
-	return tweetEl;
+	return POSTEl;
 };
 
-export const addTweetToTimeline = (tweet, prepend = false) => {
-	if (!tweet) {
-		console.error("No tweet provided to addTweetToTimeline");
+export const addPOSTToTimeline = (POST, prepend = false) => {
+	if (!POST) {
+		console.error("No POST provided to addPOSTToTimeline");
 		return null;
 	}
 
-	// Handle tweets without author property (fallback)
-	if (!tweet.author && tweet.user) {
-		tweet.author = tweet.user;
+	// Handle POSTS without author property (fallback)
+	if (!POST.author && POST.user) {
+		POST.author = POST.user;
 	}
 
-	if (!tweet.author) {
+	if (!POST.author) {
 		console.error(
-			"Invalid tweet object provided to addTweetToTimeline - missing author",
-			tweet,
+			"Invalid POST object provided to addPOSTToTimeline - missing author",
+			POST,
 		);
 		return null;
 	}
 
-	const tweetEl = createTweetElement(tweet, {
+	const POSTEl = createPOSTElement(POST, {
 		clickToOpen: true,
 		showTopReply: true,
 	});
 
-	const tweetsContainer = document.querySelector(".tweets");
-	if (!tweetsContainer) {
-		console.error("Tweets container not found");
+	const POSTSContainer = document.querySelector(".POSTS");
+	if (!POSTSContainer) {
+		console.error("POSTS container not found");
 		return null;
 	}
 
 	if (prepend) {
-		tweetsContainer.insertBefore(tweetEl, tweetsContainer.firstChild);
+		POSTSContainer.insertBefore(POSTEl, POSTSContainer.firstChild);
 	} else {
-		tweetsContainer.appendChild(tweetEl);
+		POSTSContainer.appendChild(POSTEl);
 	}
 
 	(async () => {
 		try {
-			if (tweet.reaction_count === undefined) {
-				const resp = await query(`/tweets/${tweet.id}/reactions`);
+			if (POST.reaction_count === undefined) {
+				const resp = await query(`/POSTS/${POST.id}/reactions`);
 				if (
 					resp &&
 					Array.isArray(resp.reactions) &&
 					resp.reactions.length > 0
 				) {
-					tweet.reaction_count = resp.reactions.length;
-					const reactionWrapper = tweetEl.querySelector(".reaction-wrapper");
+					POST.reaction_count = resp.reactions.length;
+					const reactionWrapper = POSTEl.querySelector(".reaction-wrapper");
 					const reactionCountSpan = reactionWrapper
 						? reactionWrapper.querySelector(".reaction-count")
 						: null;
 					if (reactionWrapper && reactionCountSpan) {
-						reactionCountSpan.textContent = String(tweet.reaction_count);
+						reactionCountSpan.textContent = String(POST.reaction_count);
 						if (!reactionCountSpan.parentNode)
 							reactionWrapper.appendChild(reactionCountSpan);
 					}
@@ -3639,5 +3639,5 @@ export const addTweetToTimeline = (tweet, prepend = false) => {
 		} catch {}
 	})();
 
-	return tweetEl;
+	return POSTEl;
 };

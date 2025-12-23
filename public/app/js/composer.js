@@ -9,7 +9,7 @@ export const useComposer = (
 	callback,
 	{
 		replyTo = null,
-		quoteTweet = null,
+		quotePOST = null,
 		article = null,
 		maxChars = 400,
 		communityId = null,
@@ -18,9 +18,9 @@ export const useComposer = (
 		cardOnly = false,
 	} = {},
 ) => {
-	const textarea = element.querySelector("#tweet-textarea");
+	const textarea = element.querySelector("#POST-textarea");
 	const charCount = element.querySelector("#char-count");
-	const tweetButton = element.querySelector("#tweet-button");
+	const POSTButton = element.querySelector("#POST-button");
 	const pollToggle = element.querySelector("#poll-toggle");
 	const pollContainer = element.querySelector("#poll-container");
 	const addPollOptionBtn = element.querySelector("#add-poll-option");
@@ -66,7 +66,7 @@ export const useComposer = (
 	const CIRCLE_CIRCUMFERENCE = 87.96;
 
 	const updateCharacterCount = () => {
-		if (!textarea || !charCount || !tweetButton) return;
+		if (!textarea || !charCount || !POSTButton) return;
 		const length = textarea.value.length;
 		const counter = charCount.closest(".character-counter");
 		const progressCircle = counter?.querySelector(".counter-progress");
@@ -82,12 +82,12 @@ export const useComposer = (
 			counter.id = "over-limit";
 			counter.classList.remove("warning");
 			charCount.textContent = maxChars - length;
-			tweetButton.disabled = true;
+			POSTButton.disabled = true;
 		} else if (length >= maxChars - 20) {
 			counter.id = "";
 			counter.classList.add("warning");
 			charCount.textContent = maxChars - length;
-			tweetButton.disabled = false;
+			POSTButton.disabled = false;
 			const hasExtras =
 				(pendingFiles && pendingFiles.length > 0) ||
 				!!selectedGif ||
@@ -96,7 +96,7 @@ export const useComposer = (
 				pollEnabled ||
 				!!interactiveCard ||
 				!!article;
-			tweetButton.disabled = !hasExtras && length === 0;
+			POSTButton.disabled = !hasExtras && length === 0;
 		} else {
 			counter.id = "";
 			counter.classList.remove("warning");
@@ -109,7 +109,7 @@ export const useComposer = (
 				pollEnabled ||
 				!!interactiveCard ||
 				!!article;
-			tweetButton.disabled = !hasExtras && length === 0;
+			POSTButton.disabled = !hasExtras && length === 0;
 		}
 	};
 
@@ -263,7 +263,7 @@ export const useComposer = (
 
 	const processFileForUpload = async (file, skipWebP = false) => {
 		try {
-			tweetButton.disabled = true;
+			POSTButton.disabled = true;
 			
 			const processedFile = skipWebP ? file : await convertToWebP(file);
 
@@ -314,7 +314,7 @@ export const useComposer = (
 			toastQueue.add(`<h1>File processing failed</h1><p>Please try again</p>`);
 			return null;
 		} finally {
-			tweetButton.disabled = false;
+			POSTButton.disabled = false;
 			updateCharacterCount();
 		}
 	};
@@ -1257,7 +1257,7 @@ export const useComposer = (
 			scheduledFor = null;
 			scheduleBtn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>`;
 			scheduleBtn.style.color = "";
-			scheduleBtn.title = "Schedule tweet";
+			scheduleBtn.title = "Schedule POST";
 			scheduleModal.style.display = "none";
 		});
 
@@ -1430,7 +1430,7 @@ export const useComposer = (
         <input type="text" placeholder="Post #${
 					optionCount + 1
 				}" maxlength="100" style="width: 100%; padding: 8px; margin-bottom: 8px; border: 1px solid var(--border-primary); border-radius: 6px; background: var(--bg-primary); color: var(--text-primary);" class="card-option-description" />
-        <textarea placeholder="Tweet text when clicked..." maxlength="280" style="width: 100%; padding: 8px; border: 1px solid var(--border-primary); border-radius: 6px; background: var(--bg-primary); color: var(--text-primary); min-height: 60px; resize: vertical;" class="card-option-tweet"></textarea>
+        <textarea placeholder="POST text when clicked..." maxlength="280" style="width: 100%; padding: 8px; border: 1px solid var(--border-primary); border-radius: 6px; background: var(--bg-primary); color: var(--text-primary); min-height: 60px; resize: vertical;" class="card-option-POST"></textarea>
         ${
 					optionCount >= 2
 						? '<button type="button" class="remove-card-option" style="margin-top: 8px; padding: 6px 12px; border: none; border-radius: 6px; background: var(--error-color); color: white; cursor: pointer;">Remove</button>'
@@ -1566,18 +1566,18 @@ export const useComposer = (
 					const description = optionEl
 						.querySelector(".card-option-description")
 						.value.trim();
-					const tweetText = optionEl
-						.querySelector(".card-option-tweet")
+					const POSTText = optionEl
+						.querySelector(".card-option-POST")
 						.value.trim();
 
-					if (!description || !tweetText) {
+					if (!description || !POSTText) {
 						toastQueue.add(
-							`<h1>All options must have description and tweet text</h1>`,
+							`<h1>All options must have description and POST text</h1>`,
 						);
 						return;
 					}
 
-					options.push({ description, tweet_text: tweetText });
+					options.push({ description, POST_text: POSTText });
 				}
 
 				interactiveCard.options = options;
@@ -1607,7 +1607,7 @@ export const useComposer = (
 		}
 	}
 
-	tweetButton.addEventListener("click", async () => {
+	POSTButton.addEventListener("click", async () => {
 		const content = textarea.value.trim();
 		const hasExtras =
 			(pendingFiles && pendingFiles.length > 0) ||
@@ -1620,7 +1620,7 @@ export const useComposer = (
 
 		if ((content.length === 0 && !hasExtras) || content.length > maxChars) {
 			toastQueue.add(
-				`<h1>Invalid tweet</h1><p>Make sure your tweet is 1 to ${maxChars} characters long.</p>`,
+				`<h1>Invalid POST</h1><p>Make sure your POST is 1 to ${maxChars} characters long.</p>`,
 			);
 			return;
 		}
@@ -1710,13 +1710,13 @@ export const useComposer = (
 				});
 
 				if (!scheduledPost) {
-					toastQueue.add(`<h1>${error || "Failed to schedule tweet"}</h1>`);
+					toastQueue.add(`<h1>${error || "Failed to schedule POST"}</h1>`);
 					return;
 				}
 
 				textarea.value = "";
 				charCount.textContent = "0";
-				tweetButton.disabled = true;
+				POSTButton.disabled = true;
 				textarea.style.height = "25px";
 
 				pendingFiles = [];
@@ -1729,7 +1729,7 @@ export const useComposer = (
 				if (scheduleBtn) {
 					scheduleBtn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>`;
 					scheduleBtn.style.color = "";
-					scheduleBtn.title = "Schedule tweet";
+					scheduleBtn.title = "Schedule POST";
 				}
 
 				if (pollEnabled && pollContainer) {
@@ -1740,7 +1740,7 @@ export const useComposer = (
 				}
 
 				toastQueue.add(
-					`<h1>Tweet Scheduled!</h1><p>Your tweet will be posted at ${new Date(
+					`<h1>POST Scheduled!</h1><p>Your POST will be posted at ${new Date(
 						scheduledPost.scheduled_for,
 					).toLocaleString()}</p>`,
 				);
@@ -1751,7 +1751,7 @@ export const useComposer = (
 			const requestBody = {
 				content,
 				reply_to: replyTo,
-				quote_tweet_id: quoteTweet?.id || null,
+				quote_POST_id: quotePOST?.id || null,
 				source: /Mobi|Android|iPhone|iPad|iPod/i.test(navigator.userAgent)
 					? "mobile_web"
 					: "desktop_web",
@@ -1798,7 +1798,7 @@ export const useComposer = (
 				requestBody.interactive_card = interactiveCard;
 			}
 
-			const { error, tweet } = await query("/tweets/", {
+			const { error, POST } = await query("/POSTS/", {
 				method: "POST",
 				headers: {
 					"Content-Type": "application/json",
@@ -1806,13 +1806,13 @@ export const useComposer = (
 				body: JSON.stringify(requestBody),
 			});
 
-			if (!tweet) {
-				toastQueue.add(`<h1>${error || "Failed to post tweet"}</h1>`);
+			if (!POST) {
+				toastQueue.add(`<h1>${error || "Failed to post POST"}</h1>`);
 				return;
 			}
 
 			textarea.value = "";
-			tweetButton.disabled = true;
+			POSTButton.disabled = true;
 			charCount.textContent = "0";
 			textarea.style.height = "25px";
 
@@ -1835,7 +1835,7 @@ export const useComposer = (
 				togglePoll();
 			}
 
-			callback(tweet);
+			callback(POST);
 		} catch {
 			toastQueue.add(`<h1>Network error. Please try again.</h1>`);
 		} finally {
@@ -1846,8 +1846,8 @@ export const useComposer = (
 	textarea.addEventListener("keydown", (e) => {
 		if ((e.ctrlKey || e.metaKey) && e.key === "Enter") {
 			e.preventDefault();
-			if (!tweetButton.disabled) {
-				tweetButton.click();
+			if (!POSTButton.disabled) {
+				POSTButton.click();
 			}
 		}
 	});
@@ -1860,7 +1860,7 @@ export const createComposer = async ({
 	callback = () => {},
 	placeholder = "What is happening?! Did a browser just go angry?!",
 	replyTo = null,
-	quoteTweet = null,
+	quotePOST = null,
 	communityId = null,
 	autofocus = false,
 	interactiveCard = null,
@@ -1868,15 +1868,15 @@ export const createComposer = async ({
 	prefill = "",
 }) => {
 	const el = document.createElement("div");
-	el.classList.add("compose-tweet");
+	el.classList.add("compose-POST");
 	el.innerHTML = `
         <div class="compose-header">
           <img src="" alt="Your avatar" id="compose-avatar">
           <div class="compose-input">
-            <textarea id="tweet-textarea" style="overflow:hidden"${
+            <textarea id="POST-textarea" style="overflow:hidden"${
 							autofocus ? "autofocus" : ""
 						}></textarea>
-            <div id="quoted-tweet-container"></div>
+            <div id="quoted-POST-container"></div>
             <div id="poll-container" style="display: none;">
               <div class="poll-options"></div>
               <button type="button" id="add-poll-option">Add another option</button>
@@ -1919,7 +1919,7 @@ export const createComposer = async ({
                     <path d="M7 17h10"/>
                   </svg>
                 </button>
-                <button type="button" id="schedule-btn" title="Schedule tweet">
+                <button type="button" id="schedule-btn" title="Schedule POST">
                   <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                     <circle cx="12" cy="12" r="10"/>
                     <polyline points="12 6 12 12 16 14"/>
@@ -1937,7 +1937,7 @@ export const createComposer = async ({
                   </svg>
                   <span class="counter-text" id="char-count"></span>
                 </div>
-                <button id="tweet-button" disabled="">Tweet</button>
+                <button id="POST-button" disabled="">POST</button>
               </div>
             </div>
             <div id="attachment-preview"></div>
@@ -1958,7 +1958,7 @@ export const createComposer = async ({
             <div id="schedule-modal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 10000; align-items: center; justify-content: center;">
               <div style="background: var(--bg-primary); border-radius: 12px; padding: 24px; max-width: 400px; width: 90%;">
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-                  <h3 style="margin: 0; font-size: 20px;">Schedule Tweet</h3>
+                  <h3 style="margin: 0; font-size: 20px;">Schedule POST</h3>
                   <button type="button" id="schedule-modal-close" style="background: none; border: none; font-size: 24px; cursor: pointer; color: var(--text-secondary);">×</button>
                 </div>
                 <div style="display: flex; flex-direction: column; gap: 16px;">
@@ -2003,18 +2003,18 @@ export const createComposer = async ({
             </div>
           </div>
         </div>`;
-	el.querySelector("#tweet-textarea").placeholder = placeholder;
-	el.querySelector("#tweet-textarea").value = prefill;
+	el.querySelector("#POST-textarea").placeholder = placeholder;
+	el.querySelector("#POST-textarea").value = prefill;
 
-	if (quoteTweet) {
-		const { createTweetElement } = await import("./tweets.js");
-		const quotedTweetEl = createTweetElement(quoteTweet, {
+	if (quotePOST) {
+		const { createPOSTElement } = await import("./POSTS.js");
+		const quotedPOSTEl = createPOSTElement(quotePOST, {
 			clickToOpen: false,
 			showTopReply: false,
 			isTopReply: false,
 			size: "preview",
 		});
-		el.querySelector("#quoted-tweet-container").appendChild(quotedTweetEl);
+		el.querySelector("#quoted-POST-container").appendChild(quotedPOSTEl);
 	}
 
 	const user = await getUser();
@@ -2052,7 +2052,7 @@ export const createComposer = async ({
 			counter.style.display = "none";
 		}
 
-		const textareaEl = el.querySelector("#tweet-textarea");
+		const textareaEl = el.querySelector("#POST-textarea");
 		if (textareaEl) textareaEl.setAttribute("maxlength", String(maxChars));
 
 		const cardToggleBtn = el.querySelector("#card-toggle");
@@ -2065,7 +2065,7 @@ export const createComposer = async ({
 			: { selectedCommunityId: null };
 		useComposer(el, callback, {
 			replyTo,
-			quoteTweet,
+			quotePOST,
 			maxChars,
 			communityId,
 			communitySelector,
@@ -2078,7 +2078,7 @@ export const createComposer = async ({
 			: { selectedCommunityId: null };
 		useComposer(el, callback, {
 			replyTo,
-			quoteTweet,
+			quotePOST,
 			communityId,
 			communitySelector,
 			interactiveCard,

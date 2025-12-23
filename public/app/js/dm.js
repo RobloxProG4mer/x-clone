@@ -95,7 +95,7 @@ function connectSSE() {
 	lastSSEConnect = now;
 
 	/* biome-ignore lint/suspicious/noDocumentCookie: idgaf */
-	document.cookie = `__TWEETAPUS_SECRET_SSE_TOKEN__=${authToken}; path=/; samesite=strict; max-age=60`;
+	document.cookie = `__Xeetapus_SECRET_SSE_TOKEN__=${authToken}; path=/; samesite=strict; max-age=60`;
 	eventSource = new EventSource(`/api/sse`);
 
 	eventSource.onopen = () => {

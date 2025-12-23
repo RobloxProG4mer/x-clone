@@ -104,7 +104,7 @@ const adminQueries = {
     SELECT DISTINCT user_id FROM (
       SELECT user_id FROM likes WHERE post_id = ?
       UNION
-      SELECT user_id FROM retweets WHERE post_id = ?
+      SELECT user_id FROM rePOSTS WHERE post_id = ?
       UNION
       SELECT user_id FROM posts WHERE reply_to = ?
       UNION
@@ -134,7 +134,7 @@ SELECT u.*,
        u.ghost_followers as ghost_follower_count,
        (SELECT COUNT(*) FROM ghost_follows WHERE target_id = u.id AND follower_type = 'following') as ghost_following_count,
        (SELECT COUNT(*) FROM likes WHERE user_id = u.id) as likes_given,
-       (SELECT COUNT(*) FROM retweets WHERE user_id = u.id) as retweets_given,
+       (SELECT COUNT(*) FROM rePOSTS WHERE user_id = u.id) as rePOSTS_given,
        (SELECT COUNT(*) FROM passkeys WHERE internal_user_id = u.id) as passkey_count,
        (SELECT JSON_GROUP_ARRAY(JSON_OBJECT(
            'id', p.id,
@@ -250,7 +250,7 @@ WHERE u.id = ?
 
 	getPostById: db.prepare("SELECT * FROM posts WHERE id = ?"),
 	updatePost: db.prepare(
-		"UPDATE posts SET content = ?, like_count = ?, retweet_count = ?, reply_count = ?, view_count = ?, created_at = ? WHERE id = ?",
+		"UPDATE posts SET content = ?, like_count = ?, rePOST_count = ?, reply_count = ?, view_count = ?, created_at = ? WHERE id = ?",
 	),
 	updatePostId: db.prepare("UPDATE posts SET id = ? WHERE id = ?"),
 	createPostAsUser: db.prepare(
@@ -575,7 +575,7 @@ const sanitizeDirectorySegment = (value) => {
 	if (typeof value !== "string") return null;
 	const trimmed = value.trim();
 	if (!trimmed) return null;
-	const withoutExt = trimmed.replace(/\.tweeta$/i, "");
+	const withoutExt = trimmed.replace(/\.POSTa$/i, "");
 	const normalized = withoutExt
 		.replace(/[^a-zA-Z0-9._-]+/g, "-")
 		.replace(/-+/g, "-")
@@ -1001,8 +1001,8 @@ export default new Elysia({ prefix: "/admin", tags: ["Admin"] })
 				admin: isAdmin,
 				affiliate,
 				affiliateWith,
-				superTweeter,
-				superTweeterBoost,
+				superPOSTer,
+				superPOSTerBoost,
 				badges,
 				accountCreationTransparency,
 				accountLoginTransparency,
@@ -1023,9 +1023,9 @@ export default new Elysia({ prefix: "/admin", tags: ["Admin"] })
 			const finalGray = gray && !gold ? 1 : 0;
 			const finalVerified = gold || gray ? 0 : verified ? 1 : 0;
 			const finalAffiliate = affiliate ? 1 : 0;
-			const finalSuperTweeter = superTweeter ? 1 : 0;
-			const finalSuperTweeterBoost =
-				superTweeter && superTweeterBoost ? superTweeterBoost : 50.0;
+			const finalSuperPOSTer = superPOSTer ? 1 : 0;
+			const finalSuperPOSTerBoost =
+				superPOSTer && superPOSTerBoost ? superPOSTerBoost : 50.0;
 
 			let affiliateWithId = null;
 			if (affiliate && affiliateWith) {
@@ -1047,7 +1047,7 @@ export default new Elysia({ prefix: "/admin", tags: ["Admin"] })
 			}
 
 			db.query(
-				`INSERT INTO users (id, username, name, bio, verified, admin, gold, gray, affiliate, affiliate_with, super_tweeter, super_tweeter_boost, account_creation_transparency, account_login_transparency, character_limit) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+				`INSERT INTO users (id, username, name, bio, verified, admin, gold, gray, affiliate, affiliate_with, super_POSTer, super_POSTer_boost, account_creation_transparency, account_login_transparency, character_limit) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
 			).run(
 				id,
 				username.trim(),
@@ -1059,8 +1059,8 @@ export default new Elysia({ prefix: "/admin", tags: ["Admin"] })
 				finalGray,
 				finalAffiliate,
 				affiliateWithId,
-				finalSuperTweeter,
-				finalSuperTweeterBoost,
+				finalSuperPOSTer,
+				finalSuperPOSTerBoost,
 				creationTransparencyStr,
 				loginTransparencyStr,
 				null,
@@ -1105,8 +1105,8 @@ export default new Elysia({ prefix: "/admin", tags: ["Admin"] })
 				cloneAffiliate: t.Optional(t.Boolean()),
 				affiliate: t.Optional(t.Boolean()),
 				affiliateWith: t.Optional(t.Union([t.String(), t.Null()])),
-				superTweeter: t.Optional(t.Boolean()),
-				superTweeterBoost: t.Optional(t.Union([t.Number(), t.Null()])),
+				superPOSTer: t.Optional(t.Boolean()),
+				superPOSTerBoost: t.Optional(t.Union([t.Number(), t.Null()])),
 				badges: t.Optional(t.Array(t.String())),
 				accountCreationTransparency: t.Optional(
 					t.Union([
@@ -2257,12 +2257,12 @@ export default new Elysia({ prefix: "/admin", tags: ["Admin"] })
 				body.cloneRelations === undefined ? true : !!body.cloneRelations;
 			const cloneGhosts =
 				body.cloneGhosts === undefined ? true : !!body.cloneGhosts;
-			const cloneTweets =
-				body.cloneTweets === undefined ? true : !!body.cloneTweets;
+			const clonePOSTS =
+				body.clonePOSTS === undefined ? true : !!body.clonePOSTS;
 			const cloneReplies =
 				body.cloneReplies === undefined ? true : !!body.cloneReplies;
-			const cloneRetweets =
-				body.cloneRetweets === undefined ? true : !!body.cloneRetweets;
+			const cloneRePOSTS =
+				body.cloneRePOSTS === undefined ? true : !!body.cloneRePOSTS;
 			const cloneReactions =
 				body.cloneReactions === undefined ? true : !!body.cloneReactions;
 			const cloneCommunities =
@@ -2359,10 +2359,10 @@ export default new Elysia({ prefix: "/admin", tags: ["Admin"] })
 						}
 					}
 
-					if (cloneTweets) {
+					if (clonePOSTS) {
 						const posts = db
 							.query(
-								"SELECT id, content, reply_to, quote_tweet_id, created_at, community_id, pinned FROM posts WHERE user_id = ? ORDER BY created_at ASC",
+								"SELECT id, content, reply_to, quote_POST_id, created_at, community_id, pinned FROM posts WHERE user_id = ? ORDER BY created_at ASC",
 							)
 							.all(sourceUser.id);
 
@@ -2374,7 +2374,7 @@ export default new Elysia({ prefix: "/admin", tags: ["Admin"] })
 							const communityIdToUse = cloneCommunities ? p.community_id : null;
 
 							db.query(
-								"INSERT INTO posts (id, user_id, content, reply_to, quote_tweet_id, community_id, created_at, pinned) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+								"INSERT INTO posts (id, user_id, content, reply_to, quote_POST_id, community_id, created_at, pinned) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
 							).run(
 								newPostId,
 								newId,
@@ -2391,7 +2391,7 @@ export default new Elysia({ prefix: "/admin", tags: ["Admin"] })
 								origId: p.id,
 								newId: newPostId,
 								reply_to: p.reply_to,
-								quote_tweet_id: p.quote_tweet_id,
+								quote_POST_id: p.quote_POST_id,
 								created_at: p.created_at,
 								pinned: p.pinned,
 								community_id: p.community_id,
@@ -2407,14 +2407,14 @@ export default new Elysia({ prefix: "/admin", tags: ["Admin"] })
 							}
 
 							let mappedQuoteId = null;
-							if (cp.quote_tweet_id) {
-								mappedQuoteId = postIdMap.has(cp.quote_tweet_id)
-									? postIdMap.get(cp.quote_tweet_id)
-									: cp.quote_tweet_id;
+							if (cp.quote_POST_id) {
+								mappedQuoteId = postIdMap.has(cp.quote_POST_id)
+									? postIdMap.get(cp.quote_POST_id)
+									: cp.quote_POST_id;
 							}
 
 							db.query(
-								"UPDATE posts SET reply_to = ?, quote_tweet_id = ? WHERE id = ?",
+								"UPDATE posts SET reply_to = ?, quote_POST_id = ? WHERE id = ?",
 							).run(mappedReplyTo, mappedQuoteId, cp.newId);
 
 							if (mappedReplyTo) {
@@ -2464,25 +2464,25 @@ export default new Elysia({ prefix: "/admin", tags: ["Admin"] })
 							}
 						}
 
-						if (cloneRetweets) {
-							const sourceRetweets = db
+						if (cloneRePOSTS) {
+							const sourceRePOSTS = db
 								.query(
-									"SELECT post_id, created_at FROM retweets WHERE user_id = ?",
+									"SELECT post_id, created_at FROM rePOSTS WHERE user_id = ?",
 								)
 								.all(sourceUser.id);
 
-							for (const r of sourceRetweets) {
+							for (const r of sourceRePOSTS) {
 								const targetPostId = postIdMap.has(r.post_id)
 									? postIdMap.get(r.post_id)
 									: r.post_id;
 								const exists = db
 									.query(
-										"SELECT 1 FROM retweets WHERE user_id = ? AND post_id = ?",
+										"SELECT 1 FROM rePOSTS WHERE user_id = ? AND post_id = ?",
 									)
 									.get(newId, targetPostId);
 								if (!exists) {
 									db.query(
-										"INSERT INTO retweets (id, user_id, post_id, created_at) VALUES (?, ?, ?, ?)",
+										"INSERT INTO rePOSTS (id, user_id, post_id, created_at) VALUES (?, ?, ?, ?)",
 									).run(
 										Bun.randomUUIDv7(),
 										newId,
@@ -2490,7 +2490,7 @@ export default new Elysia({ prefix: "/admin", tags: ["Admin"] })
 										r.created_at || new Date().toISOString(),
 									);
 									db.query(
-										"UPDATE posts SET retweet_count = COALESCE(retweet_count,0) + 1 WHERE id = ?",
+										"UPDATE posts SET rePOST_count = COALESCE(rePOST_count,0) + 1 WHERE id = ?",
 									).run(targetPostId);
 								}
 							}
@@ -2591,9 +2591,9 @@ export default new Elysia({ prefix: "/admin", tags: ["Admin"] })
 					options: {
 						cloneRelations,
 						cloneGhosts,
-						cloneTweets,
+						clonePOSTS,
 						cloneReplies,
-						cloneRetweets,
+						cloneRePOSTS,
 						cloneReactions,
 						cloneCommunities,
 						cloneMedia,
@@ -2613,9 +2613,9 @@ export default new Elysia({ prefix: "/admin", tags: ["Admin"] })
 				name: t.Optional(t.String()),
 				cloneRelations: t.Optional(t.Boolean()),
 				cloneGhosts: t.Optional(t.Boolean()),
-				cloneTweets: t.Optional(t.Boolean()),
+				clonePOSTS: t.Optional(t.Boolean()),
 				cloneReplies: t.Optional(t.Boolean()),
-				cloneRetweets: t.Optional(t.Boolean()),
+				cloneRePOSTS: t.Optional(t.Boolean()),
 				cloneReactions: t.Optional(t.Boolean()),
 				cloneCommunities: t.Optional(t.Boolean()),
 				cloneMedia: t.Optional(t.Boolean()),
@@ -2682,7 +2682,7 @@ export default new Elysia({ prefix: "/admin", tags: ["Admin"] })
 			db.transaction(() => {
 				db.query("DELETE FROM likes WHERE post_id = ?").run(params.id);
 				db.query("DELETE FROM posts WHERE reply_to = ?").run(params.id);
-				db.query("DELETE FROM retweets WHERE post_id = ?").run(params.id);
+				db.query("DELETE FROM rePOSTS WHERE post_id = ?").run(params.id);
 				adminQueries.deletePost.run(params.id);
 			})();
 			logModerationAction(user.id, "delete_post", "post", params.id, {
@@ -2750,7 +2750,7 @@ export default new Elysia({ prefix: "/admin", tags: ["Admin"] })
 			return post;
 		},
 		{
-			/* im gonna make a simple js sdk javascript access and coffee true JavaScript K4L1 H4xx0r St1nkray i will continue the tweeta android app after the auth problems are fixed 🚀 idk what is causing the auth problems tho, can you take a look at the devtools network tab yes, GPT-5.1-Codex is doing things RN check your devtools network tap and see if any errors show up network tap🚀🎯 an error did appear but it disappeared make a video or check devtools im gonna make a video🚀🚀🚀🚀🚀 check discord*/
+			/* im gonna make a simple js sdk javascript access and coffee true JavaScript K4L1 H4xx0r St1nkray i will continue the POSTa android app after the auth problems are fixed 🚀 idk what is causing the auth problems tho, can you take a look at the devtools network tab yes, GPT-5.1-Codex is doing things RN check your devtools network tap and see if any errors show up network tap🚀🎯 an error did appear but it disappeared make a video or check devtools im gonna make a video🚀🚀🚀🚀🚀 check discord*/
 			detail: {
 				description: "Gets details for a specific post",
 			},
@@ -2786,8 +2786,8 @@ export default new Elysia({ prefix: "/admin", tags: ["Admin"] })
 				};
 			if (body.likes !== undefined && body.likes !== post.like_count)
 				changes.likes = { old: post.like_count, new: body.likes };
-			if (body.retweets !== undefined && body.retweets !== post.retweet_count)
-				changes.retweets = { old: post.retweet_count, new: body.retweets };
+			if (body.rePOSTS !== undefined && body.rePOSTS !== post.rePOST_count)
+				changes.rePOSTS = { old: post.rePOST_count, new: body.rePOSTS };
 			if (body.replies !== undefined && body.replies !== post.reply_count)
 				changes.replies = { old: post.reply_count, new: body.replies };
 			if (body.views !== undefined && body.views !== post.view_count)
@@ -2810,7 +2810,7 @@ export default new Elysia({ prefix: "/admin", tags: ["Admin"] })
 			adminQueries.updatePost.run(
 				body.content,
 				body.likes,
-				body.retweets,
+				body.rePOSTS,
 				body.replies,
 				body.views,
 				newCreatedAt,
@@ -2828,7 +2828,7 @@ export default new Elysia({ prefix: "/admin", tags: ["Admin"] })
 			body: t.Object({
 				content: t.String(),
 				likes: t.Optional(t.Number()),
-				retweets: t.Optional(t.Number()),
+				rePOSTS: t.Optional(t.Number()),
 				replies: t.Optional(t.Number()),
 				views: t.Optional(t.Number()),
 				created_at: t.Optional(t.String()),
@@ -2842,7 +2842,7 @@ export default new Elysia({ prefix: "/admin", tags: ["Admin"] })
 			const rawNewId =
 				typeof body?.new_id === "string" ? body.new_id.trim() : "";
 			if (!rawNewId) {
-				return { error: "New tweet ID is required" };
+				return { error: "New POST ID is required" };
 			}
 
 			const post = adminQueries.getPostById.get(params.id);
@@ -2862,7 +2862,7 @@ export default new Elysia({ prefix: "/admin", tags: ["Admin"] })
 			try {
 				const updates = [
 					{ table: "likes", column: "post_id" },
-					{ table: "retweets", column: "post_id" },
+					{ table: "rePOSTS", column: "post_id" },
 					{ table: "attachments", column: "post_id" },
 					{ table: "bookmarks", column: "post_id" },
 					{ table: "post_hashtags", column: "post_id" },
@@ -2870,7 +2870,7 @@ export default new Elysia({ prefix: "/admin", tags: ["Admin"] })
 					{ table: "interactive_cards", column: "post_id" },
 					{ table: "fact_checks", column: "post_id" },
 					{ table: "polls", column: "post_id" },
-					{ table: "seen_tweets", column: "tweet_id" },
+					{ table: "seen_POSTS", column: "POST_id" },
 				];
 
 				db.transaction(() => {
@@ -2885,7 +2885,7 @@ export default new Elysia({ prefix: "/admin", tags: ["Admin"] })
 						post.id,
 					);
 					db.query(
-						"UPDATE posts SET quote_tweet_id = ? WHERE quote_tweet_id = ?",
+						"UPDATE posts SET quote_POST_id = ? WHERE quote_POST_id = ?",
 					).run(rawNewId, post.id);
 					db.query(
 						"UPDATE notifications SET related_id = ? WHERE related_id = ?",
@@ -2898,15 +2898,15 @@ export default new Elysia({ prefix: "/admin", tags: ["Admin"] })
 					).run(rawNewId, post.id);
 				})();
 
-				logModerationAction(user.id, "change_tweet_id", "post", rawNewId, {
+				logModerationAction(user.id, "change_POST_id", "post", rawNewId, {
 					old_id: post.id,
 					new_id: rawNewId,
 				});
 
 				return { success: true, id: rawNewId };
 			} catch (error) {
-				console.error("Failed to update tweet ID", error);
-				return { error: "Failed to update tweet ID" };
+				console.error("Failed to update POST ID", error);
+				return { error: "Failed to update POST ID" };
 			}
 		},
 		{
@@ -2917,10 +2917,10 @@ export default new Elysia({ prefix: "/admin", tags: ["Admin"] })
 	)
 
 	.post(
-		"/tweets",
+		"/POSTS",
 		async ({ body, user }) => {
 			const isSuperAdmin = superAdminIds.includes(user.id);
-			if (body.massTweet && !isSuperAdmin) {
+			if (body.massPOST && !isSuperAdmin) {
 				return { error: "SuperAdmin access required" };
 			}
 			const postId = Bun.randomUUIDv7();
@@ -2993,7 +2993,7 @@ export default new Elysia({ prefix: "/admin", tags: ["Admin"] })
 				replyTo: t.Optional(t.String()),
 				noCharLimit: t.Optional(t.Boolean()),
 				created_at: t.Optional(t.String()),
-				massTweet: t.Optional(t.Boolean()),
+				massPOST: t.Optional(t.Boolean()),
 				source: t.Optional(t.Union([t.String(), t.Null()])),
 			}),
 		},
@@ -4315,7 +4315,7 @@ export default new Elysia({ prefix: "/admin", tags: ["Admin"] })
 					addNotification(
 						user_id,
 						"fact_check",
-						`A tweet you have interacted with has been marked as misleading`,
+						`A POST you have interacted with has been marked as misleading`,
 						params.postId,
 						undefined,
 						undefined,
@@ -4817,13 +4817,13 @@ export default new Elysia({ prefix: "/admin", tags: ["Admin"] })
 		const packageFile = body?.package;
 		if (!(packageFile instanceof File)) {
 			set.status = 400;
-			return { error: "A .tweeta file is required" };
+			return { error: "A .POSTa file is required" };
 		}
 
 		const archiveName = packageFile.name?.toLowerCase?.();
-		if (!archiveName?.endsWith?.(".tweeta")) {
+		if (!archiveName?.endsWith?.(".POSTa")) {
 			set.status = 400;
-			return { error: "File must use the .tweeta extension" };
+			return { error: "File must use the .POSTa extension" };
 		}
 
 		if (packageFile.size > MAX_EXTENSION_ARCHIVE_SIZE) {
@@ -4836,7 +4836,7 @@ export default new Elysia({ prefix: "/admin", tags: ["Admin"] })
 		// Quick sanity-check for ZIP magic header (PK..)
 		if (!archiveBuffer || archiveBuffer.length < 4) {
 			set.status = 400;
-			return { error: "Invalid .tweeta archive (empty or too small)" };
+			return { error: "Invalid .POSTa archive (empty or too small)" };
 		}
 		try {
 			const hdr0 = archiveBuffer[0];
@@ -4851,7 +4851,7 @@ export default new Elysia({ prefix: "/admin", tags: ["Admin"] })
 				set.status = 400;
 				return {
 					error:
-						"Invalid .tweeta archive: not a ZIP file. Make sure you uploaded a standard ZIP renamed to .tweeta",
+						"Invalid .POSTa archive: not a ZIP file. Make sure you uploaded a standard ZIP renamed to .POSTa",
 				};
 			}
 			extractedEntries = unzipSync(archiveBuffer);
@@ -4860,7 +4860,7 @@ export default new Elysia({ prefix: "/admin", tags: ["Admin"] })
 			set.status = 400;
 			return {
 				error:
-					"Invalid or corrupted .tweeta archive (unzip failed). Ensure the file is a valid ZIP archive and not corrupted.",
+					"Invalid or corrupted .POSTa archive (unzip failed). Ensure the file is a valid ZIP archive and not corrupted.",
 			};
 		}
 
@@ -5131,7 +5131,7 @@ export default new Elysia({ prefix: "/admin", tags: ["Admin"] })
 		return { success: true, extension: formatExtensionRecord(record) };
 	})
 
-	// Export an installed or manual extension directory as a .tweeta (zip) file
+	// Export an installed or manual extension directory as a .POSTa (zip) file
 	.get("/extensions/:id/export", async ({ params, set }) => {
 		// Locate directory: prefer DB manifest install_dir if present
 		let dirName = null;
@@ -5187,7 +5187,7 @@ export default new Elysia({ prefix: "/admin", tags: ["Admin"] })
 				: `${dirName}`;
 			const headers = {
 				"Content-Type": "application/zip",
-				"Content-Disposition": `attachment; filename="${filenameBase}.tweeta"`,
+				"Content-Disposition": `attachment; filename="${filenameBase}.POSTa"`,
 			};
 			return new Response(zipped, { headers });
 		} catch (err) {
@@ -5356,38 +5356,38 @@ export default new Elysia({ prefix: "/admin", tags: ["Admin"] })
 	})
 
 	.patch(
-		"/users/:id/super-tweeter",
+		"/users/:id/super-POSTer",
 		async ({ params, body, user }) => {
 			const targetUser = adminQueries.findUserById.get(params.id);
 			if (!targetUser) {
 				return { error: "User not found" };
 			}
 
-			const superTweeter = body.super_tweeter ? 1 : 0;
+			const superPOSTer = body.super_POSTer ? 1 : 0;
 			const boost =
 				typeof body.boost === "number" && body.boost > 0 ? body.boost : 50.0;
 
 			db.query(
-				"UPDATE users SET super_tweeter = ?, super_tweeter_boost = ? WHERE id = ?",
-			).run(superTweeter, boost, params.id);
+				"UPDATE users SET super_POSTer = ?, super_POSTer_boost = ? WHERE id = ?",
+			).run(superPOSTer, boost, params.id);
 
-			logModerationAction(user.id, "toggle_super_tweeter", "user", params.id, {
-				super_tweeter: superTweeter,
+			logModerationAction(user.id, "toggle_super_POSTer", "user", params.id, {
+				super_POSTer: superPOSTer,
 				boost: boost,
 			});
 
-			return { success: true, super_tweeter: !!superTweeter, boost: boost };
+			return { success: true, super_POSTer: !!superPOSTer, boost: boost };
 		},
 		{
 			detail: {
 				description:
-					"Toggles the SuperTweeter status for a user with custom boost",
+					"Toggles the SuperPOSTer status for a user with custom boost",
 			},
 			params: t.Object({
 				id: t.String(),
 			}),
 			body: t.Object({
-				super_tweeter: t.Boolean(),
+				super_POSTer: t.Boolean(),
 				boost: t.Optional(t.Number()),
 			}),
 			response: t.Any(),
@@ -5395,37 +5395,37 @@ export default new Elysia({ prefix: "/admin", tags: ["Admin"] })
 	)
 
 	.patch(
-		"/posts/:id/super-tweet",
+		"/posts/:id/super-POST",
 		async ({ params, body, user }) => {
 			const post = adminQueries.getPostById.get(params.id);
 			if (!post) {
 				return { error: "Post not found" };
 			}
 
-			const superTweet = body.super_tweet ? 1 : 0;
+			const superPOST = body.super_POST ? 1 : 0;
 			const boost =
 				typeof body.boost === "number" && body.boost > 0 ? body.boost : 50.0;
 
 			db.query(
-				"UPDATE posts SET super_tweet = ?, super_tweet_boost = ? WHERE id = ?",
-			).run(superTweet, boost, params.id);
+				"UPDATE posts SET super_POST = ?, super_POST_boost = ? WHERE id = ?",
+			).run(superPOST, boost, params.id);
 
-			logModerationAction(user.id, "toggle_super_tweet", "post", params.id, {
-				super_tweet: superTweet,
+			logModerationAction(user.id, "toggle_super_POST", "post", params.id, {
+				super_POST: superPOST,
 				boost: boost,
 			});
 
-			return { success: true, super_tweet: !!superTweet, boost: boost };
+			return { success: true, super_POST: !!superPOST, boost: boost };
 		},
 		{
 			detail: {
-				description: "Toggles the SuperTweeta status for a post",
+				description: "Toggles the SuperPOSTa status for a post",
 			},
 			params: t.Object({
 				id: t.String(),
 			}),
 			body: t.Object({
-				super_tweet: t.Boolean(),
+				super_POST: t.Boolean(),
 				boost: t.Optional(t.Number()),
 			}),
 			response: t.Any(),
@@ -5534,7 +5534,7 @@ export default new Elysia({ prefix: "/admin", tags: ["Admin"] })
 			}
 
 			const action = body.action;
-			if (!["like", "retweet", "quote", "comment"].includes(action)) {
+			if (!["like", "rePOST", "quote", "comment"].includes(action)) {
 				return { error: "Invalid action type" };
 			}
 
@@ -5578,16 +5578,16 @@ export default new Elysia({ prefix: "/admin", tags: ["Admin"] })
 							).run(params.id);
 							successCount++;
 						}
-					} else if (action === "retweet") {
+					} else if (action === "rePOST") {
 						const existing = db
-							.query("SELECT 1 FROM retweets WHERE user_id = ? AND post_id = ?")
+							.query("SELECT 1 FROM rePOSTS WHERE user_id = ? AND post_id = ?")
 							.get(u.id, params.id);
 						if (!existing) {
 							db.query(
-								"INSERT INTO retweets (id, user_id, post_id) VALUES (?, ?, ?)",
+								"INSERT INTO rePOSTS (id, user_id, post_id) VALUES (?, ?, ?)",
 							).run(Bun.randomUUIDv7(), u.id, params.id);
 							db.query(
-								"UPDATE posts SET retweet_count = retweet_count + 1 WHERE id = ?",
+								"UPDATE posts SET rePOST_count = rePOST_count + 1 WHERE id = ?",
 							).run(params.id);
 							successCount++;
 						}
@@ -5596,7 +5596,7 @@ export default new Elysia({ prefix: "/admin", tags: ["Admin"] })
 							comments[Math.floor(Math.random() * comments.length)];
 						const quoteId = Bun.randomUUIDv7();
 						db.query(
-							"INSERT INTO posts (id, user_id, content, quote_tweet_id) VALUES (?, ?, ?, ?)",
+							"INSERT INTO posts (id, user_id, content, quote_POST_id) VALUES (?, ?, ?, ?)",
 						).run(quoteId, u.id, randomComment, params.id);
 						db.query(
 							"UPDATE posts SET quote_count = COALESCE(quote_count, 0) + 1 WHERE id = ?",
@@ -5639,7 +5639,7 @@ export default new Elysia({ prefix: "/admin", tags: ["Admin"] })
 		{
 			detail: {
 				description:
-					"Mass engage users on a post (like, retweet, quote, comment)",
+					"Mass engage users on a post (like, rePOST, quote, comment)",
 			},
 			params: t.Object({ id: t.String() }),
 			body: t.Object({
@@ -5702,7 +5702,7 @@ export default new Elysia({ prefix: "/admin", tags: ["Admin"] })
 		{
 			detail: {
 				description:
-					"Mass delete all tweets after a specific date (superadmin only)",
+					"Mass delete all POSTS after a specific date (superadmin only)",
 			},
 			body: t.Object({
 				after_date: t.String(),

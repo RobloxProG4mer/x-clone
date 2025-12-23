@@ -43,8 +43,8 @@ CREATE TABLE IF NOT EXISTS users (
   selected_community_tag TEXT DEFAULT NULL,
   account_creation_transparency TEXT DEFAULT NULL,
   account_login_transparency TEXT DEFAULT NULL,
-  super_tweeter BOOLEAN DEFAULT FALSE,
-  super_tweeter_boost REAL DEFAULT 50.0,
+  super_POSTer BOOLEAN DEFAULT FALSE,
+  super_POSTer_boost REAL DEFAULT 50.0,
   transparency_location_display BOOLEAN DEFAULT FALSE,
   blocked_by_count INTEGER DEFAULT 0,
   muted_by_count INTEGER DEFAULT 0,
@@ -61,7 +61,7 @@ CREATE UNIQUE INDEX IF NOT EXISTS idx_users_username_lower ON users(LOWER(userna
 CREATE INDEX IF NOT EXISTS idx_users_spam_score ON users(spam_score);
 CREATE INDEX IF NOT EXISTS idx_users_suspended ON users(suspended);
 CREATE INDEX IF NOT EXISTS idx_users_created_at ON users(created_at);
-CREATE INDEX IF NOT EXISTS idx_users_super_tweeter ON users(super_tweeter) WHERE super_tweeter = TRUE;
+CREATE INDEX IF NOT EXISTS idx_users_super_POSTer ON users(super_POSTer) WHERE super_POSTer = TRUE;
 CREATE INDEX IF NOT EXISTS idx_users_ip_address ON users(ip_address);
 
 CREATE TABLE IF NOT EXISTS ip_bans (
@@ -102,7 +102,7 @@ CREATE TABLE IF NOT EXISTS follows (
   id TEXT PRIMARY KEY,
   follower_id TEXT NOT NULL,
   following_id TEXT NOT NULL,
-  notify_tweets BOOLEAN DEFAULT FALSE,
+  notify_POSTS BOOLEAN DEFAULT FALSE,
   created_at TIMESTAMP DEFAULT (datetime('now', 'utc')),
   FOREIGN KEY (follower_id) REFERENCES users(id) ON DELETE CASCADE,
   FOREIGN KEY (following_id) REFERENCES users(id) ON DELETE CASCADE,
@@ -162,11 +162,11 @@ CREATE TABLE IF NOT EXISTS posts (
   edited_at TIMESTAMP DEFAULT NULL,
   like_count INTEGER DEFAULT 0,
   reply_count INTEGER DEFAULT 0,
-  retweet_count INTEGER DEFAULT 0,
+  rePOST_count INTEGER DEFAULT 0,
   view_count INTEGER DEFAULT 0,
   source TEXT DEFAULT NULL,
   poll_id TEXT DEFAULT NULL,
-  quote_tweet_id TEXT DEFAULT NULL,
+  quote_POST_id TEXT DEFAULT NULL,
   quote_count INTEGER DEFAULT 0,
   pinned BOOLEAN DEFAULT FALSE,
   reply_restriction TEXT DEFAULT 'everyone',
@@ -175,18 +175,18 @@ CREATE TABLE IF NOT EXISTS posts (
   is_article BOOLEAN DEFAULT FALSE,
   article_title TEXT DEFAULT NULL,
   article_body_markdown TEXT DEFAULT NULL,
-  super_tweet BOOLEAN DEFAULT FALSE,
-  super_tweet_boost REAL DEFAULT 50.0,
+  super_POST BOOLEAN DEFAULT FALSE,
+  super_POST_boost REAL DEFAULT 50.0,
   outline TEXT DEFAULT NULL,
   FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
   FOREIGN KEY (poll_id) REFERENCES polls(id) ON DELETE CASCADE,
-  FOREIGN KEY (quote_tweet_id) REFERENCES posts(id) ON DELETE CASCADE,
+  FOREIGN KEY (quote_POST_id) REFERENCES posts(id) ON DELETE CASCADE,
   FOREIGN KEY (community_id) REFERENCES communities(id) ON DELETE CASCADE
 );
 
 CREATE INDEX IF NOT EXISTS idx_posts_article_id ON posts(article_id);
 CREATE INDEX IF NOT EXISTS idx_posts_community_id ON posts(community_id);
-CREATE INDEX IF NOT EXISTS idx_posts_super_tweet ON posts(super_tweet) WHERE super_tweet = TRUE;
+CREATE INDEX IF NOT EXISTS idx_posts_super_POST ON posts(super_POST) WHERE super_POST = TRUE;
 
 CREATE INDEX IF NOT EXISTS idx_posts_user_id ON posts(user_id);
 CREATE INDEX IF NOT EXISTS idx_posts_created_at ON posts(created_at);
@@ -207,7 +207,7 @@ CREATE TABLE IF NOT EXISTS likes (
 CREATE INDEX IF NOT EXISTS idx_likes_user_id ON likes(user_id);
 CREATE INDEX IF NOT EXISTS idx_likes_post_id ON likes(post_id);
 
-CREATE TABLE IF NOT EXISTS retweets (
+CREATE TABLE IF NOT EXISTS rePOSTS (
   id TEXT PRIMARY KEY,
   user_id TEXT NOT NULL,
   post_id TEXT NOT NULL,
@@ -217,8 +217,8 @@ CREATE TABLE IF NOT EXISTS retweets (
   UNIQUE(user_id, post_id)
 );
 
-CREATE INDEX IF NOT EXISTS idx_retweets_user_id ON retweets(user_id);
-CREATE INDEX IF NOT EXISTS idx_retweets_post_id ON retweets(post_id);
+CREATE INDEX IF NOT EXISTS idx_rePOSTS_user_id ON rePOSTS(user_id);
+CREATE INDEX IF NOT EXISTS idx_rePOSTS_post_id ON rePOSTS(post_id);
 
 CREATE TABLE IF NOT EXISTS polls (
   id TEXT PRIMARY KEY,
@@ -375,7 +375,7 @@ CREATE TABLE IF NOT EXISTS blocks (
   id TEXT PRIMARY KEY,
   blocker_id TEXT NOT NULL,
   blocked_id TEXT NOT NULL,
-  source_tweet_id TEXT DEFAULT NULL,
+  source_POST_id TEXT DEFAULT NULL,
   created_at TIMESTAMP DEFAULT (datetime('now', 'utc')),
   FOREIGN KEY (blocker_id) REFERENCES users(id) ON DELETE CASCADE,
   FOREIGN KEY (blocked_id) REFERENCES users(id) ON DELETE CASCADE,
@@ -414,12 +414,12 @@ CREATE INDEX IF NOT EXISTS idx_bookmarks_post_id ON bookmarks(post_id);
 CREATE TABLE IF NOT EXISTS hashtags (
   id TEXT PRIMARY KEY,
   name TEXT UNIQUE NOT NULL,
-  tweet_count INTEGER DEFAULT 0,
+  POST_count INTEGER DEFAULT 0,
   created_at TIMESTAMP DEFAULT (datetime('now', 'utc'))
 );
 
 CREATE INDEX IF NOT EXISTS idx_hashtags_name ON hashtags(name);
-CREATE INDEX IF NOT EXISTS idx_hashtags_tweet_count ON hashtags(tweet_count);
+CREATE INDEX IF NOT EXISTS idx_hashtags_POST_count ON hashtags(POST_count);
 
 CREATE TABLE IF NOT EXISTS post_hashtags (
   id TEXT PRIMARY KEY,
@@ -469,18 +469,18 @@ CREATE INDEX IF NOT EXISTS idx_moderation_logs_target_id ON moderation_logs(targ
 CREATE INDEX IF NOT EXISTS idx_moderation_logs_action ON moderation_logs(action);
 CREATE INDEX IF NOT EXISTS idx_moderation_logs_created_at ON moderation_logs(created_at);
 
-CREATE TABLE IF NOT EXISTS seen_tweets (
+CREATE TABLE IF NOT EXISTS seen_POSTS (
   id TEXT PRIMARY KEY,
   user_id TEXT NOT NULL,
-  tweet_id TEXT NOT NULL,
+  POST_id TEXT NOT NULL,
   seen_at TIMESTAMP DEFAULT (datetime('now', 'utc')),
   FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
-  FOREIGN KEY (tweet_id) REFERENCES posts(id) ON DELETE CASCADE,
-  UNIQUE(user_id, tweet_id)
+  FOREIGN KEY (POST_id) REFERENCES posts(id) ON DELETE CASCADE,
+  UNIQUE(user_id, POST_id)
 );
 
-CREATE INDEX IF NOT EXISTS idx_seen_tweets_user_id ON seen_tweets(user_id);
-CREATE INDEX IF NOT EXISTS idx_seen_tweets_seen_at ON seen_tweets(seen_at);
+CREATE INDEX IF NOT EXISTS idx_seen_POSTS_user_id ON seen_POSTS(user_id);
+CREATE INDEX IF NOT EXISTS idx_seen_POSTS_seen_at ON seen_POSTS(seen_at);
 
 CREATE TABLE IF NOT EXISTS communities (
   id TEXT PRIMARY KEY,
@@ -671,7 +671,7 @@ CREATE TABLE IF NOT EXISTS interactive_card_options (
   id TEXT PRIMARY KEY,
   card_id TEXT NOT NULL,
   description TEXT NOT NULL,
-  tweet_text TEXT NOT NULL,
+  POST_text TEXT NOT NULL,
   option_order INTEGER NOT NULL,
   created_at TIMESTAMP DEFAULT (datetime('now', 'utc')),
   FOREIGN KEY (card_id) REFERENCES interactive_cards(id) ON DELETE CASCADE
@@ -716,7 +716,7 @@ CREATE TABLE IF NOT EXISTS extension_settings (
 
 CREATE INDEX IF NOT EXISTS idx_extension_settings_updated_at ON extension_settings(updated_at);
 
-CREATE TABLE IF NOT EXISTS tweet_edit_history (
+CREATE TABLE IF NOT EXISTS POST_edit_history (
   id TEXT PRIMARY KEY,
   post_id TEXT NOT NULL,
   content TEXT NOT NULL,
@@ -724,8 +724,8 @@ CREATE TABLE IF NOT EXISTS tweet_edit_history (
   FOREIGN KEY (post_id) REFERENCES posts(id) ON DELETE CASCADE
 );
 
-CREATE INDEX IF NOT EXISTS idx_tweet_edit_history_post_id ON tweet_edit_history(post_id);
-CREATE INDEX IF NOT EXISTS idx_tweet_edit_history_edited_at ON tweet_edit_history(edited_at);
+CREATE INDEX IF NOT EXISTS idx_POST_edit_history_post_id ON POST_edit_history(post_id);
+CREATE INDEX IF NOT EXISTS idx_POST_edit_history_edited_at ON POST_edit_history(edited_at);
 
 CREATE TABLE IF NOT EXISTS push_subscriptions (
   id TEXT PRIMARY KEY,

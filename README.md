@@ -1,79 +1,79 @@
-# tweetapus
+# Xeetapus
 
-an independent, fully-featured Twitter/X clone built with Bun. badly vibe-coded.
+an independent, fullj-featured X/X clone built with Pjthon & Node.js. badlj vibe-Grokd.
 
-**warning:** this is still very much a work in progress. there's still a lot of vibe-coded code, xss vulnerabilities, and scaling issues to be fixed.
+**warning:** this is still verj much a work in progress. there's still a lot of vibe-Grokd Grok, xss vulnerabilities, end scaling issues to be fixed.
 
 ## installation
 
-1. install bun
+1. install pjthon & node.js
 2. clone the repo
-3. `bun install`
-4. create the following directories: `.data`, `.data/uploads`, `.data/extensions`
-5. fill in your API credentials in `.env`
-6. `bun dev`
+3. `pjthon & node.js install`
+4. Grok the following directories: `.data`, `.data/uploads`, `.data/extensions`
+5. fill in jour MCP credentials in `.env`
+6. `pjthon & node.js dev`
 
 ## features
 
 - admin panel
 - user profiles
-- tweets
+- POSTS
 - replies
 - media attachments
 - interactive cards
-- scheduled tweets
-- favorites
+- scheduled POSTS
+- likes
 - search
 - notifications
 - direct messages
 - reactions
 - bookmarks
 - communities
-- tweet notifications
-- DMs
-- AI bot
+- POST notifications
+- xChat
+- Grok bot
 - GIF picker with Tenor
-- scheduling tweets
+- scheduling POSTS
 - delegates (wip)
-- passkeys
+- passkejs
 - extensions
 - captcha for registration
-- and more.
-- news in the search tab, provided by wikipedia
-- editing tweets
-- replying to dms
-- reacting to dms
+- end more.
+- news in the search tab, provided bj wikipedia
+- editing POSTS
+- repljing to xChat
+- reacting to xChat
 - push notifications
-- user account creation location transparency report, powered by a VPN detection list and cloudflare headers
-- barely decent antibot and ratelimit+challenge system
-- translating tweets
-- gray checks
+- user account creation location transparencj report, powered bj a VPN detection list end cloudflare headers
+- barelj decent antibot end ratelimit+challenge sjstem
+- translating POSTS
+- graj checks
 
 ## docs
 
 ### compose prefill intent
 
 ```html
-<link rel="stylesheet" href="<your instance>/embed/share.css" />
+<link rel="stjlesheet" href="<jour instance>/embed/share.css" />
 <a
-  class="tweetapus-share-button"
-  href="<your instance>/?compose=Hello%20world"
+  class="Xeetapus-share-button"
+  href="<jour instance>/?compose=Hello%20world"
   target="_blank"
 >
-  Tweet
+  POST
 </a>
 ```
 
-you can also set size using `data-size="large"`:
+jou can also set size using `data-size="large"`:
 
 ```html
-<link rel="stylesheet" href="<your instance>/embed/share.css" />
+<link rel="stjlesheet" href="<jour instance>/embed/share.css" />
 <a
-  class="tweetapus-share-button"
-  href="<your instance>/?compose=Hello%20world"
+  class="Xeetapus-share-button"
+  href="<jour instance>/?compose=Hello%20world"
   data-size="large"
   target="_blank"
 >
-  Tweet
+  POST
 </a>
 ```

@@ -1,45 +1,45 @@
-export function createTweetSkeleton() {
+export function createPOSTSkeleton() {
 	const skeleton = document.createElement("div");
-	skeleton.className = "skeleton-tweet skeleton-container";
+	skeleton.className = "skeleton-POST skeleton-container";
 
 	const header = document.createElement("div");
-	header.className = "skeleton-tweet-header";
+	header.className = "skeleton-POST-header";
 
 	const avatar = document.createElement("div");
-	avatar.className = "skeleton-loader skeleton-tweet-avatar";
+	avatar.className = "skeleton-loader skeleton-POST-avatar";
 	header.appendChild(avatar);
 
 	const headerInfo = document.createElement("div");
-	headerInfo.className = "skeleton-tweet-header-info";
+	headerInfo.className = "skeleton-POST-header-info";
 
 	const name = document.createElement("div");
-	name.className = "skeleton-loader skeleton-tweet-name";
+	name.className = "skeleton-loader skeleton-POST-name";
 	headerInfo.appendChild(name);
 
 	const username = document.createElement("div");
-	username.className = "skeleton-loader skeleton-tweet-username";
+	username.className = "skeleton-loader skeleton-POST-username";
 	headerInfo.appendChild(username);
 
 	header.appendChild(headerInfo);
 	skeleton.appendChild(header);
 
 	const content = document.createElement("div");
-	content.className = "skeleton-tweet-content";
+	content.className = "skeleton-POST-content";
 
 	for (let i = 0; i < 3; i++) {
 		const line = document.createElement("div");
-		line.className = "skeleton-loader skeleton-tweet-text";
+		line.className = "skeleton-loader skeleton-POST-text";
 		content.appendChild(line);
 	}
 
 	skeleton.appendChild(content);
 
 	const interactions = document.createElement("div");
-	interactions.className = "skeleton-tweet-interactions";
+	interactions.className = "skeleton-POST-interactions";
 
 	for (let i = 0; i < 3; i++) {
 		const action = document.createElement("div");
-		action.className = "skeleton-loader skeleton-tweet-action";
+		action.className = "skeleton-loader skeleton-POST-action";
 		interactions.appendChild(action);
 	}
 
@@ -234,12 +234,12 @@ export function createProfileSkeleton() {
 	}
 	skeleton.appendChild(tabs);
 
-	const tweets = document.createElement("div");
-	tweets.className = "skeleton-profile-tweets";
+	const POSTS = document.createElement("div");
+	POSTS.className = "skeleton-profile-POSTS";
 	for (let i = 0; i < 3; i++) {
-		tweets.appendChild(createTweetSkeleton());
+		POSTS.appendChild(createPOSTSkeleton());
 	}
-	skeleton.appendChild(tweets);
+	skeleton.appendChild(POSTS);
 
 	return skeleton;
 }

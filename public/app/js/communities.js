@@ -478,8 +478,8 @@ export async function loadCommunityDetail(communityId) {
 			.getElementById("aboutContent")
 			.classList.toggle("hidden", tab !== "about");
 		document
-			.getElementById("tweetsContent")
-			.classList.toggle("hidden", tab !== "tweets");
+			.getElementById("POSTSContent")
+			.classList.toggle("hidden", tab !== "POSTS");
 		document
 			.getElementById("membersContent")
 			.classList.toggle("hidden", tab !== "members");
@@ -491,14 +491,14 @@ export async function loadCommunityDetail(communityId) {
 			.classList.toggle("hidden", tab !== "settings");
 
 		if (tab === "about") showAboutTab();
-		else if (tab === "tweets") showTweetsTab();
+		else if (tab === "POSTS") showPOSTSTab();
 		else if (tab === "members") showMembersTab();
 		else if (tab === "requests") showRequestsTab();
 		else if (tab === "settings") showSettingsTab();
 
 		const container = document.querySelector(".community-detail-content");
 		if (container) {
-			container.classList.toggle("tab-tweets-active", tab === "tweets");
+			container.classList.toggle("tab-POSTS-active", tab === "POSTS");
 		}
 	};
 
@@ -524,18 +524,18 @@ export async function loadCommunityDetail(communityId) {
 	}
 
 	// Ensure content panes reflect the same default state (show About,
-	// hide others) and clear tweet content to avoid showing the previous
-	// community's tweets while the new one loads.
+	// hide others) and clear POST content to avoid showing the previous
+	// community's POSTS while the new one loads.
 	const aboutContentEl = document.getElementById("aboutContent");
-	const tweetsContentEl = document.getElementById("tweetsContent");
+	const POSTSContentEl = document.getElementById("POSTSContent");
 	const membersContentEl = document.getElementById("membersContent");
 	const requestsContentEl = document.getElementById("requestsContent");
 	const settingsContentEl = document.getElementById("settingsContent");
 
 	if (aboutContentEl) aboutContentEl.classList.remove("hidden");
-	if (tweetsContentEl) {
-		tweetsContentEl.classList.add("hidden");
-		tweetsContentEl.innerHTML = "";
+	if (POSTSContentEl) {
+		POSTSContentEl.classList.add("hidden");
+		POSTSContentEl.innerHTML = "";
 	}
 	if (membersContentEl) membersContentEl.classList.add("hidden");
 	if (requestsContentEl) requestsContentEl.classList.add("hidden");
@@ -587,14 +587,14 @@ function showAboutTab() {
 	content.appendChild(accessSection);
 }
 
-async function showTweetsTab() {
-	const content = document.getElementById("tweetsContent");
+async function showPOSTSTab() {
+	const content = document.getElementById("POSTSContent");
 	if (!content) return;
 
 	content.innerHTML = "";
 
-	const tweetsWrapper = document.createElement("div");
-	tweetsWrapper.style.cssText =
+	const POSTSWrapper = document.createElement("div");
+	POSTSWrapper.style.cssText =
 		"display: flex; flex-direction: column; gap: 16px;";
 
 	if (currentMember) {
@@ -602,70 +602,70 @@ async function showTweetsTab() {
 
 		const composer = await createComposer({
 			placeholder: `Share something with ${currentCommunity.name}...`,
-			callback: async (_newTweet) => {
-				showToast("Tweet posted to community!", "success");
-				showTweetsTab();
+			callback: async (_newPOST) => {
+				showToast("POST posted to community!", "success");
+				showPOSTSTab();
 			},
 			communityId: currentCommunity.id,
 		});
 
 		composer.classList.remove();
-		composer.classList.add("compose-tweet");
-		tweetsWrapper.appendChild(composer);
+		composer.classList.add("compose-POST");
+		POSTSWrapper.appendChild(composer);
 	}
 
 	const container = document.querySelector(".community-detail-content");
 	if (container)
-		container.classList.toggle("tweets-no-composer", !currentMember);
+		container.classList.toggle("POSTS-no-composer", !currentMember);
 
-	content.appendChild(tweetsWrapper);
+	content.appendChild(POSTSWrapper);
 
-	const { createTweetSkeleton, removeSkeletons, showSkeletons } = await import(
+	const { createPOSTSkeleton, removeSkeletons, showSkeletons } = await import(
 		"../../shared/skeleton-utils.js"
 	);
 
-	const skeletons = showSkeletons(tweetsWrapper, createTweetSkeleton, 3);
+	const skeletons = showSkeletons(POSTSWrapper, createPOSTSkeleton, 3);
 
 	try {
-		const { tweets } = await api(
-			`/communities/${currentCommunity.id}/tweets?limit=50`,
+		const { POSTS } = await api(
+			`/communities/${currentCommunity.id}/POSTS?limit=50`,
 		);
 
 		removeSkeletons(skeletons);
 
-		if (!tweets || tweets.length === 0) {
+		if (!POSTS || POSTS.length === 0) {
 			const emptyMsg = document.createElement("p");
 			emptyMsg.className = "empty-state";
-			emptyMsg.innerHTML = `<img src="/public/shared/assets/img/cats/pit_cat_400.png" draggable="false">No tweets in this community yet.`;
-			tweetsWrapper.appendChild(emptyMsg);
+			emptyMsg.innerHTML = `<img src="/public/shared/assets/img/cats/pit_cat_400.png" draggable="false">No POSTS in this community yet.`;
+			POSTSWrapper.appendChild(emptyMsg);
 			return;
 		}
 
-		const tweetsContainer = document.createElement("div");
-		tweetsContainer.className = "community-tweets";
-		tweetsContainer.style.cssText =
+		const POSTSContainer = document.createElement("div");
+		POSTSContainer.className = "community-POSTS";
+		POSTSContainer.style.cssText =
 			"display: flex; flex-direction: column; gap: 16px;";
 
-		const { createTweetElement } = await import("./tweets.js");
+		const { createPOSTElement } = await import("./POSTS.js");
 
-		for (const tweet of tweets) {
-			const tweetEl = createTweetElement(tweet, {
+		for (const POST of POSTS) {
+			const POSTEl = createPOSTElement(POST, {
 				clickToOpen: true,
 				showTopReply: false,
 				isTopReply: false,
 				size: "normal",
 			});
-			tweetsContainer.appendChild(tweetEl);
+			POSTSContainer.appendChild(POSTEl);
 		}
 
-		tweetsWrapper.appendChild(tweetsContainer);
+		POSTSWrapper.appendChild(POSTSContainer);
 	} catch (error) {
 		removeSkeletons(skeletons);
-		console.error("Error loading community tweets:", error);
+		console.error("Error loading community POSTS:", error);
 		const emptyMsg = document.createElement("p");
 		emptyMsg.className = "empty-state";
-		emptyMsg.textContent = "Failed to load tweets.";
-		tweetsWrapper.appendChild(emptyMsg);
+		emptyMsg.textContent = "Failed to load POSTS.";
+		POSTSWrapper.appendChild(emptyMsg);
 	}
 }
 

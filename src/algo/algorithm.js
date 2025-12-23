@@ -82,7 +82,7 @@ if (existsSync(libPath)) {
 export const calculateScore = (
 	created_at,
 	like_count,
-	retweet_count,
+	rePOST_count,
 	reply_count = 0,
 	quote_count = 0,
 	has_media = 0,
@@ -97,7 +97,7 @@ export const calculateScore = (
 	user_gold = 0,
 	follower_count = 0,
 	has_community_note = 0,
-	user_super_tweeter_boost = 0.0,
+	user_super_POSTer_boost = 0.0,
 	blocked_by_count = 0,
 	muted_by_count = 0,
 	spam_score = 0.0,
@@ -110,7 +110,7 @@ export const calculateScore = (
 	author_timing_score = 0.0,
 	cluster_size = 0,
 	spam_keyword_score = 0.0,
-	retweet_like_ratio = 0.0,
+	rePOST_like_ratio = 0.0,
 	engagement_velocity = 0.0,
 	is_video = 0,
 ) => {
@@ -126,7 +126,7 @@ export const calculateScore = (
 	return lib.symbols.calculate_score(
 		BigInt(timestamp),
 		like_count,
-		retweet_count,
+		rePOST_count,
 		reply_count,
 		quote_count,
 		has_media,
@@ -141,7 +141,7 @@ export const calculateScore = (
 		user_gold,
 		follower_count,
 		has_community_note,
-		user_super_tweeter_boost,
+		user_super_POSTer_boost,
 		blocked_by_count,
 		muted_by_count,
 		spam_score,
@@ -154,7 +154,7 @@ export const calculateScore = (
 		author_timing_score,
 		cluster_size,
 		spam_keyword_score,
-		retweet_like_ratio,
+		rePOST_like_ratio,
 		engagement_velocity,
 		is_video,
 	);
@@ -267,7 +267,7 @@ const SPAM_KEYWORDS = new Set([
 	"follow for follow",
 	"f4f",
 	"like4like",
-	"retweet to win",
+	"rePOST to win",
 	"rt to win",
 	"cashapp",
 	"paypal me",
@@ -288,15 +288,15 @@ const calculateSpamKeywordScore = (content) => {
 	return Math.min(1.0, score);
 };
 
-const calculateRetweetLikeRatio = (retweetCount, likeCount) => {
-	if (likeCount === 0 && retweetCount === 0) return 0;
-	if (likeCount === 0) return Math.min(1.0, retweetCount * 0.1);
-	return Math.min(1.0, retweetCount / (likeCount + 1));
+const calculaterePOSTLikeRatio = (rePOSTCount, likeCount) => {
+	if (likeCount === 0 && rePOSTCount === 0) return 0;
+	if (likeCount === 0) return Math.min(1.0, rePOSTCount * 0.1);
+	return Math.min(1.0, rePOSTCount / (likeCount + 1));
 };
 
-const calculateEngagementVelocity = (likes, retweets, replies, ageSeconds) => {
+const calculateEngagementVelocity = (likes, rePOSTS, replies, ageSeconds) => {
 	if (ageSeconds <= 0) return 0;
-	const total = likes + retweets + replies;
+	const total = likes + rePOSTS + replies;
 	const hoursAge = Math.max(ageSeconds / 3600, 0.1);
 	return Math.min(10.0, total / hoursAge);
 };
@@ -313,13 +313,13 @@ const hasVideoAttachment = (attachments) => {
 		: 0;
 };
 
-export const rankTweets = (
-	tweets,
+export const rankPOSTS = (
+	POSTS,
 	seenInput = new Map(),
 	displayLimit = null,
 ) => {
-	if (!lib) return tweets;
-	if (!Array.isArray(tweets) || tweets.length === 0) return [];
+	if (!lib) return POSTS;
+	if (!Array.isArray(POSTS) || POSTS.length === 0) return [];
 
 	let seenMap;
 	if (seenInput instanceof Map) {
@@ -339,55 +339,55 @@ export const rankTweets = (
 	const authorCounts = new Map();
 	const contentCounts = new Map();
 
-	tweets.forEach((tweet) => {
+	POSTS.forEach((POST) => {
 		const authorKey =
-			tweet.user_id ||
-			tweet.author_id ||
-			tweet.author?.id ||
-			tweet.username ||
-			tweet.author?.username;
+			POST.user_id ||
+			POST.author_id ||
+			POST.author?.id ||
+			POST.username ||
+			POST.author?.username;
 		if (authorKey) {
 			authorCounts.set(authorKey, (authorCounts.get(authorKey) || 0) + 1);
 		}
 
-		const contentKey = normalizeContent(tweet.content);
+		const contentKey = normalizeContent(POST.content);
 		if (contentKey) {
 			contentCounts.set(contentKey, (contentCounts.get(contentKey) || 0) + 1);
 		}
 	});
 
-	const allSeen = tweets.every((tweet) => seenMap.has(tweet.id));
+	const allSeen = POSTS.every((POST) => seenMap.has(POST.id));
 
-	const scored = tweets.map((tweet) => {
+	const scored = POSTS.map((POST) => {
 		let timestamp =
-			typeof tweet.created_at === "string"
-				? Math.floor(new Date(tweet.created_at).getTime() / 1000)
-				: tweet.created_at;
+			typeof POST.created_at === "string"
+				? Math.floor(new Date(POST.created_at).getTime() / 1000)
+				: POST.created_at;
 		if (!Number.isFinite(timestamp)) {
 			timestamp = nowSeconds;
 		}
 
-		const attachments = Array.isArray(tweet.attachments)
-			? tweet.attachments
+		const attachments = Array.isArray(POST.attachments)
+			? POST.attachments
 			: [];
 		const hasQuotedMedia =
-			tweet.quoted_tweet &&
-			Array.isArray(tweet.quoted_tweet.attachments) &&
-			tweet.quoted_tweet.attachments.length > 0;
+			POST.quoted_POST &&
+			Array.isArray(POST.quoted_POST.attachments) &&
+			POST.quoted_POST.attachments.length > 0;
 		const hasMedia = attachments.length > 0 || hasQuotedMedia ? 1 : 0;
 
 		const authorKey =
-			tweet.user_id ||
-			tweet.author_id ||
-			tweet.author?.id ||
-			tweet.username ||
-			tweet.author?.username;
+			POST.user_id ||
+			POST.author_id ||
+			POST.author?.id ||
+			POST.username ||
+			POST.author?.username;
 		const authorCount = authorKey ? authorCounts.get(authorKey) || 0 : 0;
 
-		const contentKey = normalizeContent(tweet.content);
+		const contentKey = normalizeContent(POST.content);
 		const contentCount = contentKey ? contentCounts.get(contentKey) || 0 : 0;
 
-		const seenMeta = seenMap.get(tweet.id);
+		const seenMeta = seenMap.get(POST.id);
 		let hoursSinceSeen = -1;
 		if (seenMeta !== undefined && seenMeta !== null) {
 			const parsed = Date.parse(
@@ -409,25 +409,25 @@ export const rankTweets = (
 
 		const randomFactor = Math.random();
 
-		const userVerified = tweet.verified || tweet.author?.verified ? 1 : 0;
-		const userGold = tweet.gold || tweet.author?.gold ? 1 : 0;
+		const userVerified = POST.verified || POST.author?.verified ? 1 : 0;
+		const userGold = POST.gold || POST.author?.gold ? 1 : 0;
 		const followerCount =
-			tweet.follower_count || tweet.author?.follower_count || 0;
+			POST.follower_count || POST.author?.follower_count || 0;
 		const hasCommunityNote =
-			tweet.has_community_note || tweet.fact_check ? 1 : 0;
-		const userBoost = tweet.super_tweeter
-			? tweet.super_tweeter_boost || 50.0
+			POST.has_community_note || POST.fact_check ? 1 : 0;
+		const userBoost = POST.super_POSTer
+			? POST.super_POSTer_boost || 50.0
 			: 0.0;
-		const postBoost = tweet.super_tweet ? tweet.super_tweet_boost || 50.0 : 0.0;
-		const userSuperTweeterBoost = Math.max(userBoost, postBoost);
+		const postBoost = POST.super_POST ? POST.super_POST_boost || 50.0 : 0.0;
+		const userSuperPOSTerBoost = Math.max(userBoost, postBoost);
 
 		const blockedByCount =
-			tweet.blocked_by_count || tweet.author?.blocked_by_count || 0;
+			POST.blocked_by_count || POST.author?.blocked_by_count || 0;
 		const mutedByCount =
-			tweet.muted_by_count || tweet.author?.muted_by_count || 0;
-		const spamScore = tweet.spam_score || tweet.author?.spam_score || 0.0;
+			POST.muted_by_count || POST.author?.muted_by_count || 0;
+		const spamScore = POST.spam_score || POST.author?.spam_score || 0.0;
 
-		const accountCreatedAt = tweet.author?.created_at || tweet.user_created_at;
+		const accountCreatedAt = POST.author?.created_at || POST.user_created_at;
 		let accountAgeDays = 0.0;
 		if (accountCreatedAt) {
 			const createdMs =
@@ -437,35 +437,35 @@ export const rankTweets = (
 			accountAgeDays = Math.max(0, (nowMillis - createdMs) / 86400000);
 		}
 
-		const tweetContent = tweet.content || "";
-		const { urlCount, suspiciousCount } = extractUrlMetrics(tweetContent);
-		const hashtagCount = countHashtags(tweetContent);
-		const mentionCount = countMentions(tweetContent);
-		const emojiDensity = calculateEmojiDensity(tweetContent);
+		const POSTContent = POST.content || "";
+		const { urlCount, suspiciousCount } = extractUrlMetrics(POSTContent);
+		const hashtagCount = countHashtags(POSTContent);
+		const mentionCount = countMentions(POSTContent);
+		const emojiDensity = calculateEmojiDensity(POSTContent);
 		const authorTimingScore =
-			tweet.author_timing_score || tweet.author?.timing_score || 0.0;
-		const clusterSize = tweet.cluster_size || 0;
+			POST.author_timing_score || POST.author?.timing_score || 0.0;
+		const clusterSize = POST.cluster_size || 0;
 
-		const spamKeywordScore = calculateSpamKeywordScore(tweetContent);
-		const likes = tweet.like_count || 0;
-		const retweets = tweet.retweet_count || 0;
-		const replies = tweet.reply_count || 0;
-		const rtLikeRatio = calculateRetweetLikeRatio(retweets, likes);
-		const tweetAgeSeconds = nowSeconds - timestamp;
+		const spamKeywordScore = calculateSpamKeywordScore(POSTContent);
+		const likes = POST.like_count || 0;
+		const rePOSTS = POST.rePOST_count || 0;
+		const replies = POST.reply_count || 0;
+		const rtLikeRatio = calculaterePOSTLikeRatio(rePOSTS, likes);
+		const POSTAgeSeconds = nowSeconds - timestamp;
 		const engagementVelocity = calculateEngagementVelocity(
 			likes,
-			retweets,
+			rePOSTS,
 			replies,
-			tweetAgeSeconds,
+			POSTAgeSeconds,
 		);
 		const isVideo = hasVideoAttachment(attachments);
 
 		const score = calculateScore(
 			timestamp,
 			likes,
-			retweets,
+			rePOSTS,
 			replies,
-			tweet.quote_count || 0,
+			POST.quote_count || 0,
 			hasMedia,
 			hoursSinceSeen,
 			Math.max(0, authorCount - 1),
@@ -478,7 +478,7 @@ export const rankTweets = (
 			userGold,
 			followerCount,
 			hasCommunityNote,
-			userSuperTweeterBoost,
+			userSuperPOSTerBoost,
 			blockedByCount,
 			mutedByCount,
 			spamScore,
@@ -507,7 +507,7 @@ export const rankTweets = (
 			adjustedScore *= boost;
 		}
 
-		return { ...tweet, _score: adjustedScore };
+		return { ...POST, _score: adjustedScore };
 	});
 
 	scored.sort((a, b) => b._score - a._score);

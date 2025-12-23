@@ -17,7 +17,7 @@ export async function fetchLinkPreview(url) {
 			signal: controller.signal,
 			headers: {
 				"User-Agent":
-					"Mozilla/5.0 (compatible; TweetapusLinkBot/0.1; +https://tiago.zip)",
+					"Mozilla/5.0 (compatible; XeetapusLinkBot/0.1; +https://tiago.zip)",
 			},
 		});
 		clearTimeout(timeoutId);
@@ -49,12 +49,12 @@ export async function fetchLinkPreview(url) {
 
 		const description =
 			getMetaContent("og:description", "description") ||
-			getMetaContent("twitter:description", "description") ||
+			getMetaContent("X:description", "description") ||
 			null;
 
 		const image =
 			getMetaContent("og:image", "image") ||
-			getMetaContent("twitter:image", "image") ||
+			getMetaContent("X:image", "image") ||
 			null;
 
 		const siteName = getMetaContent("og:site_name", "site_name") || null;

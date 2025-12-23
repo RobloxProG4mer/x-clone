@@ -3,7 +3,7 @@ import { rateLimit } from "elysia-rate-limit";
 import db from "../db.js";
 import ratelimit from "../helpers/ratelimit.js";
 
-const getPublicTweets = db.query(`
+const getPublicPOSTS = db.query(`
   SELECT posts.* FROM posts 
   JOIN users ON posts.user_id = users.id
   WHERE posts.reply_to IS NULL 
@@ -16,7 +16,7 @@ const getPublicTweets = db.query(`
   LIMIT ?
 `);
 
-const getPublicTweetsBefore = db.query(`
+const getPublicPOSTSBefore = db.query(`
   SELECT posts.* FROM posts 
   JOIN users ON posts.user_id = users.id
   WHERE posts.reply_to IS NULL 
@@ -38,7 +38,7 @@ const getPostsAuthor = db.query(
 
 const getAttachments = db.query(`SELECT * FROM attachments WHERE post_id = ?`);
 
-export default new Elysia({ prefix: "/public-tweets", tags: ["Public"] })
+export default new Elysia({ prefix: "/public-POSTS", tags: ["Public"] })
 	.use(
 		rateLimit({
 			duration: 240_000,
@@ -58,7 +58,7 @@ export default new Elysia({ prefix: "/public-tweets", tags: ["Public"] })
 			if (!cursor) {
 				posts = [];
 			} else {
-				posts = getPublicTweetsBefore.all(
+				posts = getPublicPOSTSBefore.all(
 					cursor.created_at,
 					cursor.created_at,
 					beforeId,
@@ -66,7 +66,7 @@ export default new Elysia({ prefix: "/public-tweets", tags: ["Public"] })
 				);
 			}
 		} else {
-			posts = getPublicTweets.all(limit);
+			posts = getPublicPOSTS.all(limit);
 		}
 
 		if (!posts || posts.length === 0) {

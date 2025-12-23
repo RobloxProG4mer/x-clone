@@ -2,27 +2,27 @@ import { decodeAttestationObject } from "@simplewebauthn/server/helpers";
 
 (async () => {
   const currentScript = document.currentScript;
-  if (currentScript.getAttribute("data-tweetapus-loaded") === "1") return;
-  currentScript.setAttribute("data-tweetapus-loaded", "1");
+  if (currentScript.getAttribute("data-Xeetapus-loaded") === "1") return;
+  currentScript.setAttribute("data-Xeetapus-loaded", "1");
 
-  const tweet = {
-    /*{tweet}*/
+  const POST = {
+    /*{POST}*/
   };
 
-  const tweetFrame = document.createElement("iframe");
-  tweetFrame.style.cssText = `
+  const POSTFrame = document.createElement("iframe");
+  POSTFrame.style.cssText = `
     width: 100%;
     height: 0px;
     border: none;
     border-radius: 0px;
     overflow: hidden;
   `;
-  tweetFrame.setAttribute("scrolling", "no");
-  tweetFrame.setAttribute("frameborder", "0");
-  tweetFrame.setAttribute("width", "100%");
-  currentScript.after(tweetFrame);
+  POSTFrame.setAttribute("scrolling", "no");
+  POSTFrame.setAttribute("frameborder", "0");
+  POSTFrame.setAttribute("width", "100%");
+  currentScript.after(POSTFrame);
 
-  const doc = tweetFrame.contentDocument;
+  const doc = POSTFrame.contentDocument;
   doc.open();
   doc.write(`
     <html>
@@ -86,7 +86,7 @@ import { decodeAttestationObject } from "@simplewebauthn/server/helpers";
             }
           }
 
-          .tweet-container {
+          .POST-container {
             background: var(--bg-primary);
             color: var(--text-primary);
             border: 1px solid var(--border-primary);
@@ -96,11 +96,11 @@ import { decodeAttestationObject } from "@simplewebauthn/server/helpers";
             transition: border-color 0.2s, background-color 0.2s;
           }
 
-          .tweet-container:hover {
+          .POST-container:hover {
             border-color: var(--border-hover);
           }
 
-          .tweet-header {
+          .POST-header {
             display: flex;
             align-items: center;
             gap: .625rem;
@@ -110,7 +110,7 @@ import { decodeAttestationObject } from "@simplewebauthn/server/helpers";
 						user-select: none;
           }
 
-          .tweet-header img {
+          .POST-header img {
             width: 32px;
             height: 32px;
             cursor: pointer;
@@ -118,16 +118,16 @@ import { decodeAttestationObject } from "@simplewebauthn/server/helpers";
             object-fit: cover;
           }
 
-          .tweet-header img:hover {
+          .POST-header img:hover {
             transform: scale(1.1);
           }
 
-          .tweet-header img:active {
+          .POST-header img:active {
             opacity: 0.8;
             transform: scale(0.98);
           }
 
-          .tweet-header-info {
+          .POST-header-info {
             display: flex;
             flex-direction: column;
             flex-wrap: wrap;
@@ -135,18 +135,18 @@ import { decodeAttestationObject } from "@simplewebauthn/server/helpers";
 						gap: 5px;
           }
 
-          .tweet-header-info:hover .name {
+          .POST-header-info:hover .name {
             text-decoration: underline;
           }
 
-          .tweet-header-info p {
+          .POST-header-info p {
             margin: 0px;
             display: flex;
             align-items: center;
             gap: 2px;
           }
 
-          .tweet-header-info .name {
+          .POST-header-info .name {
             font-weight: 500;
             margin-bottom: -4px;
             cursor: pointer;
@@ -165,19 +165,19 @@ import { decodeAttestationObject } from "@simplewebauthn/server/helpers";
             flex-shrink: 0;
           }
 
-          .tweet-header-username-span {
+          .POST-header-username-span {
             color: var(--text-secondary);
             font-weight: 400;
 						user-select: none;
           }
 
-          .tweet-header-info .username {
+          .POST-header-info .username {
             color: var(--text-secondary);
             cursor: pointer;
             user-select: none;
           }
 
-          .tweet-content {
+          .POST-content {
             font-size: 1.125rem;
             color: var(--text-primary);
             margin: 0 0 12px 0;
@@ -185,7 +185,7 @@ import { decodeAttestationObject } from "@simplewebauthn/server/helpers";
             line-height: 1.5rem;
           }
 
-          .tweet-date {
+          .POST-date {
             font-size: 14px;
             color: var(--text-secondary);
             margin: 12px 0;
@@ -193,13 +193,13 @@ import { decodeAttestationObject } from "@simplewebauthn/server/helpers";
 						user-select: none;
           }
 
-          .tweet-divider {
+          .POST-divider {
             border: none;
             border-top: 1px solid var(--border-secondary);
             margin: 12px 0;
           }
 
-          .tweet-footer {
+          .POST-footer {
             display: flex;
             align-items: center;
             justify-content: space-between;
@@ -207,48 +207,48 @@ import { decodeAttestationObject } from "@simplewebauthn/server/helpers";
 						user-select: none;
           }
 
-          .tweet-stats {
+          .POST-stats {
             display: flex;
             align-items: center;
             gap: 16px;
             color: var(--text-secondary);
           }
 
-          .tweet-stat {
+          .POST-stat {
             display: flex;
             align-items: center;
             gap: 6px;
           }
 
-          .tweet-stat svg {
+          .POST-stat svg {
             width: 19px;
             height: 19px;
           }
 
-          .tweet-link {
+          .POST-link {
             color: rgb(172, 151, 255);
             text-decoration: none;
             font-weight: 500;
             transition: color 0.2s;
           }
 
-          .tweet-link:hover {
+          .POST-link:hover {
             text-decoration: underline;
           }
 
-          .tweetapus-logo {
+          .Xeetapus-logo {
             width: 20px;
             height: 20px;
             cursor: pointer;
             transition: transform 0.2s, opacity 0.2s;
           }
 
-          .tweetapus-logo:active {
+          .Xeetapus-logo:active {
             transform: scale(0.95);
             opacity: 0.8;
           }
 
-          .tweet-attachments {
+          .POST-attachments {
             display: grid;
             gap: 8px;
             margin: 12px 0;
@@ -256,27 +256,27 @@ import { decodeAttestationObject } from "@simplewebauthn/server/helpers";
             overflow: hidden;
           }
 
-          .tweet-attachments.single-attachment {
+          .POST-attachments.single-attachment {
             grid-template-columns: 1fr;
           }
 
-          .tweet-attachments.two-attachments {
+          .POST-attachments.two-attachments {
             grid-template-columns: 1fr 1fr;
           }
 
-          .tweet-attachments.three-attachments {
+          .POST-attachments.three-attachments {
             grid-template-columns: 1fr 1fr;
           }
 
-          .tweet-attachments.three-attachments .tweet-attachment:first-child {
+          .POST-attachments.three-attachments .POST-attachment:first-child {
             grid-column: 1 / -1;
           }
 
-          .tweet-attachments.four-attachments {
+          .POST-attachments.four-attachments {
             grid-template-columns: 1fr 1fr;
           }
 
-          .tweet-attachment {
+          .POST-attachment {
             position: relative;
             width: 100%;
             overflow: hidden;
@@ -284,8 +284,8 @@ import { decodeAttestationObject } from "@simplewebauthn/server/helpers";
             background: var(--bg-secondary);
           }
 
-          .tweet-attachment img,
-          .tweet-attachment video {
+          .POST-attachment img,
+          .POST-attachment video {
             width: 100%;
             height: 100%;
             object-fit: cover;
@@ -294,11 +294,11 @@ import { decodeAttestationObject } from "@simplewebauthn/server/helpers";
             border-radius: 8px;
           }
 
-          .tweet-attachment video {
+          .POST-attachment video {
             max-height: 400px;
           }
 
-          .tweet-poll {
+          .POST-poll {
             border: 1px solid var(--border-primary);
             border-radius: 12px;
             padding: 12px;
@@ -375,7 +375,7 @@ import { decodeAttestationObject } from "@simplewebauthn/server/helpers";
   doc.close();
 
   function resizeIframeToFitContent() {
-    const body = tweetFrame.contentDocument.body;
+    const body = POSTFrame.contentDocument.body;
     let maxHeight = 0;
     const children = body.children;
     for (let i = 0; i < children.length; i++) {
@@ -385,11 +385,11 @@ import { decodeAttestationObject } from "@simplewebauthn/server/helpers";
         maxHeight = bottom;
       }
     }
-    tweetFrame.style.height = `${Math.ceil(maxHeight)}px`;
+    POSTFrame.style.height = `${Math.ceil(maxHeight)}px`;
   }
 
-  tweetFrame.addEventListener("load", () => {
-    const body = tweetFrame.contentDocument.body;
+  POSTFrame.addEventListener("load", () => {
+    const body = POSTFrame.contentDocument.body;
 
     const escapeHtml = (str) => {
       if (!str) return "";
@@ -441,8 +441,8 @@ import { decodeAttestationObject } from "@simplewebauthn/server/helpers";
     };
 
     let attachmentsHTML = "";
-    if (tweet.attachments && tweet.attachments.length > 0) {
-      const count = tweet.attachments.length;
+    if (POST.attachments && POST.attachments.length > 0) {
+      const count = POST.attachments.length;
       const gridClass =
         count === 1
           ? "single-attachment"
@@ -452,13 +452,13 @@ import { decodeAttestationObject } from "@simplewebauthn/server/helpers";
               ? "three-attachments"
               : "four-attachments";
 
-      attachmentsHTML = `<div class="tweet-attachments ${gridClass}">`;
+      attachmentsHTML = `<div class="POST-attachments ${gridClass}">`;
 
-      for (const attachment of tweet.attachments) {
-        attachmentsHTML += '<div class="tweet-attachment">';
+      for (const attachment of POST.attachments) {
+        attachmentsHTML += '<div class="POST-attachment">';
 
         if (attachment.file_url.startsWith("/")) {        
-          attachment.file_url = `${new URL(tweet.link).origin}${attachment.file_url}`;
+          attachment.file_url = `${new URL(POST.link).origin}${attachment.file_url}`;
         }
 
         if (attachment.file_type.startsWith("image/")) {
@@ -474,10 +474,10 @@ import { decodeAttestationObject } from "@simplewebauthn/server/helpers";
     }
 
     let pollHTML = "";
-    if (tweet.poll) {
-      pollHTML = '<div class="tweet-poll"><div class="poll-options">';
+    if (POST.poll) {
+      pollHTML = '<div class="POST-poll"><div class="poll-options">';
 
-      for (const option of tweet.poll.options) {
+      for (const option of POST.poll.options) {
         const safePercentage = Number.isFinite(option.percentage)
           ? Math.max(0, Math.min(100, option.percentage))
           : 0;
@@ -492,97 +492,97 @@ import { decodeAttestationObject } from "@simplewebauthn/server/helpers";
 				`;
       }
 
-      const safeTotalVotes = Number.isFinite(tweet.poll.totalVotes)
-        ? Math.max(0, tweet.poll.totalVotes)
+      const safeTotalVotes = Number.isFinite(POST.poll.totalVotes)
+        ? Math.max(0, POST.poll.totalVotes)
         : 0;
       pollHTML += `
 				</div>
 				<div class="poll-meta">
 					<span class="poll-votes">${safeTotalVotes} vote${safeTotalVotes !== 1 ? "s" : ""}</span>
-					<span class="poll-time">${escapeHtml(formatTimeRemaining(tweet.poll.expiresAt))}</span>
+					<span class="poll-time">${escapeHtml(formatTimeRemaining(POST.poll.expiresAt))}</span>
 				</div>
 			</div>
 			`;
     }
 
-    const safeLink = escapeHtml(tweet.link);
-    const safeAvatar = escapeHtml(tweet.author.avatar);
-    const safeName = escapeHtml(tweet.author.name);
-    const safeUsername = escapeHtml(tweet.author.username);
-    const safeContent = escapeHtml(tweet.content);
-    const safeAvatarRadius = Number.isFinite(tweet.author.avatar_radius)
-      ? Math.max(0, Math.min(50, tweet.author.avatar_radius))
+    const safeLink = escapeHtml(POST.link);
+    const safeAvatar = escapeHtml(POST.author.avatar);
+    const safeName = escapeHtml(POST.author.name);
+    const safeUsername = escapeHtml(POST.author.username);
+    const safeContent = escapeHtml(POST.content);
+    const safeAvatarRadius = Number.isFinite(POST.author.avatar_radius)
+      ? Math.max(0, Math.min(50, POST.author.avatar_radius))
       : 50;
-    const safeLikes = Number.isFinite(tweet.likes)
-      ? Math.max(0, tweet.likes)
+    const safeLikes = Number.isFinite(POST.likes)
+      ? Math.max(0, POST.likes)
       : 0;
-    const safeRetweets = Number.isFinite(tweet.retweets)
-      ? Math.max(0, tweet.retweets)
+    const safeRePOSTS = Number.isFinite(POST.rePOSTS)
+      ? Math.max(0, POST.rePOSTS)
       : 0;
-    const safeReplies = Number.isFinite(tweet.replies)
-      ? Math.max(0, tweet.replies)
+    const safeReplies = Number.isFinite(POST.replies)
+      ? Math.max(0, POST.replies)
       : 0;
 
     let safeOrigin;
     try {
-      safeOrigin = new URL(tweet.link).origin;
+      safeOrigin = new URL(POST.link).origin;
     } catch {
       safeOrigin = "";
     }
 
-    const tweetHTML = `
-			<div class="tweet-container" onclick="window.open('${safeLink}', '_blank')">
-				<div class="tweet-header">
+    const POSTHTML = `
+			<div class="POST-container" onclick="window.open('${safeLink}', '_blank')">
+				<div class="POST-header">
 					<img src="${safeAvatar}" alt="${safeName}" style="border-radius: ${safeAvatarRadius}%;" />
-					<div class="tweet-header-info">
+					<div class="POST-header-info">
 						<p class="name">
 							${safeName}
-							${tweet.author.verified && tweet.author.verified !== "none" ? `<span class="verification-badge">${getVerificationBadge(tweet.author.verified)}</span>` : ""}
+							${POST.author.verified && POST.author.verified !== "none" ? `<span class="verification-badge">${getVerificationBadge(POST.author.verified)}</span>` : ""}
 						</p>
-							<span class="tweet-header-username-span">@${safeUsername}</span>
+							<span class="POST-header-username-span">@${safeUsername}</span>
 					</div>
-					<img class="tweetapus-logo" src="${escapeHtml(safeOrigin)}/public/shared/assets/favicon.svg" alt="Tweetapus logo" width="32" height="32" loading="lazy" draggable="false">
+					<img class="Xeetapus-logo" src="${escapeHtml(safeOrigin)}/public/shared/assets/favicon.svg" alt="Xeetapus logo" width="32" height="32" loading="lazy" draggable="false">
 				</div>
-				<p class="tweet-content">${safeContent}</p>
+				<p class="POST-content">${safeContent}</p>
 				${attachmentsHTML}
 				${pollHTML}
-				<div class="tweet-date">${escapeHtml(formatDate(tweet.created_at))}</div>
-				<hr class="tweet-divider" />
-				<div class="tweet-footer">
-					<div class="tweet-stats">
-						<div class="tweet-stat">
+				<div class="POST-date">${escapeHtml(formatDate(POST.created_at))}</div>
+				<hr class="POST-divider" />
+				<div class="POST-footer">
+					<div class="POST-stats">
+						<div class="POST-stat">
 							<svg width="19" height="19" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
 								<path d="M5.00002 2.54822C8.00003 2.09722 9.58337 4.93428 10 5.87387C10.4167 4.93428 12 2.09722 15 2.54822C18 2.99923 18.75 5.66154 18.75 7.05826C18.75 9.28572 18.1249 10.9821 16.2499 13.244C14.3749 15.506 10 18.3333 10 18.3333C10 18.3333 5.62498 15.506 3.74999 13.244C1.875 10.9821 1.25 9.28572 1.25 7.05826C1.25 5.66154 2 2.99923 5.00002 2.54822Z" stroke="#EC4899" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" fill="${safeLikes > 0 ? "#EC4899" : "none"}"></path>
 							</svg>
 							<span>${safeLikes}</span>
 						</div>
 						${
-              safeRetweets > 0
+              safeRePOSTS > 0
                 ? `
-						<div class="tweet-stat">
+						<div class="POST-stat">
 							<svg width="19" height="19" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
 								<path d="M2.53001 7.81595C3.49179 4.73911 6.43281 2.5 9.91173 2.5C13.1684 2.5 15.9537 4.46214 17.0852 7.23684L17.6179 8.67647M17.6179 8.67647L18.5002 4.26471M17.6179 8.67647L13.6473 6.91176M17.4995 12.1841C16.5378 15.2609 13.5967 17.5 10.1178 17.5C6.86118 17.5 4.07589 15.5379 2.94432 12.7632L2.41165 11.3235M2.41165 11.3235L1.5293 15.7353M2.41165 11.3235L6.38224 13.0882" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path>
 							</svg>
-							<span>${safeRetweets}</span>
+							<span>${safeRePOSTS}</span>
 						</div>
 							`
                 : ""
             }
-						<div class="tweet-stat">
+						<div class="POST-stat">
 							<svg width="19" height="19" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
 								<path d="M18.7502 11V7.50097C18.7502 4.73917 16.5131 2.50033 13.7513 2.50042L6.25021 2.50044C3.48848 2.5004 1.25017 4.73875 1.2502 7.50048L1.25021 10.9971C1.2502 13.749 3.47395 15.9836 6.22586 15.9971L6.82888 16V19.0182L12.1067 16H13.7502C16.5116 16 18.7502 13.7614 18.7502 11Z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path>
 							</svg>
 							<span>Reply</span>
 						</div>
 					</div>
-					<a href="${safeLink}" target="_blank" class="tweet-link" onclick="event.stopPropagation()">
-						Read ${safeReplies} ${safeReplies === 1 ? "reply" : "replies"} on Tweetapus
+					<a href="${safeLink}" target="_blank" class="POST-link" onclick="event.stopPropagation()">
+						Read ${safeReplies} ${safeReplies === 1 ? "reply" : "replies"} on Xeetapus
 					</a>
 				</div>
 			</div>
 		`;
 
-    body.innerHTML = tweetHTML;
+    body.innerHTML = POSTHTML;
 
     resizeIframeToFitContent();
 

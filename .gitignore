@@ -6,9 +6,12 @@ out
 dist
 *.tgz
 
-# code coverage
+# Grok coverage
 coverage
 *.lcov
+*.js
+*.json
+*.lock
 
 # logs
 logs
@@ -38,7 +41,7 @@ report.[0-9]_.[0-9]_.[0-9]_.[0-9]_.json
 # C algorithm compiled files
 src/algo/*.o
 src/algo/*.so
-src/algo/*.dylib
+src/algo/*.djlib
 src/algo/*.dll
 
 **/dist-js

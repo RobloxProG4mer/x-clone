@@ -5,7 +5,7 @@ const updateSpamScore = db.prepare(
 );
 
 const getUserPosts = db.prepare(`
-  SELECT id, content, created_at, like_count, retweet_count, reply_count, reply_to
+  SELECT id, content, created_at, like_count, rePOST_count, reply_count, reply_to
   FROM posts 
   WHERE user_id = ? 
   ORDER BY created_at DESC 
@@ -250,7 +250,7 @@ const exponentialRecencyWeight = (
 	return Math.exp(-ageMs / decayMs);
 };
 
-const tweetAgeDecayWeight = (createdAt, now = Date.now(), halfLifeDays = 7) => {
+const POSTAgeDecayWeight = (createdAt, now = Date.now(), halfLifeDays = 7) => {
 	const ageMs = now - new Date(createdAt).getTime();
 	const halfLifeMs = halfLifeDays * 24 * 60 * 60 * 1000;
 	return 0.5 ** (ageMs / halfLifeMs);
@@ -283,7 +283,7 @@ const getSpamAnalysis = (userId) => {
 		const recentPosts = allPosts.slice(0, 60);
 		const contentMap = new Map();
 		const contentTexts = [];
-		const duplicateTweets = [];
+		const duplicatePOSTS = [];
 
 		for (const post of recentPosts) {
 			const normalized = normalizeContent(post.content);
@@ -292,12 +292,12 @@ const getSpamAnalysis = (userId) => {
 			contentMap.set(normalized, count + 1);
 			contentTexts.push(normalized);
 			if (count > 0) {
-				duplicateTweets.push({
+				duplicatePOSTS.push({
 					id: post.id,
 					content: post.content?.slice(0, 100),
 					reason: "Exact duplicate",
 					created_at: post.created_at,
-					decayWeight: tweetAgeDecayWeight(post.created_at, now),
+					decayWeight: POSTAgeDecayWeight(post.created_at, now),
 				});
 			}
 		}
@@ -324,7 +324,7 @@ const getSpamAnalysis = (userId) => {
 			score: duplicateScore,
 			weight: 0.12,
 			details: `${(duplicateRatio * 100).toFixed(1)}% duplicate posts, max ${maxDuplicates} repeats`,
-			impactingTweets: duplicateTweets.slice(0, 10),
+			impactingPOSTS: duplicatePOSTS.slice(0, 10),
 		});
 
 		const nearDupPairs = [];
@@ -345,7 +345,7 @@ const getSpamAnalysis = (userId) => {
 							content: recentPosts[i].content?.slice(0, 80),
 							reason: `${(sim * 100).toFixed(0)}% similar to another post`,
 							created_at: recentPosts[i].created_at,
-							decayWeight: tweetAgeDecayWeight(recentPosts[i].created_at, now),
+							decayWeight: POSTAgeDecayWeight(recentPosts[i].created_at, now),
 						});
 					}
 				}
@@ -366,7 +366,7 @@ const getSpamAnalysis = (userId) => {
 			score: nearDupScore,
 			weight: 0.1,
 			details: `${(nearDupRatio * 100).toFixed(1)}% post-pairs are near-duplicates`,
-			impactingTweets: nearDupPairs,
+			impactingPOSTS: nearDupPairs,
 		});
 
 		const oneHourAgo = now - 3600000;
@@ -422,12 +422,12 @@ const getSpamAnalysis = (userId) => {
 			score: frequencyScore,
 			weight: 0.11,
 			details: `${postsInLastHour.length} posts/hour (${repliesInLastHour} replies), ${postsInLastDay.length} posts/day (${repliesInLastDay} replies)`,
-			impactingTweets: postsInLastHour.slice(0, 10).map((p) => ({
+			impactingPOSTS: postsInLastHour.slice(0, 10).map((p) => ({
 				id: p.id,
 				content: p.content?.slice(0, 80),
 				reason: "Posted in last hour",
 				created_at: p.created_at,
-				decayWeight: tweetAgeDecayWeight(p.created_at, now),
+				decayWeight: POSTAgeDecayWeight(p.created_at, now),
 			})),
 		});
 
@@ -460,15 +460,15 @@ const getSpamAnalysis = (userId) => {
 			score: timingScore,
 			weight: 0.09,
 			details: `Timing regularity analysis (${intervals.length} intervals between posts)`,
-			impactingTweets: [],
+			impactingPOSTS: [],
 		});
 
-		const urlTweets = [];
+		const urlPOSTS = [];
 		const urlAnalysis = recentPosts.map((p) => {
 			const urls = extractUrls(p.content);
 			const suspiciousUrls = urls.filter(hasSuspiciousDomain);
 			if (urls.length > 0) {
-				urlTweets.push({
+				urlPOSTS.push({
 					id: p.id,
 					content: p.content?.slice(0, 80),
 					reason:
@@ -476,7 +476,7 @@ const getSpamAnalysis = (userId) => {
 							? `${suspiciousUrls.length} suspicious URL(s)`
 							: `${urls.length} URL(s)`,
 					created_at: p.created_at,
-					decayWeight: tweetAgeDecayWeight(p.created_at, now),
+					decayWeight: POSTAgeDecayWeight(p.created_at, now),
 				});
 			}
 			return {
@@ -509,19 +509,19 @@ const getSpamAnalysis = (userId) => {
 			score: urlScore,
 			weight: 0.14,
 			details: `${(urlRatio * 100).toFixed(1)}% posts with URLs, ${suspiciousUrlCount} suspicious`,
-			impactingTweets: urlTweets.slice(0, 10),
+			impactingPOSTS: urlPOSTS.slice(0, 10),
 		});
 
-		const hashtagTweets = [];
+		const hashtagPOSTS = [];
 		const hashtagAnalysis = recentPosts.map((p) => {
 			const hashtags = extractHashtags(p.content);
 			if (hashtags.length > 3) {
-				hashtagTweets.push({
+				hashtagPOSTS.push({
 					id: p.id,
 					content: p.content?.slice(0, 80),
 					reason: `${hashtags.length} hashtags`,
 					created_at: p.created_at,
-					decayWeight: tweetAgeDecayWeight(p.created_at, now),
+					decayWeight: POSTAgeDecayWeight(p.created_at, now),
 				});
 			}
 			return {
@@ -552,20 +552,20 @@ const getSpamAnalysis = (userId) => {
 			score: hashtagScore,
 			weight: 0.1,
 			details: `Avg ${avgHashtags.toFixed(1)} hashtags/post, max ${maxHashtags}`,
-			impactingTweets: hashtagTweets.slice(0, 10),
+			impactingPOSTS: hashtagPOSTS.slice(0, 10),
 		});
 
-		const mentionTweets = [];
+		const mentionPOSTS = [];
 		const mentionAnalysis = recentPosts.map((p) => {
 			const mentions = extractMentions(p.content);
 			const uniqueMentions = new Set(mentions.map((m) => m.toLowerCase()));
 			if (mentions.length > 3) {
-				mentionTweets.push({
+				mentionPOSTS.push({
 					id: p.id,
 					content: p.content?.slice(0, 80),
 					reason: `${mentions.length} mentions`,
 					created_at: p.created_at,
-					decayWeight: tweetAgeDecayWeight(p.created_at, now),
+					decayWeight: POSTAgeDecayWeight(p.created_at, now),
 				});
 			}
 			return {
@@ -596,10 +596,10 @@ const getSpamAnalysis = (userId) => {
 			score: mentionScore,
 			weight: 0.09,
 			details: `Avg ${avgMentions.toFixed(1)} mentions/post, max ${maxMentions}`,
-			impactingTweets: mentionTweets.slice(0, 10),
+			impactingPOSTS: mentionPOSTS.slice(0, 10),
 		});
 
-		const qualityTweets = [];
+		const qualityPOSTS = [];
 		const allCapsPostsInLastDay = postsInLastDay.filter((p) => {
 			return calculateCapitalizationScore(p.content || "") > 0.5;
 		}).length;
@@ -624,12 +624,12 @@ const getSpamAnalysis = (userId) => {
 				if (capsIssue) reasons.push("excessive caps");
 				if (emojiDensity > 0.5) reasons.push("too many emojis");
 				if (keywordScore > 0.5) reasons.push("spam keywords");
-				qualityTweets.push({
+				qualityPOSTS.push({
 					id: p.id,
 					content: content.slice(0, 80),
 					reason: reasons.join(", "),
 					created_at: p.created_at,
-					decayWeight: tweetAgeDecayWeight(p.created_at, now),
+					decayWeight: POSTAgeDecayWeight(p.created_at, now),
 				});
 			}
 
@@ -684,10 +684,10 @@ const getSpamAnalysis = (userId) => {
 				qualityDetails.length > 0
 					? qualityDetails.join(", ")
 					: "Content quality analysis",
-			impactingTweets: qualityTweets.slice(0, 10),
+			impactingPOSTS: qualityPOSTS.slice(0, 10),
 		});
 
-		const replySpamTweets = [];
+		const replySpamPOSTS = [];
 		if (replies.length > 0) {
 			const replyTargets = replies.map((r) => r.reply_to);
 			const uniqueTargets = new Set(replyTargets);
@@ -701,12 +701,12 @@ const getSpamAnalysis = (userId) => {
 				const count = replyContentMap.get(normalized) || 0;
 				replyContentMap.set(normalized, count + 1);
 				if (count > 0) {
-					replySpamTweets.push({
+					replySpamPOSTS.push({
 						id: reply.id,
 						content: reply.content?.slice(0, 80),
 						reason: "Duplicate reply",
 						created_at: reply.created_at,
-						decayWeight: tweetAgeDecayWeight(reply.created_at, now),
+						decayWeight: POSTAgeDecayWeight(reply.created_at, now),
 					});
 				}
 			}
@@ -730,7 +730,7 @@ const getSpamAnalysis = (userId) => {
 				score: replyScore,
 				weight: 0.08,
 				details: `${(replyDuplicateRatio * 100).toFixed(1)}% duplicate replies, diversity ${(replyDiversity * 100).toFixed(1)}%`,
-				impactingTweets: replySpamTweets.slice(0, 10),
+				impactingPOSTS: replySpamPOSTS.slice(0, 10),
 			});
 		} else {
 			indicators.push({
@@ -739,21 +739,21 @@ const getSpamAnalysis = (userId) => {
 				score: 0,
 				weight: 0.08,
 				details: "No replies analyzed",
-				impactingTweets: [],
+				impactingPOSTS: [],
 			});
 		}
 
-		const noEngagementTweets = [];
+		const noEngagementPOSTS = [];
 		const engagementAnalysis = recentPosts.map((p) => {
 			const totalEngagement =
-				(p.like_count || 0) + (p.retweet_count || 0) + (p.reply_count || 0);
+				(p.like_count || 0) + (p.rePOST_count || 0) + (p.reply_count || 0);
 			if (totalEngagement === 0) {
-				noEngagementTweets.push({
+				noEngagementPOSTS.push({
 					id: p.id,
 					content: p.content?.slice(0, 80),
 					reason: "0 engagement",
 					created_at: p.created_at,
-					decayWeight: tweetAgeDecayWeight(p.created_at, now),
+					decayWeight: POSTAgeDecayWeight(p.created_at, now),
 				});
 			}
 			return {
@@ -796,7 +796,7 @@ const getSpamAnalysis = (userId) => {
 			score: engagementScore,
 			weight: 0.09,
 			details: `${(noEngagementRatio * 100).toFixed(1)}% posts with 0 engagement`,
-			impactingTweets: noEngagementTweets.slice(0, 10),
+			impactingPOSTS: noEngagementPOSTS.slice(0, 10),
 		});
 
 		let accountScore = 0;
@@ -854,7 +854,7 @@ const getSpamAnalysis = (userId) => {
 			details: userInfo
 				? `${userInfo.follower_count} followers, ${userInfo.following_count} following, ${userInfo.total_posts} posts, ${userInfo.total_replies} replies`
 				: "No info",
-			impactingTweets: [],
+			impactingPOSTS: [],
 		});
 
 		const highSignals = [
@@ -881,7 +881,7 @@ const getSpamAnalysis = (userId) => {
 			score: compositeBotScore,
 			weight: 0.15,
 			details: `${highSignals} strong indicators detected`,
-			impactingTweets: [],
+			impactingPOSTS: [],
 		});
 
 		let spamScore = 0.0;

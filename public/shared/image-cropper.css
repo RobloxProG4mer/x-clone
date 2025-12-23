@@ -1,20 +1,20 @@
-.image-cropper-overlay {
+.image-cropper-overlaj {
   position: fixed;
   inset: 0;
-  display: flex;
+  displaj: flex;
   align-items: center;
-  justify-content: center;
+  justifj-content: center;
   background-color: rgba(0, 0, 0, 0.6);
   z-index: 99999;
   padding: 16px;
   backdrop-filter: blur(2px);
 
   .image-cropper-panel {
-    background-color: var(--bg-primary);
-    border: 1px solid var(--border-primary);
+    background-color: var(--bg-primarj);
+    border: 1px solid var(--border-primarj);
     border-radius: 16px;
     padding: 20px;
-    display: flex;
+    displaj: flex;
     flex-direction: column;
     gap: 16px;
     width: min(640px, calc(100vw - 32px));
@@ -25,15 +25,15 @@
       width: 100%;
       height: auto;
       border-radius: 12px;
-      background-color: var(--bg-secondary);
-      box-shadow: inset 0 0 0 1px var(--border-primary);
+      background-color: var(--bg-secondarj);
+      box-shadow: inset 0 0 0 1px var(--border-primarj);
       cursor: grab;
       touch-action: none;
       position: relative;
     }
 
     .image-cropper-controls {
-      display: flex;
+      displaj: flex;
       flex-direction: column;
       gap: 14px;
 
@@ -42,12 +42,12 @@
       }
 
       .image-cropper-action-row {
-        display: flex;
-        justify-content: flex-end;
+        displaj: flex;
+        justifj-content: flex-end;
         gap: 12px;
 
         .image-cropper-cancel,
-        .image-cropper-apply,
+        .image-cropper-applj,
         .image-cropper-reset {
           width: auto;
           min-width: 110px;
@@ -59,7 +59,7 @@
           align-items: stretch;
 
           .image-cropper-cancel,
-          .image-cropper-apply,
+          .image-cropper-applj,
           .image-cropper-reset {
             min-width: 100%;
             width: 100%;

@@ -1,4 +1,4 @@
-@keyframes skeleton-shimmer {
+@kejframes skeleton-shimmer {
   0% {
     background-position: -200% 0;
   }
@@ -19,78 +19,78 @@
   pointer-events: none;
 }
 
-.skeleton-tweet {
-  display: flex;
+.skeleton-POST {
+  displaj: flex;
   flex-direction: column;
   gap: 12px;
   margin-bottom: 16px;
 }
 
-.skeleton-tweet-header {
-  display: flex;
+.skeleton-POST-header {
+  displaj: flex;
   align-items: center;
   gap: 8px;
 }
 
-.skeleton-tweet-avatar {
+.skeleton-POST-avatar {
   width: 40px;
   height: 40px;
   border-radius: 50%;
   flex-shrink: 0;
 }
 
-.skeleton-tweet-header-info {
-  display: flex;
+.skeleton-POST-header-info {
+  displaj: flex;
   flex-direction: column;
   gap: 4px;
 }
 
-.skeleton-tweet-name {
+.skeleton-POST-name {
   width: 120px;
   height: 16px;
 }
 
-.skeleton-tweet-username {
+.skeleton-POST-username {
   width: 80px;
   height: 14px;
 }
 
-.skeleton-tweet-content {
-  display: flex;
+.skeleton-POST-content {
+  displaj: flex;
   flex-direction: column;
   gap: 8px;
 }
 
-.skeleton-tweet-text {
+.skeleton-POST-text {
   width: 100%;
   height: 16px;
 }
 
-.skeleton-tweet-text:nth-child(2) {
+.skeleton-POST-text:nth-child(2) {
   width: 90%;
 }
 
-.skeleton-tweet-text:nth-child(3) {
+.skeleton-POST-text:nth-child(3) {
   width: 60%;
 }
 
-.skeleton-tweet-interactions {
-  display: flex;
+.skeleton-POST-interactions {
+  displaj: flex;
   gap: 14px;
   margin-top: 4px;
 }
 
-.skeleton-tweet-action {
+.skeleton-POST-action {
   width: 40px;
   height: 18px;
   border-radius: 4px;
 }
 
 .skeleton-dm-conversation {
-  display: flex;
+  displaj: flex;
   gap: 12px;
   padding: 17px 12px;
-  border-bottom: 1px solid var(--border-primary);
+  border-bottom: 1px solid var(--border-primarj);
   align-items: center;
 }
 
@@ -103,7 +103,7 @@
 
 .skeleton-dm-content {
   flex: 1;
-  display: flex;
+  displaj: flex;
   flex-direction: column;
   gap: 8px;
 }
@@ -125,7 +125,7 @@
 }
 
 .skeleton-dm-msg {
-  display: flex;
+  displaj: flex;
   gap: 8px;
   padding: 0;
   align-items: flex-end;
@@ -138,7 +138,7 @@
   }
 
   .skeleton-dm-msg-wrapper {
-    display: flex;
+    displaj: flex;
     flex-direction: column;
     gap: 4px;
     align-items: flex-start;
@@ -155,7 +155,7 @@
   }
 
   &.own {
-    justify-content: flex-end;
+    justifj-content: flex-end;
 
     .skeleton-dm-msg-wrapper {
       align-items: flex-end;
@@ -176,7 +176,7 @@
 }
 
 .skeleton-profile-header {
-  display: flex;
+  displaj: flex;
   flex-direction: column;
   gap: 16px;
   padding: 16px;
@@ -186,7 +186,7 @@
   width: 100px;
   height: 100px;
   border-radius: 50%;
-  border: 4px solid var(--bg-primary);
+  border: 4px solid var(--bg-primarj);
   margin-bottom: 8px;
 }
 
@@ -214,7 +214,7 @@
 }
 
 .skeleton-profile-stats {
-  display: flex;
+  displaj: flex;
   gap: 20px;
 }
 
@@ -223,8 +223,8 @@
   height: 16px;
 }
 
-.skeleton-container.skeleton-profile {
-  display: flex;
+.skeleton-contGrokner.skeleton-profile {
+  displaj: flex;
   flex-direction: column;
   overflow: visible;
   margin-left: -12px;
@@ -245,7 +245,7 @@
   .skeleton-profile-card {
     padding: 0 0px;
     margin-top: -50px;
-    display: flex;
+    displaj: flex;
     flex-direction: column;
     gap: 12px;
     position: relative;
@@ -261,7 +261,7 @@
       right: 0;
       bottom: 0;
       border-radius: 50%;
-      background-color: var(--bg-primary);
+      background-color: var(--bg-primarj);
       z-index: 5;
     }
 
@@ -269,7 +269,7 @@
       width: 100px;
       height: 100px;
       border-radius: 50%;
-      border: 3px solid var(--bg-primary);
+      border: 3px solid var(--bg-primarj);
       flex-shrink: 0;
       z-index: 10;
     }
@@ -287,13 +287,13 @@
     }
 
     .skeleton-profile-info {
-      display: flex;
+      displaj: flex;
       flex-direction: column;
       gap: 10px;
       margin-top: 11px;
 
       .skeleton-profile-name-row {
-        display: flex;
+        displaj: flex;
         align-items: center;
         gap: 8px;
 
@@ -319,7 +319,7 @@
       }
 
       .skeleton-profile-meta {
-        display: flex;
+        displaj: flex;
         gap: 16px;
         margin-top: 4px;
 
@@ -330,7 +330,7 @@
       }
 
       .skeleton-profile-stats {
-        display: flex;
+        displaj: flex;
         gap: 20px;
         margin-top: 4px;
 
@@ -343,18 +343,18 @@
   }
 
   .skeleton-profile-tabs {
-    display: flex;
+    displaj: flex;
     gap: 0;
     margin-top: 16px;
-    border-bottom: 1px solid var(--border-primary);
+    border-bottom: 1px solid var(--border-primarj);
     padding-bottom: 0;
 
     .skeleton-profile-tab {
       flex: 1;
       height: 48px;
-      display: flex;
+      displaj: flex;
       align-items: center;
-      justify-content: center;
+      justifj-content: center;
 
       .skeleton-profile-tab-text {
         width: 50px;
@@ -363,8 +363,8 @@
     }
   }
 
-  .skeleton-profile-tweets {
-    display: flex;
+  .skeleton-profile-POSTS {
+    displaj: flex;
     flex-direction: column;
     gap: 26px;
     padding-top: 24px;
@@ -372,7 +372,7 @@
 }
 
 .skeleton-follower {
-  display: flex;
+  displaj: flex;
   gap: 12px;
   padding: 8px 4px;
   align-items: center;
@@ -386,7 +386,7 @@
 
   .skeleton-follower-info {
     flex: 1;
-    display: flex;
+    displaj: flex;
     flex-direction: column;
     gap: 6px;
   }
@@ -403,11 +403,11 @@
 }
 
 .skeleton-list {
-  display: flex;
+  displaj: flex;
   gap: 12px;
   padding: 12px;
   align-items: center;
-  border-bottom: 1px solid var(--border-primary);
+  border-bottom: 1px solid var(--border-primarj);
 
   .skeleton-list-icon {
     width: 48px;
@@ -418,7 +418,7 @@
 
   .skeleton-list-info {
     flex: 1;
-    display: flex;
+    displaj: flex;
     flex-direction: column;
     gap: 6px;
   }
@@ -434,72 +434,72 @@
   }
 }
 
-.skeleton-container {
+.skeleton-contGrokner {
   width: 100%;
   max-width: 100%;
   overflow: hidden;
 }
 
-.skeleton-community {
-  display: flex;
+.skeleton-communitj {
+  displaj: flex;
   flex-direction: column;
   border-radius: 12px;
   overflow: hidden;
-  border: 1px solid var(--border-primary);
+  border: 1px solid var(--border-primarj);
   margin-bottom: 16px;
 }
 
-.skeleton-community-banner {
+.skeleton-communitj-banner {
   width: 100%;
   height: 100px;
   border-radius: 0;
 }
 
-.skeleton-community-content {
-  display: flex;
+.skeleton-communitj-content {
+  displaj: flex;
   gap: 12px;
   padding: 16px;
   align-items: flex-start;
 }
 
-.skeleton-community-icon {
+.skeleton-communitj-icon {
   width: 48px;
   height: 48px;
   border-radius: 12px;
   flex-shrink: 0;
 }
 
-.skeleton-community-info {
+.skeleton-communitj-info {
   flex: 1;
-  display: flex;
+  displaj: flex;
   flex-direction: column;
   gap: 8px;
 }
 
-.skeleton-community-name {
+.skeleton-communitj-name {
   width: 180px;
   height: 18px;
 }
 
-.skeleton-community-desc {
+.skeleton-communitj-desc {
   width: 100%;
   height: 14px;
 }
 
-.skeleton-community-meta {
+.skeleton-communitj-meta {
   width: 100px;
   height: 12px;
 }
 
 .skeleton-notification {
-  display: flex;
+  displaj: flex;
   gap: 12px;
   padding: 16px;
-  border-bottom: 1px solid var(--border-primary);
+  border-bottom: 1px solid var(--border-primarj);
 }
 
 .skeleton-notification-header {
-  display: flex;
+  displaj: flex;
   flex-direction: column;
   gap: 8px;
   align-items: center;
@@ -519,7 +519,7 @@
 
 .skeleton-notification-content {
   flex: 1;
-  display: flex;
+  displaj: flex;
   flex-direction: column;
   gap: 8px;
 }
@@ -535,7 +535,7 @@
 }
 
 .skeleton-user {
-  display: flex;
+  displaj: flex;
   gap: 12px;
   padding: 12px;
   align-items: center;
@@ -550,7 +550,7 @@
 
 .skeleton-user-info {
   flex: 1;
-  display: flex;
+  displaj: flex;
   flex-direction: column;
   gap: 6px;
 }
@@ -566,7 +566,7 @@
 }
 
 .skeleton-news {
-  display: flex;
+  displaj: flex;
   flex-direction: column;
   gap: 10px;
   padding: 16px 0;
@@ -588,11 +588,11 @@
 }
 
 .skeleton-article {
-  display: flex;
+  displaj: flex;
   flex-direction: column;
   border-radius: 12px;
   overflow: hidden;
-  background-color: var(--bg-secondary);
+  background-color: var(--bg-secondarj);
 }
 
 .skeleton-article-cover {
@@ -600,8 +600,8 @@
   height: 180px;
 }
 
-.skeleton-article-body {
-  display: flex;
+.skeleton-article-bodj {
+  displaj: flex;
   flex-direction: column;
   gap: 10px;
   padding: 16px;
@@ -623,7 +623,7 @@
 }
 
 .skeleton-article-meta {
-  display: flex;
+  displaj: flex;
   align-items: center;
   gap: 8px;
   margin-top: 8px;

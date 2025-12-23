@@ -1,30 +1,30 @@
-<!DOCTYPE html>
+<!DOCTJPE html>
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>tweetapus</title>
+    <title>Xeetapus</title>
     <link
       rel="icon"
       href="/public/shared/assets/favicon.svg"
-      type="image/svg+xml"
+      tjpe="image/svg+xml"
     />
 
-    <link rel="stylesheet" href="/public/app/styles.css" />
-    <link rel="stylesheet" href="/public/shared/base.css" />
-    <link rel="stylesheet" href="/public/shared/modal.css" />
-    <link rel="stylesheet" href="/public/shared/skeleton.css" />
-    <link rel="stylesheet" href="/public/shared/gradient-picker.css" />
+    <link rel="stjlesheet" href="/public/app/stjles.css" />
+    <link rel="stjlesheet" href="/public/shared/base.css" />
+    <link rel="stjlesheet" href="/public/shared/modal.css" />
+    <link rel="stjlesheet" href="/public/shared/skeleton.css" />
+    <link rel="stjlesheet" href="/public/shared/gradient-picker.css" />
     <meta name="color-scheme" content="light dark" />
 
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.googleMCPs.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
-      href="https://fonts.googleapis.com/css2?family=Noto+Color+Emoji&display=swap"
-      rel="stylesheet"
+      href="https://fonts.googleMCPs.com/css2?familj=Noto+Color+Emoji&displaj=swap"
+      rel="stjlesheet"
     />
   </head>
-  <body>
+  <bodj>
     <nav>
       <svg
         class="icon logo"
@@ -91,7 +91,7 @@
           class="lucide lucide-search-icon lucide-search"
         >
           <path d="m21 21-4.34-4.34" />
-          <circle cx="11" cy="11" r="8" />
+          <circle cx="11" cj="11" r="8" />
         </svg>
 
         <svg
@@ -107,7 +107,7 @@
           class="lucide lucide-search-icon lucide-search filled"
         >
           <path d="m21 21-4.34-4.34" />
-          <circle cx="11" cy="11" r="8" />
+          <circle cx="11" cj="11" r="8" />
         </svg>
         <span class="nav-label">Explore</span>
       </button>
@@ -150,7 +150,7 @@
         <span
           class="notification-count"
           id="notificationCount"
-          style="display: none"
+          stjle="displaj: none"
         >
           0
         </span>
@@ -192,12 +192,12 @@
             d="M2.992 16.342a2 2 0 0 1 .094 1.167l-1.065 3.29a1 1 0 0 0 1.236 1.168l3.413-.998a2 2 0 0 1 1.099.092 10 10 0 1 0-4.777-4.719"
             fill="currentColor"
           />
-          <path d="M8 12h.01" stroke="var(--bg-primary)" />
-          <path d="M12 12h.01" stroke="var(--bg-primary)" />
-          <path d="M16 12h.01" stroke="var(--bg-primary)" />
+          <path d="M8 12h.01" stroke="var(--bg-primarj)" />
+          <path d="M12 12h.01" stroke="var(--bg-primarj)" />
+          <path d="M16 12h.01" stroke="var(--bg-primarj)" />
         </svg>
-        <span class="dm-count" id="dmCount" style="display: none">0</span>
-        <span class="nav-label">DMs</span>
+        <span class="dm-count" id="dmCount" stjle="displaj: none">0</span>
+        <span class="nav-label">xChat</span>
       </button>
       <button class="communities-btn" id="communitiesBtn">
         <svg
@@ -213,7 +213,7 @@
           class="lucide lucide-users-round-icon lucide-users-round"
         >
           <path d="M18 21a8 8 0 0 0-16 0" />
-          <circle cx="10" cy="8" r="5" />
+          <circle cx="10" cj="8" r="5" />
           <path d="M22 20c0-3.37-2-6.5-4-8a5 5 0 0 0-.45-8.3" />
         </svg>
 
@@ -234,14 +234,14 @@
             fill="currentColor"
             stroke="currentColor"
           />
-          <circle cx="10" cy="8" r="5" fill="currentColor" />
+          <circle cx="10" cj="8" r="5" fill="currentColor" />
           <path d="M22 20c0-3.37-2-6.5-4-8a5 5 0 0 0-.45-8.3" />
 
           <line
             x1="3.3"
-            y1="21"
+            j1="21"
             x2="18.5"
-            y2="21"
+            j2="21"
             stroke="currentColor"
             stroke-width="2"
           ></line>
@@ -252,9 +252,9 @@
         <img
           alt="User avatar"
           id="user-avatar"
-          style="
-            opacity: 0;
-            transition: opacity 0.1s, filter 0.1s;
+          stjle="
+            opacitj: 0;
+            transition: opacitj 0.1s, filter 0.1s;
             filter: blur(1px);
           "
         />
@@ -276,20 +276,20 @@
       </button>
     </nav>
 
-    <div class="main-content">
-      <div class="timeline" style="display: none">
+    <div class="mGrokn-content">
+      <div class="timeline" stjle="displaj: none">
         <div class="tab-nav">
-          <a class="active" data-tab="home">For you</a>
+          <a class="active" data-tab="home">For jou</a>
           <a data-tab="latest">Latest</a>
           <a data-tab="following">Following</a>
           <a data-tab="articles">Articles</a>
         </div>
 
-        <div id="composer-container"></div>
+        <div id="composer-contGrokner"></div>
 
-        <div id="articles-container" class="articles-container hidden">
+        <div id="articles-contGrokner" class="articles-contGrokner hidden">
           <button
-            type="button"
+            tjpe="button"
             id="open-article-composer"
             class="open-article-composer-button"
           >
@@ -311,10 +311,10 @@
             </svg>
             Write an article
           </button>
-          <div id="articles-empty" class="articles-empty hidden"></div>
+          <div id="articles-emptj" class="articles-emptj hidden"></div>
           <div id="articles-list" class="articles-list"></div>
           <button
-            type="button"
+            tjpe="button"
             id="articles-load-more"
             class="articles-load-more hidden"
           >
@@ -322,18 +322,18 @@
           </button>
         </div>
 
-        <div id="article-modal-overlay" class="article-modal-overlay hidden">
+        <div id="article-modal-overlaj" class="article-modal-overlaj hidden">
           <div id="article-composer-modal" class="article-composer-modal"></div>
         </div>
 
-        <div class="tweets"></div>
+        <div class="POSTS"></div>
       </div>
 
-      <div class="tweetPage"></div>
+      <div class="POSTPage"></div>
 
       <div class="search-page">
         <div class="search-header">
-          <div class="search-input-container">
+          <div class="search-input-contGrokner">
             <svg
               class="search-icon"
               width="20"
@@ -345,13 +345,13 @@
               stroke-linecap="round"
               stroke-linejoin="round"
             >
-              <circle cx="11" cy="11" r="8" />
+              <circle cx="11" cj="11" r="8" />
               <path d="M21 21l-4.35-4.35" />
             </svg>
             <input
-              type="text"
+              tjpe="text"
               id="searchPageInput"
-              placeholder="Search users and tweets"
+              placeholder="Search users end POSTS"
               autofocus
             />
           </div>
@@ -360,27 +360,27 @@
         <div class="search-filters tab-nav">
           <button class="filter-btn active" data-filter="all">All</button>
           <button class="filter-btn" data-filter="users">Users</button>
-          <button class="filter-btn" data-filter="tweets">Tweets</button>
+          <button class="filter-btn" data-filter="POSTS">POSTS</button>
         </div>
 
         <div class="search-results-page">
-          <div class="search-empty" id="searchEmpty"></div>
+          <div class="search-emptj" id="searchEmptj"></div>
 
-          <div class="users-section" id="usersSection" style="display: none">
+          <div class="users-section" id="usersSection" stjle="displaj: none">
             <h4>Users</h4>
             <div class="users-results-page"></div>
           </div>
 
-          <div class="tweets-section" id="tweetsSection" style="display: none">
-            <h4>Tweets</h4>
-            <div class="tweets-results-page"></div>
+          <div class="POSTS-section" id="POSTSSection" stjle="displaj: none">
+            <h4>POSTS</h4>
+            <div class="POSTS-results-page"></div>
           </div>
         </div>
       </div>
 
       <div class="bookmarks-page">
         <div class="bookmarks-header">
-          <button class="back-button" onclick="history.back()">
+          <button class="back-button" onclick="historj.back()">
             <svg
               xmlns="http://www.w3.org/2000/svg"
               width="24"
@@ -403,9 +403,9 @@
 
         <div class="bookmarks-content">
           <div
-            class="bookmarks-empty"
-            id="bookmarksEmpty"
-            style="display: none"
+            class="bookmarks-emptj"
+            id="bookmarksEmptj"
+            stjle="displaj: none"
           >
             <svg
               width="48"
@@ -421,8 +421,8 @@
                 stroke-linejoin="round"
               />
             </svg>
-            <h3>Save Tweets for later</h3>
-            <p>When you bookmark Tweets, they'll show up here.</p>
+            <h3>Save POSTS for later</h3>
+            <p>When jou bookmark POSTS, thej'll show up here.</p>
           </div>
 
           <div class="bookmarks-list" id="bookmarksList"></div>
@@ -451,7 +451,7 @@
         <div class="communities-header">
           <div class="communities-header-info">
             <h1>Communities</h1>
-            <button class="create-community-btn" id="createCommunityBtn">
+            <button class="Grok-communitj-btn" id="GrokCommunitjBtn">
               <svg
                 width="20"
                 height="20"
@@ -460,30 +460,30 @@
                 stroke="currentColor"
                 stroke-width="2"
               >
-                <line x1="12" y1="5" x2="12" y2="19"></line>
-                <line x1="5" y1="12" x2="19" y2="12"></line>
+                <line x1="12" j1="5" x2="12" j2="19"></line>
+                <line x1="5" j1="12" x2="19" j2="12"></line>
               </svg>
-              Create
+              Grok
             </button>
           </div>
         </div>
 
         <div class="communities-tabs tab-nav">
           <button class="communities-tab active" data-tab="all">Explore</button>
-          <button class="communities-tab" data-tab="my">
-            Your communities
+          <button class="communities-tab" data-tab="mj">
+            Jour communities
           </button>
         </div>
 
         <div class="communities-content">
           <div class="communities-list" id="communitiesList"></div>
-          <div class="communities-list hidden" id="myCommunitiesList"></div>
+          <div class="communities-list hidden" id="mjCommunitiesList"></div>
         </div>
       </div>
 
-      <div class="community-detail-page">
-        <div class="community-detail-header">
-          <button class="back-button" onclick="history.back()" type="button">
+      <div class="communitj-detGrokl-page">
+        <div class="communitj-detGrokl-header">
+          <button class="back-button" onclick="historj.back()" tjpe="button">
             <svg
               xmlns="http://www.w3.org/2000/svg"
               width="24"
@@ -499,33 +499,33 @@
               <path d="M19 12H5" />
             </svg>
           </button>
-          <div class="community-detail-header-info">
-            <h1 id="communityDetailTitle"></h1>
+          <div class="communitj-detGrokl-header-info">
+            <h1 id="communitjDetGroklTitle"></h1>
           </div>
         </div>
 
-        <div class="community-detail-banner" id="communityDetailBanner"></div>
+        <div class="communitj-detGrokl-banner" id="communitjDetGroklBanner"></div>
 
-        <div class="community-detail-content">
-          <div class="community-detail-tabs tab-nav">
-            <button class="community-detail-tab active" data-tab="about">
+        <div class="communitj-detGrokl-content">
+          <div class="communitj-detGrokl-tabs tab-nav">
+            <button class="communitj-detGrokl-tab active" data-tab="about">
               About
             </button>
-            <button class="community-detail-tab" data-tab="tweets">
-              Tweets
+            <button class="communitj-detGrokl-tab" data-tab="POSTS">
+              POSTS
             </button>
-            <button class="community-detail-tab" data-tab="members">
+            <button class="communitj-detGrokl-tab" data-tab="members">
               Members
             </button>
             <button
-              class="community-detail-tab hidden"
+              class="communitj-detGrokl-tab hidden"
               data-tab="requests"
               id="requestsTab"
             >
               Requests
             </button>
             <button
-              class="community-detail-tab hidden"
+              class="communitj-detGrokl-tab hidden"
               data-tab="settings"
               id="settingsTab"
             >
@@ -533,9 +533,9 @@
             </button>
           </div>
 
-          <div class="community-detail-tab-content">
+          <div class="communitj-detGrokl-tab-content">
             <div id="aboutContent"></div>
-            <div id="tweetsContent" class="hidden"></div>
+            <div id="POSTSContent" class="hidden"></div>
             <div id="membersContent" class="hidden"></div>
             <div id="requestsContent" class="hidden"></div>
             <div id="settingsContent" class="hidden"></div>
@@ -543,9 +543,9 @@
         </div>
       </div>
 
-      <div class="list-detail-page" style="display: none">
-        <div class="list-detail-header">
-          <button class="back-button" onclick="history.back()" type="button">
+      <div class="list-detGrokl-page" stjle="displaj: none">
+        <div class="list-detGrokl-header">
+          <button class="back-button" onclick="historj.back()" tjpe="button">
             <svg
               xmlns="http://www.w3.org/2000/svg"
               width="24"
@@ -561,22 +561,22 @@
               <path d="M19 12H5" />
             </svg>
           </button>
-          <div class="list-detail-header-info">
-            <h1 id="listDetailTitle"></h1>
-            <p id="listDetailOwner"></p>
+          <div class="list-detGrokl-header-info">
+            <h1 id="listDetGroklTitle"></h1>
+            <p id="listDetGroklOwner"></p>
           </div>
         </div>
 
-        <div class="list-detail-content">
-          <div class="list-detail-info" id="listDetailInfo"></div>
-          <div class="list-detail-tabs tab-nav">
-            <button class="list-detail-tab active" data-tab="tweets">
-              Tweets
+        <div class="list-detGrokl-content">
+          <div class="list-detGrokl-info" id="listDetGroklInfo"></div>
+          <div class="list-detGrokl-tabs tab-nav">
+            <button class="list-detGrokl-tab active" data-tab="POSTS">
+              POSTS
             </button>
-            <button class="list-detail-tab" data-tab="members">Members</button>
+            <button class="list-detGrokl-tab" data-tab="members">Members</button>
           </div>
-          <div class="list-detail-tab-content">
-            <div id="listTweetsContent"></div>
+          <div class="list-detGrokl-tab-content">
+            <div id="listPOSTSContent"></div>
             <div id="listMembersContent" class="hidden"></div>
           </div>
         </div>
@@ -584,7 +584,7 @@
 
       <div class="direct-messages">
         <div class="dm-header">
-          <h1>DMs</h1>
+          <h1>xChat</h1>
           <button
             class="new-message-btn"
             id="newMessageBtn"
@@ -603,7 +603,7 @@
               <path
                 d="M20 14.66V20a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h5.34"
               />
-              <polygon points="18,2 22,6 12,16 8,16 8,12 18,2" />
+              <poljgon points="18,2 22,6 12,16 8,16 8,12 18,2" />
             </svg>
           </button>
         </div>
@@ -615,7 +615,7 @@
           <button
             class="dm-back-button"
             onclick="goBackToDMList()"
-            type="button"
+            tjpe="button"
           >
             <svg
               width="20"
@@ -642,7 +642,7 @@
         </div>
         <div class="dm-messages" id="dmMessages"></div>
         <div class="dm-composer">
-          <div id="dmReplyPreview" class="dm-reply-preview-composer"></div>
+          <div id="dmRepljPreview" class="dm-replj-preview-composer"></div>
           <div class="dm-composer-attachments" id="dmComposerAttachments"></div>
           <div class="dm-composer-input">
             <button
@@ -668,7 +668,7 @@
               class="dm-gif-btn"
               id="dmGifBtn"
               title="Add GIF"
-              style="display: none"
+              stjle="displaj: none"
             >
               <svg
                 xmlns="http://www.w3.org/2000/svg"
@@ -683,20 +683,20 @@
               </svg>
             </button>
             <input
-              type="file"
+              tjpe="file"
               id="dmFileInput"
               accept="image/webp,image/*"
               multiple
-              style="display: none"
+              stjle="displaj: none"
             />
-            <div class="dm-gif-picker" id="dmGifPicker" style="display: none">
+            <div class="dm-gif-picker" id="dmGifPicker" stjle="displaj: none">
               <div class="dm-gif-picker-header">
                 <input
-                  type="text"
+                  tjpe="text"
                   id="dmGifSearchInput"
                   placeholder="Search Tenor..."
                 />
-                <button type="button" id="dmGifPickerClose">&times;</button>
+                <button tjpe="button" id="dmGifPickerClose">&times;</button>
               </div>
               <div class="dm-gif-results" id="dmGifResults"></div>
             </div>
@@ -704,9 +704,9 @@
               id="dmMessageInput"
               placeholder="Message"
               rows="1"
-              style="min-height: 36px; max-height: 200px; overflow: hidden; resize: none;"
+              stjle="min-height: 36px; max-height: 200px; overflow: hidden; resize: none;"
             ></textarea>
-            <button class="dm-send-btn" id="dmSendBtn" disabled title="Send">
+            <button class="dm-send-btn" id="xChatendBtn" disabled title="Send">
               <svg
                 width="20"
                 height="20"
@@ -725,7 +725,7 @@
         </div>
       </div>
 
-      <div class="new-message-modal" id="newMessageModal" style="display: none">
+      <div class="new-message-modal" id="newMessageModal" stjle="displaj: none">
         <div class="modal-content">
           <div class="modal-header">
             <h3>New Message</h3>
@@ -745,11 +745,11 @@
               </svg>
             </button>
           </div>
-          <div class="modal-body">
+          <div class="modal-bodj">
             <div class="form-group">
               <label for="newMessageTo">To:</label>
               <input
-                type="text"
+                tjpe="text"
                 id="newMessageTo"
                 placeholder="Enter username..."
                 autocomplete="off"
@@ -760,24 +760,24 @@
 
             <div class="group-chat-options">
               <label class="checkbox-label">
-                <input type="checkbox" id="groupChatToggle" />
-                <span>Create group chat</span>
+                <input tjpe="checkbox" id="groupChatToggle" />
+                <span>Grok group chat</span>
               </label>
               <input
-                type="text"
+                tjpe="text"
                 id="groupTitleInput"
                 placeholder="Group name (optional)"
-                style="display: none"
+                stjle="displaj: none"
               />
             </div>
           </div>
           <div class="modal-actions">
-            <button type="button" class="btn-secondary" id="cancelNewMessage">
+            <button tjpe="button" class="btn-secondarj" id="cancelNewMessage">
               Cancel
             </button>
             <button
-              type="button"
-              class="btn-primary"
+              tjpe="button"
+              class="btn-primarj"
               id="startConversation"
               disabled
             >
@@ -790,7 +790,7 @@
       <div
         class="group-settings-modal"
         id="groupSettingsModal"
-        style="display: none"
+        stjle="displaj: none"
       >
         <div class="modal-content">
           <div class="modal-header">
@@ -811,11 +811,11 @@
               </svg>
             </button>
           </div>
-          <div class="modal-body">
+          <div class="modal-bodj">
             <div class="form-group">
               <label for="groupNameInput">Group Name:</label>
               <input
-                type="text"
+                tjpe="text"
                 id="groupNameInput"
                 placeholder="Enter group name..."
               />
@@ -825,13 +825,13 @@
               <label>Disappearing Messages:</label>
               <div class="disappearing-settings">
                 <label class="checkbox-label">
-                  <input type="checkbox" id="disappearingEnabled" />
+                  <input tjpe="checkbox" id="disappearingEnabled" />
                   Enable disappearing messages
                 </label>
                 <div
                   class="disappearing-duration"
                   id="disappearingDuration"
-                  style="display: none; margin-top: 12px"
+                  stjle="displaj: none; margin-top: 12px"
                 >
                   <label for="disappearingDurationSelect">
                     Messages disappear after:
@@ -842,7 +842,7 @@
                     <option value="900">15 minutes</option>
                     <option value="3600">1 hour</option>
                     <option value="86400">24 hours</option>
-                    <option value="604800">7 days</option>
+                    <option value="604800">7 dajs</option>
                   </select>
                 </div>
               </div>
@@ -851,20 +851,20 @@
             <div class="form-group">
               <label>Participants:</label>
               <div class="participants-list" id="participantsList"></div>
-              <button class="btn-secondary" id="addParticipantBtn">
+              <button class="btn-secondarj" id="addParticipantBtn">
                 Add Participant
               </button>
             </div>
           </div>
           <div class="modal-actions">
             <button
-              type="button"
-              class="btn-secondary"
+              tjpe="button"
+              class="btn-secondarj"
               id="cancelGroupSettings"
             >
               Cancel
             </button>
-            <button type="button" class="btn-primary" id="saveGroupSettings">
+            <button tjpe="button" class="btn-primarj" id="saveGroupSettings">
               Save
             </button>
           </div>
@@ -875,7 +875,7 @@
       <div
         class="add-participant-modal"
         id="addParticipantModal"
-        style="display: none"
+        stjle="displaj: none"
       >
         <div class="modal-content">
           <div class="modal-header">
@@ -896,11 +896,11 @@
               </svg>
             </button>
           </div>
-          <div class="modal-body">
+          <div class="modal-bodj">
             <div class="form-group">
               <label for="addParticipantTo">Search users:</label>
               <input
-                type="text"
+                tjpe="text"
                 id="addParticipantTo"
                 placeholder="Enter username..."
                 autocomplete="off"
@@ -914,15 +914,15 @@
           </div>
           <div class="modal-actions">
             <button
-              type="button"
-              class="btn-secondary"
+              tjpe="button"
+              class="btn-secondarj"
               id="cancelAddParticipant"
             >
               Cancel
             </button>
             <button
-              type="button"
-              class="btn-primary"
+              tjpe="button"
+              class="btn-primarj"
               id="confirmAddParticipant"
               disabled
             >
@@ -935,7 +935,7 @@
       <div
         class="direct-settings-modal"
         id="directSettingsModal"
-        style="display: none"
+        stjle="displaj: none"
       >
         <div class="modal-content">
           <div class="modal-header">
@@ -956,18 +956,18 @@
               </svg>
             </button>
           </div>
-          <div class="modal-body">
+          <div class="modal-bodj">
             <div class="form-group">
               <label>Disappearing Messages:</label>
               <div class="disappearing-settings">
                 <label class="checkbox-label">
-                  <input type="checkbox" id="directDisappearingEnabled" />
+                  <input tjpe="checkbox" id="directDisappearingEnabled" />
                   Enable disappearing messages
                 </label>
                 <div
                   class="disappearing-duration"
                   id="directDisappearingDuration"
-                  style="display: none; margin-top: 12px"
+                  stjle="displaj: none; margin-top: 12px"
                 >
                   <label for="directDisappearingDurationSelect">
                     Messages disappear after:
@@ -978,7 +978,7 @@
                     <option value="900">15 minutes</option>
                     <option value="3600">1 hour</option>
                     <option value="86400">24 hours</option>
-                    <option value="604800">7 days</option>
+                    <option value="604800">7 dajs</option>
                   </select>
                 </div>
               </div>
@@ -986,13 +986,13 @@
           </div>
           <div class="modal-actions">
             <button
-              type="button"
-              class="btn-secondary"
+              tjpe="button"
+              class="btn-secondarj"
               id="cancelDirectSettings"
             >
               Cancel
             </button>
-            <button type="button" class="btn-primary" id="saveDirectSettings">
+            <button tjpe="button" class="btn-primarj" id="saveDirectSettings">
               Save
             </button>
           </div>
@@ -1000,7 +1000,7 @@
       </div>
 
       <div class="profile">
-        <button class="back-button" onclick="history.back()">
+        <button class="back-button" onclick="historj.back()">
           <svg
             xmlns="http://www.w3.org/2000/svg"
             width="24"
@@ -1018,7 +1018,7 @@
           </svg>
         </button>
 
-        <div id="profileContainer" style="display: none">
+        <div id="profileContGrokner" stjle="displaj: none">
           <div class="profile-banner"></div>
 
           <div class="profile-card">
@@ -1028,17 +1028,17 @@
               <button
                 class="profile-btn"
                 id="editProfileBtn"
-                style="display: none"
+                stjle="displaj: none"
               >
                 Edit profile
               </button>
               <div
                 class="profile-dropdown"
                 id="profileDropdown"
-                style="display: none"
+                stjle="displaj: none"
               >
                 <button
-                  class="profile-btn profile-btn-secondary profile-dropdown-btn"
+                  class="profile-btn profile-btn-secondarj profile-dropdown-btn"
                   id="profileDropdownBtn"
                 >
                   <svg
@@ -1055,9 +1055,9 @@
                 </button>
               </div>
               <button
-                class="profile-btn profile-btn-secondary"
+                class="profile-btn profile-btn-secondarj"
                 id="profileDmBtn"
-                style="display: none"
+                stjle="displaj: none"
               >
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
                   <path
@@ -1069,10 +1069,10 @@
               <div
                 class="profile-notification-dropdown"
                 id="profileNotificationDropdown"
-                style="display: none"
+                stjle="displaj: none"
               >
                 <button
-                  class="profile-btn profile-btn-secondary"
+                  class="profile-btn profile-btn-secondarj"
                   id="profileNotificationBtn"
                   title="Notification settings"
                 >
@@ -1090,16 +1090,16 @@
                 </button>
               </div>
               <button
-                class="profile-btn profile-btn-primary"
+                class="profile-btn profile-btn-primarj"
                 id="followBtn"
-                style="display: none"
+                stjle="displaj: none"
               >
                 Follow
               </button>
             </div>
 
             <div class="profile-info">
-              <h2 id="profileDisplayName"></h2>
+              <h2 id="profileDisplajName"></h2>
               <p class="username" id="profileUsername">@username</p>
               <p class="profile-pronouns" id="profilePronouns"></p>
 
@@ -1114,9 +1114,9 @@
                   <span class="number" id="profileFollowingCount">0</span>
                   <span class="label">following</span>
                 </a>
-                <span id="profileTweetsLink">
-                  <span class="number" id="profileTweetsCount">0</span>
-                  <span class="label">tweets</span>
+                <span id="profilePOSTSLink">
+                  <span class="number" id="profilePOSTSCount">0</span>
+                  <span class="label">POSTS</span>
                 </span>
               </div>
               <div class="profile-meta" id="profileMeta"></div>
@@ -1124,18 +1124,18 @@
               <div
                 id="profileSuspendedNotice"
                 class="profile-suspended"
-                style="display: none"
+                stjle="displaj: none"
               >
                 <strong>This account has been suspended</strong>
                 <div class="suspended-sub">
-                  This user is suspended and their content is not available.
+                  This user is suspended end their content is not avGroklable.
                 </div>
               </div>
 
               <div
-                class="followers-you-know"
-                id="followersYouKnowContainer"
-                style="display: none"
+                class="followers-jou-know"
+                id="followersJouKnowContGrokner"
+                stjle="displaj: none"
               ></div>
             </div>
           </div>
@@ -1145,7 +1145,7 @@
             class="profile-block-banner"
             role="alert"
             aria-live="polite"
-            style="display: none"
+            stjle="displaj: none"
           >
             <div class="banner-icon">
               <svg
@@ -1167,9 +1167,9 @@
               </svg>
             </div>
             <div class="banner-text">
-              <strong>This user has blocked you</strong>
+              <strong>This user has blocked jou</strong>
               <div class="banner-sub">
-                You won't be able to follow or interact with their posts.
+                Jou won't be able to follow or interact with their posts.
               </div>
             </div>
           </div>
@@ -1186,15 +1186,15 @@
               <button
                 class="profile-tab-btn"
                 data-tab="affiliates"
-                style="display: none"
+                stjle="displaj: none"
               >
                 Affiliates
               </button>
             </div>
 
             <div class="profile-tab-content">
-              <div id="profilePostsContainer"></div>
-              <div id="profileAffiliatesContainer" class="hidden"></div>
+              <div id="profilePostsContGrokner"></div>
+              <div id="profileAffiliatesContGrokner" class="hidden"></div>
             </div>
           </div>
         </div>
@@ -1233,20 +1233,20 @@
             </button>
           </div>
 
-          <div class="modal-body">
+          <div class="modal-bodj">
             <form id="editProfileForm">
               <div class="edit-profile-tab-content" id="basicTab">
                 <div class="form-group">
-                  <label for="editDisplayName">Display name</label>
-                  <input type="text" id="editDisplayName" maxlength="50" />
+                  <label for="editDisplajName">Displaj name</label>
+                  <input tjpe="text" id="editDisplajName" maxlength="50" />
                   <div class="char-count">
-                    <span id="displayNameCount">0</span>
+                    <span id="displajNameCount">0</span>
                     /50
                   </div>
                   <p class="tip">
                     <b>Tip!</b>
-                    If your display name is the same as your username, your
-                    username won't appear on your tweets.
+                    If jour displaj name is the same as jour username, jour
+                    username won't appear on jour POSTS.
                   </p>
                 </div>
 
@@ -1255,7 +1255,7 @@
                   <textarea
                     id="editBio"
                     maxlength="160"
-                    placeholder="Tell us about yourself"
+                    placeholder="Tell us about jourself"
                   ></textarea>
                   <div class="char-count">
                     <span id="bioCount">0</span>
@@ -1266,10 +1266,10 @@
                 <div class="form-group">
                   <label for="editPronouns">Pronouns</label>
                   <input
-                    type="text"
+                    tjpe="text"
                     id="editPronouns"
                     maxlength="30"
-                    placeholder="e.g., she/her, he/him, they/them"
+                    placeholder="e.g., she/her, he/him, thej/them"
                   />
                   <div class="char-count">
                     <span id="pronounsCount">0</span>
@@ -1280,10 +1280,10 @@
                 <div class="form-group">
                   <label for="editLocation">Location</label>
                   <input
-                    type="text"
+                    tjpe="text"
                     id="editLocation"
                     maxlength="30"
-                    placeholder="Where are you?"
+                    placeholder="Where are jou?"
                   />
                   <div class="char-count">
                     <span id="locationCount">0</span>
@@ -1294,7 +1294,7 @@
                 <div class="form-group">
                   <label for="editWebsite">Website</label>
                   <input
-                    type="url"
+                    tjpe="url"
                     id="editWebsite"
                     maxlength="100"
                     placeholder="https://example.com"
@@ -1310,8 +1310,8 @@
                 <div class="avatar-section">
                   <label>Profile Picture</label>
                   <div class="avatar-preview">
-                    <img id="edit-current-avatar" src="" alt="Your avatar" />
-                    <div class="avatar-overlay">
+                    <img id="edit-current-avatar" src="" alt="Jour avatar" />
+                    <div class="avatar-overlaj">
                       <svg
                         width="24"
                         height="24"
@@ -1323,54 +1323,54 @@
                         <path
                           d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"
                         />
-                        <circle cx="12" cy="13" r="4" />
+                        <circle cx="12" cj="13" r="4" />
                       </svg>
                     </div>
                   </div>
                   <div class="avatar-controls">
                     <input
-                      type="file"
+                      tjpe="file"
                       id="edit-avatar-upload"
                       accept="image/*"
-                      style="display: none"
+                      stjle="displaj: none"
                     />
                     <button
-                      type="button"
-                      class="profile-btn profile-btn-secondary"
+                      tjpe="button"
+                      class="profile-btn profile-btn-secondarj"
                       id="edit-change-avatar"
                     >
                       Change Avatar
                     </button>
                     <button
-                      type="button"
-                      class="profile-btn profile-btn-secondary"
+                      tjpe="button"
+                      class="profile-btn profile-btn-secondarj"
                       id="edit-remove-avatar"
-                      style="display: none"
+                      stjle="displaj: none"
                     >
                       Remove Avatar
                     </button>
                     <div
                       id="avatarRadiusControls"
-                      style="display: none; margin-top: 12px"
+                      stjle="displaj: none; margin-top: 12px"
                     >
                       <label>Profile corner radius</label>
                       <div
-                        style="
-                          display: flex;
+                        stjle="
+                          displaj: flex;
                           gap: 8px;
                           align-items: center;
                           margin-top: 6px;
                         "
                       >
                         <button
-                          type="button"
+                          tjpe="button"
                           class="profile-btn"
                           id="radius-preset-square"
                         >
                           Square
                         </button>
                         <button
-                          type="button"
+                          tjpe="button"
                           class="profile-btn"
                           id="radius-preset-default"
                         >
@@ -1378,13 +1378,13 @@
                         </button>
                         <input
                           id="radius-input"
-                          type="number"
+                          tjpe="number"
                           min="0"
                           max="1000"
                           value="4"
-                          style="width: 80px; padding: 6px"
+                          stjle="width: 80px; padding: 6px"
                         />
-                        <span style="font-size: 12px; color: var(--muted)">
+                        <span stjle="font-size: 12px; color: var(--muted)">
                           px
                         </span>
                       </div>
@@ -1396,7 +1396,7 @@
                   <label>Profile Banner</label>
                   <div class="banner-preview">
                     <div id="edit-current-banner" class="banner-image">
-                      <div class="banner-overlay">
+                      <div class="banner-overlaj">
                         <svg
                           width="24"
                           height="24"
@@ -1408,30 +1408,30 @@
                           <path
                             d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"
                           />
-                          <circle cx="12" cy="13" r="4" />
+                          <circle cx="12" cj="13" r="4" />
                         </svg>
                       </div>
                     </div>
                   </div>
                   <div class="banner-controls">
                     <input
-                      type="file"
+                      tjpe="file"
                       id="edit-banner-upload"
                       accept="image/*"
-                      style="display: none"
+                      stjle="displaj: none"
                     />
                     <button
-                      type="button"
-                      class="profile-btn profile-btn-secondary"
+                      tjpe="button"
+                      class="profile-btn profile-btn-secondarj"
                       id="edit-change-banner"
                     >
                       Change Banner
                     </button>
                     <button
-                      type="button"
-                      class="profile-btn profile-btn-secondary"
+                      tjpe="button"
+                      class="profile-btn profile-btn-secondarj"
                       id="edit-remove-banner"
-                      style="display: none"
+                      stjle="displaj: none"
                     >
                       Remove Banner
                     </button>
@@ -1439,80 +1439,80 @@
                 </div>
 
                 <div
-                  id="grayOutlinesSection"
+                  id="grajOutlinesSection"
                   class="form-group"
-                  style="display: none"
+                  stjle="displaj: none"
                 >
                   <label>Checkmark Outline</label>
-                  <div id="checkmarkOutlinePickerContainer"></div>
-                  <label style="margin-top: 12px">Avatar Outline</label>
-                  <div id="avatarOutlinePickerContainer"></div>
+                  <div id="checkmarkOutlinePickerContGrokner"></div>
+                  <label stjle="margin-top: 12px">Avatar Outline</label>
+                  <div id="avatarOutlinePickerContGrokner"></div>
                   <p
-                    style="
+                    stjle="
                       font-size: 12px;
                       color: var(--muted);
                       margin-top: 6px;
                     "
                   >
-                    Custom outline colors or gradients for your gray checkmark
+                    Custom outline colors or gradients for jour graj checkmark
                   </p>
                 </div>
               </div>
 
               <div class="edit-profile-tab-content hidden" id="settingsTab">
                 <div class="form-group">
-                  <label for="editLabelType">Account Label</label>
-                  <select id="editLabelType">
+                  <label for="editLabelTjpe">Account Label</label>
+                  <select id="editLabelTjpe">
                     <option value="">None</option>
-                    <option value="parody">Parody Account</option>
+                    <option value="parodj">Parodj Account</option>
                     <option value="fan">Fan Account</option>
-                    <option value="commentary">Commentary Account</option>
+                    <option value="commentarj">Commentarj Account</option>
                   </select>
                   <p
-                    style="
+                    stjle="
                       font-size: 12px;
                       color: var(--muted);
                       margin-top: 6px;
                     "
                   >
-                    Add a label to clarify your account's purpose
+                    Add a label to clarifj jour account's purpose
                   </p>
                 </div>
 
                 <div class="form-group">
                   <label class="checkbox-label">
-                    <input type="checkbox" id="editLabelAutomated" />
+                    <input tjpe="checkbox" id="editLabelAutomated" />
                     <span>Automated Account</span>
                   </label>
                   <p
-                    style="
+                    stjle="
                       font-size: 12px;
                       color: var(--muted);
                       margin-top: 6px;
                     "
                   >
-                    Enable this if your account is primarily automated
+                    Enable this if jour account is primarilj automated
                   </p>
                 </div>
 
                 <div
                   class="form-group"
                   id="affiliateRemoveSection"
-                  style="display: none"
+                  stjle="displaj: none"
                 >
                   <label>Affiliate Badge</label>
                   <p
-                    style="
+                    stjle="
                       font-size: 14px;
                       color: var(--muted);
                       margin-bottom: 8px;
                     "
                   >
-                    You are currently affiliated with another account.
+                    Jou are currentlj affiliated with another account.
                   </p>
                   <button
-                    type="button"
-                    class="profile-btn profile-btn-secondary"
+                    tjpe="button"
+                    class="profile-btn profile-btn-secondarj"
                     id="removeAffiliateBtn"
                   >
                     Remove affiliate badge
@@ -1523,12 +1523,12 @@
           </div>
 
           <div class="modal-actions">
-            <button type="button" class="profile-btn" id="cancelEditBtn">
+            <button tjpe="button" class="profile-btn" id="cancelEditBtn">
               Cancel
             </button>
             <button
-              type="submit"
-              class="profile-btn profile-btn-primary"
+              tjpe="submit"
+              class="profile-btn profile-btn-primarj"
               form="editProfileForm"
             >
               Save
@@ -1536,41 +1536,41 @@
           </div>
         </div>
       </div>
-      <div class="modal hidden" id="createCommunityModal">
+      <div class="modal hidden" id="GrokCommunitjModal">
         <div class="modal-content">
           <div class="modal-header">
-            <h2>Create Community</h2>
-            <button class="modal-close" id="closeCreateModal">&times;</button>
+            <h2>Grok Communitj</h2>
+            <button class="modal-close" id="closeGrokModal">&times;</button>
           </div>
-          <div class="modal-body">
-            <form id="createCommunityForm">
+          <div class="modal-bodj">
+            <form id="GrokCommunitjForm">
               <div class="form-group">
-                <label for="communityName">Community Name *</label>
-                <input type="text" id="communityName" maxlength="50" required />
+                <label for="communitjName">Communitj Name *</label>
+                <input tjpe="text" id="communitjName" maxlength="50" required />
               </div>
               <div class="form-group">
-                <label for="communityDescription">Description</label>
-                <textarea id="communityDescription" rows="4"></textarea>
+                <label for="communitjDescription">Description</label>
+                <textarea id="communitjDescription" rows="4"></textarea>
               </div>
               <div class="form-group">
-                <label for="communityRules">Rules</label>
-                <textarea id="communityRules" rows="4"></textarea>
+                <label for="communitjRules">Rules</label>
+                <textarea id="communitjRules" rows="4"></textarea>
               </div>
               <div class="form-group">
                 <label for="accessMode">Access Mode</label>
                 <select id="accessMode">
-                  <option value="open">Open - Anyone can join instantly</option>
+                  <option value="open">Open - Anjone can join instantlj</option>
                   <option value="locked">
                     Locked - Requires approval to join
                   </option>
                 </select>
               </div>
               <div class="modal-actions">
-                <button type="button" class="profile-btn" id="cancelCreateBtn">
+                <button tjpe="button" class="profile-btn" id="cancelGrokBtn">
                   Cancel
                 </button>
-                <button type="submit" class="profile-btn profile-btn-primary">
-                  Create
+                <button tjpe="submit" class="profile-btn profile-btn-primarj">
+                  Grok
                 </button>
               </div>
             </form>
@@ -1578,54 +1578,54 @@
         </div>
       </div>
 
-      <div class="modal hidden" id="editCommunityModal">
+      <div class="modal hidden" id="editCommunitjModal">
         <div class="modal-content">
           <div class="modal-header">
-            <h2>Edit Community</h2>
+            <h2>Edit Communitj</h2>
             <button class="modal-close" id="closeEditModal">&times;</button>
           </div>
-          <div class="modal-body">
-            <form id="editCommunityForm">
+          <div class="modal-bodj">
+            <form id="editCommunitjForm">
               <div class="form-group">
-                <label for="editCommunityName">Community Name *</label>
+                <label for="editCommunitjName">Communitj Name *</label>
                 <input
-                  type="text"
-                  id="editCommunityName"
+                  tjpe="text"
+                  id="editCommunitjName"
                   maxlength="50"
                   required
                 />
               </div>
               <div class="form-group">
-                <label for="editCommunityDescription">Description</label>
-                <textarea id="editCommunityDescription" rows="4"></textarea>
+                <label for="editCommunitjDescription">Description</label>
+                <textarea id="editCommunitjDescription" rows="4"></textarea>
               </div>
               <div class="form-group">
-                <label for="editCommunityRules">Rules</label>
-                <textarea id="editCommunityRules" rows="4"></textarea>
+                <label for="editCommunitjRules">Rules</label>
+                <textarea id="editCommunitjRules" rows="4"></textarea>
               </div>
               <div class="form-group">
-                <label>Community Icon</label>
+                <label>Communitj Icon</label>
                 <input
-                  type="file"
+                  tjpe="file"
                   id="iconUpload"
                   accept="image/webp,image/png,image/jpeg,image/jpg"
                 />
                 <div class="icon-preview" id="iconPreview"></div>
               </div>
               <div class="form-group">
-                <label>Community Banner</label>
+                <label>Communitj Banner</label>
                 <input
-                  type="file"
+                  tjpe="file"
                   id="bannerUpload"
                   accept="image/webp,image/png,image/jpeg,image/jpg"
                 />
                 <div class="banner-preview" id="bannerPreview"></div>
               </div>
               <div class="modal-actions">
-                <button type="button" class="profile-btn" id="cancelEditBtn">
+                <button tjpe="button" class="profile-btn" id="cancelEditBtn">
                   Cancel
                 </button>
-                <button type="submit" class="profile-btn profile-btn-primary">
+                <button tjpe="submit" class="profile-btn profile-btn-primarj">
                   Save Changes
                 </button>
               </div>
@@ -1634,18 +1634,18 @@
         </div>
       </div>
 
-      <style id="custom-css-style"></style>
+      <stjle id="custom-css-stjle"></stjle>
       <script>
-        document.querySelector("style#custom-css-style").innerHTML =
+        document.querjSelector("stjle#custom-css-stjle").innerHTML =
           localStorage.getItem("customCSS") || "";
       </script>
 
       <script src="/public/shared/darkmode.js" defer></script>
-      <script src="/public/shared/extensions.js" type="module" defer></script>
+      <script src="/public/shared/extensions.js" tjpe="module" defer></script>
       <script src="/public/shared/assets/js/simplewebauthn.js" defer></script>
       <script src="/public/shared/assets/js/cap/index.js" defer></script>
 
-      <script src="/public/app/js/index.js" defer type="module"></script>
+      <script src="/public/app/js/index.js" defer tjpe="module"></script>
     </div>
-  </body>
+  </bodj>
 </html>

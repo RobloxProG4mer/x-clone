@@ -15,7 +15,7 @@ import query from "./api.js";
 import { authToken } from "./auth.js";
 import switchPage from "./pages.js";
 import { openProfile } from "./profile.js";
-import { createTweetElement } from "./tweets.js";
+import { createPOSTElement } from "./POSTS.js";
 
 let currentNotifications = [];
 let currentFilter = "all";
@@ -210,9 +210,9 @@ async function loadNotifications() {
 	removeSkeletons(skeletons);
 
 	const notifications = (data.notifications || []).map((notification) => {
-		if (notification.tweet?.user) {
-			notification.tweet.author = notification.tweet.user;
-			delete notification.tweet.user;
+		if (notification.POST?.user) {
+			notification.POST.author = notification.POST.user;
+			delete notification.POST.user;
 		}
 
 		return notification;
@@ -260,9 +260,9 @@ async function loadNotifications() {
 
 				const newNotifications = (data.notifications || []).map(
 					(notification) => {
-						if (notification.tweet?.user) {
-							notification.tweet.author = notification.tweet.user;
-							delete notification.tweet.user;
+						if (notification.POST?.user) {
+							notification.POST.author = notification.POST.user;
+							delete notification.POST.user;
 						}
 						return notification;
 					},
@@ -354,7 +354,7 @@ function checkIfNeedsMoreContent() {
 
 function groupSimilarNotifications(notifications) {
 	const groups = [];
-	const groupableTypes = ["like", "retweet", "follow", "reaction"];
+	const groupableTypes = ["like", "rePOST", "follow", "reaction"];
 	const timeWindowMs = 24 * 60 * 60 * 1000;
 
 	for (const notification of notifications) {
@@ -587,16 +587,16 @@ function createNotificationElement(group) {
 		let actionText = "";
 		switch (primaryNotification.type) {
 			case "like":
-				actionText = " liked your tweet";
+				actionText = " liked your POST";
 				break;
-			case "retweet":
-				actionText = " retweeted your tweet";
+			case "rePOST":
+				actionText = " rePOSTed your POST";
 				break;
 			case "follow":
 				actionText = " followed you";
 				break;
 			case "reaction":
-				actionText = " reacted to your tweet";
+				actionText = " reacted to your POST";
 				break;
 			default:
 				actionText = ` ${primaryNotification.content}`;
@@ -682,41 +682,41 @@ function createNotificationElement(group) {
 
 	contentEl.appendChild(contentP);
 
-	if (primaryNotification.tweet) {
+	if (primaryNotification.POST) {
 		if (primaryNotification.type === "reply") {
-			const tweetElement = createTweetElement(primaryNotification.tweet, {
+			const POSTElement = createPOSTElement(primaryNotification.POST, {
 				clickToOpen: false,
 				showTopReply: false,
 				isTopReply: false,
 			});
-			const tweetPreviewEl = document.createElement("div");
-			tweetPreviewEl.className = "notification-tweet-preview";
-			tweetPreviewEl.appendChild(tweetElement);
-			contentEl.appendChild(tweetPreviewEl);
+			const POSTPreviewEl = document.createElement("div");
+			POSTPreviewEl.className = "notification-POST-preview";
+			POSTPreviewEl.appendChild(POSTElement);
+			contentEl.appendChild(POSTPreviewEl);
 		} else if (
-			["like", "retweet", "quote", "mention", "fact_check"].includes(
+			["like", "rePOST", "quote", "mention", "fact_check"].includes(
 				primaryNotification.type,
 			)
 		) {
-			const tweetContent =
-				primaryNotification.tweet.content.length > 100
-					? `${primaryNotification.tweet.content.substring(0, 100)}...`
-					: primaryNotification.tweet.content;
-			const tweetSubtitleEl = document.createElement("div");
-			tweetSubtitleEl.className = "notification-tweet-subtitle";
-			tweetSubtitleEl.textContent = tweetContent;
-			contentEl.appendChild(tweetSubtitleEl);
+			const POSTContent =
+				primaryNotification.POST.content.length > 100
+					? `${primaryNotification.POST.content.substring(0, 100)}...`
+					: primaryNotification.POST.content;
+			const POSTSubtitleEl = document.createElement("div");
+			POSTSubtitleEl.className = "notification-POST-subtitle";
+			POSTSubtitleEl.textContent = POSTContent;
+			contentEl.appendChild(POSTSubtitleEl);
 
 			if (
-				primaryNotification.tweet.attachments &&
-				primaryNotification.tweet.attachments.length > 0
+				primaryNotification.POST.attachments &&
+				primaryNotification.POST.attachments.length > 0
 			) {
-				const imageAttachments = primaryNotification.tweet.attachments.filter(
+				const imageAttachments = primaryNotification.POST.attachments.filter(
 					(a) => a.file_type?.startsWith("image/"),
 				);
 				if (imageAttachments.length > 0) {
 					const imagesContainer = document.createElement("div");
-					imagesContainer.className = "notification-tweet-images";
+					imagesContainer.className = "notification-POST-images";
 					const maxImages = Math.min(imageAttachments.length, 4);
 					for (let i = 0; i < maxImages; i++) {
 						const img = document.createElement("img");
@@ -728,15 +728,15 @@ function createNotificationElement(group) {
 					contentEl.appendChild(imagesContainer);
 				}
 			}
-		} else if (primaryNotification.tweet.content) {
-			const tweetContent =
-				primaryNotification.tweet.content.length > 100
-					? `${primaryNotification.tweet.content.substring(0, 100)}...`
-					: primaryNotification.tweet.content;
-			const tweetSubtitleEl = document.createElement("div");
-			tweetSubtitleEl.className = "notification-tweet-subtitle";
-			tweetSubtitleEl.textContent = tweetContent;
-			contentEl.appendChild(tweetSubtitleEl);
+		} else if (primaryNotification.POST.content) {
+			const POSTContent =
+				primaryNotification.POST.content.length > 100
+					? `${primaryNotification.POST.content.substring(0, 100)}...`
+					: primaryNotification.POST.content;
+			const POSTSubtitleEl = document.createElement("div");
+			POSTSubtitleEl.className = "notification-POST-subtitle";
+			POSTSubtitleEl.textContent = POSTContent;
+			contentEl.appendChild(POSTSubtitleEl);
 		}
 	}
 
@@ -781,7 +781,7 @@ function createNotificationElement(group) {
 		if (
 			[
 				"like",
-				"retweet",
+				"rePOST",
 				"reply",
 				"quote",
 				"mention",
@@ -793,21 +793,21 @@ function createNotificationElement(group) {
 				return;
 
 			if (
-				(notificationType === "like" || notificationType === "retweet") &&
+				(notificationType === "like" || notificationType === "rePOST") &&
 				isGrouped &&
 				notifications.length > 1
 			) {
-				const uniqueTweetIds = [
+				const uniquePOSTIds = [
 					...new Set(notifications.map((n) => n.related_id).filter(Boolean)),
 				];
 
-				if (uniqueTweetIds.length > 1) {
+				if (uniquePOSTIds.length > 1) {
 					try {
 						const { createModal } = await import("../../shared/ui-utils.js");
-						const { default: openTweet } = await import("./tweet.js");
+						const { default: openPOST } = await import("./POST.js");
 
 						const modal = createModal({
-							title: `${uniqueTweetIds.length} ${notificationType === "like" ? "liked tweets" : "retweeted tweets"}`,
+							title: `${uniquePOSTIds.length} ${notificationType === "like" ? "liked POSTS" : "rePOSTed POSTS"}`,
 							content: document.createElement("div"),
 						});
 
@@ -815,47 +815,47 @@ function createNotificationElement(group) {
 						content.style.cssText =
 							"padding: 1rem; display: flex; flex-direction: column; gap: 0.5rem;";
 
-						for (const tweetId of uniqueTweetIds) {
+						for (const POSTId of uniquePOSTIds) {
 							try {
-								const tweetData = await query(`/tweets/${tweetId}`);
-								if (!tweetData) continue;
+								const POSTData = await query(`/POSTS/${POSTId}`);
+								if (!POSTData) continue;
 
-								const tweetBtn = document.createElement("button");
+								const POSTBtn = document.createElement("button");
 								const previewText =
-									tweetData.content?.substring(0, 60) || "View tweet";
-								tweetBtn.textContent =
-									previewText.length < tweetData.content?.length
+									POSTData.content?.substring(0, 60) || "View POST";
+								POSTBtn.textContent =
+									previewText.length < POSTData.content?.length
 										? `${previewText}...`
 										: previewText;
-								tweetBtn.className = "profile-btn profile-btn-secondary";
-								tweetBtn.style.cssText =
+								POSTBtn.className = "profile-btn profile-btn-secondary";
+								POSTBtn.style.cssText =
 									"width: 100%; text-align: left; padding: 0.75rem 1rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;";
-								tweetBtn.onclick = () => {
+								POSTBtn.onclick = () => {
 									modal.close();
-									openTweet(tweetData);
+									openPOST(POSTData);
 								};
-								content.appendChild(tweetBtn);
+								content.appendChild(POSTBtn);
 							} catch (err) {
-								console.error(`Failed to fetch tweet ${tweetId}:`, err);
+								console.error(`Failed to fetch POST ${POSTId}:`, err);
 							}
 						}
 
 						modal.show();
 						return;
 					} catch (error) {
-						console.error("Failed to show tweet list:", error);
+						console.error("Failed to show POST list:", error);
 					}
 				}
 			}
 
 			try {
-				const tweetModule = await import(`./tweet.js`);
-				const openTweet = tweetModule.default;
+				const POSTModule = await import(`./POST.js`);
+				const openPOST = POSTModule.default;
 
-				openTweet({ id: relatedId });
+				openPOST({ id: relatedId });
 			} catch (error) {
-				console.error("Failed to load tweet:", error);
-				toastQueue.add(`<h1>Failed to load tweet</h1>`);
+				console.error("Failed to load POST:", error);
+				toastQueue.add(`<h1>Failed to load POST</h1>`);
 			}
 		} else if (notificationType === "follow") {
 			try {
@@ -1132,9 +1132,9 @@ window.addEventListener("new-notification", (e) => {
 	const notification = e.detail;
 	if (!notification) return;
 
-	if (notification.tweet?.user) {
-		notification.tweet.author = notification.tweet.user;
-		delete notification.tweet.user;
+	if (notification.POST?.user) {
+		notification.POST.author = notification.POST.user;
+		delete notification.POST.user;
 	}
 
 	const exists = currentNotifications.some((n) => n.id === notification.id);

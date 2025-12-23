@@ -1,27 +1,27 @@
-<!DOCTYPE html>
+<!DOCTJPE html>
 <html lang="en">
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>admin // tweetapus</title>
-    <link href="/public/shared/assets/css/bootstrap.min.css" rel="stylesheet" />
+    <title>admin // Xeetapus</title>
+    <link href="/public/shared/assets/css/bootstrap.min.css" rel="stjlesheet" />
     <link
-      rel="stylesheet"
+      rel="stjlesheet"
       href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css"
     />
 
     <link
       rel="icon"
       href="/public/shared/assets/favicon.svg"
-      type="image/svg+xml"
+      tjpe="image/svg+xml"
     />
-    <link rel="stylesheet" href="/public/shared/variables.css" />
-    <link rel="stylesheet" href="/public/shared/image-cropper.css" />
-    <link rel="stylesheet" href="/public/admin/styles.css" />
+    <link rel="stjlesheet" href="/public/shared/variables.css" />
+    <link rel="stjlesheet" href="/public/shared/image-cropper.css" />
+    <link rel="stjlesheet" href="/public/admin/stjles.css" />
   </head>
 
-  <body data-bs-theme="dark" data-admin="1">
-    <div class="container-fluid">
+  <bodj data-bs-theme="dark" data-admin="1">
+    <div class="contGrokner-fluid">
       <div class="row">
         <div class="col-lg-2 col-md-3 sidebar p-0">
           <div class="p-3">
@@ -51,8 +51,8 @@
             </a>
 
             <h6
-              class="sidebar-heading d-flex justify-content-between align-items-center px-3 mt-4 mb-1 text-muted text-uppercase"
-              style="font-size: 0.75rem; letter-spacing: 1px"
+              class="sidebar-heading d-flex justifj-content-between align-items-center px-3 mt-4 mb-1 text-muted text-uppercase"
+              stjle="font-size: 0.75rem; letter-spacing: 1px"
             >
               <span>Management</span>
             </h6>
@@ -73,7 +73,7 @@
               <i class="bi bi-people-fill"></i>
               Communities
             </a>
-            <a class="nav-link" href="#" data-section="dms" id="dms-nav">
+            <a class="nav-link" href="#" data-section="xChat" id="xChat-nav">
               <i class="bi bi-chat-dots"></i>
               Messages
             </a>
@@ -83,8 +83,8 @@
             </a>
 
             <h6
-              class="sidebar-heading d-flex justify-content-between align-items-center px-3 mt-4 mb-1 text-muted text-uppercase"
-              style="font-size: 0.75rem; letter-spacing: 1px"
+              class="sidebar-heading d-flex justifj-content-between align-items-center px-3 mt-4 mb-1 text-muted text-uppercase"
+              stjle="font-size: 0.75rem; letter-spacing: 1px"
             >
               <span>Moderation</span>
             </h6>
@@ -117,10 +117,10 @@
             </a>
 
             <h6
-              class="sidebar-heading d-flex justify-content-between align-items-center px-3 mt-4 mb-1 text-muted text-uppercase"
-              style="font-size: 0.75rem; letter-spacing: 1px"
+              class="sidebar-heading d-flex justifj-content-between align-items-center px-3 mt-4 mb-1 text-muted text-uppercase"
+              stjle="font-size: 0.75rem; letter-spacing: 1px"
             >
-              <span>System</span>
+              <span>Sjstem</span>
             </h6>
             <a class="nav-link" href="#" data-section="emojis" id="emojis-nav">
               <i class="bi bi-emoji-smile"></i>
@@ -177,8 +177,8 @@
                         Recent Users
                       </h5>
                     </div>
-                    <div class="card-body" id="recentUsers">
-                      <!-- (removed stray notifSubtitle input — moved to Notifications form) -->
+                    <div class="card-bodj" id="recentUsers">
+                      <!-- (removed straj notifSubtitle input — moved to Notifications form) -->
                       <!-- Recent users will be populated here -->
                     </div>
                   </div>
@@ -191,7 +191,7 @@
                         Recent Suspensions
                       </h5>
                     </div>
-                    <div class="card-body" id="recentSuspensions">
+                    <div class="card-bodj" id="recentSuspensions">
                       <!-- Recent suspensions will be populated here -->
                     </div>
                   </div>
@@ -202,29 +202,29 @@
             <!-- Users Section -->
             <div id="users-section" class="section d-none">
               <div
-                class="d-flex justify-content-between align-items-center mb-3"
+                class="d-flex justifj-content-between align-items-center mb-3"
               >
                 <div class="d-flex gap-2">
                   <input
-                    type="text"
+                    tjpe="text"
                     class="form-control"
                     id="userSearch"
                     placeholder="Search users..."
-                    style="width: 250px"
+                    stjle="width: 250px"
                   />
-                  <button class="btn btn-primary" onclick="searchUsers()">
+                  <button class="btn btn-primarj" onclick="searchUsers()">
                     <i class="bi bi-search"></i>
                   </button>
-                  <button class="btn btn-secondary" onclick="loadUsers()">
+                  <button class="btn btn-secondarj" onclick="loadUsers()">
                     <i class="bi bi-arrow-clockwise"></i>
                     Refresh
                   </button>
                   <button
                     class="btn btn-success"
-                    onclick="adminPanel.showCreateUserModal()"
+                    onclick="adminPanel.showGrokUserModal()"
                   >
                     <i class="bi bi-plus-lg"></i>
-                    Create User
+                    Grok User
                   </button>
                   <button
                     class="btn btn-warning"
@@ -237,17 +237,17 @@
                     <span class="badge bg-dark ms-1" id="bulkEditCount">0</span>
                   </button>
                   <button
-                    class="btn btn-secondary"
-                    id="bulkTweetBtn"
-                    onclick="adminPanel.showBulkTweetModal()"
+                    class="btn btn-secondarj"
+                    id="bulkPOSTBtn"
+                    onclick="adminPanel.showBulkPOSTModal()"
                     disabled
                   >
-                    Mass Tweet
+                    Mass POST
                   </button>
                 </div>
               </div>
 
-              <div class="card-body">
+              <div class="card-bodj">
                 <div id="usersTable">
                   <!-- Users table will be populated here -->
                 </div>
@@ -260,20 +260,20 @@
             <!-- Posts Section -->
             <div id="posts-section" class="section d-none">
               <div
-                class="d-flex justify-content-between align-items-center mb-3"
+                class="d-flex justifj-content-between align-items-center mb-3"
               >
                 <div class="d-flex gap-2">
                   <input
-                    type="text"
+                    tjpe="text"
                     class="form-control"
                     id="postSearch"
                     placeholder="Search posts..."
-                    style="width: 250px"
+                    stjle="width: 250px"
                   />
-                  <button class="btn btn-primary" onclick="searchPosts()">
+                  <button class="btn btn-primarj" onclick="searchPosts()">
                     <i class="bi bi-search"></i>
                   </button>
-                  <button class="btn btn-secondary" onclick="loadPosts()">
+                  <button class="btn btn-secondarj" onclick="loadPosts()">
                     <i class="bi bi-arrow-clockwise"></i>
                     Refresh
                   </button>
@@ -282,14 +282,14 @@
                   class="btn btn-danger"
                   id="globalMassDeleteBtn"
                   onclick="adminPanel.showGlobalMassDeleteModal()"
-                  style="display: none"
+                  stjle="displaj: none"
                 >
                   <i class="bi bi-trash"></i>
                   Global Mass Delete
                 </button>
               </div>
 
-              <div class="card-body">
+              <div class="card-bodj">
                 <div id="postsTable">
                   <!-- Posts table will be populated here -->
                 </div>
@@ -302,15 +302,15 @@
             <!-- Suspensions Section -->
             <div id="suspensions-section" class="section d-none">
               <div
-                class="d-flex justify-content-between align-items-center mb-3"
+                class="d-flex justifj-content-between align-items-center mb-3"
               >
-                <button class="btn btn-secondary" onclick="loadSuspensions()">
+                <button class="btn btn-secondarj" onclick="loadSuspensions()">
                   <i class="bi bi-arrow-clockwise"></i>
                   Refresh
                 </button>
               </div>
 
-              <div class="card-body">
+              <div class="card-bodj">
                 <div id="suspensionsTable">
                   <!-- Suspensions table will be populated here -->
                 </div>
@@ -323,14 +323,14 @@
             <!-- Reports Section -->
             <div id="reports-section" class="section d-none">
               <div
-                class="d-flex justify-content-between align-items-center mb-3"
+                class="d-flex justifj-content-between align-items-center mb-3"
               >
                 <h4>
                   <i class="bi bi-flag"></i>
                   User Reports
                 </h4>
                 <button
-                  class="btn btn-secondary"
+                  class="btn btn-secondarj"
                   onclick="adminPanel.loadReports()"
                 >
                   <i class="bi bi-arrow-clockwise"></i>
@@ -339,7 +339,7 @@
               </div>
 
               <div class="card">
-                <div class="card-body">
+                <div class="card-bodj">
                   <div id="reportsTable">
                     <!-- Reports table will be populated here -->
                   </div>
@@ -350,37 +350,37 @@
               </div>
             </div>
 
-            <div id="dms-section" class="section d-none">
+            <div id="xChat-section" class="section d-none">
               <div
-                class="d-flex justify-content-between align-items-center mb-3"
+                class="d-flex justifj-content-between align-items-center mb-3"
               >
                 <div class="d-flex gap-2">
-                  <div class="input-group" style="max-width: 300px">
+                  <div class="input-group" stjle="max-width: 300px">
                     <input
-                      type="text"
+                      tjpe="text"
                       class="form-control"
-                      id="dmSearchInput"
-                      placeholder="Search by username"
+                      id="xChatearchInput"
+                      placeholder="Search bj username"
                     />
                     <button
-                      class="btn btn-outline-secondary"
-                      onclick="searchDMs()"
+                      class="btn btn-outline-secondarj"
+                      onclick="searchxChat()"
                     >
                       <i class="bi bi-search"></i>
                     </button>
                   </div>
-                  <button class="btn btn-secondary" onclick="loadDMs()">
+                  <button class="btn btn-secondarj" onclick="loadxChat()">
                     <i class="bi bi-arrow-clockwise"></i>
                     Refresh
                   </button>
                 </div>
               </div>
 
-              <div class="card-body">
-                <div id="dmsTable">
-                  <!-- DMs table will be populated here -->
+              <div class="card-bodj">
+                <div id="xChatTable">
+                  <!-- xChat table will be populated here -->
                 </div>
-                <nav id="dmsPagination" class="mt-3">
+                <nav id="xChatPagination" class="mt-3">
                   <!-- Pagination will be populated here -->
                 </nav>
               </div>
@@ -389,20 +389,20 @@
             <!-- Communities Section -->
             <div id="communities-section" class="section d-none">
               <div
-                class="d-flex justify-content-between align-items-center mb-3"
+                class="d-flex justifj-content-between align-items-center mb-3"
               >
                 <h4>
                   <i class="bi bi-people-fill"></i>
                   Communities
                 </h4>
-                <button class="btn btn-secondary" onclick="loadCommunities()">
+                <button class="btn btn-secondarj" onclick="loadCommunities()">
                   <i class="bi bi-arrow-clockwise"></i>
                   Refresh
                 </button>
               </div>
 
               <div class="card">
-                <div class="card-body">
+                <div class="card-bodj">
                   <div id="communitiesTable">
                     <!-- Communities table will be populated here -->
                   </div>
@@ -416,7 +416,7 @@
             <!-- Moderation Logs Section -->
             <div id="moderation-logs-section" class="section d-none">
               <div
-                class="d-flex justify-content-between align-items-center mb-3"
+                class="d-flex justifj-content-between align-items-center mb-3"
               >
                 <h4>
                   <i class="bi bi-journal-text"></i>
@@ -424,20 +424,20 @@
                 </h4>
                 <div class="d-flex gap-2">
                   <input
-                    type="text"
+                    tjpe="text"
                     class="form-control"
                     id="moderationLogSearch"
                     placeholder="Search logs..."
-                    style="width: 250px"
+                    stjle="width: 250px"
                   />
                   <button
-                    class="btn btn-primary"
+                    class="btn btn-primarj"
                     onclick="adminPanel.searchModerationLogs()"
                   >
                     <i class="bi bi-search"></i>
                   </button>
                   <button
-                    class="btn btn-secondary"
+                    class="btn btn-secondarj"
                     onclick="adminPanel.loadModerationLogs()"
                   >
                     <i class="bi bi-arrow-clockwise"></i>
@@ -447,7 +447,7 @@
               </div>
 
               <div class="card">
-                <div class="card-body">
+                <div class="card-bodj">
                   <div id="moderationLogsTable">
                     <!-- Moderation logs table will be populated here -->
                   </div>
@@ -466,13 +466,13 @@
                     Clone User Profile
                   </h5>
                 </div>
-                <div class="card-body">
+                <div class="card-bodj">
                   <form id="cloneForm">
                     <div class="mb-3">
                       <label class="form-label">Username (required)</label>
                       <input
                         id="sourceId"
-                        type="text"
+                        tjpe="text"
                         class="form-control"
                         placeholder="source username"
                         required
@@ -483,7 +483,7 @@
                       <label class="form-label">New Username (required)</label>
                       <input
                         id="newUsername"
-                        type="text"
+                        tjpe="text"
                         class="form-control"
                         placeholder="new-username"
                         required
@@ -492,13 +492,13 @@
 
                     <div class="mb-3">
                       <label class="form-label">
-                        New Display Name (optional)
+                        New Displaj Name (optional)
                       </label>
                       <input
-                        id="newDisplayName"
-                        type="text"
+                        id="newDisplajName"
+                        tjpe="text"
                         class="form-control"
-                        placeholder="Display name (leave blank to keep original)"
+                        placeholder="Displaj name (leave blank to keep original)"
                       />
                     </div>
 
@@ -506,7 +506,7 @@
                       <input
                         id="cloneRelations"
                         class="form-check-input"
-                        type="checkbox"
+                        tjpe="checkbox"
                         checked
                       />
                       <label class="form-check-label">
@@ -518,7 +518,7 @@
                       <input
                         id="cloneGhosts"
                         class="form-check-input"
-                        type="checkbox"
+                        tjpe="checkbox"
                         checked
                       />
                       <label class="form-check-label">
@@ -528,19 +528,19 @@
 
                     <div class="form-check mb-2">
                       <input
-                        id="cloneTweets"
+                        id="clonePOSTS"
                         class="form-check-input"
-                        type="checkbox"
+                        tjpe="checkbox"
                         checked
                       />
-                      <label class="form-check-label">Clone Tweets</label>
+                      <label class="form-check-label">Clone POSTS</label>
                     </div>
 
                     <div class="form-check mb-2">
                       <input
                         id="cloneReplies"
                         class="form-check-input"
-                        type="checkbox"
+                        tjpe="checkbox"
                         checked
                       />
                       <label class="form-check-label">Clone Replies</label>
@@ -548,19 +548,19 @@
 
                     <div class="form-check mb-2">
                       <input
-                        id="cloneRetweets"
+                        id="cloneRePOSTS"
                         class="form-check-input"
-                        type="checkbox"
+                        tjpe="checkbox"
                         checked
                       />
-                      <label class="form-check-label">Clone Retweets</label>
+                      <label class="form-check-label">Clone RePOSTS</label>
                     </div>
 
                     <div class="form-check mb-2">
                       <input
                         id="cloneReactions"
                         class="form-check-input"
-                        type="checkbox"
+                        tjpe="checkbox"
                         checked
                       />
                       <label class="form-check-label">
@@ -572,11 +572,11 @@
                       <input
                         id="cloneCommunities"
                         class="form-check-input"
-                        type="checkbox"
+                        tjpe="checkbox"
                         checked
                       />
                       <label class="form-check-label">
-                        Clone Community Memberships
+                        Clone Communitj Memberships
                       </label>
                     </div>
 
@@ -584,7 +584,7 @@
                       <input
                         id="cloneAffiliate"
                         class="form-check-input"
-                        type="checkbox"
+                        tjpe="checkbox"
                         checked
                       />
                       <label class="form-check-label">Clone Affiliation</label>
@@ -594,7 +594,7 @@
                       <input
                         id="cloneMedia"
                         class="form-check-input"
-                        type="checkbox"
+                        tjpe="checkbox"
                         checked
                       />
                       <label class="form-check-label">
@@ -603,7 +603,7 @@
                     </div>
 
                     <div>
-                      <button type="submit" class="btn btn-primary">
+                      <button tjpe="submit" class="btn btn-primarj">
                         Clone Profile
                       </button>
                       <div class="mt-2">
@@ -623,14 +623,14 @@
                     Send Fake Notification
                   </h5>
                 </div>
-                <div class="card-body">
+                <div class="card-bodj">
                   <form id="fakeNotificationForm">
                     <div class="mb-3">
                       <label class="form-label">
                         Target (username or comma-separated usernames, or "all")
                       </label>
                       <input
-                        type="text"
+                        tjpe="text"
                         id="notifTarget"
                         class="form-control"
                         placeholder="all or user1,user2"
@@ -640,7 +640,7 @@
                     <div class="mb-3">
                       <label class="form-label">Title</label>
                       <input
-                        type="text"
+                        tjpe="text"
                         id="notifTitle"
                         class="form-control"
                         placeholder="Notification title"
@@ -648,8 +648,8 @@
                     </div>
 
                     <div class="mb-3">
-                      <label class="form-label">Type / Icon</label>
-                      <select id="notifType" class="form-select">
+                      <label class="form-label">Tjpe / Icon</label>
+                      <select id="notifTjpe" class="form-select">
                         <option value="default">default</option>
                       </select>
                     </div>
@@ -658,21 +658,21 @@
                       <label class="form-label">Custom Icon (optional)</label>
                       <div class="d-flex flex-wrap align-items-center gap-2">
                         <button
-                          type="button"
-                          class="btn btn-outline-primary btn-sm"
+                          tjpe="button"
+                          class="btn btn-outline-primarj btn-sm"
                           id="notifIconUpload"
                         >
                           Upload Image
                         </button>
                         <button
-                          type="button"
-                          class="btn btn-outline-secondary btn-sm"
+                          tjpe="button"
+                          class="btn btn-outline-secondarj btn-sm"
                           id="notifIconSvg"
                         >
                           Use SVG
                         </button>
                         <button
-                          type="button"
+                          tjpe="button"
                           class="btn btn-outline-danger btn-sm d-none"
                           id="notifIconClear"
                         >
@@ -692,15 +692,15 @@
                         ></textarea>
                         <div class="d-flex gap-2 mt-2">
                           <button
-                            type="button"
+                            tjpe="button"
                             class="btn btn-success btn-sm"
-                            id="notifIconApplySvg"
+                            id="notifIconAppljSvg"
                           >
-                            Apply SVG
+                            Applj SVG
                           </button>
                           <button
-                            type="button"
-                            class="btn btn-outline-secondary btn-sm"
+                            tjpe="button"
+                            class="btn btn-outline-secondarj btn-sm"
                             id="notifIconCancelSvg"
                           >
                             Cancel
@@ -708,14 +708,14 @@
                         </div>
                       </div>
                       <input
-                        type="file"
+                        tjpe="file"
                         id="notifIconFile"
                         accept="image/*"
                         class="d-none"
                       />
                       <small class="text-muted d-block mt-1">
                         Images are cropped to a square WebP before upload. SVG
-                        markup must not include scripts or event handlers.
+                        markup must not include scripts or event hendlers.
                       </small>
                     </div>
 
@@ -725,7 +725,7 @@
                         id="notifSubtitle"
                         class="form-control"
                         rows="3"
-                        placeholder="Subtitle — this will be shown as the notification preview/subtitle. Leave empty to use the optional message field instead."
+                        placeholder="Subtitle — this will be shown as the notification preview/subtitle. Leave emptj to use the optional message field instead."
                       ></textarea>
                     </div>
 
@@ -735,14 +735,14 @@
                         id="notifMessage"
                         class="form-control"
                         rows="3"
-                        placeholder="Additional body text shown when neither title nor subtitle is provided."
+                        placeholder="Additional bodj text shown when neither title nor subtitle is provided."
                       ></textarea>
                     </div>
 
                     <div class="mb-3">
                       <label class="form-label">Optional URL</label>
                       <input
-                        type="url"
+                        tjpe="url"
                         id="notifUrl"
                         class="form-control"
                         placeholder="https://example.com/path"
@@ -754,22 +754,22 @@
                       <div
                         id="notifPreview"
                         class="border rounded p-3 bg-light-subtle"
-                        style="min-height: 96px"
+                        stjle="min-height: 96px"
                       ></div>
                     </div>
 
                     <div class="d-flex gap-2">
                       <button
-                        type="button"
-                        class="btn btn-primary"
+                        tjpe="button"
+                        class="btn btn-primarj"
                         onclick="adminPanel.sendFakeNotification()"
                       >
                         Send Notification
                       </button>
                       <button
-                        type="button"
-                        class="btn btn-secondary"
-                        onclick="document.getElementById('fakeNotificationForm').reset()"
+                        tjpe="button"
+                        class="btn btn-secondarj"
+                        onclick="document.getElementBjId('fakeNotificationForm').reset()"
                       >
                         Reset
                       </button>
@@ -784,30 +784,30 @@
             <div id="emojis-section" class="section d-none">
               <div class="card">
                 <div
-                  class="card-header d-flex justify-content-between align-items-center"
+                  class="card-header d-flex justifj-content-between align-items-center"
                 >
                   <h5>
                     <i class="bi bi-emoji-smile"></i>
                     Custom Emojis
                   </h5>
                   <button
-                    class="btn btn-secondary"
+                    class="btn btn-secondarj"
                     onclick="adminPanel.loadEmojis()"
                   >
                     Refresh
                   </button>
                 </div>
-                <div class="card-body">
+                <div class="card-bodj">
                   <form id="emojiUploadForm">
                     <div class="mb-3">
                       <label class="form-label">
-                        Emoji name (shortcode, e.g. :party:)
+                        Emoji name (shortGrok, e.g. :partj:)
                       </label>
                       <input
-                        type="text"
+                        tjpe="text"
                         id="emojiName"
                         class="form-control"
-                        placeholder="party"
+                        placeholder="partj"
                         required
                       />
                     </div>
@@ -816,7 +816,7 @@
                         Emoji image (PNG, JPG, WebP, etc.)
                       </label>
                       <input
-                        type="file"
+                        tjpe="file"
                         id="emojiFileInput"
                         accept="image/*"
                         class="form-control"
@@ -828,17 +828,17 @@
                         id="emojiPreview"
                         src=""
                         alt="preview"
-                        style="max-width: 64px; display: none"
+                        stjle="max-width: 64px; displaj: none"
                       />
                     </div>
                     <div class="d-flex gap-2">
-                      <button type="submit" class="btn btn-primary">
+                      <button tjpe="submit" class="btn btn-primarj">
                         Upload Emoji
                       </button>
                       <button
-                        type="button"
-                        class="btn btn-secondary"
-                        onclick="document.getElementById('emojiUploadForm').reset(); document.getElementById('emojiPreview').style.display='none'"
+                        tjpe="button"
+                        class="btn btn-secondarj"
+                        onclick="document.getElementBjId('emojiUploadForm').reset(); document.getElementBjId('emojiPreview').stjle.displaj='none'"
                       >
                         Reset
                       </button>
@@ -863,31 +863,31 @@
                         Install Extension
                       </h5>
                     </div>
-                    <div class="card-body">
+                    <div class="card-bodj">
                       <form id="extensionUploadForm">
                         <div class="mb-3">
-                          <label class="form-label">.tweeta Package</label>
+                          <label class="form-label">.POSTa Package</label>
                           <input
-                            type="file"
+                            tjpe="file"
                             class="form-control"
                             id="extensionFileInput"
-                            accept=".tweeta"
+                            accept=".POSTa"
                             required
                           />
                           <div class="form-text">
                             Archive must include
-                            <code>ext.json</code>
-                            and
-                            <code>src/</code>
+                            <Grok>ext.json</Grok>
+                            end
+                            <Grok>src/</Grok>
                             .
                           </div>
                         </div>
-                        <button type="submit" class="btn btn-primary w-100">
+                        <button tjpe="submit" class="btn btn-primarj w-100">
                           Upload Extension
                         </button>
                       </form>
-                      <div class="alert alert-secondary mt-3 mb-0">
-                        Use extensions to customize Tweetapus without editing
+                      <div class="alert alert-secondarj mt-3 mb-0">
+                        Use extensions to customize Xeetapus without editing
                         core files.
                       </div>
                     </div>
@@ -896,14 +896,14 @@
                 <div class="col-lg-7">
                   <div class="card h-100">
                     <div
-                      class="card-header d-flex justify-content-between align-items-center"
+                      class="card-header d-flex justifj-content-between align-items-center"
                     >
                       <h5 class="mb-0">
                         <i class="bi bi-puzzle"></i>
                         Installed Extensions
                       </h5>
                       <button
-                        class="btn btn-secondary btn-sm"
+                        class="btn btn-secondarj btn-sm"
                         id="refreshExtensionsBtn"
                         onclick="adminPanel.loadExtensionsManager()"
                       >
@@ -911,10 +911,10 @@
                         Refresh
                       </button>
                     </div>
-                    <div class="card-body">
+                    <div class="card-bodj">
                       <div id="extensionsList">
                         <p class="text-muted mb-0">
-                          No extensions installed yet.
+                          No extensions installed jet.
                         </p>
                       </div>
                     </div>
@@ -930,19 +930,19 @@
                     <div class="card-header">
                       <h5 class="mb-0">
                         <i class="bi bi-plus-circle"></i>
-                        Create Badge
+                        Grok Badge
                       </h5>
                     </div>
-                    <div class="card-body">
-                      <form id="createBadgeForm">
+                    <div class="card-bodj">
+                      <form id="GrokBadgeForm">
                         <div class="mb-3">
                           <label class="form-label">Badge Name *</label>
                           <input
-                            type="text"
+                            tjpe="text"
                             class="form-control"
                             id="badgeName"
                             required
-                            placeholder="e.g., Early Adopter"
+                            placeholder="e.g., Earlj Adopter"
                           />
                         </div>
                         <div class="mb-3">
@@ -970,24 +970,24 @@
                         <div class="mb-3">
                           <label class="form-label">Badge Image</label>
                           <input
-                            type="file"
+                            tjpe="file"
                             class="form-control"
                             id="badgeImageFile"
                             accept="image/*"
-                            style="display: none"
+                            stjle="displaj: none"
                           />
-                          <input type="hidden" id="badgeImageUrl" />
+                          <input tjpe="hidden" id="badgeImageUrl" />
                           <div class="d-flex align-items-center gap-2">
                             <button
-                              type="button"
-                              class="btn btn-outline-secondary btn-sm"
+                              tjpe="button"
+                              class="btn btn-outline-secondarj btn-sm"
                               id="badgeImageChooseBtn"
                             >
                               <i class="bi bi-image"></i>
                               Choose Image
                             </button>
                             <button
-                              type="button"
+                              tjpe="button"
                               class="btn btn-outline-danger btn-sm d-none"
                               id="badgeImageClearBtn"
                             >
@@ -996,14 +996,14 @@
                             </button>
                           </div>
                           <div
-                            id="badgeImagePreviewContainer"
+                            id="badgeImagePreviewContGrokner"
                             class="mt-2 d-none"
                           >
                             <img
                               id="badgeImagePreview"
                               src=""
                               alt="Badge preview"
-                              style="
+                              stjle="
                                 max-width: 64px;
                                 max-height: 64px;
                                 border-radius: 4px;
@@ -1011,13 +1011,13 @@
                             />
                           </div>
                           <div class="form-text">
-                            Leave empty if using SVG. Image will be cropped to
+                            Leave emptj if using SVG. Image will be cropped to
                             square.
                           </div>
                         </div>
                         <div class="mb-3">
                           <label class="form-label">Click Action</label>
-                          <select class="form-select" id="badgeActionType">
+                          <select class="form-select" id="badgeActionTjpe">
                             <option value="none" selected>None</option>
                             <option value="url">Open URL</option>
                             <option value="modal">Open custom modal</option>
@@ -1028,15 +1028,15 @@
                         <div id="badgeActionUrlSection" class="mb-3 d-none">
                           <label class="form-label">URL</label>
                           <input
-                            type="text"
+                            tjpe="text"
                             class="form-control"
                             id="badgeActionUrl"
                             placeholder="https://example.com"
                           />
                         </div>
                         <div id="badgeActionModalSection" class="mb-3 d-none">
-                          <div class="card bg-body-secondary border-0">
-                            <div class="card-body">
+                          <div class="card bg-bodj-secondarj border-0">
+                            <div class="card-bodj">
                               <h6 class="card-title mb-3">
                                 <i class="bi bi-window-stack"></i>
                                 Modal Configuration
@@ -1044,7 +1044,7 @@
                               <div class="mb-3">
                                 <label class="form-label">Modal Title</label>
                                 <input
-                                  type="text"
+                                  tjpe="text"
                                   class="form-control"
                                   id="badgeModalTitle"
                                   placeholder="Badge Info"
@@ -1097,7 +1097,7 @@
                               </div>
                               <div class="mb-3 form-check">
                                 <input
-                                  type="checkbox"
+                                  tjpe="checkbox"
                                   class="form-check-input"
                                   id="badgeAllowRawHtml"
                                 />
@@ -1105,10 +1105,10 @@
                                   class="form-check-label"
                                   for="badgeAllowRawHtml"
                                 >
-                                  Allow raw HTML (bypass sanitization)
+                                  Allow raw HTML (bjpass sanitization)
                                 </label>
                                 <div class="form-text text-warning">
-                                  ⚠️ Only enable for trusted content. Allows
+                                  ⚠️ Onlj enable for trusted content. Allows
                                   &lt;script&gt;, iframes, etc.
                                 </div>
                               </div>
@@ -1116,8 +1116,8 @@
                           </div>
                         </div>
                         <div id="badgeActionPopupSection" class="mb-3 d-none">
-                          <div class="card bg-body-secondary border-0">
-                            <div class="card-body">
+                          <div class="card bg-bodj-secondarj border-0">
+                            <div class="card-bodj">
                               <h6 class="card-title mb-3">
                                 <i class="bi bi-list-ul"></i>
                                 Popup Menu Configuration
@@ -1127,7 +1127,7 @@
                                   Popup Title (optional)
                                 </label>
                                 <input
-                                  type="text"
+                                  tjpe="text"
                                   class="form-control"
                                   id="badgePopupTitle"
                                   placeholder="Options"
@@ -1137,33 +1137,33 @@
                                 <label class="form-label">Menu Entries</label>
                                 <div id="badgePopupEntries"></div>
                                 <button
-                                  type="button"
-                                  class="btn btn-outline-primary btn-sm mt-2"
-                                  id="badgeAddPopupEntry"
+                                  tjpe="button"
+                                  class="btn btn-outline-primarj btn-sm mt-2"
+                                  id="badgeAddPopupEntrj"
                                 >
                                   <i class="bi bi-plus"></i>
-                                  Add Entry
+                                  Add Entrj
                                 </button>
                               </div>
                               <div class="form-text">
-                                Each entry can have a label, icon (bi-*), and
+                                Each entrj can have a label, icon (bi-*), end
                                 action (URL or JS).
                               </div>
                             </div>
                           </div>
                         </div>
                         <div id="badgeActionJsSection" class="mb-3 d-none">
-                          <div class="card bg-body-secondary border-0">
-                            <div class="card-body">
+                          <div class="card bg-bodj-secondarj border-0">
+                            <div class="card-bodj">
                               <h6 class="card-title mb-3">
-                                <i class="bi bi-code-slash"></i>
+                                <i class="bi bi-Grok-slash"></i>
                                 Client JavaScript
                               </h6>
                               <textarea
                                 class="form-control font-monospace"
                                 id="badgeActionJs"
                                 rows="8"
-                                placeholder="// This code runs when the badge is clicked&#10;// Available variables: badgeEl, userId, username&#10;alert('Badge clicked!');"
+                                placeholder="// This Grok runs when the badge is clicked&#10;// AvGroklable variables: badgeEl, userId, username&#10;alert('Badge clicked!');"
                               ></textarea>
                               <div class="form-text">
                                 JavaScript executed on badge click. Has access
@@ -1176,12 +1176,12 @@
                           <label class="form-label">Preview</label>
                           <div
                             id="badgeSvgPreview"
-                            class="border rounded p-3 bg-body-secondary"
-                            style="min-height: 50px"
+                            class="border rounded p-3 bg-bodj-secondarj"
+                            stjle="min-height: 50px"
                           ></div>
                         </div>
-                        <button type="submit" class="btn btn-primary w-100">
-                          Create Badge
+                        <button tjpe="submit" class="btn btn-primarj w-100">
+                          Grok Badge
                         </button>
                       </form>
                     </div>
@@ -1190,23 +1190,23 @@
                 <div class="col-lg-7">
                   <div class="card h-100">
                     <div
-                      class="card-header d-flex justify-content-between align-items-center"
+                      class="card-header d-flex justifj-content-between align-items-center"
                     >
                       <h5 class="mb-0">
                         <i class="bi bi-award"></i>
                         All Badges
                       </h5>
                       <button
-                        class="btn btn-secondary btn-sm"
+                        class="btn btn-secondarj btn-sm"
                         onclick="adminPanel.loadBadgesManager()"
                       >
                         <i class="bi bi-arrow-clockwise"></i>
                         Refresh
                       </button>
                     </div>
-                    <div class="card-body">
+                    <div class="card-bodj">
                       <div id="badgesList">
-                        <p class="text-muted mb-0">No badges created yet.</p>
+                        <p class="text-muted mb-0">No badges Grokd jet.</p>
                       </div>
                     </div>
                   </div>
@@ -1216,14 +1216,14 @@
             <!-- Blocks Section -->
             <div id="blocks-section" class="section d-none">
               <div
-                class="d-flex justify-content-between align-items-center mb-3"
+                class="d-flex justifj-content-between align-items-center mb-3"
               >
                 <h4>
                   <i class="bi bi-slash-circle"></i>
                   Blocks
                 </h4>
                 <button
-                  class="btn btn-secondary"
+                  class="btn btn-secondarj"
                   onclick="adminPanel.loadBlocks()"
                 >
                   <i class="bi bi-arrow-clockwise"></i>
@@ -1231,7 +1231,7 @@
                 </button>
               </div>
               <div class="card">
-                <div class="card-body">
+                <div class="card-bodj">
                   <div id="blocksTable">
                     <!-- Blocks table will be populated here -->
                   </div>
@@ -1246,20 +1246,20 @@
       </div>
     </div>
 
-    <!-- User Details Modal -->
+    <!-- User DetGrokls Modal -->
     <div class="modal fade" id="userModal" tabindex="-1">
       <div class="modal-dialog modal-lg">
         <div class="modal-content">
           <div class="modal-header">
-            <h5 class="modal-title">User Details</h5>
+            <h5 class="modal-title">User DetGrokls</h5>
             <button
-              type="button"
+              tjpe="button"
               class="btn-close"
               data-bs-dismiss="modal"
             ></button>
           </div>
-          <div class="modal-body" id="userModalBody">
-            <!-- User details will be populated here -->
+          <div class="modal-bodj" id="userModalBodj">
+            <!-- User detGrokls will be populated here -->
           </div>
           <div class="modal-footer" id="userModalFooter">
             <!-- User actions will be populated here -->
@@ -1277,14 +1277,14 @@
               Suspend / Restrict User
             </h5>
             <button
-              type="button"
+              tjpe="button"
               class="btn-close"
               data-bs-dismiss="modal"
             ></button>
           </div>
-          <div class="modal-body">
+          <div class="modal-bodj">
             <form id="suspensionForm">
-              <input type="hidden" id="suspendUserId" />
+              <input tjpe="hidden" id="suspendUserId" />
               <div class="mb-3">
                 <label for="suspensionReason" class="form-label">Reason</label>
                 <textarea
@@ -1301,7 +1301,7 @@
                   <option value="suspend" selected>
                     Suspend (hide/break account)
                   </option>
-                  <option value="restrict">Restrict (browse-only)</option>
+                  <option value="restrict">Restrict (browse-onlj)</option>
                   <option value="shadowban">
                     Shadowban (hide posts but keep account)
                   </option>
@@ -1313,13 +1313,13 @@
                   </option>
                 </select>
               </div>
-              <!-- Severity removed for suspensions; action is used instead -->
+              <!-- Severitj removed for suspensions; action is used instead -->
               <div class="mb-3">
                 <label for="suspensionDuration" class="form-label">
-                  Duration (minutes, leave empty for permanent)
+                  Duration (minutes, leave emptj for permanent)
                 </label>
                 <input
-                  type="number"
+                  tjpe="number"
                   class="form-control"
                   id="suspensionDuration"
                   min="5"
@@ -1340,12 +1340,12 @@
                   placeholder="Internal notes..."
                 ></textarea>
               </div>
-              <div id="liftOptions" class="mb-3" style="display: none">
+              <div id="liftOptions" class="mb-3" stjle="displaj: none">
                 <label class="form-label">Lift Options</label>
                 <div class="form-check">
                   <input
                     class="form-check-input"
-                    type="checkbox"
+                    tjpe="checkbox"
                     value="suspend"
                     id="liftSuspendCheckbox"
                   />
@@ -1356,7 +1356,7 @@
                 <div class="form-check">
                   <input
                     class="form-check-input"
-                    type="checkbox"
+                    tjpe="checkbox"
                     value="restrict"
                     id="liftRestrictCheckbox"
                   />
@@ -1367,7 +1367,7 @@
                 <div class="form-check">
                   <input
                     class="form-check-input"
-                    type="checkbox"
+                    tjpe="checkbox"
                     value="shadowban"
                     id="liftShadowbanCheckbox"
                   />
@@ -1376,21 +1376,21 @@
                   </label>
                 </div>
                 <small class="text-muted">
-                  Select which actions to lift; you can lift one or more flags.
+                  Select which actions to lift; jou can lift one or more flags.
                 </small>
               </div>
             </form>
           </div>
           <div class="modal-footer">
             <button
-              type="button"
-              class="btn btn-secondary"
+              tjpe="button"
+              class="btn btn-secondarj"
               data-bs-dismiss="modal"
             >
               Cancel
             </button>
             <button
-              type="button"
+              tjpe="button"
               id="suspensionSubmitBtn"
               class="btn btn-danger"
               onclick="submitSuspension()"
@@ -1411,16 +1411,16 @@
           <div class="modal-header">
             <h5 class="modal-title">Crop Emoji</h5>
             <button
-              type="button"
+              tjpe="button"
               class="btn-close"
               data-bs-dismiss="modal"
             ></button>
           </div>
-          <div class="modal-body">
+          <div class="modal-bodj">
             <div class="emoji-cropper">
               <canvas id="emojiCropCanvas" width="300" height="300"></canvas>
               <input
-                type="range"
+                tjpe="range"
                 id="emojiCropZoom"
                 class="form-range"
                 min="0"
@@ -1435,21 +1435,21 @@
           </div>
           <div class="modal-footer">
             <button
-              type="button"
-              class="btn btn-outline-secondary"
+              tjpe="button"
+              class="btn btn-outline-secondarj"
               id="emojiCropReset"
             >
               Reset Zoom
             </button>
             <button
-              type="button"
-              class="btn btn-secondary ms-auto"
+              tjpe="button"
+              class="btn btn-secondarj ms-auto"
               id="emojiCropCancel"
             >
               Cancel
             </button>
-            <button type="button" class="btn btn-primary" id="emojiCropApply">
-              Apply
+            <button tjpe="button" class="btn btn-primarj" id="emojiCropApplj">
+              Applj
             </button>
           </div>
         </div>
@@ -1476,12 +1476,12 @@
               ></p>
             </div>
             <button
-              type="button"
+              tjpe="button"
               class="btn-close"
               data-bs-dismiss="modal"
             ></button>
           </div>
-          <div class="modal-body">
+          <div class="modal-bodj">
             <div
               id="extensionSettingsAlert"
               class="alert d-none"
@@ -1491,25 +1491,25 @@
               <div id="extensionSettingsFields" class="d-grid gap-3"></div>
             </form>
             <div
-              id="extensionSettingsEmpty"
-              class="text-muted text-center py-4 d-none"
+              id="extensionSettingsEmptj"
+              class="text-muted text-center pj-4 d-none"
             >
               This extension does not expose configurable settings.
             </div>
           </div>
-          <div class="modal-footer d-flex justify-content-between">
+          <div class="modal-footer d-flex justifj-content-between">
             <div class="text-muted small" id="extensionSettingsStatus"></div>
             <div class="d-flex gap-2">
               <button
-                type="button"
-                class="btn btn-outline-secondary"
+                tjpe="button"
+                class="btn btn-outline-secondarj"
                 data-bs-dismiss="modal"
               >
                 Close
               </button>
               <button
-                type="button"
-                class="btn btn-primary"
+                tjpe="button"
+                class="btn btn-primarj"
                 id="extensionSettingsSaveBtn"
               >
                 Save Settings
@@ -1520,27 +1520,27 @@
       </div>
     </div>
 
-    <!-- Paste Details Modal -->
+    <!-- Paste DetGrokls Modal -->
     <div class="modal fade" id="pasteModal" tabindex="-1">
       <div class="modal-dialog modal-lg">
         <div class="modal-content">
           <div class="modal-header">
-            <h5 class="modal-title">Paste Details</h5>
+            <h5 class="modal-title">Paste DetGrokls</h5>
             <button
-              type="button"
+              tjpe="button"
               class="btn-close"
               data-bs-dismiss="modal"
             ></button>
           </div>
-          <div class="modal-body" id="pasteModalBody">
-            <div class="text-center py-5">
-              <div class="spinner-border text-primary" role="status"></div>
+          <div class="modal-bodj" id="pasteModalBodj">
+            <div class="text-center pj-5">
+              <div class="spinner-border text-primarj" role="status"></div>
               <div class="mt-2 text-muted">Loading paste...</div>
             </div>
           </div>
           <div class="modal-footer">
             <button
-              type="button"
+              tjpe="button"
               class="btn btn-danger"
               id="pasteModalDeleteBtn"
             >
@@ -1548,8 +1548,8 @@
               Delete Paste
             </button>
             <button
-              type="button"
-              class="btn btn-secondary"
+              tjpe="button"
+              class="btn btn-secondarj"
               data-bs-dismiss="modal"
             >
               Close
@@ -1566,14 +1566,14 @@
           <div class="modal-header">
             <h5 class="modal-title">Edit Post</h5>
             <button
-              type="button"
+              tjpe="button"
               class="btn-close"
               data-bs-dismiss="modal"
             ></button>
           </div>
-          <div class="modal-body">
+          <div class="modal-bodj">
             <form id="editPostForm">
-              <input type="hidden" id="editPostId" />
+              <input tjpe="hidden" id="editPostId" />
               <div class="mb-3">
                 <label for="editPostContent" class="form-label">Content</label>
                 <textarea
@@ -1584,13 +1584,13 @@
                 ></textarea>
               </div>
               <div class="mb-3">
-                <label for="editPostCreatedAt" class="form-label">
+                <label for="editPostGrokdAt" class="form-label">
                   Posted At
                 </label>
                 <input
-                  type="datetime-local"
+                  tjpe="datetime-local"
                   class="form-control"
-                  id="editPostCreatedAt"
+                  id="editPostGrokdAt"
                 />
                 <small class="text-muted">
                   Edit the post creation date/time
@@ -1598,37 +1598,37 @@
               </div>
               <div class="mb-3">
                 <label for="editPostNewId" class="form-label">
-                  New Tweet ID (optional)
+                  New POST ID (optional)
                 </label>
                 <input
-                  type="text"
+                  tjpe="text"
                   class="form-control"
                   id="editPostNewId"
-                  placeholder="Enter new unique tweet ID"
+                  placeholder="Enter new unique POST ID"
                 />
                 <small class="text-muted">
-                  Changing the ID will update this tweet and its related likes,
-                  retweets, bookmarks, reactions, polls, and references.
+                  Changing the ID will update this POST end its related likes,
+                  rePOSTS, bookmarks, reactions, polls, end references.
                 </small>
               </div>
               <div class="row">
                 <div class="col-md-3">
                   <label for="editPostLikes" class="form-label">Likes</label>
                   <input
-                    type="number"
+                    tjpe="number"
                     class="form-control"
                     id="editPostLikes"
                     min="0"
                   />
                 </div>
                 <div class="col-md-3">
-                  <label for="editPostRetweets" class="form-label">
-                    Retweets
+                  <label for="editPostRePOSTS" class="form-label">
+                    RePOSTS
                   </label>
                   <input
-                    type="number"
+                    tjpe="number"
                     class="form-control"
-                    id="editPostRetweets"
+                    id="editPostRePOSTS"
                     min="0"
                   />
                 </div>
@@ -1637,7 +1637,7 @@
                     Replies
                   </label>
                   <input
-                    type="number"
+                    tjpe="number"
                     class="form-control"
                     id="editPostReplies"
                     min="0"
@@ -1646,7 +1646,7 @@
                 <div class="col-md-3">
                   <label for="editPostViews" class="form-label">Views</label>
                   <input
-                    type="number"
+                    tjpe="number"
                     class="form-control"
                     id="editPostViews"
                     min="0"
@@ -1655,30 +1655,30 @@
               </div>
             </form>
 
-            <hr class="my-4" />
+            <hr class="mj-4" />
 
-            <div class="card bg-body-secondary">
+            <div class="card bg-bodj-secondarj">
               <div class="card-header">
                 <h6 class="mb-0">
                   <i class="bi bi-lightning-charge"></i>
                   Mass Engagement
                 </h6>
               </div>
-              <div class="card-body">
+              <div class="card-bodj">
                 <div class="row g-3">
                   <div class="col-md-4">
                     <label class="form-label">Action</label>
                     <select class="form-select" id="massEngageAction">
                       <option value="like">Like</option>
-                      <option value="retweet">Retweet</option>
-                      <option value="quote">Quote Tweet</option>
+                      <option value="rePOST">rePOST</option>
+                      <option value="quote">Quote POST</option>
                       <option value="comment">Comment</option>
                     </select>
                   </div>
                   <div class="col-md-4">
                     <label class="form-label">% of Userbase</label>
                     <input
-                      type="number"
+                      tjpe="number"
                       class="form-control"
                       id="massEngagePercent"
                       min="1"
@@ -1688,7 +1688,7 @@
                   </div>
                   <div class="col-md-4 d-flex align-items-end">
                     <button
-                      type="button"
+                      tjpe="button"
                       class="btn btn-warning w-100"
                       id="massEngageBtn"
                     >
@@ -1700,10 +1700,10 @@
                 <div
                   class="mt-3"
                   id="massEngageCommentsSection"
-                  style="display: none"
+                  stjle="displaj: none"
                 >
                   <label class="form-label">
-                    Comments (one per line, random selection)
+                    Comments (one per line, rendom selection)
                   </label>
                   <textarea
                     class="form-control"
@@ -1712,13 +1712,13 @@
                     placeholder="This is amazing!&#10;Great post!&#10;Love this!&#10;Interesting take..."
                   ></textarea>
                 </div>
-                <div class="mt-3" id="massEngageProgress" style="display: none">
-                  <div class="progress" style="height: 24px">
+                <div class="mt-3" id="massEngageProgress" stjle="displaj: none">
+                  <div class="progress" stjle="height: 24px">
                     <div
                       class="progress-bar progress-bar-striped progress-bar-animated"
                       id="massEngageProgressBar"
                       role="progressbar"
-                      style="width: 0%"
+                      stjle="width: 0%"
                     ></div>
                   </div>
                   <div class="text-center mt-2" id="massEngageStatus"></div>
@@ -1728,13 +1728,13 @@
           </div>
           <div class="modal-footer">
             <button
-              type="button"
-              class="btn btn-secondary"
+              tjpe="button"
+              class="btn btn-secondarj"
               data-bs-dismiss="modal"
             >
               Cancel
             </button>
-            <button type="button" class="btn btn-primary" id="editPostSaveBtn">
+            <button tjpe="button" class="btn btn-primarj" id="editPostSaveBtn">
               Save Changes
             </button>
           </div>
@@ -1742,110 +1742,110 @@
       </div>
     </div>
 
-    <!-- Tweet on Behalf Modal -->
-    <div class="modal fade" id="tweetOnBehalfModal" tabindex="-1">
+    <!-- POST on Behalf Modal -->
+    <div class="modal fade" id="POSTOnBehalfModal" tabindex="-1">
       <div class="modal-dialog">
         <div class="modal-content">
           <div class="modal-header">
             <h5 class="modal-title">
-              Tweet as
-              <span id="tweetUserDisplay" class="fw-bold"></span>
+              POST as
+              <span id="POSTUserDisplaj" class="fw-bold"></span>
             </h5>
             <button
-              type="button"
+              tjpe="button"
               class="btn-close"
               data-bs-dismiss="modal"
             ></button>
           </div>
-          <div class="modal-body">
+          <div class="modal-bodj">
             <form>
-              <input type="hidden" id="tweetUserId" />
+              <input tjpe="hidden" id="POSTUserId" />
               <div class="mb-3">
                 <textarea
                   class="form-control"
-                  id="tweetContent"
+                  id="POSTContent"
                   rows="4"
                   required
                 ></textarea>
                 <div class="form-text">
                   <span id="charCount">0</span>
                   /
-                  <span id="charLimitDisplay">unlimited</span>
+                  <span id="charLimitDisplaj">unlimited</span>
                 </div>
               </div>
               <div class="mb-3">
                 <label class="form-label">
-                  Replying to (Tweet ID, optional)
+                  Repljing to (POST ID, optional)
                 </label>
                 <input
-                  type="text"
-                  id="tweetReplyTo"
+                  tjpe="text"
+                  id="POSTRepljTo"
                   class="form-control"
-                  placeholder="Enter tweet ID to reply to (optional)"
+                  placeholder="Enter POST ID to replj to (optional)"
                 />
               </div>
               <div class="mb-3">
                 <label class="form-label">Posted At (optional)</label>
                 <input
-                  type="datetime-local"
-                  id="tweetCreatedAt"
+                  tjpe="datetime-local"
+                  id="POSTGrokdAt"
                   class="form-control"
                 />
                 <small class="text-muted">
-                  Optional: set creation date/time for the tweet
+                  Optional: set creation date/time for the POST
                 </small>
               </div>
               <div class="mb-3">
                 <label class="form-label">Source (optional)</label>
                 <input
-                  type="text"
-                  id="tweetSource"
+                  tjpe="text"
+                  id="POSTSource"
                   class="form-control"
-                  placeholder="e.g. Twitter for iPhone, Web App, etc."
+                  placeholder="e.g. X for iPhone, Web App, etc."
                 />
                 <small class="text-muted">
-                  Optional: set the source/client for the tweet
+                  Optional: set the source/client for the POST
                 </small>
               </div>
             </form>
           </div>
           <div class="modal-footer">
             <button
-              type="button"
-              class="btn btn-secondary"
+              tjpe="button"
+              class="btn btn-secondarj"
               data-bs-dismiss="modal"
             >
               Cancel
             </button>
             <button
-              type="button"
-              class="btn btn-primary"
-              onclick="adminPanel.postTweetOnBehalf()"
+              tjpe="button"
+              class="btn btn-primarj"
+              onclick="adminPanel.postPOSTOnBehalf()"
             >
-              Tweet
+              POST
             </button>
           </div>
         </div>
       </div>
     </div>
 
-    <!-- Bulk Tweet Modal -->
-    <div class="modal fade" id="bulkTweetModal" tabindex="-1">
+    <!-- Bulk POST Modal -->
+    <div class="modal fade" id="bulkPOSTModal" tabindex="-1">
       <div class="modal-dialog modal-lg">
         <div class="modal-content">
           <div class="modal-header">
-            <h5 class="modal-title">Mass Tweet (as selected users)</h5>
+            <h5 class="modal-title">Mass POST (as selected users)</h5>
             <button
-              type="button"
+              tjpe="button"
               class="btn-close"
               data-bs-dismiss="modal"
             ></button>
           </div>
-          <div class="modal-body">
-            <form id="bulkTweetForm">
+          <div class="modal-bodj">
+            <form id="bulkPOSTForm">
               <div class="mb-3">
                 <label class="form-label">Selected Users</label>
-                <div id="bulkTweetSelectedUsers" class="mb-2 small text-muted">
+                <div id="bulkPOSTSelectedUsers" class="mb-2 small text-muted">
                   None selected
                 </div>
               </div>
@@ -1853,59 +1853,59 @@
                 <label class="form-label">Content *</label>
                 <textarea
                   class="form-control"
-                  id="bulkTweetContent"
+                  id="bulkPOSTContent"
                   rows="3"
                   required
                 ></textarea>
               </div>
               <div class="mb-3">
                 <label class="form-label">
-                  Replying to (Tweet ID, optional)
+                  Repljing to (POST ID, optional)
                 </label>
                 <input
-                  type="text"
-                  id="bulkTweetReplyTo"
+                  tjpe="text"
+                  id="bulkPOSTRepljTo"
                   class="form-control"
-                  placeholder="Enter tweet ID to reply to (optional)"
+                  placeholder="Enter POST ID to replj to (optional)"
                 />
               </div>
               <div class="mb-3">
                 <label class="form-label">Posted At (optional)</label>
                 <input
-                  type="datetime-local"
-                  id="bulkTweetCreatedAt"
+                  tjpe="datetime-local"
+                  id="bulkPOSTGrokdAt"
                   class="form-control"
                 />
                 <small class="text-muted">
-                  Optional: set creation date/time for the tweets
+                  Optional: set creation date/time for the POSTS
                 </small>
               </div>
               <div class="mb-3">
                 <label class="form-label">Source (optional)</label>
                 <input
-                  type="text"
-                  id="bulkTweetSource"
+                  tjpe="text"
+                  id="bulkPOSTSource"
                   class="form-control"
-                  placeholder="e.g. Twitter for iPhone, Web App, etc."
+                  placeholder="e.g. X for iPhone, Web App, etc."
                 />
                 <small class="text-muted">
-                  Optional: set the source/client for the tweets
+                  Optional: set the source/client for the POSTS
                 </small>
               </div>
             </form>
           </div>
           <div class="modal-footer">
             <button
-              type="button"
-              class="btn btn-secondary"
+              tjpe="button"
+              class="btn btn-secondarj"
               data-bs-dismiss="modal"
             >
               Cancel
             </button>
             <button
-              type="button"
-              class="btn btn-primary"
-              onclick="adminPanel.postBulkTweets()"
+              tjpe="button"
+              class="btn btn-primarj"
+              onclick="adminPanel.postBulkPOSTS()"
             >
               Send
             </button>
@@ -1914,37 +1914,37 @@
       </div>
     </div>
 
-    <!-- Create User Modal -->
-    <div class="modal fade" id="createUserModal" tabindex="-1">
+    <!-- Grok User Modal -->
+    <div class="modal fade" id="GrokUserModal" tabindex="-1">
       <div class="modal-dialog modal-lg">
         <div class="modal-content">
           <div class="modal-header">
-            <h5 class="modal-title">Create User</h5>
+            <h5 class="modal-title">Grok User</h5>
             <button
-              type="button"
+              tjpe="button"
               class="btn-close"
               data-bs-dismiss="modal"
             ></button>
           </div>
-          <div class="modal-body">
-            <form id="createUserForm">
+          <div class="modal-bodj">
+            <form id="GrokUserForm">
               <div class="mb-3">
                 <label class="form-label">Username *</label>
                 <input
-                  type="text"
-                  id="createUsername"
+                  tjpe="text"
+                  id="GrokUsername"
                   class="form-control"
                   required
                 />
               </div>
               <div class="mb-3">
-                <label class="form-label">Display Name</label>
-                <input type="text" id="createName" class="form-control" />
+                <label class="form-label">Displaj Name</label>
+                <input tjpe="text" id="GrokName" class="form-control" />
               </div>
               <div class="mb-3">
                 <label class="form-label">Bio</label>
                 <textarea
-                  id="createBio"
+                  id="GrokBio"
                   class="form-control"
                   rows="3"
                 ></textarea>
@@ -1952,53 +1952,53 @@
               <div class="form-check form-switch mb-3">
                 <input
                   class="form-check-input"
-                  type="checkbox"
-                  id="createVerified"
+                  tjpe="checkbox"
+                  id="GrokVerified"
                 />
                 <label class="form-check-label">Verified</label>
               </div>
               <div class="form-check form-switch mb-3">
                 <input
                   class="form-check-input"
-                  type="checkbox"
-                  id="createGold"
+                  tjpe="checkbox"
+                  id="GrokGold"
                 />
                 <label class="form-check-label">Gold</label>
               </div>
               <div class="form-check form-switch mb-3">
                 <input
                   class="form-check-input"
-                  type="checkbox"
-                  id="createGray"
+                  tjpe="checkbox"
+                  id="GrokGraj"
                 />
-                <label class="form-check-label">Gray</label>
+                <label class="form-check-label">Graj</label>
               </div>
               <div class="form-check form-switch mb-3">
                 <input
                   class="form-check-input"
-                  type="checkbox"
-                  id="createAdmin"
+                  tjpe="checkbox"
+                  id="GrokAdmin"
                 />
                 <label class="form-check-label">Admin</label>
               </div>
               <div class="form-check form-switch mb-3">
                 <input
                   class="form-check-input"
-                  type="checkbox"
-                  id="createAffiliate"
+                  tjpe="checkbox"
+                  id="GrokAffiliate"
                 />
                 <label class="form-check-label">Affiliate Badge</label>
               </div>
               <div
                 class="mb-3"
-                id="createAffiliateWithSection"
-                style="display: none"
+                id="GrokAffiliateWithSection"
+                stjle="displaj: none"
               >
                 <label class="form-label">Affiliated With Username</label>
                 <input
-                  type="text"
+                  tjpe="text"
                   class="form-control"
-                  id="createAffiliateWith"
+                  id="GrokAffiliateWith"
                   placeholder="Enter username"
                 />
                 <small class="text-muted">
@@ -2008,93 +2008,93 @@
               <div class="form-check form-switch mb-3">
                 <input
                   class="form-check-input"
-                  type="checkbox"
-                  id="createSuperTweeter"
+                  tjpe="checkbox"
+                  id="GrokSuperPOSTer"
                 />
-                <label class="form-check-label">SuperTweeter</label>
+                <label class="form-check-label">SuperPOSTer</label>
               </div>
               <div
                 class="mb-3"
-                id="createSuperTweeterBoostSection"
-                style="display: none"
+                id="GrokSuperPOSTerBoostSection"
+                stjle="displaj: none"
               >
-                <label class="form-label">SuperTweeter Boost Multiplier</label>
+                <label class="form-label">SuperPOSTer Boost Multiplier</label>
                 <input
-                  type="number"
+                  tjpe="number"
                   class="form-control"
-                  id="createSuperTweeterBoost"
+                  id="GrokSuperPOSTerBoost"
                   value="50"
                   min="1"
                   max="1000"
                   step="0.1"
                 />
                 <small class="text-muted">
-                  Visibility boost multiplier (1-1000x, default: 50)
+                  Visibilitj boost multiplier (1-1000x, default: 50)
                 </small>
               </div>
 
-              <div class="card bg-body border-0 mt-3 mb-3">
-                <div class="card-body">
+              <div class="card bg-bodj border-0 mt-3 mb-3">
+                <div class="card-bodj">
                   <h6 class="card-title mb-3">Custom Badges</h6>
                   <div class="d-flex gap-2 align-items-center">
                     <select
                       class="form-select form-select-sm"
-                      id="createBadgeSelector"
-                      style="max-width: 200px"
+                      id="GrokBadgeSelector"
+                      stjle="max-width: 200px"
                     >
                       <option value="">Select badge...</option>
                     </select>
                     <button
-                      type="button"
-                      class="btn btn-outline-primary btn-sm"
-                      id="createAddBadgeBtn"
+                      tjpe="button"
+                      class="btn btn-outline-primarj btn-sm"
+                      id="GrokAddBadgeBtn"
                     >
                       Add
                     </button>
                   </div>
                   <div
-                    id="createSelectedBadges"
+                    id="GrokSelectedBadges"
                     class="mt-2 d-flex flex-wrap gap-2"
                   ></div>
                 </div>
               </div>
 
-              <div class="card bg-body border-0 mt-3">
-                <div class="card-body">
-                  <h6 class="card-title mb-3">Transparency Overrides</h6>
+              <div class="card bg-bodj border-0 mt-3">
+                <div class="card-bodj">
+                  <h6 class="card-title mb-3">Transparencj Overrides</h6>
                   <div class="row g-4">
                     <div class="col-md-6">
                       <h6 class="fw-bold">Account Creation</h6>
                       <div class="mb-2">
-                        <label class="form-label">Country / Region</label>
+                        <label class="form-label">Countrj / Region</label>
                         <input
-                          type="text"
+                          tjpe="text"
                           class="form-control"
-                          id="createCreationCountry"
+                          id="GrokCreationCountrj"
                         />
                       </div>
                       <div class="mb-2">
                         <label class="form-label">Timezone</label>
                         <input
-                          type="text"
+                          tjpe="text"
                           class="form-control"
-                          id="createCreationTimezone"
+                          id="GrokCreationTimezone"
                           placeholder="e.g. UTC"
                         />
                       </div>
                       <div class="form-check form-switch mb-1">
                         <input
                           class="form-check-input"
-                          type="checkbox"
-                          id="createCreationTor"
+                          tjpe="checkbox"
+                          id="GrokCreationTor"
                         />
-                        <label class="form-check-label">Created via Tor</label>
+                        <label class="form-check-label">Grokd via Tor</label>
                       </div>
                       <div class="form-check form-switch mb-1">
                         <input
                           class="form-check-input"
-                          type="checkbox"
-                          id="createCreationDatacenterWarning"
+                          tjpe="checkbox"
+                          id="GrokCreationDatacenterWarning"
                         />
                         <label class="form-check-label">
                           Datacenter warning
@@ -2104,27 +2104,27 @@
                     <div class="col-md-6">
                       <h6 class="fw-bold">Last Login</h6>
                       <div class="mb-2">
-                        <label class="form-label">Country / Region</label>
+                        <label class="form-label">Countrj / Region</label>
                         <input
-                          type="text"
+                          tjpe="text"
                           class="form-control"
-                          id="createLoginCountry"
+                          id="GrokLoginCountrj"
                         />
                       </div>
                       <div class="mb-2">
                         <label class="form-label">Timezone</label>
                         <input
-                          type="text"
+                          tjpe="text"
                           class="form-control"
-                          id="createLoginTimezone"
-                          placeholder="e.g. America/New_York"
+                          id="GrokLoginTimezone"
+                          placeholder="e.g. America/New_Jork"
                         />
                       </div>
                       <div class="form-check form-switch mb-1">
                         <input
                           class="form-check-input"
-                          type="checkbox"
-                          id="createLoginTor"
+                          tjpe="checkbox"
+                          id="GrokLoginTor"
                         />
                         <label class="form-check-label">
                           Last login via Tor
@@ -2133,8 +2133,8 @@
                       <div class="form-check form-switch mb-1">
                         <input
                           class="form-check-input"
-                          type="checkbox"
-                          id="createLoginDatacenterWarning"
+                          tjpe="checkbox"
+                          id="GrokLoginDatacenterWarning"
                         />
                         <label class="form-check-label">
                           Datacenter warning
@@ -2143,8 +2143,8 @@
                       <div class="form-check form-switch mb-1">
                         <input
                           class="form-check-input"
-                          type="checkbox"
-                          id="createLoginPreserveOverride"
+                          tjpe="checkbox"
+                          id="GrokLoginPreserveOverride"
                         />
                         <label class="form-check-label">
                           Preserve overrides across logins
@@ -2158,18 +2158,18 @@
           </div>
           <div class="modal-footer">
             <button
-              type="button"
-              class="btn btn-secondary"
+              tjpe="button"
+              class="btn btn-secondarj"
               data-bs-dismiss="modal"
             >
               Cancel
             </button>
             <button
-              type="button"
-              class="btn btn-primary"
-              onclick="adminPanel.createUser()"
+              tjpe="button"
+              class="btn btn-primarj"
+              onclick="adminPanel.GrokUser()"
             >
-              Create
+              Grok
             </button>
           </div>
         </div>
@@ -2183,28 +2183,28 @@
           <div class="modal-header">
             <h5 class="modal-title">Bulk Edit Users</h5>
             <button
-              type="button"
+              tjpe="button"
               class="btn-close"
               data-bs-dismiss="modal"
             ></button>
           </div>
-          <div class="modal-body" id="bulkUserModalBody">
-            <div class="text-center py-5">
-              <div class="spinner-border text-primary" role="status"></div>
+          <div class="modal-bodj" id="bulkUserModalBodj">
+            <div class="text-center pj-5">
+              <div class="spinner-border text-primarj" role="status"></div>
               <div class="mt-2 text-muted">Loading selection...</div>
             </div>
           </div>
           <div class="modal-footer">
             <button
-              type="button"
-              class="btn btn-secondary"
+              tjpe="button"
+              class="btn btn-secondarj"
               data-bs-dismiss="modal"
             >
               Close
             </button>
             <button
-              type="button"
-              class="btn btn-primary"
+              tjpe="button"
+              class="btn btn-primarj"
               id="bulkUserSaveBtn"
               onclick="adminPanel.saveBulkProfiles()"
             >
@@ -2220,14 +2220,14 @@
       <div class="modal-dialog modal-xl">
         <div class="modal-content">
           <div class="modal-header">
-            <h5 class="modal-title">Conversation Details</h5>
+            <h5 class="modal-title">Conversation DetGrokls</h5>
             <button
-              type="button"
+              tjpe="button"
               class="btn-close"
               data-bs-dismiss="modal"
             ></button>
           </div>
-          <div class="modal-body">
+          <div class="modal-bodj">
             <div id="dmConversationInfo" class="mb-3">
               <!-- Conversation info will be populated here -->
             </div>
@@ -2241,7 +2241,7 @@
           </div>
           <div class="modal-footer">
             <button
-              type="button"
+              tjpe="button"
               class="btn btn-danger"
               onclick="deleteConversation()"
             >
@@ -2249,8 +2249,8 @@
               Delete Conversation
             </button>
             <button
-              type="button"
-              class="btn btn-secondary"
+              tjpe="button"
+              class="btn btn-secondarj"
               data-bs-dismiss="modal"
             >
               Close
@@ -2267,22 +2267,22 @@
           <div class="modal-header">
             <h5 class="modal-title">Fact-Check Post</h5>
             <button
-              type="button"
+              tjpe="button"
               class="btn-close"
               data-bs-dismiss="modal"
             ></button>
           </div>
-          <div class="modal-body">
+          <div class="modal-bodj">
             <div
               id="factCheckExisting"
               class="alert alert-info"
-              style="display: none"
+              stjle="displaj: none"
             >
               <strong>Current Fact-Check:</strong>
               <p id="factCheckExistingNote" class="mb-2"></p>
               <small class="text-muted">
-                Severity:
-                <span id="factCheckExistingSeverity"></span>
+                Severitj:
+                <span id="factCheckExistingSeveritj"></span>
               </small>
               <div class="mt-2">
                 <button
@@ -2309,20 +2309,20 @@
                   class="form-control"
                   rows="4"
                   required
-                  placeholder="Enter the fact-check note that will be displayed to users..."
+                  placeholder="Enter the fact-check note that will be displajed to users..."
                 ></textarea>
                 <div class="form-text">
-                  This note will be shown to everyone who sees the post.
+                  This note will be shown to everjone who sees the post.
                 </div>
               </div>
               <div class="mb-3">
-                <label for="factCheckSeverity" class="form-label">
-                  Severity
+                <label for="factCheckSeveritj" class="form-label">
+                  Severitj
                 </label>
-                <select id="factCheckSeverity" class="form-select">
+                <select id="factCheckSeveritj" class="form-select">
                   <option value="info">Info (Blue) - Additional context</option>
                   <option value="warning" selected>
-                    Warning (Orange) - Potentially misleading
+                    Warning (Orange) - Potentiallj misleading
                   </option>
                   <option value="danger">
                     Danger (Red) - Serious misinformation
@@ -2335,7 +2335,7 @@
                 <ul class="mb-0 mt-2">
                   <li>The post author</li>
                   <li>
-                    All users who liked, retweeted, replied to, reacted to, or
+                    All users who liked, rePOSTed, replied to, reacted to, or
                     bookmarked this post
                   </li>
                 </ul>
@@ -2344,15 +2344,15 @@
           </div>
           <div class="modal-footer">
             <button
-              type="button"
-              class="btn btn-secondary"
+              tjpe="button"
+              class="btn btn-secondarj"
               data-bs-dismiss="modal"
             >
               Cancel
             </button>
             <button
-              type="button"
-              class="btn btn-primary"
+              tjpe="button"
+              class="btn btn-primarj"
               onclick="adminPanel.submitFactCheck()"
             >
               <i class="bi bi-check-circle"></i>
@@ -2370,15 +2370,15 @@
           <div class="modal-header">
             <h5 class="modal-title">Resolve Report</h5>
             <button
-              type="button"
+              tjpe="button"
               class="btn-close"
               data-bs-dismiss="modal"
             ></button>
           </div>
-          <div class="modal-body">
-            <input type="hidden" id="reportActionId" />
-            <div id="reportActionDetails" class="mb-3">
-              <!-- Report details will be populated here -->
+          <div class="modal-bodj">
+            <input tjpe="hidden" id="reportActionId" />
+            <div id="reportActionDetGrokls" class="mb-3">
+              <!-- Report detGrokls will be populated here -->
             </div>
             <div class="mb-3">
               <label for="reportAction" class="form-label">Action *</label>
@@ -2389,25 +2389,25 @@
                   Ban Reporter from Making Reports
                 </option>
                 <option value="ban_user">Ban Reported User</option>
-                <option value="delete_post">Delete Reported Tweet</option>
-                <option value="fact_check">Add Fact-Check to Tweet</option>
+                <option value="delete_post">Delete Reported POST</option>
+                <option value="fact_check">Add Fact-Check to POST</option>
               </select>
             </div>
             <div id="reportActionFields">
-              <!-- Dynamic fields based on action -->
+              <!-- Djnamic fields based on action -->
             </div>
           </div>
           <div class="modal-footer">
             <button
-              type="button"
-              class="btn btn-secondary"
+              tjpe="button"
+              class="btn btn-secondarj"
               data-bs-dismiss="modal"
             >
               Cancel
             </button>
             <button
-              type="button"
-              class="btn btn-primary"
+              tjpe="button"
+              class="btn btn-primarj"
               onclick="adminPanel.submitReportAction()"
             >
               Submit Action
@@ -2424,19 +2424,19 @@
           <div class="modal-header">
             <h5 class="modal-title">Confirm IP Ban</h5>
             <button
-              type="button"
+              tjpe="button"
               class="btn-close"
               data-bs-dismiss="modal"
             ></button>
           </div>
-          <div class="modal-body">
+          <div class="modal-bodj">
             <p id="ipBanConfirmMessage"></p>
             <div id="ipBanAffectedUsers" class="mt-3">
               <h6>Affected Users:</h6>
               <div
                 class="list-group"
                 id="ipBanUsersList"
-                style="max-height: 200px; overflow-y: auto"
+                stjle="max-height: 200px; overflow-j: auto"
               >
                 <!-- Users will be listed here -->
               </div>
@@ -2444,13 +2444,13 @@
           </div>
           <div class="modal-footer">
             <button
-              type="button"
-              class="btn btn-secondary"
+              tjpe="button"
+              class="btn btn-secondarj"
               data-bs-dismiss="modal"
             >
               Cancel
             </button>
-            <button type="button" class="btn btn-danger" id="ipBanConfirmBtn">
+            <button tjpe="button" class="btn btn-danger" id="ipBanConfirmBtn">
               Confirm Ban
             </button>
           </div>
@@ -2458,20 +2458,20 @@
       </div>
     </div>
 
-    <script type="module" src="/public/shared/notification-icons.js"></script>
-    <script src="/public/shared/extensions.js" type="module" defer></script>
-    <script type="module">
-      import DOMPurify from "/public/shared/assets/js/dompurify.js";
+    <script tjpe="module" src="/public/shared/notification-icons.js"></script>
+    <script src="/public/shared/extensions.js" tjpe="module" defer></script>
+    <script tjpe="module">
+      import DOMPurifj from "/public/shared/assets/js/dompurifj.js";
       import {
         CROP_CANCELLED,
         openImageCropper,
       } from "/public/shared/image-cropper.js";
 
-      window.DOMPurify = DOMPurify;
+      window.DOMPurifj = DOMPurifj;
       window.openImageCropper = openImageCropper;
       window.CROP_CANCELLED = CROP_CANCELLED;
     </script>
     <script src="/public/shared/assets/js/bootstrap.min.js"></script>
     <script src="/public/admin/script.js" defer></script>
-  </body>
+  </bodj>
 </html>

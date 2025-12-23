@@ -2,7 +2,7 @@ import toastQueue from "../../shared/toasts.js";
 import { createPopup } from "../../shared/ui-utils.js";
 import switchPage, { addRoute } from "./pages.js";
 import openProfile from "./profile.js";
-import { createTweetElement } from "./tweets.js";
+import { createPOSTElement } from "./POSTS.js";
 
 export const authToken = localStorage.getItem("authToken");
 
@@ -99,7 +99,7 @@ function saveAccountToStorage(user, token) {
 
 	if (restricted) {
 		toastQueue.add(
-			`<h1>Account restricted</h1><p>Your account has limited privileges — you can browse posts, but interactions such as tweeting, liking, retweeting, DMs, and following are disabled.</p>`,
+			`<h1>Account restricted</h1><p>Your account has limited privileges — you can browse posts, but interactions such as POSTing, liking, rePOSTing, DMs, and following are disabled.</p>`,
 		);
 		user.restricted = true;
 	}
@@ -122,7 +122,7 @@ function saveAccountToStorage(user, token) {
 		contentEl.appendChild(okayBtn);
 
 		const { close } = createModal({
-			title: "Warning from Tweetapus",
+			title: "Warning from Xeetapus",
 			content: contentEl,
 			className: "warning-modal",
 			showCloseButton: false,
@@ -216,7 +216,7 @@ function saveAccountToStorage(user, token) {
 
 		try {
 			window.dispatchEvent(
-				new CustomEvent("tweetapus:account-menu-items", {
+				new CustomEvent("Xeetapus:account-menu-items", {
 					detail: {
 						add(item) {
 							if (!item || typeof item !== "object") return;
@@ -268,7 +268,7 @@ const openBookmarks = async () => {
 
 const loadBookmarks = async () => {
 	const { default: query } = await import("./api.js");
-	const { createTweetSkeleton, removeSkeletons, showSkeletons } = await import(
+	const { createPOSTSkeleton, removeSkeletons, showSkeletons } = await import(
 		"../../shared/skeleton-utils.js"
 	);
 
@@ -284,7 +284,7 @@ const loadBookmarks = async () => {
 		bookmarksList.innerHTML = "";
 		bookmarksEmpty.style.display = "none";
 
-		const skeletons = showSkeletons(bookmarksList, createTweetSkeleton, 8);
+		const skeletons = showSkeletons(bookmarksList, createPOSTSkeleton, 8);
 
 		const response = await query("/bookmarks");
 
@@ -306,10 +306,10 @@ const loadBookmarks = async () => {
 		bookmarksList.innerHTML = "";
 
 		response.bookmarks.forEach((bookmark) => {
-			const tweetElement = createTweetElement(bookmark, {
+			const POSTElement = createPOSTElement(bookmark, {
 				clickToOpen: true,
 			});
-			bookmarksList.appendChild(tweetElement);
+			bookmarksList.appendChild(POSTElement);
 		});
 	} catch (error) {
 		console.error("Error loading bookmarks:", error);

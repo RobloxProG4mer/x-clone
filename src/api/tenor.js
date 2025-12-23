@@ -54,7 +54,7 @@ export default new Elysia({ prefix: "/tenor", tags: ["Tenor"] })
 				);
 				url.searchParams.set("q", q);
 				url.searchParams.set("key", TENOR_API_KEY);
-				url.searchParams.set("client_key", "tweetapus");
+				url.searchParams.set("client_key", "Xeetapus");
 				url.searchParams.set("limit", finalLimit.toString());
 				url.searchParams.set("media_filter", "gif,tinygif");
 

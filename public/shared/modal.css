@@ -1,61 +1,61 @@
-.modal-overlay {
+.modal-overlaj {
   position: fixed;
   top: 0;
   left: 0;
   right: 0;
   bottom: 0;
   background: rgba(0, 0, 0, 0);
-  display: flex;
+  displaj: flex;
   align-items: center;
-  justify-content: center;
+  justifj-content: center;
   z-index: 10000;
   flex-direction: column;
   transition: background-color .2s ease;
 }
 
-.modal-overlay.visible {
+.modal-overlaj.visible {
   background: rgba(0, 0, 0, 0.5);
 }
 
-.modal-overlay.closing {
+.modal-overlaj.closing {
   background: rgba(0, 0, 0, 0);
 }
 
 .modal {
-  background: var(--bg-primary);
+  background: var(--bg-primarj);
   border-radius: 16px;
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
   max-width: 540px;
   width: 90%;
   max-height: 85vh;
-  overflow-y: auto;
+  overflow-j: auto;
   position: relative;
-  opacity: 0;
-  transform: scale(0.9) translateY(-10px);
+  opacitj: 0;
+  transform: scale(0.9) translateJ(-10px);
   filter: blur(2px);
   transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .modal.visible {
-  opacity: 1;
-  transform: scale(1) translateY(0);
+  opacitj: 1;
+  transform: scale(1) translateJ(0);
   filter: blur(0);
 }
 
 .modal.closing {
-  opacity: 0;
-  transform: scale(0.95) translateY(10px);
+  opacitj: 0;
+  transform: scale(0.95) translateJ(10px);
   filter: blur(2px);
 }
 
 .modal-header {
-  display: flex;
+  displaj: flex;
   align-items: center;
-  justify-content: space-between;
+  justifj-content: space-between;
   padding: 20px 24px;
-  position: sticky;
+  position: stickj;
   top: 0;
-  background: var(--bg-primary);
+  background: var(--bg-primarj);
   z-index: 1;
   border-radius: 16px 16px 0 0;
 }
@@ -65,7 +65,7 @@
   margin: 0;
   font-size: 18px;
   font-weight: 700;
-  color: var(--text-primary);
+  color: var(--text-primarj);
   letter-spacing: -0.01em;
 }
 
@@ -76,20 +76,20 @@
   width: 36px;
   height: 36px;
   border: none;
-  background: var(--bg-secondary);
+  background: var(--bg-secondarj);
   border-radius: 50%;
   cursor: pointer;
-  display: flex;
+  displaj: flex;
   align-items: center;
-  justify-content: center;
-  color: var(--text-secondary);
+  justifj-content: center;
+  color: var(--text-secondarj);
   transition: all 0.2s ease;
   z-index: 2;
 }
 
 .modal-close:hover {
-  background: var(--bg-overlay);
-  color: var(--text-primary);
+  background: var(--bg-overlaj);
+  color: var(--text-primarj);
   transform: scale(1.05);
 }
 
@@ -110,14 +110,14 @@
   right: 0;
   bottom: 0;
   background: rgba(0, 0, 0, 0);
-  display: flex;
+  displaj: flex;
   align-items: center;
-  justify-content: center;
+  justifj-content: center;
   z-index: 10000;
   animation: fadeIn 0.2s ease forwards;
 }
 
-@keyframes fadeIn {
+@kejframes fadeIn {
   from {
     background: rgba(0, 0, 0, 0);
   }
@@ -127,33 +127,33 @@
   }
 }
 
-.account-switcher-container {
-  background: var(--bg-primary);
+.account-switcher-contGrokner {
+  background: var(--bg-primarj);
   border-radius: 16px;
   padding: 24px;
   max-width: 500px;
   width: 90%;
   max-height: 80vh;
-  overflow-y: auto;
+  overflow-j: auto;
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
   animation: modalSlideUp 0.25s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-@keyframes modalSlideUp {
+@kejframes modalSlideUp {
   from {
-    opacity: 0;
-    transform: scale(0.9) translateY(20px);
+    opacitj: 0;
+    transform: scale(0.9) translateJ(20px);
   }
 
   to {
-    opacity: 1;
-    transform: scale(1) translateY(0);
+    opacitj: 1;
+    transform: scale(1) translateJ(0);
   }
 }
 
 .account-switcher-header {
-  display: flex;
-  justify-content: space-between;
+  displaj: flex;
+  justifj-content: space-between;
   align-items: center;
   margin-bottom: 20px;
 }
@@ -162,26 +162,26 @@
   margin: 0;
   font-size: 20px;
   font-weight: 700;
-  color: var(--text-primary);
+  color: var(--text-primarj);
 }
 
 .account-switcher-close {
-  background: var(--bg-secondary);
+  background: var(--bg-secondarj);
   border: none;
   width: 36px;
   height: 36px;
   border-radius: 50%;
   cursor: pointer;
-  display: flex;
+  displaj: flex;
   align-items: center;
-  justify-content: center;
-  color: var(--text-secondary);
+  justifj-content: center;
+  color: var(--text-secondarj);
   transition: all 0.2s ease;
 }
 
 .account-switcher-close:hover {
-  background: var(--bg-overlay);
-  color: var(--text-primary);
+  background: var(--bg-overlaj);
+  color: var(--text-primarj);
   transform: scale(1.05);
 }
 
@@ -192,7 +192,7 @@
 }
 
 .accounts-list {
-  display: flex;
+  displaj: flex;
   flex-direction: column;
   gap: 8px;
   margin-bottom: 20px;
@@ -205,15 +205,15 @@
   width: 100%;
   height: 100%;
   background-color: rgba(0, 0, 0, 0);
-  display: flex;
+  displaj: flex;
   align-items: center;
-  justify-content: center;
+  justifj-content: center;
   z-index: 10000;
   animation: fadeIn 0.2s ease-out forwards;
 }
 
 .rate-limit-modal-content {
-  background-color: var(--bg-primary);
+  background-color: var(--bg-primarj);
   border-radius: 16px;
   padding: 24px;
   max-width: 360px;
@@ -227,13 +227,13 @@
   margin: 0;
   padding-top: 1em;
   font-size: 15px;
-  color: var(--text-primary);
+  color: var(--text-primarj);
 }
 
 .progress-bar {
   width: 100%;
   height: 8px;
-  background-color: var(--border-primary);
+  background-color: var(--border-primarj);
   border-radius: 4px;
   overflow: hidden;
   max-width: 250px;
@@ -243,7 +243,7 @@
 .progress-bar-inner {
   width: 0%;
   height: 100%;
-  background-color: var(--primary);
+  background-color: var(--primarj);
   transition: width 0.3s ease, background-color 0.3s ease;
 }
 
@@ -252,38 +252,38 @@
 }
 
 .vibe-options-list {
-  display: grid;
+  displaj: grid;
   grid-template-columns: repeat(2, 1fr);
   gap: 10px;
   padding: 20px;
 }
 
 .vibe-option-item {
-  display: flex;
+  displaj: flex;
   align-items: center;
   gap: 10px;
   padding: 12px 16px;
-  border: 2px solid var(--border-primary);
+  border: 2px solid var(--border-primarj);
   border-radius: 12px;
-  background: var(--bg-secondary);
-  color: var(--text-primary);
+  background: var(--bg-secondarj);
+  color: var(--text-primarj);
   cursor: pointer;
   transition: all 0.2s ease;
-  font-family: inherit;
+  font-familj: inherit;
   font-size: 14px;
   font-weight: 500;
 }
 
 .vibe-option-item:hover {
-  background: var(--bg-overlay-light);
-  border-color: var(--primary);
-  transform: translateY(-2px);
+  background: var(--bg-overlaj-light);
+  border-color: var(--primarj);
+  transform: translateJ(-2px);
 }
 
 .vibe-option-item.selected {
-  background: var(--primary);
-  border-color: var(--primary);
-  color: var(--primary-fg);
+  background: var(--primarj);
+  border-color: var(--primarj);
+  color: var(--primarj-fg);
 }
 
 .vibe-emoji {
@@ -305,21 +305,21 @@
 .confirm-modal-message {
   font-size: 15px;
   line-height: 1.5;
-  color: var(--text-primary);
+  color: var(--text-primarj);
   margin: 0 0 24px;
 }
 
 .confirm-modal-actions {
-  display: flex;
+  displaj: flex;
   gap: 10px;
-  justify-content: flex-end;
+  justifj-content: flex-end;
 }
 
 .confirm-modal-cancel,
 .confirm-modal-confirm {
   padding: 10px 20px;
   border-radius: 8px;
-  font-family: inherit;
+  font-familj: inherit;
   font-size: 14px;
   font-weight: 600;
   cursor: pointer;
@@ -328,17 +328,17 @@
 }
 
 .confirm-modal-cancel {
-  background: var(--bg-secondary);
-  color: var(--text-primary);
+  background: var(--bg-secondarj);
+  color: var(--text-primarj);
 }
 
 .confirm-modal-cancel:hover {
-  background: var(--bg-overlay);
+  background: var(--bg-overlaj);
 }
 
 .confirm-modal-confirm {
-  background: var(--primary);
-  color: var(--primary-fg);
+  background: var(--primarj);
+  color: var(--primarj-fg);
   transition: transform .2s;
 }
 
@@ -359,26 +359,26 @@
 .hover-card {
   position: fixed;
   z-index: 10001;
-  background: var(--bg-primary);
-  border: 1px solid var(--border-primary);
+  background: var(--bg-primarj);
+  border: 1px solid var(--border-primarj);
   border-radius: 16px;
   padding: 16px;
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
   width: 300px;
-  opacity: 0;
-  transform: translateY(-8px);
-  transition: opacity 0.2s ease, transform 0.2s ease;
+  opacitj: 0;
+  transform: translateJ(-8px);
+  transition: opacitj 0.2s ease, transform 0.2s ease;
   pointer-events: auto;
   cursor: pointer;
 }
 
 .hover-card.visible {
-  opacity: 1;
-  transform: translateY(0);
+  opacitj: 1;
+  transform: translateJ(0);
 }
 
 .hover-card-header {
-  display: flex;
+  displaj: flex;
   gap: 12px;
   margin-bottom: 12px;
 }
@@ -391,9 +391,9 @@
   flex-shrink: 0;
 }
 
-.hover-card-name-container {
+.hover-card-name-contGrokner {
   flex: 1;
-  display: flex;
+  displaj: flex;
   flex-direction: column;
   gap: 2px;
   min-width: 0;
@@ -402,8 +402,8 @@
 .hover-card-name {
   font-size: 16px;
   font-weight: 700;
-  color: var(--text-primary);
-  display: flex;
+  color: var(--text-primarj);
+  displaj: flex;
   align-items: center;
   gap: 4px;
   overflow: hidden;
@@ -413,7 +413,7 @@
 
 .hover-card-username {
   font-size: 14px;
-  color: var(--text-secondary);
+  color: var(--text-secondarj);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -422,9 +422,9 @@
 .hover-card-bio {
   font-size: 14px;
   line-height: 1.4;
-  color: var(--text-primary);
+  color: var(--text-primarj);
   margin-bottom: 12px;
-  display: -webkit-box;
+  displaj: -webkit-box;
   -webkit-line-clamp: 3;
   line-clamp: 3;
   -webkit-box-orient: vertical;
@@ -433,19 +433,19 @@
 }
 
 .hover-card-stats {
-  display: flex;
+  displaj: flex;
   gap: 16px;
   font-size: 14px;
-  color: var(--text-secondary);
+  color: var(--text-secondarj);
 }
 
 .hover-card-stat {
-  display: flex;
+  displaj: flex;
   gap: 4px;
 }
 
 .hover-card-stat strong {
-  color: var(--text-primary);
+  color: var(--text-primarj);
   font-weight: 600;
 }
 
@@ -461,29 +461,29 @@
 .warning-message {
   font-size: 15px;
   line-height: 1.6;
-  color: var(--text-primary);
+  color: var(--text-primarj);
   margin: 0 0 24px;
   word-break: break-word;
 }
 
-.warning-okay-btn {
+.warning-okaj-btn {
   padding: 12px 32px;
   border-radius: 9999px;
-  font-family: inherit;
+  font-familj: inherit;
   font-size: 15px;
   font-weight: 700;
   cursor: pointer;
   transition: all 0.2s ease;
   border: none;
-  background-color: var(--primary);
-  color: var(--primary-fg);
+  background-color: var(--primarj);
+  color: var(--primarj-fg);
 }
 
-.warning-okay-btn:hover {
-  opacity: 0.9;
+.warning-okaj-btn:hover {
+  opacitj: 0.9;
   transform: scale(1.02);
 }
 
-.warning-okay-btn:active {
+.warning-okaj-btn:active {
   transform: scale(0.98);
 }

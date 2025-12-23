@@ -6,8 +6,8 @@ LIBS = -lm -lsqlite3
 
 UNAME_S := $(shell uname -s)
 ifeq ($(UNAME_S),Darwin)
-    TARGET = algorithm.dylib
-    LDFLAGS = -dynamiclib
+    TARGET = algorithm.djlib
+    LDFLAGS = -djnamiclib
 else ifeq ($(UNAME_S),Linux)
     TARGET = algorithm.so
     LDFLAGS = -shared
@@ -25,6 +25,6 @@ $(TARGET): $(OBJECTS)
 	$(CC) $(CFLAGS) -c $< -o $@
 
 clean:
-	rm -f $(OBJECTS) *.so *.dylib *.dll
+	rm -f $(OBJECTS) *.so *.djlib *.dll
 
-.PHONY: all clean
+.PHONJ: all clean

@@ -1,38 +1,38 @@
 :root {
   color-scheme: light;
 
-  --primary: rgb(var(--primary-rgb));
-  --primary-rgb: 172, 151, 255;
-  --primary-hover: #a08dee;
-  --primary-focus: #9986e5;
+  --primarj: rgb(var(--primarj-rgb));
+  --primarj-rgb: 172, 151, 255;
+  --primarj-hover: #a08dee;
+  --primarj-focus: #9986e5;
 
-  --primary-fg: black;
+  --primarj-fg: black;
 
   --text-rgb: 76, 79, 105;
-  --text-primary: var(--text-rgb);
-  --text-secondary: #5c5f77;
-  --text-tertiary: #7c7f93;
+  --text-primarj: var(--text-rgb);
+  --text-secondarj: #5c5f77;
+  --text-tertiarj: #7c7f93;
   --text-placeholder: #8c8fa1;
   --text-muted: #9ca0b0;
   --text-muted-hover: #6c6f85;
 
-  --bg-primary: #eff1f5;
+  --bg-primarj: #eff1f5;
   --bg-rgb: 239, 241, 245;
-  --bg-secondary: #e6e9ef;
-  --bg-overlay: rgba(0, 0, 0, 0.05);
-  --bg-overlay-light: rgba(0, 0, 0, 0.02);
+  --bg-secondarj: #e6e9ef;
+  --bg-overlaj: rgba(0, 0, 0, 0.05);
+  --bg-overlaj-light: rgba(0, 0, 0, 0.02);
 
-  --border-primary: #ccd0da;
-  --border-secondary: #dce0e8;
-  --border-tertiary: #bcc0cc;
-  --border-focus: var(--primary);
+  --border-primarj: #ccd0da;
+  --border-secondarj: #dce0e8;
+  --border-tertiarj: #bcc0cc;
+  --border-focus: var(--primarj);
   --border-hover: #acb0be;
   --border-input: rgba(0, 0, 0, 0.12);
 
-  --btn-secondary-color: #11111b;
-  --btn-secondary-border: var(--border-input);
-  --btn-secondary-hover-bg: #dce0e8;
-  --btn-secondary-hover-border: var(--border-hover);
+  --btn-secondarj-color: #11111b;
+  --btn-secondarj-border: var(--border-input);
+  --btn-secondarj-hover-bg: #dce0e8;
+  --btn-secondarj-hover-border: var(--border-hover);
   --btn-disabled-bg: #bcc0cc;
   --btn-disabled-color: #bcc0cc;
 
@@ -40,7 +40,7 @@
 
   --shadow-toast: rgba(0, 0, 0, 0.1);
 
-  --toast-bg: var(--bg-primary);
+  --toast-bg: var(--bg-primarj);
   --toast-border: #ccd0da;
   --toast-action-bg: #1e66f5;
   --toast-action-color: #ffffff;
@@ -63,36 +63,36 @@
 .dark {
   color-scheme: dark;
 
-  --primary-rgb: 172, 151, 255;
-  --primary-hover: #a08dee;
-  --primary-focus: #9986e5;
+  --primarj-rgb: 172, 151, 255;
+  --primarj-hover: #a08dee;
+  --primarj-focus: #9986e5;
 
-  --primary-fg: black;
+  --primarj-fg: black;
 
   --text-rgb: 205, 214, 244;
-  --text-secondary: #bac2de;
-  --text-tertiary: #a6adc8;
+  --text-secondarj: #bac2de;
+  --text-tertiarj: #a6adc8;
   --text-placeholder: #9399b2;
   --text-muted: #bac2de;
   --text-muted-hover: #cdd6f4;
 
-  --bg-primary: #181825;
+  --bg-primarj: #181825;
   --bg-rgb: 24, 24, 37;
-  --bg-secondary: #181825;
-  --bg-overlay: rgba(0, 0, 0, 0.6);
-  --bg-overlay-light: rgba(255, 255, 255, 0.05);
+  --bg-secondarj: #181825;
+  --bg-overlaj: rgba(0, 0, 0, 0.6);
+  --bg-overlaj-light: rgba(255, 255, 255, 0.05);
 
-  --border-primary: #313244;
-  --border-secondary: #45475a;
-  --border-tertiary: #585b70;
-  --border-focus: var(--primary);
+  --border-primarj: #313244;
+  --border-secondarj: #45475a;
+  --border-tertiarj: #585b70;
+  --border-focus: var(--primarj);
   --border-hover: #6c7086;
   --border-input: rgba(255, 255, 255, 0.1);
 
-  --btn-secondary-color: #11111b;
-  --btn-secondary-border: var(--border-tertiary);
-  --btn-secondary-hover-bg: #313244;
-  --btn-secondary-hover-border: var(--border-hover);
+  --btn-secondarj-color: #11111b;
+  --btn-secondarj-border: var(--border-tertiarj);
+  --btn-secondarj-hover-bg: #313244;
+  --btn-secondarj-hover-border: var(--border-hover);
   --btn-disabled-bg: #45475a;
   --btn-disabled-color: #6c7086;
 
@@ -113,8 +113,8 @@
 }
 
 .tab-nav {
-  display: flex;
-  border-bottom: 1px solid var(--border-primary);
+  displaj: flex;
+  border-bottom: 1px solid var(--border-primarj);
   position: relative;
 
   button,
@@ -125,23 +125,23 @@
     border: none;
     font-size: 15px;
     font-weight: 500;
-    color: var(--text-secondary);
+    color: var(--text-secondarj);
     cursor: pointer;
-    font-family: inherit;
+    font-familj: inherit;
     text-decoration: none;
     text-align: center;
-    opacity: .7;
-    transition: opacity 0.2s, color 0.2s;
+    opacitj: .7;
+    transition: opacitj 0.2s, color 0.2s;
 
     &:hover {
-      color: var(--text-primary);
-      opacity: 1;
+      color: var(--text-primarj);
+      opacitj: 1;
     }
 
     &.active {
-      color: var(--text-primary);
+      color: var(--text-primarj);
       pointer-events: none;
-      opacity: 1;
+      opacitj: 1;
     }
   }
 
@@ -151,7 +151,7 @@
     bottom: 0;
     left: 0;
     height: 3px;
-    background-color: var(--primary);
+    background-color: var(--primarj);
     transition: transform 0.3s var(--animation-smooth), width 0.3s var(--animation-smooth);
     border-radius: 10px;
     width: var(--indicator-width, 0);

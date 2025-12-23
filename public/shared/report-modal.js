@@ -166,7 +166,7 @@ export function showReportModal({ type, id, username }) {
 	modalContent.appendChild(form);
 
 	const { close } = createModal({
-		title: `Report ${type === "post" ? "tweet by" : ""}${
+		title: `Report ${type === "post" ? "POST by" : ""}${
 			username ? ` @${username}` : ""
 		}`,
 		content: modalContent,
@@ -208,7 +208,7 @@ export function showReportModal({ type, id, username }) {
 
 			if (data.success) {
 				toastQueue.add(
-					"<h1>Report submitted successfully</h1><p>Thank you for helping keep Tweetapus safe.</p>",
+					"<h1>Report submitted successfully</h1><p>Thank you for helping keep Xeetapus safe.</p>",
 				);
 				close();
 			} else {

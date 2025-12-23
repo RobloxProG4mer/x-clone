@@ -1,6 +1,6 @@
 const pageSelectors = {
 	timeline: ".timeline",
-	tweet: ".tweetPage",
+	POST: ".POSTPage",
 	profile: ".profile",
 	notifications: ".notifications",
 	search: ".search-page",
@@ -47,8 +47,8 @@ let unreadDMs = 0;
 const getPageTitle = (page, opts = {}) => {
 	const titles = {
 		timeline: () => null,
-		tweet: () => (opts?.title ? `${opts.title}` : "tweetapus"),
-		profile: () => (opts?.title ? `${opts.title}` : "tweetapus"),
+		POST: () => (opts?.title ? `${opts.title}` : "Xeetapus"),
+		profile: () => (opts?.title ? `${opts.title}` : "Xeetapus"),
 		notifications: () => "notifications",
 		search: () => "search",
 		bookmarks: () => "bookmarks",
@@ -62,7 +62,7 @@ const getPageTitle = (page, opts = {}) => {
 			opts?.title ? `${opts.title}` : "list",
 		settings: () => "settings",
 	};
-	return titles[page]?.() ? `${titles[page]?.()} // tweetapus` : "tweetapus";
+	return titles[page]?.() ? `${titles[page]?.()} // Xeetapus` : "Xeetapus";
 };
 
 export function updatePageTitle(page, opts = {}) {

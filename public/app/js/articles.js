@@ -190,8 +190,8 @@ const renderArticleCard = (article, { prepend = false } = {}) => {
 	card.appendChild(contentEl);
 
 	card.addEventListener("click", async () => {
-		const { default: openTweet } = await import("./tweet.js");
-		openTweet({ id: article.id });
+		const { default: openPOST } = await import("./POST.js");
+		openPOST({ id: article.id });
 	});
 
 	if (prepend && articlesList.firstChild) {
@@ -595,6 +595,6 @@ export const handleArticlesScroll = async () => {
 };
 
 export const openArticleById = async (articleId) => {
-	const { default: openTweet } = await import("./tweet.js");
-	openTweet({ id: articleId });
+	const { default: openPOST } = await import("./POST.js");
+	openPOST({ id: articleId });
 };

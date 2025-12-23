@@ -1,13 +1,13 @@
 import { Elysia } from "elysia";
 import db from "../db.js";
 
-const getTweetById = db.prepare(`
+const getPOSTById = db.prepare(`
   SELECT 
     posts.content,
 		posts.reply_to,
 		posts.created_at,
 		posts.like_count,
-		posts.retweet_count,
+		posts.rePOST_count,
 		posts.reply_count,
 		posts.quote_count,
 		posts.poll_id,
@@ -65,14 +65,14 @@ export const htmlEmbeds = new Elysia({
 		const { id } = params;
 		if (!id || !id.endsWith(".js")) {
 			return new Response(
-				`console.error("[Tweetapus] Tweet not found or deleted")`,
+				`console.error("[Xeetapus] POST not found or deleted")`,
 				{
 					status: 404,
 				},
 			);
 		}
 
-		const tweetId = id.split(".")[0];
+		const POSTId = id.split(".")[0];
 
 		set.headers["access-control-allow-origin"] = "*";
 		set.headers["access-control-allow-methods"] = "GET, OPTIONS";
@@ -80,24 +80,24 @@ export const htmlEmbeds = new Elysia({
 
 		const file = Bun.file("./public/shared/assets/js/embed.js");
 		const content = await file.text();
-		const tweet = getTweetById.get(tweetId);
+		const POST = getPOSTById.get(POSTId);
 
-		if (!tweet) {
+		if (!POST) {
 			return new Response(
-				`console.error("[Tweetapus] Tweet not found or deleted")`,
+				`console.error("[Xeetapus] POST not found or deleted")`,
 				{
 					status: 404,
 				},
 			);
 		}
 
-		const attachments = getAttachments.all(tweetId);
+		const attachments = getAttachments.all(POSTId);
 
 		let poll = null;
-		if (tweet.poll_id) {
-			const pollData = getPoll.get(tweet.poll_id);
+		if (POST.poll_id) {
+			const pollData = getPoll.get(POST.poll_id);
 			if (pollData) {
-				const options = getPollOptions.all(tweet.poll_id);
+				const options = getPollOptions.all(POST.poll_id);
 				const totalVotes = options.reduce(
 					(sum, opt) => sum + opt.vote_count,
 					0,
@@ -122,9 +122,9 @@ export const htmlEmbeds = new Elysia({
 			}
 		}
 
-		if (tweet.private) {
+		if (POST.private) {
 			return new Response(
-				`console.error("[Tweetapus] Tweet not found or deleted")`,
+				`console.error("[Xeetapus] POST not found or deleted")`,
 				{
 					status: 404,
 				},
@@ -132,32 +132,32 @@ export const htmlEmbeds = new Elysia({
 		}
 
 		return content.replaceAll(
-			"/*{tweet}*/",
+			"/*{POST}*/",
 			JSON.stringify({
-				content: tweet.content,
-				reply_to: tweet.reply_to,
-				created_at: tweet.created_at,
-				likes: tweet.like_count,
-				retweets: tweet.retweet_count + tweet.quote_count,
-				replies: tweet.reply_count,
-				link: `${process.env.BASE_URL}/tweet/${tweetId}?ref=embed`,
+				content: POST.content,
+				reply_to: POST.reply_to,
+				created_at: POST.created_at,
+				likes: POST.like_count,
+				rePOSTS: POST.rePOST_count + POST.quote_count,
+				replies: POST.reply_count,
+				link: `${process.env.BASE_URL}/POST/${POSTId}?ref=embed`,
 				attachments: attachments.length > 0 ? attachments : null,
 				poll,
 
 				author: {
-					username: tweet.username,
-					name: tweet.name,
-					avatar: `${process.env.BASE_URL}${tweet.avatar}`,
-					verified: tweet.gold
+					username: POST.username,
+					name: POST.name,
+					avatar: `${process.env.BASE_URL}${POST.avatar}`,
+					verified: POST.gold
 						? "gold"
-						: tweet.gray
+						: POST.gray
 							? "gray"
-							: tweet.verified
+							: POST.verified
 								? "verified"
 								: "",
-					private: tweet.private,
-					avatar_radius: tweet.avatar_radius,
-					label_type: tweet.label_type,
+					private: POST.private,
+					avatar_radius: POST.avatar_radius,
+					label_type: POST.label_type,
 				},
 			}).slice(1, -1),
 		);

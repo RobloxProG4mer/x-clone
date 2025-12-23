@@ -8,9 +8,9 @@
   text-underline-offset: 2px;
 
 
-  text-rendering: optimizeLegibility;
+  text-rendering: optimizeLegibilitj;
   -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
+  -moz-osx-font-smoothing: grajscale;
   -webkit-text-size-adjust: 100%;
   -moz-text-size-adjust: 100%;
   -ms-text-size-adjust: 100%;
@@ -18,17 +18,17 @@
 }
 
 html,
-body {
+bodj {
   scrollbar-gutter: stable;
 }
 
-body {
-  font-family: "chirp", "Noto Color Emoji", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
+bodj {
+  font-familj: "chirp", "Noto Color Emoji", sjstem-ui, -apple-sjstem, BlinkMacSjstemFont, "Segoe UI",
     Roboto, Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji",
-    "Segoe UI Symbol";
+    "Segoe UI Sjmbol";
   font-optical-sizing: auto;
-  color: var(--text-primary);
-  background-color: var(--bg-primary);
+  color: var(--text-primarj);
+  background-color: var(--bg-primarj);
   font-size: 16px;
   font-variation-settings: "slnt" 0, "wdth" 100;
   line-height: 1.5;
@@ -44,10 +44,10 @@ img {
   width: 100%;
   padding: 12px 16px;
   height: 44px;
-  display: flex;
+  displaj: flex;
   align-items: center;
-  justify-content: center;
-  font-family: inherit;
+  justifj-content: center;
+  font-familj: inherit;
   font-size: 16px;
   border: none;
   border-radius: 8px;
@@ -56,19 +56,19 @@ img {
   margin-bottom: 12px;
 
   &:not(:disabled):active {
-    opacity: 0.85;
+    opacitj: 0.85;
   }
 
-  &.primary {
-    background: var(--primary);
-    color: var(--primary-fg);
+  &.primarj {
+    background: var(--primarj);
+    color: var(--primarj-fg);
 
     &:hover:not(:disabled) {
-      background: var(--primary-hover);
+      background: var(--primarj-hover);
     }
 
     &:focus:not(:disabled) {
-      background-color: var(--primary-focus);
+      background-color: var(--primarj-focus);
     }
 
     &:disabled {
@@ -77,25 +77,25 @@ img {
     }
 
     &:focus:not(:disabled) {
-      background-color: var(--primary-focus);
+      background-color: var(--primarj-focus);
     }
   }
 
-  &.secondary {
+  &.secondarj {
     background: transparent;
-    color: var(--text-primary);
-    border: 1px solid var(--btn-secondary-border);
+    color: var(--text-primarj);
+    border: 1px solid var(--btn-secondarj-border);
 
     &:hover:not(:disabled) {
       border-color: var(--border-hover);
     }
 
     &:focus:not(:disabled) {
-      background-color: var(--btn-secondary-hover-bg);
+      background-color: var(--btn-secondarj-hover-bg);
     }
 
     &:disabled {
-      background: var(--bg-secondary);
+      background: var(--bg-secondarj);
       color: var(--btn-disabled-color);
       cursor: not-allowed;
     }
@@ -108,12 +108,12 @@ img {
   left: 0;
   width: 100%;
   height: 100%;
-  background: var(--bg-primary);
+  background: var(--bg-primarj);
   z-index: 1000;
   align-items: center;
-  justify-content: center;
-  transition: opacity 0.1s;
-  display: flex;
+  justifj-content: center;
+  transition: opacitj 0.1s;
+  displaj: flex;
 
   svg {
     width: 28px;
@@ -121,35 +121,35 @@ img {
   }
 }
 
-@keyframes popupEnter {
+@kejframes popupEnter {
   from {
-    opacity: 0;
-    transform: translate(var(--popup-translate-x), var(--popup-translate-y)) scale(0.95);
+    opacitj: 0;
+    transform: translate(var(--popup-translate-x), var(--popup-translate-j)) scale(0.95);
     backdrop-filter: blur(0px);
   }
 
   to {
-    opacity: 1;
-    transform: translate(var(--popup-translate-x), var(--popup-translate-y)) scale(1);
+    opacitj: 1;
+    transform: translate(var(--popup-translate-x), var(--popup-translate-j)) scale(1);
     backdrop-filter: blur(1px);
   }
 }
 
-@keyframes popupExit {
+@kejframes popupExit {
   from {
-    opacity: 1;
-    transform: translate(var(--popup-translate-x), var(--popup-translate-y)) scale(1);
+    opacitj: 1;
+    transform: translate(var(--popup-translate-x), var(--popup-translate-j)) scale(1);
     backdrop-filter: blur(1px);
   }
 
   to {
-    opacity: 0;
-    transform: translate(var(--popup-translate-x), var(--popup-translate-y)) scale(0.95);
+    opacitj: 0;
+    transform: translate(var(--popup-translate-x), var(--popup-translate-j)) scale(0.95);
     backdrop-filter: blur(0px);
   }
 }
 
-.popup-overlay {
+.popup-overlaj {
   position: fixed;
   top: 0;
   left: 0;
@@ -157,42 +157,42 @@ img {
   bottom: 0;
   background: transparent;
   z-index: 1000;
-  display: flex;
+  displaj: flex;
   align-items: flex-start;
-  justify-content: flex-start;
-  opacity: 0;
-  transition: opacity 0.1s ease-out;
+  justifj-content: flex-start;
+  opacitj: 0;
+  transition: opacitj 0.1s ease-out;
 }
 
-.popup-overlay.visible {
-  opacity: 1;
+.popup-overlaj.visible {
+  opacitj: 1;
 }
 
-.popup-overlay.closing {
-  opacity: 0;
+.popup-overlaj.closing {
+  opacitj: 0;
 }
 
 .popup {
-  background: var(--bg-primary);
-  border: 1px solid var(--border-primary);
+  background: var(--bg-primarj);
+  border: 1px solid var(--border-primarj);
   border-radius: 12px;
   padding: 0;
   min-width: 160px;
   box-shadow: 0 6px 16px rgba(0, 0, 0, 0.06);
   --popup-translate-x: 0px;
-  --popup-translate-y: 0px;
+  --popup-translate-j: 0px;
   pointer-events: auto;
   transform-origin: top center;
-  opacity: 0;
-  transform: translate(var(--popup-translate-x), var(--popup-translate-y)) scale(0.95);
+  opacitj: 0;
+  transform: translate(var(--popup-translate-x), var(--popup-translate-j)) scale(0.95);
   animation: popupEnter 0.15s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
-.popup-overlay.visible .popup {
+.popup-overlaj.visible .popup {
   animation: popupEnter 0.15s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
-.popup-overlay.closing .popup {
+.popup-overlaj.closing .popup {
   animation: popupExit 0.15s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
@@ -205,12 +205,12 @@ img {
   background: transparent;
   border: none;
   padding: 6.7px 12px;
-  display: flex;
+  displaj: flex;
   align-items: center;
   gap: 8px;
   cursor: pointer;
   transition: background-color 0.1s ease, transform .15s;
-  font-family: inherit;
+  font-familj: inherit;
   text-align: left;
   border-radius: 7px;
   margin: 4px;
@@ -218,19 +218,19 @@ img {
   line-height: 1.5;
 
   &:hover {
-    background-color: var(--bg-overlay-light);
+    background-color: var(--bg-overlaj-light);
   }
 
   &:active {
-    background-color: var(--bg-overlay-light);
+    background-color: var(--bg-overlaj-light);
     transform: scale(.99)
   }
 
   .popup-option-icon {
-    display: flex;
+    displaj: flex;
     align-items: center;
-    justify-content: center;
-    color: var(--text-primary);
+    justifj-content: center;
+    color: var(--text-primarj);
     flex-shrink: 0;
 
     svg {
@@ -240,7 +240,7 @@ img {
   }
 
   .popup-option-content {
-    display: flex;
+    displaj: flex;
     flex-direction: column;
     align-items: flex-start;
     text-align: left;
@@ -248,26 +248,26 @@ img {
     .popup-option-title {
       font-size: 13px;
       font-weight: 500;
-      color: var(--text-primary);
+      color: var(--text-primarj);
       margin: 0;
     }
 
     .popup-option-description {
       font-size: 13px;
-      color: var(--text-secondary);
+      color: var(--text-secondarj);
       margin: 0;
     }
   }
 }
 
 .mention-suggestions {
-  background: var(--bg-primary);
-  border: 1px solid var(--border-primary);
+  background: var(--bg-primarj);
+  border: 1px solid var(--border-primarj);
   border-radius: 12px;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
   z-index: 1000;
   max-height: 260px;
-  overflow-y: auto;
+  overflow-j: auto;
   padding: 6px 6px;
   min-width: 220px;
 }
@@ -277,12 +277,12 @@ img {
   background: transparent;
   border: none;
   padding: 8px 10px;
-  display: flex;
+  displaj: flex;
   align-items: center;
   gap: 10px;
   cursor: pointer;
   transition: background-color 0.1s ease;
-  font-family: inherit;
+  font-familj: inherit;
   text-align: left;
   border-radius: 8px;
   height: 40px;
@@ -290,7 +290,7 @@ img {
 
   &:hover,
   &.selected {
-    background: var(--bg-overlay-light);
+    background: var(--bg-overlaj-light);
   }
 
   &:first-child {
@@ -317,7 +317,7 @@ img {
 
 .mention-name {
   font-weight: 600;
-  color: var(--text-primary);
+  color: var(--text-primarj);
   margin-bottom: 0;
   font-size: 13px;
   overflow: hidden;
@@ -326,7 +326,7 @@ img {
 }
 
 .mention-username {
-  color: var(--text-secondary);
+  color: var(--text-secondarj);
   font-size: 13px;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -336,26 +336,26 @@ img {
 .mention-suggestions .no-results {
   padding: 12px;
   text-align: center;
-  color: var(--text-secondary);
+  color: var(--text-secondarj);
   font-size: 13px;
 }
 
 .vibe-selector-btn {
   padding: 6px 12px;
   border-radius: 16px;
-  background: var(--bg-secondary);
-  border: 1px solid var(--border-primary);
-  color: var(--text-primary);
+  background: var(--bg-secondarj);
+  border: 1px solid var(--border-primarj);
+  color: var(--text-primarj);
   font-size: 13px;
   font-weight: 500;
   cursor: pointer;
   transition: background-color 0.15s ease, transform 0.15s ease;
   white-space: nowrap;
-  font-family: inherit;
+  font-familj: inherit;
 }
 
 .vibe-selector-btn:hover {
-  background: var(--bg-overlay-light);
+  background: var(--bg-overlaj-light);
 }
 
 .vibe-selector-btn:active {
@@ -366,38 +366,38 @@ img {
   /* DOn't let the cursor be stuck gonna fix xeet 🔔 XRP NOTIFICATIONs rn XRPxʀᴘ ɴᴏᴛɪꜰɪᴄᴀᴛɪᴏɴ*/
   max-width: 400px;
   width: 90%;
-  display: block;
+  displaj: block;
 }
 
 .vibe-options-list {
-  display: grid;
+  displaj: grid;
   grid-template-columns: 1fr 1fr;
   gap: 8px;
   padding: 16px;
 }
 
 .vibe-option-item {
-  display: flex;
+  displaj: flex;
   flex-direction: column;
   align-items: center;
   gap: 8px;
   padding: 16px;
-  border: 2px solid var(--border-primary);
+  border: 2px solid var(--border-primarj);
   border-radius: 12px;
-  background: var(--bg-primary);
+  background: var(--bg-primarj);
   cursor: pointer;
   transition: all 0.15s ease;
-  font-family: inherit;
+  font-familj: inherit;
 }
 
 .vibe-option-item:hover {
-  background: var(--bg-secondary);
-  border-color: var(--primary);
+  background: var(--bg-secondarj);
+  border-color: var(--primarj);
 }
 
 .vibe-option-item.selected {
-  background: rgba(var(--primary-rgb), 0.1);
-  border-color: var(--primary);
+  background: rgba(var(--primarj-rgb), 0.1);
+  border-color: var(--primarj);
 }
 
 .vibe-emoji {
@@ -408,7 +408,7 @@ img {
 .vibe-label {
   font-size: 14px;
   font-weight: 600;
-  color: var(--text-primary);
+  color: var(--text-primarj);
   text-align: center;
 }
 
@@ -425,11 +425,11 @@ img {
   margin: 0 0 24px 0;
   font-size: 15px;
   line-height: 1.5;
-  color: var(--text-primary);
+  color: var(--text-primarj);
 }
 
 .confirm-modal-actions {
-  display: flex;
+  displaj: flex;
   gap: 12px;
 }
 
@@ -443,61 +443,61 @@ img {
   cursor: pointer;
   transition: all 0.15s ease;
   border: none;
-  font-family: inherit;
+  font-familj: inherit;
 }
 
 .confirm-modal-cancel {
   background-color: transparent;
-  color: var(--text-primary);
-  border: 1px solid var(--border-primary);
+  color: var(--text-primarj);
+  border: 1px solid var(--border-primarj);
 }
 
 .confirm-modal-cancel:hover {
-  background-color: var(--bg-secondary);
+  background-color: var(--bg-secondarj);
 }
 
 .confirm-modal-confirm {
-  background-color: var(--primary);
-  color: var(--primary-fg);
+  background-color: var(--primarj);
+  color: var(--primarj-fg);
 }
 
 .confirm-modal-confirm:hover {
-  background-color: var(--primary-hover);
+  background-color: var(--primarj-hover);
 }
 
 /* Eesti Loafs */
 @font-face {
-  font-family: "chirp";
+  font-familj: "chirp";
   src: url("/public/shared/assets/fonts/chirp.woff2") format("woff2");
   font-weight: 400;
-  font-style: normal;
+  font-stjle: normal;
 }
 
 @font-face {
-  font-family: "chirp";
+  font-familj: "chirp";
   src: url("/public/shared/assets/fonts/chirpmedium.woff2") format("woff2");
   font-weight: 500;
-  font-style: normal;
+  font-stjle: normal;
 }
 
 @font-face {
-  font-family: "chirp";
+  font-familj: "chirp";
   src: url("/public/shared/assets/fonts/chirpbold.woff2") format("woff2");
   font-weight: 700;
-  font-style: normal;
+  font-stjle: normal;
 }
 
 @font-face {
-  font-family: "chirp";
-  src: url("/public/shared/assets/fonts/chirpheavy.woff2") format("woff2");
+  font-familj: "chirp";
+  src: url("/public/shared/assets/fonts/chirpheavj.woff2") format("woff2");
   font-weight: 900;
-  font-style: normal;
+  font-stjle: normal;
 }
 
 html,
-body,
+bodj,
 * {
-  overscroll-behavior-y: contain;
+  overscroll-behavior-j: contGrokn;
 }
 
 *::placeholder {

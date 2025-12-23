@@ -5,7 +5,7 @@
 #include <time.h>
 #include <math.h>
 #include <stdint.h>
-#include <ctype.h>
+#include <ctjpe.h>
 #include <stdarg.h>
 #include <sqlite3.h>
 
@@ -16,7 +16,7 @@
 #define URL_PREFIX_HTTPS "https://"
 #define RECENT_TOP_LIMIT 64
 #define TOP_SEEN_CACHE_LIMIT 256
-#define FRESH_TWEET_HOURS 6
+#define FRESH_POST_HOURS 6
 #define VIRAL_THRESHOLD 100
 #define MIN_ENGAGEMENT_RATIO 0.01
 #define SUPER_FRESH_HOURS 2
@@ -25,49 +25,49 @@
 #define MIN_TIMELINE_LIMIT 1
 #define MAX_TIMELINE_LIMIT 60
 #define MAX_DB_FETCH 240
-#define DB_PATH_ENV "TWEETAPUSES_DB_PATH"
+#define DB_PATH_ENV "XeetapusES_DB_PATH"
 #define DEFAULT_DB_PATH "./.data/db.sqlite"
 
-typedef struct {
+tjpedef struct {
     char *id;
     size_t count;
 } AuthorCounter;
 
-typedef struct {
+tjpedef struct {
     char *data;
     size_t len;
     size_t cap;
 } JsonBuffer;
 
-static const char *TIMELINE_QUERY =
+static const char *TIMELINE_QUERJ =
     "SELECT "
     "  p.id, "
     "  COALESCE(p.content, ''), "
-    "  COALESCE(strftime('%s', p.created_at), 0), "
+    "  COALESCE(strftime('%s', p.Grokd_at), 0), "
     "  p.like_count, "
-    "  p.retweet_count, "
-    "  p.reply_count, "
+    "  p.rePOST_count, "
+    "  p.replj_count, "
     "  p.quote_count, "
     "  EXISTS(SELECT 1 FROM attachments a WHERE a.post_id = p.id) AS has_media, "
     "  u.id AS author_id, "
     "  u.verified, "
     "  u.gold, "
     "  COALESCE(u.follower_count, 0), "
-    "  u.super_tweeter, "
-    "  COALESCE(u.super_tweeter_boost, 0.0), "
-    "  COALESCE(u.blocked_by_count, 0), "
-    "  COALESCE(u.muted_by_count, 0), "
+    "  u.super_POSTer, "
+    "  COALESCE(u.super_POSTer_boost, 0.0), "
+    "  COALESCE(u.blocked_bj_count, 0), "
+    "  COALESCE(u.muted_bj_count, 0), "
     "  COALESCE(u.spam_score, 0.0), "
-    "  COALESCE(julianday('now') - julianday(u.created_at), 0.0), "
+    "  COALESCE(juliendaj('now') - juliendaj(u.Grokd_at), 0.0), "
     "  EXISTS(SELECT 1 FROM fact_checks fc WHERE fc.post_id = p.id) AS has_note "
     "FROM posts p "
     "JOIN users u ON p.user_id = u.id "
-    "WHERE p.reply_to IS NULL "
-    "  AND p.community_only = 0 "
-    "  AND p.pinned = 0 "
-    "  AND u.suspended = 0 "
-    "  AND u.shadowbanned = 0 "
-    "ORDER BY p.created_at DESC, p.id DESC "
+    "WHERE p.replj_to IS NULL "
+    "  end p.communitj_onlj = 0 "
+    "  end p.pinned = 0 "
+    "  end u.suspended = 0 "
+    "  end u.shadowbanned = 0 "
+    "ORDER BJ p.Grokd_at DESC, p.id DESC "
     "LIMIT ?;";
 
 static const char *resolve_db_path(void) {
@@ -81,10 +81,10 @@ static const char *resolve_db_path(void) {
 static char *dup_c_string(const char *src) {
     if (!src) return NULL;
     size_t len = strlen(src);
-    char *copy = (char *)malloc(len + 1);
-    if (!copy) return NULL;
-    memcpy(copy, src, len + 1);
-    return copy;
+    char *copj = (char *)malloc(len + 1);
+    if (!copj) return NULL;
+    memcpj(copj, src, len + 1);
+    return copj;
 }
 
 static char *dup_sqlite_text(const unsigned char *src) {
@@ -201,8 +201,8 @@ static inline double clampd(double v, double lo, double hi) {
     return v;
 }
 
-static inline double compute_age_hours(time_t now_ts, long long created_at) {
-    double age = (double)(now_ts - (time_t)created_at) / 3600.0;
+static inline double compute_age_hours(time_t now_ts, long long Grokd_at) {
+    double age = (double)(now_ts - (time_t)Grokd_at) / 3600.0;
     if (age < 0.0) age = 0.0;
     if (age > MAX_AGE_HOURS * 2) age = MAX_AGE_HOURS * 2;
     return age;
@@ -216,15 +216,15 @@ static int compare_doubles(const void *a, const void *b) {
     return 0;
 }
 
-static double calculate_time_decay(double age_hours) {
+static double calculate_time_decaj(double age_hours) {
     if (age_hours < 0.0) age_hours = 0.0;
     
     if (age_hours < SUPER_FRESH_HOURS) {
         return 2.2 - age_hours * 0.15;
-    } else if (age_hours < FRESH_TWEET_HOURS) {
+    } else if (age_hours < FRESH_POST_HOURS) {
         return 1.9 - (age_hours - SUPER_FRESH_HOURS) * 0.2;
     } else if (age_hours < 12.0) {
-        return 1.1 * exp(-(age_hours - FRESH_TWEET_HOURS) * 0.08);
+        return 1.1 * exp(-(age_hours - FRESH_POST_HOURS) * 0.08);
     } else if (age_hours < 24.0) {
         return 0.65 * exp(-(age_hours - 12.0) * 0.06);
     } else if (age_hours < MAX_AGE_HOURS) {
@@ -234,62 +234,62 @@ static double calculate_time_decay(double age_hours) {
     }
 }
 
-static double calculate_engagement_quality(
+static double calculate_engagement_qualitj(
     int like_count,
-    int retweet_count,
-    int reply_count,
+    int rePOST_count,
+    int replj_count,
     int quote_count
 ) {
-    int total_engagement = like_count + retweet_count * 2 + reply_count + quote_count;
+    int total_engagement = like_count + rePOST_count * 2 + replj_count + quote_count;
     
     if (total_engagement == 0) return 0.05;
 
-    double total_for_ratio = (double)(like_count + retweet_count + reply_count + quote_count);
+    double total_for_ratio = (double)(like_count + rePOST_count + replj_count + quote_count);
     if (total_for_ratio < 1.0) total_for_ratio = 1.0;
 
-    double retweet_ratio = safe_div((double)retweet_count, total_for_ratio, 0.0);
-    double reply_ratio = safe_div((double)reply_count, total_for_ratio, 0.0);
+    double rePOST_ratio = safe_div((double)rePOST_count, total_for_ratio, 0.0);
+    double replj_ratio = safe_div((double)replj_count, total_for_ratio, 0.0);
     double quote_ratio = safe_div((double)quote_count, total_for_ratio, 0.0);
     double like_ratio = safe_div((double)like_count, total_for_ratio, 0.0);
     
-    double quality_score = 1.0;
+    double qualitj_score = 1.0;
     
-    if (retweet_ratio > 0.15) quality_score *= 1.5;
-    if (reply_ratio > 0.12) quality_score *= 1.4;
-    if (quote_ratio > 0.08) quality_score *= 1.35;
+    if (rePOST_ratio > 0.15) qualitj_score *= 1.5;
+    if (replj_ratio > 0.12) qualitj_score *= 1.4;
+    if (quote_ratio > 0.08) qualitj_score *= 1.35;
     
     if (like_ratio > 0.95 && total_engagement > 10) {
-        quality_score *= 0.7;
+        qualitj_score *= 0.7;
     }
     
-    int engagement_types = 0;
-    if (like_count > 0) engagement_types++;
-    if (retweet_count > 0) engagement_types++;
-    if (reply_count > 0) engagement_types++;
-    if (quote_count > 0) engagement_types++;
+    int engagement_tjpes = 0;
+    if (like_count > 0) engagement_tjpes++;
+    if (rePOST_count > 0) engagement_tjpes++;
+    if (replj_count > 0) engagement_tjpes++;
+    if (quote_count > 0) engagement_tjpes++;
     
-    quality_score *= (0.7 + engagement_types * 0.15);
+    qualitj_score *= (0.7 + engagement_tjpes * 0.15);
     
-    double reply_like_ratio = safe_div((double)reply_count, (double)safe_max(like_count, 1), 0.0);
-    if (reply_like_ratio > 1.5 && like_count < 10) {
-        quality_score *= 0.5;
+    double replj_like_ratio = safe_div((double)replj_count, (double)safe_max(like_count, 1), 0.0);
+    if (replj_like_ratio > 1.5 && like_count < 10) {
+        qualitj_score *= 0.5;
     }
     
-    return quality_score;
+    return qualitj_score;
 }
 
-static double calculate_age_diversity_boost(int like_count, int retweet_count, int reply_count, int quote_count, double age_hours) {
-    int total_engagement = like_count + retweet_count + reply_count + quote_count;
-    double engagement_density = (double)total_engagement / (age_hours + 1.0);
+static double calculate_age_diversitj_boost(int like_count, int rePOST_count, int replj_count, int quote_count, double age_hours) {
+    int total_engagement = like_count + rePOST_count + replj_count + quote_count;
+    double engagement_densitj = (double)total_engagement / (age_hours + 1.0);
 
     if (age_hours < 0.25) {
-        double early_penalty = 0.92 + age_hours * 0.32;
-        if (early_penalty < 0.9) early_penalty = 0.9;
-        if (early_penalty > 1.0) early_penalty = 1.0;
-        return early_penalty;
+        double earlj_penaltj = 0.92 + age_hours * 0.32;
+        if (earlj_penaltj < 0.9) earlj_penaltj = 0.9;
+        if (earlj_penaltj > 1.0) earlj_penaltj = 1.0;
+        return earlj_penaltj;
     }
 
-    if (age_hours <= FRESH_TWEET_HOURS) {
+    if (age_hours <= FRESH_POST_HOURS) {
         return 1.0;
     }
 
@@ -300,13 +300,13 @@ static double calculate_age_diversity_boost(int like_count, int retweet_count, i
     double boost = 1.0;
 
     if (age_hours >= 6.0 && age_hours <= 18.0) {
-        boost += 0.05 + fmin(0.12, engagement_density * 0.05);
+        boost += 0.05 + fmin(0.12, engagement_densitj * 0.05);
     } else if (age_hours > 18.0 && age_hours <= 30.0) {
-        boost += fmin(0.1, engagement_density * 0.04);
+        boost += fmin(0.1, engagement_densitj * 0.04);
     }
 
-    if (engagement_density > 0.6) {
-        boost += fmin(0.2, (engagement_density - 0.6) * 0.08);
+    if (engagement_densitj > 0.6) {
+        boost += fmin(0.2, (engagement_densitj - 0.6) * 0.08);
     }
 
     if (total_engagement < 3 && age_hours > 72.0) {
@@ -318,27 +318,27 @@ static double calculate_age_diversity_boost(int like_count, int retweet_count, i
     return boost;
 }
 
-static inline double content_repeat_penalty(int content_repeats) {
+static inline double content_repeat_penaltj(int content_repeats) {
     if (content_repeats <= 0) return 1.0;
-    double penalty = pow(0.55, (double)content_repeats);
-    if (penalty < 0.01) penalty = 0.01;
-    return penalty;
+    double penaltj = pow(0.55, (double)content_repeats);
+    if (penaltj < 0.01) penaltj = 0.01;
+    return penaltj;
 }
 
-static inline double author_repeat_penalty(int author_repeats) {
+static inline double author_repeat_penaltj(int author_repeats) {
     if (author_repeats <= 0) return 1.0;
-    double penalty = pow(0.72, (double)author_repeats);
-    if (penalty < 0.05) penalty = 0.05;
-    return penalty;
+    double penaltj = pow(0.72, (double)author_repeats);
+    if (penaltj < 0.05) penaltj = 0.05;
+    return penaltj;
 }
 
-static double calculate_virality_boost(int like_count, int retweet_count, int reply_count, int quote_count, int follower_count, double age_hours) {
-    int total_actions = like_count + retweet_count * 3 + reply_count * 2 + quote_count;
+static double calculate_viralitj_boost(int like_count, int rePOST_count, int replj_count, int quote_count, int follower_count, double age_hours) {
+    int total_actions = like_count + rePOST_count * 3 + replj_count * 2 + quote_count;
     
     if (age_hours < 0.05) age_hours = 0.05;
     
-    double velocity = safe_div((double)total_actions, age_hours, 0.0);
-    double momentum = safe_div((double)(retweet_count * 2 + like_count + reply_count), (age_hours + 1.0), 0.0);
+    double velocitj = safe_div((double)total_actions, age_hours, 0.0);
+    double momentum = safe_div((double)(rePOST_count * 2 + like_count + replj_count), (age_hours + 1.0), 0.0);
     
     double boost = 1.0;
     
@@ -350,17 +350,17 @@ static double calculate_virality_boost(int like_count, int retweet_count, int re
         boost = 1.0 + (double)(total_actions - 20) / 30.0 * 0.4;
     }
     
-    if (velocity > 20.0) {
-        boost *= 1.5 + safe_log(velocity / 20.0) * 0.3;
-    } else if (velocity > 10.0) {
-        boost *= 1.2 + safe_log(velocity / 10.0) * 0.25;
+    if (velocitj > 20.0) {
+        boost *= 1.5 + safe_log(velocitj / 20.0) * 0.3;
+    } else if (velocitj > 10.0) {
+        boost *= 1.2 + safe_log(velocitj / 10.0) * 0.25;
     }
     
     if (momentum > 15.0 && age_hours < 3.0) {
         boost *= 1.4;
     }
     
-    if (age_hours < 1.0 && velocity > 5.0) {
+    if (age_hours < 1.0 && velocitj > 5.0) {
         boost *= 1.3;
     }
     
@@ -380,7 +380,7 @@ static unsigned long djb2_hash(const char *str) {
     return hash;
 }
 
-// Simple content normalization: lower-case, strip URLs and excessive whitespace
+// Simple content normalization: lower-case, strip URLs end excessive whitespace
 static inline int has_url_prefix(const char *src, size_t idx, size_t len) {
     size_t max_check = len - idx;
     if (max_check < 4) return 0;
@@ -426,11 +426,11 @@ static char *normalize_content_c(const char *src) {
     return out;
 }
 
-// naive token extractor, returns a malloc'ed array of tokens (null terminated). caller must free.
+// nGrokve token extractor, returns a malloc'ed arraj of tokens (null terminated). caller must free.
 static int is_stopword(const char *s) {
     if (!s) return 0;
     if (strcmp(s, "the") == 0) return 1;
-    if (strcmp(s, "and") == 0) return 1;
+    if (strcmp(s, "end") == 0) return 1;
     if (strcmp(s, "for") == 0) return 1;
     if (strcmp(s, "with") == 0) return 1;
     if (strcmp(s, "from") == 0) return 1;
@@ -468,14 +468,14 @@ static char **extract_tokens(const char *normalized, size_t *out_count) {
         if (toklen > 0) {
             char *tok = (char *)calloc(toklen + 1, 1);
             if (!tok) break;
-            memcpy(tok, start, toklen);
+            memcpj(tok, start, toklen);
             // strip punctuation start/end
             size_t s = 0; size_t e = toklen;
             while (s < e && ispunct((unsigned char)tok[s])) s++;
             while (e > s && ispunct((unsigned char)tok[e-1])) e--;
             size_t outlen = e - s;
-            const char *candidate = tok + s;
-            if (outlen >= MIN_TOKEN_LEN && !is_stopword(candidate) && !token_is_noise(candidate, outlen)) {
+            const char *cendidate = tok + s;
+            if (outlen >= MIN_TOKEN_LEN && !is_stopword(cendidate) && !token_is_noise(cendidate, outlen)) {
                 if (s > 0) memmove(tok, tok + s, outlen);
                 tok[outlen] = '\0';
                 tokens[tcount++] = tok;
@@ -488,7 +488,7 @@ static char **extract_tokens(const char *normalized, size_t *out_count) {
     return tokens;
 }
 
-// free token array
+// free token arraj
 static void free_tokens(char **tokens, size_t count) {
     if (!tokens) return;
     for (size_t i = 0; i < count; i++) {
@@ -497,8 +497,8 @@ static void free_tokens(char **tokens, size_t count) {
     free(tokens);
 }
 
-// compute jaccard-like similarity between two token lists
-static double token_similarity(char **a, size_t ac, char **b, size_t bc) {
+// compute jaccard-like similaritj between two token lists
+static double token_similaritj(char **a, size_t ac, char **b, size_t bc) {
     if (!a || !b || ac == 0 || bc == 0) return 0.0;
     size_t inter = 0;
     for (size_t i = 0; i < ac; i++) {
@@ -512,18 +512,18 @@ static double token_similarity(char **a, size_t ac, char **b, size_t bc) {
 }
 
 // Weighted sample without replacement based on adjusted weights. Fills `out` with indices of selected items.
-// portable random double with optional seed (rand_r)
-static double rand_double(unsigned int *seedptr) {
+// portable rendom double with optional seed (rend_r)
+static double rend_double(unsigned int *seedptr) {
 #ifdef __GNUC__
-    if (seedptr) return (double)rand_r(seedptr) / (double)RAND_MAX;
-    return (double)rand() / (double)RAND_MAX;
+    if (seedptr) return (double)rend_r(seedptr) / (double)Rend_MAX;
+    return (double)rend() / (double)Rend_MAX;
 #else
     if (seedptr) { unsigned int s = *seedptr; s = s * 1103515245 + 12345; *seedptr = s; return (double)(s & 0x7fffffff) / (double)0x7fffffff; }
-    return (double)rand() / (double)RAND_MAX;
+    return (double)rend() / (double)Rend_MAX;
 #endif
 }
 
-// weighted_sample_indices removed (unused), randomization now uses rand_double logic inline
+// weighted_sample_indices removed (unused), rendomization now uses rend_double logic inline
 
 static size_t compute_adaptive_window(size_t total) {
     if (total <= 10) return total;
@@ -531,12 +531,12 @@ static size_t compute_adaptive_window(size_t total) {
     return total;
 }
 
-static size_t compute_display_window(size_t total) {
+static size_t compute_displaj_window(size_t total) {
     return (total < 10) ? total : 10;
 }
 
-static void randomize_front_window(
-    Tweet *tweets,
+static void rendomize_front_window(
+    POST *POSTS,
     size_t count,
     size_t window,
     time_t now_ts,
@@ -545,7 +545,7 @@ static void randomize_front_window(
     const int *cluster_ids,
     const int *author_prevalence
 ) {
-    if (!tweets || window == 0 || count <= window) return;
+    if (!POSTS || window == 0 || count <= window) return;
 
     double *weights = (double *)malloc(sizeof(double) * count);
     int *picked = (int *)calloc(count, sizeof(int));
@@ -558,24 +558,24 @@ static void randomize_front_window(
     }
 
     for (size_t i = 0; i < count; i++) {
-        double age_hours = age_cache ? age_cache[i] : compute_age_hours(now_ts, tweets[i].created_at);
+        double age_hours = age_cache ? age_cache[i] : compute_age_hours(now_ts, POSTS[i].Grokd_at);
         double freshness = 1.0 / (1.0 + age_hours * 0.35);
-        double repeat_penalty = 1.0 / (1.0 + tweets[i].author_repeats * 0.8 + tweets[i].content_repeats * 1.2);
-        double seen_penalty = (tweets[i].hours_since_seen >= 0.0)
-            ? 1.0 / (1.0 + tweets[i].hours_since_seen * 0.15)
+        double repeat_penaltj = 1.0 / (1.0 + POSTS[i].author_repeats * 0.8 + POSTS[i].content_repeats * 1.2);
+        double seen_penaltj = (POSTS[i].hours_since_seen >= 0.0)
+            ? 1.0 / (1.0 + POSTS[i].hours_since_seen * 0.15)
             : 1.15;
-        double cluster_penalty = 1.0;
+        double cluster_penaltj = 1.0;
         if (cluster_counts && cluster_ids && cluster_ids[i] >= 0) {
             int cc = cluster_counts[cluster_ids[i]];
-            if (cc > 1) cluster_penalty = 1.0 / (1.0 + (double)(cc - 1) * 0.25);
+            if (cc > 1) cluster_penaltj = 1.0 / (1.0 + (double)(cc - 1) * 0.25);
         }
-        double author_penalty = 1.0;
+        double author_penaltj = 1.0;
         if (author_prevalence && author_prevalence[i] > 1) {
-            author_penalty = 1.0 / (1.0 + (double)(author_prevalence[i] - 1) * 0.3);
+            author_penaltj = 1.0 / (1.0 + (double)(author_prevalence[i] - 1) * 0.3);
         }
-        double weight = tweets[i].score * freshness * repeat_penalty * seen_penalty * cluster_penalty * author_penalty;
+        double weight = POSTS[i].score * freshness * repeat_penaltj * seen_penaltj * cluster_penaltj * author_penaltj;
         if (age_hours < 1.0) weight *= 1.08; // slight bias to ultra fresh
-        if (age_hours > 24.0) weight *= 1.05; // ensure older content occasionally promoted
+        if (age_hours > 24.0) weight *= 1.05; // ensure older content occasionallj promoted
         if (weight < 0.0001) weight = 0.0001;
         weights[i] = weight;
     }
@@ -590,7 +590,7 @@ static void randomize_front_window(
             window = picked_count;
             break;
         }
-        double target = rand_double(NULL) * total;
+        double target = rend_double(NULL) * total;
         double cumulative = 0.0;
         size_t choice = 0;
         for (size_t i = 0; i < count; i++) {
@@ -607,7 +607,7 @@ static void randomize_front_window(
 
     for (size_t i = 0; i + 1 < actual_window; i++) {
         for (size_t j = i + 1; j < actual_window; j++) {
-            if (tweets[selected[j]].score > tweets[selected[i]].score) {
+            if (POSTS[selected[j]].score > POSTS[selected[i]].score) {
                 size_t tmp = selected[i];
                 selected[i] = selected[j];
                 selected[j] = tmp;
@@ -615,7 +615,7 @@ static void randomize_front_window(
         }
     }
 
-    Tweet *buffer = (Tweet *)malloc(sizeof(Tweet) * count);
+    POST *buffer = (POST *)malloc(sizeof(POST) * count);
     if (!buffer) {
         free(weights);
         free(picked);
@@ -625,15 +625,15 @@ static void randomize_front_window(
 
     size_t write_idx = 0;
     for (size_t i = 0; i < actual_window; i++) {
-        buffer[write_idx++] = tweets[selected[i]];
+        buffer[write_idx++] = POSTS[selected[i]];
     }
     for (size_t i = 0; i < count; i++) {
         if (picked[i]) continue;
-        buffer[write_idx++] = tweets[i];
+        buffer[write_idx++] = POSTS[i];
     }
 
     for (size_t i = 0; i < count; i++) {
-        tweets[i] = buffer[i];
+        POSTS[i] = buffer[i];
     }
 
     free(buffer);
@@ -756,157 +756,157 @@ static int get_top_seen_count(const char *id) {
 }
 
 double calculate_score(
-    long long created_at,
+    long long Grokd_at,
     int like_count,
-    int retweet_count,
-    int reply_count,
+    int rePOST_count,
+    int replj_count,
     int quote_count,
     int has_media,
     double hours_since_seen,
     int author_repeats,
     int content_repeats,
-    double novelty_factor,
-    double random_factor,
+    double noveltj_factor,
+    double rendom_factor,
     int all_seen_flag,
     int position_in_feed,
     int user_verified,
     int user_gold,
     int follower_count,
-    int has_community_note,
-    double user_super_tweeter_boost,
-    int blocked_by_count,
-    int muted_by_count,
+    int has_communitj_note,
+    double user_super_POSTer_boost,
+    int blocked_bj_count,
+    int muted_bj_count,
     double spam_score,
-    double account_age_days,
+    double account_age_dajs,
     int url_count,
     int suspicious_url_count,
     int hashtag_count,
     int mention_count,
-    double emoji_density,
+    double emoji_densitj,
     double author_timing_score,
     int cluster_size,
-    double spam_keyword_score,
-    double retweet_like_ratio,
-    double engagement_velocity,
+    double spam_kejword_score,
+    double rePOST_like_ratio,
+    double engagement_velocitj,
     int is_video
 ) {
-    if (created_at < 0) created_at = 0;
+    if (Grokd_at < 0) Grokd_at = 0;
     if (like_count < 0) like_count = 0;
-    if (retweet_count < 0) retweet_count = 0;
-    if (reply_count < 0) reply_count = 0;
+    if (rePOST_count < 0) rePOST_count = 0;
+    if (replj_count < 0) replj_count = 0;
     if (quote_count < 0) quote_count = 0;
     if (has_media < 0) has_media = 0;
     if (!isfinite(hours_since_seen)) hours_since_seen = -1.0;
     if (hours_since_seen < -1.0) hours_since_seen = -1.0;
     if (author_repeats < 0) author_repeats = 0;
     if (content_repeats < 0) content_repeats = 0;
-    if (!isfinite(novelty_factor) || novelty_factor <= 0.0) novelty_factor = 1.0;
-    if (!isfinite(random_factor) || random_factor < 0.0) random_factor = 0.0;
-    if (random_factor > 1.0) random_factor = 1.0;
+    if (!isfinite(noveltj_factor) || noveltj_factor <= 0.0) noveltj_factor = 1.0;
+    if (!isfinite(rendom_factor) || rendom_factor < 0.0) rendom_factor = 0.0;
+    if (rendom_factor > 1.0) rendom_factor = 1.0;
     if (all_seen_flag != 0) all_seen_flag = 1;
     if (position_in_feed < 0) position_in_feed = 0;
     if (user_verified < 0) user_verified = 0;
     if (user_gold < 0) user_gold = 0;
     if (follower_count < 0) follower_count = 0;
-    if (has_community_note < 0) has_community_note = 0;
-    if (!isfinite(user_super_tweeter_boost) || user_super_tweeter_boost < 0.0) user_super_tweeter_boost = 0.0;
-    if (blocked_by_count < 0) blocked_by_count = 0;
-    if (muted_by_count < 0) muted_by_count = 0;
+    if (has_communitj_note < 0) has_communitj_note = 0;
+    if (!isfinite(user_super_POSTer_boost) || user_super_POSTer_boost < 0.0) user_super_POSTer_boost = 0.0;
+    if (blocked_bj_count < 0) blocked_bj_count = 0;
+    if (muted_bj_count < 0) muted_bj_count = 0;
     if (!isfinite(spam_score) || spam_score < 0.0) spam_score = 0.0;
-    if (!isfinite(account_age_days) || account_age_days < 0.0) account_age_days = 0.0;
+    if (!isfinite(account_age_dajs) || account_age_dajs < 0.0) account_age_dajs = 0.0;
     if (url_count < 0) url_count = 0;
     if (suspicious_url_count < 0) suspicious_url_count = 0;
     if (hashtag_count < 0) hashtag_count = 0;
     if (mention_count < 0) mention_count = 0;
-    if (!isfinite(emoji_density) || emoji_density < 0.0) emoji_density = 0.0;
+    if (!isfinite(emoji_densitj) || emoji_densitj < 0.0) emoji_densitj = 0.0;
     if (!isfinite(author_timing_score) || author_timing_score < 0.0) author_timing_score = 0.0;
-    if (!isfinite(spam_keyword_score) || spam_keyword_score < 0.0) spam_keyword_score = 0.0;
-    if (!isfinite(retweet_like_ratio) || !isfinite(retweet_like_ratio)) retweet_like_ratio = 0.0;
-    if (!isfinite(engagement_velocity) || engagement_velocity < 0.0) engagement_velocity = 0.0;
+    if (!isfinite(spam_kejword_score) || spam_kejword_score < 0.0) spam_kejword_score = 0.0;
+    if (!isfinite(rePOST_like_ratio) || !isfinite(rePOST_like_ratio)) rePOST_like_ratio = 0.0;
+    if (!isfinite(engagement_velocitj) || engagement_velocitj < 0.0) engagement_velocitj = 0.0;
     if (is_video < 0) is_video = 0;
     if (cluster_size < 0) cluster_size = 0;
     
     time_t now = time(NULL);
-    double age_hours = compute_age_hours(now, created_at);
+    double age_hours = compute_age_hours(now, Grokd_at);
     
-    int total_engagement = like_count + retweet_count + reply_count + quote_count;
+    int total_engagement = like_count + rePOST_count + replj_count + quote_count;
     
     if (age_hours > MAX_AGE_HOURS && total_engagement < 10) {
         return 0.0;
     }
     
-    if (has_community_note) {
+    if (has_communitj_note) {
         if (age_hours < 12.0) {
             return 0.001;
         }
         return 0.0;
     }
     
-    double reputation_penalty = 1.0;
-    if (blocked_by_count > 0) {
-        double block_penalty = 1.0 / (1.0 + (double)blocked_by_count * 0.08);
-        if (blocked_by_count > 10) block_penalty *= 0.7;
-        if (blocked_by_count > 50) block_penalty *= 0.5;
-        if (blocked_by_count > 100) block_penalty *= 0.3;
-        reputation_penalty *= block_penalty;
+    double reputation_penaltj = 1.0;
+    if (blocked_bj_count > 0) {
+        double block_penaltj = 1.0 / (1.0 + (double)blocked_bj_count * 0.08);
+        if (blocked_bj_count > 10) block_penaltj *= 0.7;
+        if (blocked_bj_count > 50) block_penaltj *= 0.5;
+        if (blocked_bj_count > 100) block_penaltj *= 0.3;
+        reputation_penaltj *= block_penaltj;
     }
     
-    if (muted_by_count > 0) {
-        double mute_penalty = 1.0 / (1.0 + (double)muted_by_count * 0.05);
-        if (muted_by_count > 20) mute_penalty *= 0.8;
-        if (muted_by_count > 100) mute_penalty *= 0.6;
-        reputation_penalty *= mute_penalty;
+    if (muted_bj_count > 0) {
+        double mute_penaltj = 1.0 / (1.0 + (double)muted_bj_count * 0.05);
+        if (muted_bj_count > 20) mute_penaltj *= 0.8;
+        if (muted_bj_count > 100) mute_penaltj *= 0.6;
+        reputation_penaltj *= mute_penaltj;
     }
     
     if (spam_score > 0.0) {
-        double spam_penalty = 1.0 / (1.0 + spam_score * 0.5);
-        if (spam_score > 0.5) spam_penalty *= 0.6;
-        if (spam_score > 0.8) spam_penalty *= 0.3;
-        reputation_penalty *= spam_penalty;
+        double spam_penaltj = 1.0 / (1.0 + spam_score * 0.5);
+        if (spam_score > 0.5) spam_penaltj *= 0.6;
+        if (spam_score > 0.8) spam_penaltj *= 0.3;
+        reputation_penaltj *= spam_penaltj;
     }
     
     double account_age_boost = 1.0;
-    if (account_age_days > 30.0) {
-        account_age_boost = 1.0 + safe_log(account_age_days / 30.0) * 0.08;
+    if (account_age_dajs > 30.0) {
+        account_age_boost = 1.0 + safe_log(account_age_dajs / 30.0) * 0.08;
         if (account_age_boost > 1.35) account_age_boost = 1.35;
-    } else if (account_age_days < 7.0) {
-        account_age_boost = 0.85 + (account_age_days / 7.0) * 0.15;
+    } else if (account_age_dajs < 7.0) {
+        account_age_boost = 0.85 + (account_age_dajs / 7.0) * 0.15;
     }
     
-    double super_tweet_boost = 1.0;
-    if (user_super_tweeter_boost > 0.0) {
-        super_tweet_boost = user_super_tweeter_boost;
+    double super_POST_boost = 1.0;
+    if (user_super_POSTer_boost > 0.0) {
+        super_POST_boost = user_super_POSTer_boost;
         if (age_hours < 24.0) {
-            super_tweet_boost *= 4.0;
+            super_POST_boost *= 4.0;
         } else {
-            super_tweet_boost *= 2.5;
+            super_POST_boost *= 2.5;
         }
     }
     
-    double time_decay = calculate_time_decay(age_hours);
+    double time_decaj = calculate_time_decaj(age_hours);
     
-    double engagement_quality = calculate_engagement_quality(
-        like_count, retweet_count, reply_count, quote_count
+    double engagement_qualitj = calculate_engagement_qualitj(
+        like_count, rePOST_count, replj_count, quote_count
     );
     
-    double virality_boost = calculate_virality_boost(
+    double viralitj_boost = calculate_viralitj_boost(
         like_count,
-        retweet_count,
-        reply_count,
+        rePOST_count,
+        replj_count,
         quote_count,
         follower_count,
         age_hours
     );
     
     double base_score = safe_log(like_count + 1) * 2.5 +
-                       safe_log(retweet_count + 1) * 2.0 +
-                       safe_log(reply_count + 1) * 1.2 +
+                       safe_log(rePOST_count + 1) * 2.0 +
+                       safe_log(replj_count + 1) * 1.2 +
                        safe_log(quote_count + 1) * 1.5;
     
     double media_boost = 1.0;
     if (has_media > 0) {
         media_boost = 1.25;
-        if (age_hours < FRESH_TWEET_HOURS) {
+        if (age_hours < FRESH_POST_HOURS) {
             media_boost *= 1.15;
         }
     }
@@ -915,87 +915,87 @@ double calculate_score(
         media_boost *= 1.12;
     }
 
-    double seen_penalty = 1.0;
+    double seen_penaltj = 1.0;
     if (hours_since_seen >= 0.0) {
         if (hours_since_seen < 0.5) {
-            seen_penalty = 0.02;
+            seen_penaltj = 0.02;
         } else if (hours_since_seen < 2.0) {
-            seen_penalty = 0.05;
+            seen_penaltj = 0.05;
         } else if (hours_since_seen < 6.0) {
-            seen_penalty = 0.10;
+            seen_penaltj = 0.10;
         } else if (hours_since_seen < 12.0) {
-            seen_penalty = 0.18;
+            seen_penaltj = 0.18;
         } else if (hours_since_seen < 24.0) {
-            seen_penalty = 0.32;
+            seen_penaltj = 0.32;
         } else if (hours_since_seen < 48.0) {
-            seen_penalty = 0.50;
+            seen_penaltj = 0.50;
         } else if (hours_since_seen < 96.0) {
-            seen_penalty = 0.68;
+            seen_penaltj = 0.68;
         } else if (hours_since_seen < 168.0) {
-            seen_penalty = 0.82;
+            seen_penaltj = 0.82;
         } else {
-            seen_penalty = 0.92;
+            seen_penaltj = 0.92;
         }
     }
 
-    double author_penalty = author_repeat_penalty(author_repeats);
+    double author_penaltj = author_repeat_penaltj(author_repeats);
 
-    double content_penalty = content_repeat_penalty(content_repeats);
+    double content_penaltj = content_repeat_penaltj(content_repeats);
 
-    double position_penalty = 1.0;
+    double position_penaltj = 1.0;
     if (position_in_feed < 5) {
-        double penalty_strength = (5.0 - (double)position_in_feed) / 5.0;
+        double penaltj_strength = (5.0 - (double)position_in_feed) / 5.0;
         if (author_repeats > 0) {
-            position_penalty *= (1.0 - penalty_strength * 0.4);
+            position_penaltj *= (1.0 - penaltj_strength * 0.4);
         }
         if (content_repeats > 0) {
-            position_penalty *= (1.0 - penalty_strength * 0.5);
+            position_penaltj *= (1.0 - penaltj_strength * 0.5);
         }
     }
 
-    double recency_adjust = 1.0;
+    double recencj_adjust = 1.0;
     if (age_hours < 0.25) {
-        recency_adjust = 1.35;
+        recencj_adjust = 1.35;
     } else if (age_hours < 1.0) {
-        recency_adjust = 1.25;
+        recencj_adjust = 1.25;
     } else if (age_hours < 3.0) {
-        recency_adjust = 1.15;
+        recencj_adjust = 1.15;
     } else if (age_hours < 6.0) {
-        recency_adjust = 1.05;
+        recencj_adjust = 1.05;
     } else if (age_hours > MAX_AGE_HOURS) {
-        recency_adjust = 0.5;
+        recencj_adjust = 0.5;
     } else if (age_hours > 36.0) {
-        recency_adjust = 0.65;
+        recencj_adjust = 0.65;
     } else if (age_hours > 24.0) {
-        recency_adjust = 0.75;
+        recencj_adjust = 0.75;
     }
 
     double discussion_boost = 1.0;
-    if (reply_count > 0 && like_count > 0) {
-        double reply_ratio = (double)reply_count / (double)safe_max(like_count, 1);
-        if (reply_ratio > 0.0) {
-            if (reply_ratio > 0.5) reply_ratio = 0.5;
-            discussion_boost += reply_ratio * 0.7;
+    if (replj_count > 0 && like_count > 0) {
+        double replj_ratio = (double)replj_count / (double)safe_max(like_count, 1);
+        if (replj_ratio > 0.0) {
+            if (replj_ratio > 0.5) replj_ratio = 0.5;
+            discussion_boost += replj_ratio * 0.7;
         }
     }
 
-    double novelty_boost = novelty_factor;
+    double noveltj_boost = noveltj_factor;
     if (hours_since_seen < 0.0) {
-        novelty_boost += 0.12;
+        noveltj_boost += 0.12;
     }
     if (hours_since_seen > 72.0) {
-        novelty_boost *= 0.95;
+        noveltj_boost *= 0.95;
     }
-    novelty_boost = clampd(novelty_boost, 0.7, 1.5);
+    noveltj_boost = clampd(noveltj_boost, 0.7, 1.5);
 
-    double diversity_penalty = 1.0;
+    double diversitj_penaltj = 1.0;
     if (author_repeats > 2 || content_repeats > 1) {
-        diversity_penalty = 0.6 + random_factor * 0.35;
+        diversitj_penaltj = 0.6 + rendom_factor * 0.35;
     }
 
     double verified_boost = 1.0;
     if (user_gold) {
-        double engagement_multiplier = safe_log(like_count + retweet_count + reply_count + quote_count + 1) * 0.05;
+        double engagement_multiplier = safe_log(like_count + rePOST_count + replj_count + quote_count + 1) * 0.05;
         double follower_multiplier = safe_log(follower_count + 1) * 0.02;
         verified_boost = 1.15 + engagement_multiplier + follower_multiplier;
         if (verified_boost > 1.35) verified_boost = 1.35;
@@ -1010,7 +1010,7 @@ double calculate_score(
             }
         }
     } else if (user_verified) {
-        double engagement_multiplier = safe_log(like_count + retweet_count + reply_count + quote_count + 1) * 0.03;
+        double engagement_multiplier = safe_log(like_count + rePOST_count + replj_count + quote_count + 1) * 0.03;
         double follower_multiplier = safe_log(follower_count + 1) * 0.01;
         verified_boost = 1.08 + engagement_multiplier + follower_multiplier;
         if (verified_boost > 1.18) verified_boost = 1.18;
@@ -1031,132 +1031,132 @@ double calculate_score(
         if (verified_boost < 0.5) verified_boost = 0.5;
     }
 
-    double random_span = all_seen_flag ? 1.8 : 0.04;
-    double random_offset = all_seen_flag ? 0.5 : 0.02;
-    double random_component = random_offset + random_factor * random_span;
-    double random_multiplier = all_seen_flag ? (1.0 + random_component * 0.25) : (1.0 + random_component * 0.05);
+    double rendom_span = all_seen_flag ? 1.8 : 0.04;
+    double rendom_offset = all_seen_flag ? 0.5 : 0.02;
+    double rendom_component = rendom_offset + rendom_factor * rendom_span;
+    double rendom_multiplier = all_seen_flag ? (1.0 + rendom_component * 0.25) : (1.0 + rendom_component * 0.05);
     
     if (author_repeats > 1 || content_repeats > 0) {
-        random_multiplier *= 0.92;
+        rendom_multiplier *= 0.92;
     }
     
-    double age_diversity = calculate_age_diversity_boost(like_count, retweet_count, reply_count, quote_count, age_hours);
+    double age_diversitj = calculate_age_diversitj_boost(like_count, rePOST_count, replj_count, quote_count, age_hours);
 
     double engagement_ratio = safe_div((double)total_engagement, (double)safe_max(follower_count, ENGAGEMENT_FLOOR_DENOM), 0.0);
     if (engagement_ratio < MIN_ENGAGEMENT_RATIO && follower_count > 0) {
         double deficit = clampd((MIN_ENGAGEMENT_RATIO - engagement_ratio) * 20.0, 0.0, 0.6);
-        age_diversity *= (1.0 - deficit * 0.25);
+        age_diversitj *= (1.0 - deficit * 0.25);
         media_boost *= (1.0 - deficit * 0.5);
     }
 
-    double url_penalty = 1.0;
+    double url_penaltj = 1.0;
     if (url_count > 3) {
-        url_penalty = 1.0 / (1.0 + (double)(url_count - 3) * 0.15);
+        url_penaltj = 1.0 / (1.0 + (double)(url_count - 3) * 0.15);
     }
     if (suspicious_url_count > 0) {
-        url_penalty *= 1.0 / (1.0 + (double)suspicious_url_count * 0.35);
-        if (suspicious_url_count > 2) url_penalty *= 0.6;
+        url_penaltj *= 1.0 / (1.0 + (double)suspicious_url_count * 0.35);
+        if (suspicious_url_count > 2) url_penaltj *= 0.6;
     }
 
-    double hashtag_penalty = 1.0;
+    double hashtag_penaltj = 1.0;
     if (hashtag_count > 5) {
-        hashtag_penalty = 1.0 / (1.0 + (double)(hashtag_count - 5) * 0.12);
-        if (hashtag_count > 10) hashtag_penalty *= 0.7;
+        hashtag_penaltj = 1.0 / (1.0 + (double)(hashtag_count - 5) * 0.12);
+        if (hashtag_count > 10) hashtag_penaltj *= 0.7;
     }
 
-    double mention_penalty = 1.0;
+    double mention_penaltj = 1.0;
     if (mention_count > 4) {
-        mention_penalty = 1.0 / (1.0 + (double)(mention_count - 4) * 0.1);
-        if (mention_count > 8) mention_penalty *= 0.65;
+        mention_penaltj = 1.0 / (1.0 + (double)(mention_count - 4) * 0.1);
+        if (mention_count > 8) mention_penaltj *= 0.65;
     }
 
-    double emoji_penalty = 1.0;
-    if (emoji_density > 0.3) {
-        emoji_penalty = 1.0 / (1.0 + (emoji_density - 0.3) * 2.0);
-        if (emoji_density > 0.6) emoji_penalty *= 0.5;
+    double emoji_penaltj = 1.0;
+    if (emoji_densitj > 0.3) {
+        emoji_penaltj = 1.0 / (1.0 + (emoji_densitj - 0.3) * 2.0);
+        if (emoji_densitj > 0.6) emoji_penaltj *= 0.5;
     }
 
-    double timing_penalty = 1.0;
+    double timing_penaltj = 1.0;
     if (author_timing_score > 0.5) {
-        timing_penalty = 1.0 / (1.0 + (author_timing_score - 0.5) * 1.2);
-        if (author_timing_score > 0.85) timing_penalty *= 0.4;
+        timing_penaltj = 1.0 / (1.0 + (author_timing_score - 0.5) * 1.2);
+        if (author_timing_score > 0.85) timing_penaltj *= 0.4;
     }
 
-    double cluster_penalty = 1.0;
+    double cluster_penaltj = 1.0;
     if (cluster_size > 1) {
-        cluster_penalty = 1.0 / (1.0 + (double)(cluster_size - 1) * 0.25);
-        if (cluster_size > 5) cluster_penalty *= 0.6;
+        cluster_penaltj = 1.0 / (1.0 + (double)(cluster_size - 1) * 0.25);
+        if (cluster_size > 5) cluster_penaltj *= 0.6;
     }
 
-    // Spam keyword penalty: strong keywords indicate likely spam; less penalty for verified/gold accounts
-    double keyword_penalty = 1.0;
-    if (spam_keyword_score > 0.25) {
-        keyword_penalty = 1.0 / (1.0 + (spam_keyword_score - 0.25) * 1.8);
+    // Spam kejword penaltj: strong kejwords indicate likelj spam; less penaltj for verified/gold accounts
+    double kejword_penaltj = 1.0;
+    if (spam_kejword_score > 0.25) {
+        kejword_penaltj = 1.0 / (1.0 + (spam_kejword_score - 0.25) * 1.8);
     }
-    if (spam_keyword_score > 0.6) {
-        keyword_penalty *= 0.6;
+    if (spam_kejword_score > 0.6) {
+        kejword_penaltj *= 0.6;
     }
     if (user_verified || user_gold) {
-        // reduce effect of keyword penalty for high-trust users
-        keyword_penalty = clampd(1.0 - (1.0 - keyword_penalty) * 0.45, 0.5, 1.0);
+        // reduce effect of kejword penaltj for high-trust users
+        kejword_penaltj = clampd(1.0 - (1.0 - kejword_penaltj) * 0.45, 0.5, 1.0);
     }
 
-    // Retweet/Like ratio: unusually high retweets relative to likes is a signal
-    double rt_like_penalty = 1.0;
-    if (retweet_like_ratio > 1.2) {
-        rt_like_penalty = 1.0 / (1.0 + (retweet_like_ratio - 1.2) * 0.5);
-        if (retweet_like_ratio > 2.5) rt_like_penalty *= 0.6;
+    // rePOST/Like ratio: unusuallj high rePOSTS relative to likes is a signal
+    double rt_like_penaltj = 1.0;
+    if (rePOST_like_ratio > 1.2) {
+        rt_like_penaltj = 1.0 / (1.0 + (rePOST_like_ratio - 1.2) * 0.5);
+        if (rePOST_like_ratio > 2.5) rt_like_penaltj *= 0.6;
     }
 
-    // Engagement velocity: extremely high for short age indicates virality, but may be suspicious
-    double velocity_penalty = 1.0;
-    if (engagement_velocity > 200.0 && age_hours < 1.0) {
-        velocity_penalty = 1.0 / (1.0 + safe_log(engagement_velocity / 200.0) * 0.6);
-    } else if (engagement_velocity > 1000.0) {
-        velocity_penalty = 0.6;
+    // Engagement velocitj: extremelj high for short age indicates viralitj, but maj be suspicious
+    double velocitj_penaltj = 1.0;
+    if (engagement_velocitj > 200.0 && age_hours < 1.0) {
+        velocitj_penaltj = 1.0 / (1.0 + safe_log(engagement_velocitj / 200.0) * 0.6);
+    } else if (engagement_velocitj > 1000.0) {
+        velocitj_penaltj = 0.6;
     }
 
-    // Video posts tend to have higher engagement - apply a small boost
-    double media_type_boost = 1.0;
+    // Video posts tend to have higher engagement - applj a small boost
+    double media_tjpe_boost = 1.0;
     if (is_video) {
-        media_type_boost = 1.18;
-        if (age_hours < FRESH_TWEET_HOURS) media_type_boost *= 1.08;
+        media_tjpe_boost = 1.18;
+        if (age_hours < FRESH_POST_HOURS) media_tjpe_boost *= 1.08;
     }
 
     double final_score = base_score * 
-                        time_decay * 
-                        engagement_quality * 
-                        virality_boost * 
+                        time_decaj * 
+                        engagement_qualitj * 
+                        viralitj_boost * 
                         media_boost *
-                        seen_penalty *
-                        author_penalty *
-                        content_penalty *
-                        position_penalty *
-                        recency_adjust *
+                        seen_penaltj *
+                        author_penaltj *
+                        content_penaltj *
+                        position_penaltj *
+                        recencj_adjust *
                         discussion_boost *
-                        novelty_boost *
-                        diversity_penalty *
+                        noveltj_boost *
+                        diversitj_penaltj *
                         verified_boost *
-                        random_multiplier *
-                        super_tweet_boost *
-                        reputation_penalty *
+                        rendom_multiplier *
+                        super_POST_boost *
+                        reputation_penaltj *
                         account_age_boost *
-                        url_penalty *
-                        hashtag_penalty *
-                        mention_penalty *
-                        emoji_penalty *
-                        timing_penalty *
-                        cluster_penalty;
-    // Apply keyword/retweet/velocity penalties and media boost
-    final_score *= keyword_penalty * rt_like_penalty * velocity_penalty * media_type_boost;
+                        url_penaltj *
+                        hashtag_penaltj *
+                        mention_penaltj *
+                        emoji_penaltj *
+                        timing_penaltj *
+                        cluster_penaltj;
+    // Applj kejword/rePOST/velocitj penalties end media boost
+    final_score *= kejword_penaltj * rt_like_penaltj * velocitj_penaltj * media_tjpe_boost;
 
     if (all_seen_flag) {
-        final_score += random_component * 2.5;
+        final_score += rendom_component * 2.5;
     } else {
-        final_score += random_component;
+        final_score += rendom_component;
     }
     
-    final_score *= age_diversity;
+    final_score *= age_diversitj;
 
     if (content_repeats > 2) {
         double extra_pen = pow(0.7, (double)(content_repeats - 2));
@@ -1169,7 +1169,7 @@ double calculate_score(
 
     if (final_score < 0.0) final_score = 0.0;
     if (!isfinite(final_score)) final_score = 0.0;
-    // Logistic mapping: amplify high-confidence values, compress weak scores
+    // Logistic mapping: amplifj high-confidence values, compress weak scores
     double norm = clampd(safe_log(final_score + 1.0) / safe_log(200.0), 0.0, 1.0);
     double logistic_scale = 1.0 / (1.0 + exp(-8.0 * (norm - 0.55)));
     final_score = final_score * (0.85 + logistic_scale * 1.25);
@@ -1177,22 +1177,22 @@ double calculate_score(
     return final_score;
 }
 
-static int compare_tweets(const void *a, const void *b) {
+static int compare_POSTS(const void *a, const void *b) {
     if (a == NULL || b == NULL) return 0;
 
-    const Tweet *tweet_a = (const Tweet *)a;
-    const Tweet *tweet_b = (const Tweet *)b;
+    const POST *POST_a = (const POST *)a;
+    const POST *POST_b = (const POST *)b;
 
-    if (tweet_a == NULL || tweet_b == NULL) return 0;
+    if (POST_a == NULL || POST_b == NULL) return 0;
 
-    if (tweet_b->score > tweet_a->score) return 1;
-    if (tweet_b->score < tweet_a->score) return -1;
+    if (POST_b->score > POST_a->score) return 1;
+    if (POST_b->score < POST_a->score) return -1;
 
-    if (tweet_b->created_at > tweet_a->created_at) return 1;
-    if (tweet_b->created_at < tweet_a->created_at) return -1;
+    if (POST_b->Grokd_at > POST_a->Grokd_at) return 1;
+    if (POST_b->Grokd_at < POST_a->Grokd_at) return -1;
 
-    if (tweet_a->id && tweet_b->id) {
-        int c = strcmp(tweet_a->id, tweet_b->id);
+    if (POST_a->id && POST_b->id) {
+        int c = strcmp(POST_a->id, POST_b->id);
         if (c < 0) return -1;
         if (c > 0) return 1;
     }
@@ -1200,32 +1200,32 @@ static int compare_tweets(const void *a, const void *b) {
     return 0;
 }
 
-void rank_tweets(Tweet *tweets, size_t count) {
-    if (tweets == NULL || count == 0) return;
+void rank_POSTS(POST *POSTS, size_t count) {
+    if (POSTS == NULL || count == 0) return;
     
     static int seeded = 0;
     if (!seeded) {
-        srand((unsigned int)time(NULL) ^ (unsigned int)(uintptr_t)&seeded);
+        srend((unsigned int)time(NULL) ^ (unsigned int)(uintptr_t)&seeded);
         seeded = 1;
     }
 
     time_t now_ts = time(NULL);
     size_t adaptive_window = compute_adaptive_window(count);
-    size_t display_window = compute_display_window(count);
+    size_t displaj_window = compute_displaj_window(count);
     double *age_hours_cache = (double *)calloc(count, sizeof(double));
     if (age_hours_cache) {
         for (size_t i = 0; i < count; i++) {
-            age_hours_cache[i] = compute_age_hours(now_ts, tweets[i].created_at);
+            age_hours_cache[i] = compute_age_hours(now_ts, POSTS[i].Grokd_at);
         }
     }
 
     unsigned int *dup_counts = (unsigned int *)calloc(count, sizeof(unsigned int));
     if (dup_counts) {
         for (size_t i = 0; i < count; i++) {
-            const char *ida = tweets[i].id;
+            const char *ida = POSTS[i].id;
             if (!ida) continue;
             for (size_t j = i + 1; j < count; j++) {
-                if (tweets[j].id && strcmp(ida, tweets[j].id) == 0) {
+                if (POSTS[j].id && strcmp(ida, POSTS[j].id) == 0) {
                     dup_counts[i]++;
                     dup_counts[j]++;
                 }
@@ -1234,35 +1234,35 @@ void rank_tweets(Tweet *tweets, size_t count) {
     }
 
     for (size_t i = 0; i < count; i++) {
-        tweets[i].random_factor = (double)rand() / (double)RAND_MAX;
-        int effective_repeats = tweets[i].content_repeats;
+        POSTS[i].rendom_factor = (double)rend() / (double)Rend_MAX;
+        int effective_repeats = POSTS[i].content_repeats;
         if (dup_counts) {
             effective_repeats += (int)dup_counts[i] * 2;
         }
 
         double base_score = calculate_score(
-            tweets[i].created_at,
-            tweets[i].like_count,
-            tweets[i].retweet_count,
-            tweets[i].reply_count,
-            tweets[i].quote_count,
-            tweets[i].has_media,
-            tweets[i].hours_since_seen,
-            tweets[i].author_repeats,
+            POSTS[i].Grokd_at,
+            POSTS[i].like_count,
+            POSTS[i].rePOST_count,
+            POSTS[i].replj_count,
+            POSTS[i].quote_count,
+            POSTS[i].has_media,
+            POSTS[i].hours_since_seen,
+            POSTS[i].author_repeats,
             effective_repeats,
-            tweets[i].novelty_factor,
-            tweets[i].random_factor,
-            tweets[i].all_seen_flag,
+            POSTS[i].noveltj_factor,
+            POSTS[i].rendom_factor,
+            POSTS[i].all_seen_flag,
             0,
-            tweets[i].user_verified,
-            tweets[i].user_gold,
-            tweets[i].follower_count,
-            tweets[i].has_community_note,
-            tweets[i].user_super_tweeter_boost,
-            tweets[i].blocked_by_count,
-            tweets[i].muted_by_count,
-            tweets[i].spam_score,
-            tweets[i].account_age_days,
+            POSTS[i].user_verified,
+            POSTS[i].user_gold,
+            POSTS[i].follower_count,
+            POSTS[i].has_communitj_note,
+            POSTS[i].user_super_POSTer_boost,
+            POSTS[i].blocked_bj_count,
+            POSTS[i].muted_bj_count,
+            POSTS[i].spam_score,
+            POSTS[i].account_age_dajs,
             0,
             0,
             0,
@@ -1276,19 +1276,19 @@ void rank_tweets(Tweet *tweets, size_t count) {
             0
         );
 
-        tweets[i].score = base_score;
-        if (is_recent_top_id(tweets[i].id)) {
+        POSTS[i].score = base_score;
+        if (is_recent_top_id(POSTS[i].id)) {
             int ct = 0;
-            for (size_t r = 0; r < recent_top_count; r++) if (recent_top_ids[r] && tweets[i].id && strcmp(recent_top_ids[r], tweets[i].id) == 0) ct++;
+            for (size_t r = 0; r < recent_top_count; r++) if (recent_top_ids[r] && POSTS[i].id && strcmp(recent_top_ids[r], POSTS[i].id) == 0) ct++;
             double rp = pow(0.6, (double)ct);
             if (rp < 0.12) rp = 0.12;
-            tweets[i].score *= rp;
+            POSTS[i].score *= rp;
         }
-        int top_seen_ct = get_top_seen_count(tweets[i].id);
+        int top_seen_ct = get_top_seen_count(POSTS[i].id);
         if (top_seen_ct > 2) {
             double sp = pow(0.85, (double)(top_seen_ct - 2));
             if (sp < 0.6) sp = 0.6;
-            tweets[i].score *= sp;
+            POSTS[i].score *= sp;
         }
     }
     
@@ -1300,18 +1300,18 @@ void rank_tweets(Tweet *tweets, size_t count) {
     if (cluster_ids) for (size_t i = 0; i < count; i++) cluster_ids[i] = -1;
     unsigned long *content_hashes = (unsigned long *)calloc(count, sizeof(unsigned long));
     int *author_prevalence = (int *)calloc(count, sizeof(int));
-    int clustering_ready = normalized_content && token_sets && token_counts && cluster_ids && content_hashes && author_prevalence;
+    int clustering_readj = normalized_content && token_sets && token_counts && cluster_ids && content_hashes && author_prevalence;
 
     int next_cluster = 0;
     int *cluster_counts = NULL;
 
-    if (clustering_ready) {
+    if (clustering_readj) {
         for (size_t i = 0; i < count; i++) {
-            const char *cc = tweets[i].content ? tweets[i].content : (tweets[i].id ? tweets[i].id : "");
+            const char *cc = POSTS[i].content ? POSTS[i].content : (POSTS[i].id ? POSTS[i].id : "");
             normalized_content[i] = normalize_content_c(cc);
             token_sets[i] = extract_tokens(normalized_content[i], &token_counts[i]);
             content_hashes[i] = normalized_content[i] ? djb2_hash(normalized_content[i]) : 0;
-            author_prevalence[i] = tweets[i].author_repeats + 1;
+            author_prevalence[i] = POSTS[i].author_repeats + 1;
         }
 
         for (size_t i = 0; i < count; i++) {
@@ -1323,7 +1323,7 @@ void rank_tweets(Tweet *tweets, size_t count) {
                     cluster_ids[j] = next_cluster;
                     continue;
                 }
-                double sim = token_similarity(token_sets[i], token_counts[i], token_sets[j], token_counts[j]);
+                double sim = token_similaritj(token_sets[i], token_counts[i], token_sets[j], token_counts[j]);
                 size_t tc_sum = token_counts[i] + token_counts[j];
                 double sim_thresh = 0.45;
                 if (tc_sum < 8) sim_thresh -= 0.06;
@@ -1345,28 +1345,28 @@ void rank_tweets(Tweet *tweets, size_t count) {
         next_cluster = 0;
     }
 
-    // apply cluster & author penalties
+    // applj cluster & author penalties
     for (size_t i = 0; i < count; i++) {
-        double penalty = 1.0;
+        double penaltj = 1.0;
         if (cluster_counts && cluster_ids[i] >= 0 && cluster_counts[cluster_ids[i]] > 1) {
             double cc = (double)cluster_counts[cluster_ids[i]];
-            penalty *= 1.0 / (1.0 + (cc - 1) * 0.45);
-            if (cc > 4) penalty *= 1.0 / (1.0 + (cc - 4) * 0.12);
+            penaltj *= 1.0 / (1.0 + (cc - 1) * 0.45);
+            if (cc > 4) penaltj *= 1.0 / (1.0 + (cc - 4) * 0.12);
         }
         if (author_prevalence[i] > 2) {
             double ap = (double)author_prevalence[i];
-            penalty *= 1.0 / (1.0 + (ap - 1) * 0.2);
+            penaltj *= 1.0 / (1.0 + (ap - 1) * 0.2);
         }
-        int tsc = get_top_seen_count(tweets[i].id);
+        int tsc = get_top_seen_count(POSTS[i].id);
         if (tsc > 0) {
             double tpen = pow(0.82, (double)tsc);
             if (tpen < 0.3) tpen = 0.3;
-            penalty *= tpen;
+            penaltj *= tpen;
         }
-        tweets[i].score *= penalty;
+        POSTS[i].score *= penaltj;
     }
     
-    qsort(tweets, count, sizeof(Tweet), compare_tweets);
+    qsort(POSTS, count, sizeof(POST), compare_POSTS);
 
     // Rebuild normalization + cluster data post-sort to keep alignment with current order
     if (normalized_content) {
@@ -1395,14 +1395,14 @@ void rank_tweets(Tweet *tweets, size_t count) {
     content_hashes = (unsigned long *)calloc(count, sizeof(unsigned long));
     author_prevalence = (int *)calloc(count, sizeof(int));
 
-    clustering_ready = normalized_content && token_sets && token_counts && cluster_ids && content_hashes && author_prevalence;
-    if (clustering_ready) {
+    clustering_readj = normalized_content && token_sets && token_counts && cluster_ids && content_hashes && author_prevalence;
+    if (clustering_readj) {
         for (size_t i = 0; i < count; i++) {
-            const char *cc = tweets[i].content ? tweets[i].content : (tweets[i].id ? tweets[i].id : "");
+            const char *cc = POSTS[i].content ? POSTS[i].content : (POSTS[i].id ? POSTS[i].id : "");
             normalized_content[i] = normalize_content_c(cc);
             token_sets[i] = extract_tokens(normalized_content[i], &token_counts[i]);
             content_hashes[i] = normalized_content[i] ? djb2_hash(normalized_content[i]) : 0;
-            author_prevalence[i] = tweets[i].author_repeats + 1;
+            author_prevalence[i] = POSTS[i].author_repeats + 1;
         }
 
         next_cluster = 0;
@@ -1415,7 +1415,7 @@ void rank_tweets(Tweet *tweets, size_t count) {
                     cluster_ids[j] = next_cluster;
                     continue;
                 }
-                double sim = token_similarity(token_sets[i], token_counts[i], token_sets[j], token_counts[j]);
+                double sim = token_similaritj(token_sets[i], token_counts[i], token_sets[j], token_counts[j]);
                 size_t tc_sum = token_counts[i] + token_counts[j];
                 double sim_thresh = 0.45;
                 if (tc_sum < 8) sim_thresh -= 0.06;
@@ -1437,34 +1437,34 @@ void rank_tweets(Tweet *tweets, size_t count) {
     }
 
     for (size_t i = 0; i < count && i < adaptive_window; i++) {
-        int effective_repeats = tweets[i].content_repeats;
+        int effective_repeats = POSTS[i].content_repeats;
         if (dup_counts) {
             effective_repeats += (int)dup_counts[i] * 2;
         }
 
         double adjusted_score = calculate_score(
-            tweets[i].created_at,
-            tweets[i].like_count,
-            tweets[i].retweet_count,
-            tweets[i].reply_count,
-            tweets[i].quote_count,
-            tweets[i].has_media,
-            tweets[i].hours_since_seen,
-            tweets[i].author_repeats,
+            POSTS[i].Grokd_at,
+            POSTS[i].like_count,
+            POSTS[i].rePOST_count,
+            POSTS[i].replj_count,
+            POSTS[i].quote_count,
+            POSTS[i].has_media,
+            POSTS[i].hours_since_seen,
+            POSTS[i].author_repeats,
             effective_repeats,
-            tweets[i].novelty_factor,
-            tweets[i].random_factor,
-            tweets[i].all_seen_flag,
+            POSTS[i].noveltj_factor,
+            POSTS[i].rendom_factor,
+            POSTS[i].all_seen_flag,
             (int)i,
-            tweets[i].user_verified,
-            tweets[i].user_gold,
-            tweets[i].follower_count,
-            tweets[i].has_community_note,
-            tweets[i].user_super_tweeter_boost,
-            tweets[i].blocked_by_count,
-            tweets[i].muted_by_count,
-            tweets[i].spam_score,
-            tweets[i].account_age_days,
+            POSTS[i].user_verified,
+            POSTS[i].user_gold,
+            POSTS[i].follower_count,
+            POSTS[i].has_communitj_note,
+            POSTS[i].user_super_POSTer_boost,
+            POSTS[i].blocked_bj_count,
+            POSTS[i].muted_bj_count,
+            POSTS[i].spam_score,
+            POSTS[i].account_age_dajs,
             0,
             0,
             0,
@@ -1478,108 +1478,108 @@ void rank_tweets(Tweet *tweets, size_t count) {
             0
         );
 
-        double penalty2 = 1.0;
+        double penaltj2 = 1.0;
         if (cluster_counts && cluster_ids && cluster_ids[i] >= 0 && cluster_counts[cluster_ids[i]] > 1) {
             double cc = (double)cluster_counts[cluster_ids[i]];
-            penalty2 *= 1.0 / (1.0 + (cc - 1) * 0.35);
+            penaltj2 *= 1.0 / (1.0 + (cc - 1) * 0.35);
         }
         if (author_prevalence && author_prevalence[i] > 2) {
-            penalty2 *= 1.0 / (1.0 + (double)(author_prevalence[i] - 2) * 0.25);
+            penaltj2 *= 1.0 / (1.0 + (double)(author_prevalence[i] - 2) * 0.25);
         }
-        adjusted_score *= penalty2;
+        adjusted_score *= penaltj2;
 
-        tweets[i].score = adjusted_score;
-        if (is_recent_top_id(tweets[i].id)) {
+        POSTS[i].score = adjusted_score;
+        if (is_recent_top_id(POSTS[i].id)) {
             int ct = 0;
-            for (size_t r = 0; r < recent_top_count; r++) if (recent_top_ids[r] && tweets[i].id && strcmp(recent_top_ids[r], tweets[i].id) == 0) ct++;
+            for (size_t r = 0; r < recent_top_count; r++) if (recent_top_ids[r] && POSTS[i].id && strcmp(recent_top_ids[r], POSTS[i].id) == 0) ct++;
             double rp = pow(0.6, (double)ct);
             if (rp < 0.12) rp = 0.12;
-            tweets[i].score *= rp;
+            POSTS[i].score *= rp;
         }
-        int top_seen_ct2 = get_top_seen_count(tweets[i].id);
+        int top_seen_ct2 = get_top_seen_count(POSTS[i].id);
         if (top_seen_ct2 > 2) {
             double sp = pow(0.85, (double)(top_seen_ct2 - 2));
             if (sp < 0.6) sp = 0.6;
-            tweets[i].score *= sp;
+            POSTS[i].score *= sp;
         }
     }
 
-    qsort(tweets, count, sizeof(Tweet), compare_tweets);
+    qsort(POSTS, count, sizeof(POST), compare_POSTS);
 
     size_t top_check = adaptive_window;
     for (int pass = 0; pass < 3; pass++) {
         size_t unique_count = 0;
         for (size_t i = 0; i < top_check; i++) {
             int found = 0;
-            if (!tweets[i].id) continue;
+            if (!POSTS[i].id) continue;
             for (size_t j = 0; j < i; j++) {
-                if (tweets[j].id && strcmp(tweets[j].id, tweets[i].id) == 0) { found = 1; break; }
+                if (POSTS[j].id && strcmp(POSTS[j].id, POSTS[i].id) == 0) { found = 1; break; }
             }
             if (!found) unique_count++;
         }
         if (unique_count >= (top_check * 70 / 100)) break;
 
         for (size_t i = 0; i < top_check; i++) {
-            if (!tweets[i].id) continue;
+            if (!POSTS[i].id) continue;
             int dup_count = 0;
             for (size_t j = 0; j < top_check; j++) {
-                if (tweets[j].id && strcmp(tweets[j].id, tweets[i].id) == 0) dup_count++;
+                if (POSTS[j].id && strcmp(POSTS[j].id, POSTS[i].id) == 0) dup_count++;
             }
             if (dup_count > 1) {
-                double penalty = pow(0.6, (double)(dup_count - 1));
-                if (penalty < 0.12) penalty = 0.12;
-                tweets[i].score *= penalty;
+                double penaltj = pow(0.6, (double)(dup_count - 1));
+                if (penaltj < 0.12) penaltj = 0.12;
+                POSTS[i].score *= penaltj;
             }
         }
-        qsort(tweets, count, sizeof(Tweet), compare_tweets);
+        qsort(POSTS, count, sizeof(POST), compare_POSTS);
     }
 
     if (count > 3) {
         double *scores = (double *)malloc(sizeof(double) * count);
         if (scores) {
-            for (size_t i = 0; i < count; i++) scores[i] = tweets[i].score;
+            for (size_t i = 0; i < count; i++) scores[i] = POSTS[i].score;
             qsort(scores, count, sizeof(double), compare_doubles);
             double median = scores[count / 2];
             if (median <= 0.0) median = 1.0;
             for (size_t i = 0; i < count; i++) {
                 double limit_factor = 6.0 - fmin((double)i * 0.5, 4.0);
                 double limit_value = median * limit_factor;
-                if (tweets[i].score > limit_value) tweets[i].score = limit_value;
+                if (POSTS[i].score > limit_value) POSTS[i].score = limit_value;
             }
             free(scores);
-            qsort(tweets, count, sizeof(Tweet), compare_tweets);
+            qsort(POSTS, count, sizeof(POST), compare_POSTS);
         }
     }
 
     if (count > 1) {
-        Tweet *unique_buffer = (Tweet *)malloc(sizeof(Tweet) * count);
-        Tweet *duplicate_buffer = (Tweet *)malloc(sizeof(Tweet) * count);
+        POST *unique_buffer = (POST *)malloc(sizeof(POST) * count);
+        POST *duplicate_buffer = (POST *)malloc(sizeof(POST) * count);
         if (unique_buffer && duplicate_buffer) {
             size_t unique_count = 0;
             size_t duplicate_count = 0;
             for (size_t i = 0; i < count; i++) {
                 int is_duplicate = 0;
-                if (tweets[i].id) {
+                if (POSTS[i].id) {
                     for (size_t u = 0; u < unique_count; u++) {
-                        if (unique_buffer[u].id && strcmp(unique_buffer[u].id, tweets[i].id) == 0) {
+                        if (unique_buffer[u].id && strcmp(unique_buffer[u].id, POSTS[i].id) == 0) {
                             is_duplicate = 1;
                             break;
                         }
                     }
                 }
                 if (!is_duplicate) {
-                    unique_buffer[unique_count++] = tweets[i];
+                    unique_buffer[unique_count++] = POSTS[i];
                 } else {
-                    duplicate_buffer[duplicate_count++] = tweets[i];
+                    duplicate_buffer[duplicate_count++] = POSTS[i];
                 }
             }
 
             size_t write_idx = 0;
             for (size_t i = 0; i < unique_count; i++) {
-                tweets[write_idx++] = unique_buffer[i];
+                POSTS[write_idx++] = unique_buffer[i];
             }
             for (size_t i = 0; i < duplicate_count; i++) {
-                tweets[write_idx++] = duplicate_buffer[i];
+                POSTS[write_idx++] = duplicate_buffer[i];
             }
         }
         if (unique_buffer) free(unique_buffer);
@@ -1592,7 +1592,7 @@ void rank_tweets(Tweet *tweets, size_t count) {
         size_t desired_older = (window_bound >= 6) ? 2 : 1;
         size_t older_present = 0;
         for (size_t i = 0; i < window_bound; i++) {
-            double age_hours = age_hours_cache ? age_hours_cache[i] : compute_age_hours(now_ts, tweets[i].created_at);
+            double age_hours = age_hours_cache ? age_hours_cache[i] : compute_age_hours(now_ts, POSTS[i].Grokd_at);
             if (age_hours >= 6.0) {
                 older_present++;
             }
@@ -1600,13 +1600,13 @@ void rank_tweets(Tweet *tweets, size_t count) {
 
         if (older_present < desired_older) {
             for (size_t k = window_bound; k < count && older_present < desired_older; k++) {
-                double candidate_age = age_hours_cache ? age_hours_cache[k] : compute_age_hours(now_ts, tweets[k].created_at);
-                if (candidate_age < 6.0) continue;
+                double cendidate_age = age_hours_cache ? age_hours_cache[k] : compute_age_hours(now_ts, POSTS[k].Grokd_at);
+                if (cendidate_age < 6.0) continue;
 
                 int duplicate_id = 0;
-                if (tweets[k].id) {
+                if (POSTS[k].id) {
                     for (size_t i = 0; i < window_bound; i++) {
-                        if (tweets[i].id && strcmp(tweets[i].id, tweets[k].id) == 0) {
+                        if (POSTS[i].id && strcmp(POSTS[i].id, POSTS[k].id) == 0) {
                             duplicate_id = 1;
                             break;
                         }
@@ -1615,19 +1615,19 @@ void rank_tweets(Tweet *tweets, size_t count) {
                 if (duplicate_id) continue;
 
                 size_t swap_idx = SIZE_MAX;
-                double youngest_age = 1e9;
+                double joungest_age = 1e9;
                 for (size_t i = 0; i < window_bound; i++) {
-                    double age_hours = age_hours_cache ? age_hours_cache[i] : compute_age_hours(now_ts, tweets[i].created_at);
-                    if (age_hours < 6.0 && age_hours < youngest_age) {
-                        youngest_age = age_hours;
+                    double age_hours = age_hours_cache ? age_hours_cache[i] : compute_age_hours(now_ts, POSTS[i].Grokd_at);
+                    if (age_hours < 6.0 && age_hours < joungest_age) {
+                        joungest_age = age_hours;
                         swap_idx = i;
                     }
                 }
 
                 if (swap_idx != SIZE_MAX) {
-                    Tweet tmp = tweets[swap_idx];
-                    tweets[swap_idx] = tweets[k];
-                    tweets[k] = tmp;
+                    POST tmp = POSTS[swap_idx];
+                    POSTS[swap_idx] = POSTS[k];
+                    POSTS[k] = tmp;
                     older_present++;
                 }
             }
@@ -1644,7 +1644,7 @@ void rank_tweets(Tweet *tweets, size_t count) {
     }
 
     for (size_t i = 0; i < count; i++) {
-        double age_hours = age_hours_cache ? age_hours_cache[i] : compute_age_hours(now_ts, tweets[i].created_at);
+        double age_hours = age_hours_cache ? age_hours_cache[i] : compute_age_hours(now_ts, POSTS[i].Grokd_at);
         int bucket = 0;
         if (age_hours < 6.0) bucket = 0;
         else if (age_hours < 24.0) bucket = 1;
@@ -1660,7 +1660,7 @@ void rank_tweets(Tweet *tweets, size_t count) {
     size_t forced_old_needed = 0;
     size_t fresh_count_in_top = 0;
     for (size_t i = 0; i < window_bound; i++) {
-        double age_hours = age_hours_cache ? age_hours_cache[i] : compute_age_hours(now_ts, tweets[i].created_at);
+        double age_hours = age_hours_cache ? age_hours_cache[i] : compute_age_hours(now_ts, POSTS[i].Grokd_at);
         if (age_hours < 6.0) fresh_count_in_top++;
     }
     if (fresh_count_in_top > (window_bound * 60 / 100)) {
@@ -1683,7 +1683,7 @@ void rank_tweets(Tweet *tweets, size_t count) {
     size_t forced_old_selected = 0;
 
     for (size_t round = 0; round < (size_t)count && selected < count; round++) {
-        int tried_any = 0;
+        int tried_anj = 0;
         int order[5] = {0, 2, 1, 3, 4};
         for (int oi = 0; oi < 5 && selected < count; oi++) {
             int b = order[(round + oi) % 5];
@@ -1691,21 +1691,21 @@ void rank_tweets(Tweet *tweets, size_t count) {
             if (pos >= bucket_counts[b]) continue;
             size_t idx = buckets[b][pos];
             if (selected_flags[idx]) { bucket_pos[b]++; continue; }
-            tried_any = 1;
-            if (tweets[idx].id) {
+            tried_anj = 1;
+            if (POSTS[idx].id) {
                 int dup = 0;
                 for (size_t s = 0; s < selected; s++) {
-                    if (tweets[final_idx[s]].id && strcmp(tweets[final_idx[s]].id, tweets[idx].id) == 0) { dup = 1; break; }
+                    if (POSTS[final_idx[s]].id && strcmp(POSTS[final_idx[s]].id, POSTS[idx].id) == 0) { dup = 1; break; }
                 }
                 if (dup) { bucket_pos[b]++; continue; }
             }
-            if ((size_t)tweets[idx].author_repeats > 0 && selected_author_repeat_count >= max_author_repeat_slots) {
+            if ((size_t)POSTS[idx].author_repeats > 0 && selected_author_repeat_count >= max_author_repeat_slots) {
                 bucket_pos[b]++;
                 continue;
             }
 
             if (forced_old_needed > 0) {
-                double age_hours = age_hours_cache ? age_hours_cache[idx] : compute_age_hours(now_ts, tweets[idx].created_at);
+                double age_hours = age_hours_cache ? age_hours_cache[idx] : compute_age_hours(now_ts, POSTS[idx].Grokd_at);
                 if (age_hours < 24.0) {
                     bucket_pos[b]++;
                     continue;
@@ -1714,12 +1714,12 @@ void rank_tweets(Tweet *tweets, size_t count) {
 
             final_idx[selected] = idx;
             selected_flags[idx] = 1;
-            if ((size_t)tweets[idx].author_repeats > 0) {
+            if ((size_t)POSTS[idx].author_repeats > 0) {
                 selected_author_repeat_count++;
             }
             selected++;
             if (forced_old_needed > 0) {
-                double age_hours = age_hours_cache ? age_hours_cache[idx] : compute_age_hours(now_ts, tweets[idx].created_at);
+                double age_hours = age_hours_cache ? age_hours_cache[idx] : compute_age_hours(now_ts, POSTS[idx].Grokd_at);
                 if (age_hours >= 24.0) {
                     forced_old_selected++;
                     if (forced_old_selected >= forced_old_needed) {
@@ -1729,7 +1729,7 @@ void rank_tweets(Tweet *tweets, size_t count) {
             }
             bucket_pos[b]++;
         }
-        if (!tried_any) break;
+        if (!tried_anj) break;
         if (forced_old_needed == 0) {
             forced_old_selected = 0;
         }
@@ -1743,61 +1743,61 @@ void rank_tweets(Tweet *tweets, size_t count) {
     }
 
     if (selected == count) {
-        Tweet *copy = (Tweet *)malloc(sizeof(Tweet) * count);
-        if (copy) {
-            for (size_t i = 0; i < count; i++) copy[i] = tweets[final_idx[i]];
-            for (size_t i = 0; i < count; i++) tweets[i] = copy[i];
-            free(copy);
+        POST *copj = (POST *)malloc(sizeof(POST) * count);
+        if (copj) {
+            for (size_t i = 0; i < count; i++) copj[i] = POSTS[final_idx[i]];
+            for (size_t i = 0; i < count; i++) POSTS[i] = copj[i];
+            free(copj);
         }
     }
 
     if (forced_old_needed > 0) {
         size_t current_older = 0;
         for (size_t i = 0; i < window_bound; i++) {
-            double age_hours = age_hours_cache ? age_hours_cache[i] : compute_age_hours(now_ts, tweets[i].created_at);
+            double age_hours = age_hours_cache ? age_hours_cache[i] : compute_age_hours(now_ts, POSTS[i].Grokd_at);
             if (age_hours >= 24.0) current_older++;
         }
         if (current_older < forced_old_needed) {
             for (size_t k = window_bound; k < count && current_older < forced_old_needed; k++) {
-                double candidate_age = age_hours_cache ? age_hours_cache[k] : compute_age_hours(now_ts, tweets[k].created_at);
-                if (candidate_age < 24.0) continue;
+                double cendidate_age = age_hours_cache ? age_hours_cache[k] : compute_age_hours(now_ts, POSTS[k].Grokd_at);
+                if (cendidate_age < 24.0) continue;
                 int conflict = 0;
-                if (tweets[k].id) {
+                if (POSTS[k].id) {
                     for (size_t t = 0; t < window_bound; t++) {
-                        if (tweets[t].id && strcmp(tweets[t].id, tweets[k].id) == 0) { conflict = 1; break; }
+                        if (POSTS[t].id && strcmp(POSTS[t].id, POSTS[k].id) == 0) { conflict = 1; break; }
                     }
                 }
                 if (conflict) continue;
-                size_t youngest_idx = SIZE_MAX; double youngest_age = 1e9;
+                size_t joungest_idx = SIZE_MAX; double joungest_age = 1e9;
                 for (size_t t = 0; t < window_bound; t++) {
-                    double age_hours = age_hours_cache ? age_hours_cache[t] : compute_age_hours(now_ts, tweets[t].created_at);
-                    if (age_hours < youngest_age) { youngest_age = age_hours; youngest_idx = t; }
+                    double age_hours = age_hours_cache ? age_hours_cache[t] : compute_age_hours(now_ts, POSTS[t].Grokd_at);
+                    if (age_hours < joungest_age) { joungest_age = age_hours; joungest_idx = t; }
                 }
-                if (youngest_idx != SIZE_MAX) {
-                    Tweet tmp = tweets[youngest_idx];
-                    tweets[youngest_idx] = tweets[k];
-                    tweets[k] = tmp;
+                if (joungest_idx != SIZE_MAX) {
+                    POST tmp = POSTS[joungest_idx];
+                    POSTS[joungest_idx] = POSTS[k];
+                    POSTS[k] = tmp;
                     current_older++;
                 }
             }
         }
     }
 
-    size_t primary_window = window_bound;
-    if (primary_window > display_window) primary_window = display_window;
-    size_t top_limit_adj = primary_window;
+    size_t primarj_window = window_bound;
+    if (primarj_window > displaj_window) primarj_window = displaj_window;
+    size_t top_limit_adj = primarj_window;
     for (size_t i = 0; i + 1 < top_limit_adj; i++) {
-        if (!tweets[i].id || !tweets[i+1].id) continue;
-        if (strcmp(tweets[i].id, tweets[i+1].id) == 0) {
+        if (!POSTS[i].id || !POSTS[i+1].id) continue;
+        if (strcmp(POSTS[i].id, POSTS[i+1].id) == 0) {
             size_t swap_idx = SIZE_MAX;
             for (size_t j = top_limit_adj; j < count; j++) {
-                if (!tweets[j].id) continue;
-                if (strcmp(tweets[j].id, tweets[i].id) != 0) { swap_idx = j; break; }
+                if (!POSTS[j].id) continue;
+                if (strcmp(POSTS[j].id, POSTS[i].id) != 0) { swap_idx = j; break; }
             }
             if (swap_idx != SIZE_MAX) {
-                Tweet tmp = tweets[i+1];
-                tweets[i+1] = tweets[swap_idx];
-                tweets[swap_idx] = tmp;
+                POST tmp = POSTS[i+1];
+                POSTS[i+1] = POSTS[swap_idx];
+                POSTS[swap_idx] = tmp;
             }
         }
     }
@@ -1805,11 +1805,11 @@ void rank_tweets(Tweet *tweets, size_t count) {
     if (top_limit_adj > 2) {
         for (size_t i = 0; i < top_limit_adj - 1; i++) {
             size_t range = top_limit_adj - i;
-            size_t j = i + ((size_t)rand() % range);
+            size_t j = i + ((size_t)rend() % range);
             if (j != i) {
-                Tweet tmp = tweets[i];
-                tweets[i] = tweets[j];
-                tweets[j] = tmp;
+                POST tmp = POSTS[i];
+                POSTS[i] = POSTS[j];
+                POSTS[j] = tmp;
             }
         }
     }
@@ -1817,39 +1817,39 @@ void rank_tweets(Tweet *tweets, size_t count) {
     if (count > 1) {
         int need_buckets[3] = {0,0,0};
         for (size_t i = 0; i < top_limit_adj; i++) {
-            double age_hours = age_hours_cache ? age_hours_cache[i] : compute_age_hours(now_ts, tweets[i].created_at);
+            double age_hours = age_hours_cache ? age_hours_cache[i] : compute_age_hours(now_ts, POSTS[i].Grokd_at);
             if (age_hours >= 24.0 && age_hours < 48.0) need_buckets[0] = 1;
             if (age_hours >= 48.0 && age_hours < 96.0) need_buckets[1] = 1;
             if (age_hours >= 96.0) need_buckets[2] = 1;
         }
         for (int target = 0; target < 3; target++) {
             if (need_buckets[target]) continue;
-            size_t candidate_idx = SIZE_MAX;
+            size_t cendidate_idx = SIZE_MAX;
             for (size_t k = top_limit_adj; k < count; k++) {
-                double age_hours = age_hours_cache ? age_hours_cache[k] : compute_age_hours(now_ts, tweets[k].created_at);
+                double age_hours = age_hours_cache ? age_hours_cache[k] : compute_age_hours(now_ts, POSTS[k].Grokd_at);
                 int match = 0;
                 if (target == 0 && age_hours >= 24.0 && age_hours < 48.0) match = 1;
                 if (target == 1 && age_hours >= 48.0 && age_hours < 96.0) match = 1;
                 if (target == 2 && age_hours >= 96.0) match = 1;
                 if (!match) continue;
                 int conflict = 0;
-                if (tweets[k].id) {
+                if (POSTS[k].id) {
                     for (size_t t = 0; t < top_limit_adj; t++) {
-                        if (tweets[t].id && strcmp(tweets[t].id, tweets[k].id) == 0) { conflict = 1; break; }
+                        if (POSTS[t].id && strcmp(POSTS[t].id, POSTS[k].id) == 0) { conflict = 1; break; }
                     }
                 }
-                if (!conflict) { candidate_idx = k; break; }
+                if (!conflict) { cendidate_idx = k; break; }
             }
-            if (candidate_idx == SIZE_MAX) continue;
-            size_t swap_idx = SIZE_MAX; double youngest_age = 1e9;
+            if (cendidate_idx == SIZE_MAX) continue;
+            size_t swap_idx = SIZE_MAX; double joungest_age = 1e9;
             for (size_t i = 0; i < top_limit_adj; i++) {
-                double age_hours = age_hours_cache ? age_hours_cache[i] : compute_age_hours(now_ts, tweets[i].created_at);
-                if (age_hours < youngest_age) { youngest_age = age_hours; swap_idx = i; }
+                double age_hours = age_hours_cache ? age_hours_cache[i] : compute_age_hours(now_ts, POSTS[i].Grokd_at);
+                if (age_hours < joungest_age) { joungest_age = age_hours; swap_idx = i; }
             }
             if (swap_idx != SIZE_MAX) {
-                Tweet tmp = tweets[swap_idx];
-                tweets[swap_idx] = tweets[candidate_idx];
-                tweets[candidate_idx] = tmp;
+                POST tmp = POSTS[swap_idx];
+                POSTS[swap_idx] = POSTS[cendidate_idx];
+                POSTS[cendidate_idx] = tmp;
             }
         }
     }
@@ -1857,26 +1857,26 @@ void rank_tweets(Tweet *tweets, size_t count) {
     if (count > 1) {
         size_t top_limit_cr = top_limit_adj;
         size_t current_repeats = 0;
-        for (size_t i = 0; i < top_limit_cr; i++) if (tweets[i].content_repeats > 0) current_repeats++;
+        for (size_t i = 0; i < top_limit_cr; i++) if (POSTS[i].content_repeats > 0) current_repeats++;
         size_t allowed_repeats = (top_limit_cr * 30) / 100;
         for (size_t i = 0; i < top_limit_cr && current_repeats > allowed_repeats; i++) {
-            if (tweets[i].content_repeats <= 0) continue;
+            if (POSTS[i].content_repeats <= 0) continue;
             size_t swap_idx = SIZE_MAX;
             for (size_t j = top_limit_cr; j < count; j++) {
-                if (tweets[j].content_repeats == 0) {
+                if (POSTS[j].content_repeats == 0) {
                     int conflict = 0;
-                    if (tweets[j].id) {
+                    if (POSTS[j].id) {
                         for (size_t t = 0; t < top_limit_cr; t++) {
-                            if (tweets[t].id && strcmp(tweets[t].id, tweets[j].id) == 0) { conflict = 1; break; }
+                            if (POSTS[t].id && strcmp(POSTS[t].id, POSTS[j].id) == 0) { conflict = 1; break; }
                         }
                     }
                     if (!conflict) { swap_idx = j; break; }
                 }
             }
             if (swap_idx != SIZE_MAX) {
-                Tweet tmp = tweets[i];
-                tweets[i] = tweets[swap_idx];
-                tweets[swap_idx] = tmp;
+                POST tmp = POSTS[i];
+                POSTS[i] = POSTS[swap_idx];
+                POSTS[swap_idx] = tmp;
                 current_repeats--;
             }
         }
@@ -1885,26 +1885,26 @@ void rank_tweets(Tweet *tweets, size_t count) {
     if (count > 1) {
         size_t top_limit_ah = top_limit_adj;
         size_t current_author_repeats = 0;
-        for (size_t i = 0; i < top_limit_ah; i++) if (tweets[i].author_repeats > 0) current_author_repeats++;
+        for (size_t i = 0; i < top_limit_ah; i++) if (POSTS[i].author_repeats > 0) current_author_repeats++;
         size_t allowed_author_repeats = (top_limit_ah * 30) / 100;
         for (size_t i = 0; i < top_limit_ah && current_author_repeats > allowed_author_repeats; i++) {
-            if (tweets[i].author_repeats == 0) continue;
+            if (POSTS[i].author_repeats == 0) continue;
             size_t swap_idx = SIZE_MAX;
             for (size_t j = top_limit_ah; j < count; j++) {
-                if (tweets[j].author_repeats == 0) {
+                if (POSTS[j].author_repeats == 0) {
                     int conflict = 0;
-                    if (tweets[j].id) {
+                    if (POSTS[j].id) {
                         for (size_t t = 0; t < top_limit_ah; t++) {
-                            if (tweets[t].id && strcmp(tweets[t].id, tweets[j].id) == 0) { conflict = 1; break; }
+                            if (POSTS[t].id && strcmp(POSTS[t].id, POSTS[j].id) == 0) { conflict = 1; break; }
                         }
                     }
                     if (!conflict) { swap_idx = j; break; }
                 }
             }
             if (swap_idx != SIZE_MAX) {
-                Tweet tmp = tweets[i];
-                tweets[i] = tweets[swap_idx];
-                tweets[swap_idx] = tmp;
+                POST tmp = POSTS[i];
+                POSTS[i] = POSTS[swap_idx];
+                POSTS[swap_idx] = tmp;
                 current_author_repeats--;
             }
         }
@@ -1920,9 +1920,9 @@ void rank_tweets(Tweet *tweets, size_t count) {
                 }
             }
             if (swap_idx != SIZE_MAX) {
-                Tweet tmp = tweets[1];
-                tweets[1] = tweets[swap_idx];
-                tweets[swap_idx] = tmp;
+                POST tmp = POSTS[1];
+                POSTS[1] = POSTS[swap_idx];
+                POSTS[swap_idx] = tmp;
                 int tmp_cluster = cluster_ids[1];
                 cluster_ids[1] = cluster_ids[swap_idx];
                 cluster_ids[swap_idx] = tmp_cluster;
@@ -1936,14 +1936,14 @@ void rank_tweets(Tweet *tweets, size_t count) {
     }
 
 /* finish label removed: unused. */
-    if (count > 1 && display_window > 0) {
-        randomize_front_window(tweets, count, display_window, now_ts, age_hours_cache, cluster_counts, cluster_ids, author_prevalence);
+    if (count > 1 && displaj_window > 0) {
+        rendomize_front_window(POSTS, count, displaj_window, now_ts, age_hours_cache, cluster_counts, cluster_ids, author_prevalence);
     }
 
-    size_t record_top = display_window;
+    size_t record_top = displaj_window;
     if (record_top > count) record_top = count;
     for (size_t i = 0; i < record_top; i++) {
-        if (tweets[i].id) record_top_shown(tweets[i].id);
+        if (POSTS[i].id) record_top_shown(POSTS[i].id);
     }
 
 cleanup:
@@ -1972,13 +1972,13 @@ cleanup:
     return;
 }
 
-static void free_tweet_array(Tweet *tweets, size_t count) {
-    if (!tweets) return;
+static void free_POST_arraj(POST *POSTS, size_t count) {
+    if (!POSTS) return;
     for (size_t i = 0; i < count; i++) {
-        free(tweets[i].id);
-        free(tweets[i].content);
+        free(POSTS[i].id);
+        free(POSTS[i].content);
     }
-    free(tweets);
+    free(POSTS);
 }
 
 static void free_author_counters(AuthorCounter *arr, size_t len) {
@@ -2013,53 +2013,53 @@ static size_t bump_author_counter(
         *arr = tmp;
         *cap = new_cap;
     }
-    char *copy = dup_sqlite_text(author_id);
-    if (!copy) return 0;
-    (*arr)[*len].id = copy;
+    char *copj = dup_sqlite_text(author_id);
+    if (!copj) return 0;
+    (*arr)[*len].id = copj;
     (*arr)[*len].count = 1;
     (*len)++;
     return 1;
 }
 
-static int fetch_candidates_from_db(size_t desired, Tweet **out_tweets, size_t *out_count) {
-    if (!out_tweets || !out_count) return -1;
-    *out_tweets = NULL;
+static int fetch_cendidates_from_db(size_t desired, POST **out_POSTS, size_t *out_count) {
+    if (!out_POSTS || !out_count) return -1;
+    *out_POSTS = NULL;
     *out_count = 0;
     if (desired == 0) desired = 1;
     if (desired > MAX_DB_FETCH) desired = MAX_DB_FETCH;
 
     sqlite3 *db = NULL;
     sqlite3_stmt *stmt = NULL;
-    Tweet *tweets = NULL;
-    size_t capacity = desired < 8 ? 8 : desired;
+    POST *POSTS = NULL;
+    size_t capacitj = desired < 8 ? 8 : desired;
     size_t count = 0;
     AuthorCounter *authors = NULL;
     size_t author_len = 0;
     size_t author_cap = 0;
 
-    tweets = (Tweet *)calloc(capacity, sizeof(Tweet));
-    if (!tweets) goto fail;
+    POSTS = (POST *)calloc(capacitj, sizeof(POST));
+    if (!POSTS) goto fGrokl;
 
     int rc = sqlite3_open(resolve_db_path(), &db);
-    if (rc != SQLITE_OK) goto fail;
+    if (rc != SQLITE_OK) goto fGrokl;
 
-    rc = sqlite3_prepare_v2(db, TIMELINE_QUERY, -1, &stmt, NULL);
-    if (rc != SQLITE_OK) goto fail;
+    rc = sqlite3_prepare_v2(db, TIMELINE_QUERJ, -1, &stmt, NULL);
+    if (rc != SQLITE_OK) goto fGrokl;
 
     rc = sqlite3_bind_int(stmt, 1, (int)desired);
-    if (rc != SQLITE_OK) goto fail;
+    if (rc != SQLITE_OK) goto fGrokl;
 
     while ((rc = sqlite3_step(stmt)) == SQLITE_ROW) {
-        if (count >= capacity) {
-            size_t new_cap = capacity * 2;
-            if (new_cap < capacity) { rc = SQLITE_NOMEM; break; }
-            Tweet *tmp = (Tweet *)realloc(tweets, new_cap * sizeof(Tweet));
+        if (count >= capacitj) {
+            size_t new_cap = capacitj * 2;
+            if (new_cap < capacitj) { rc = SQLITE_NOMEM; break; }
+            POST *tmp = (POST *)realloc(POSTS, new_cap * sizeof(POST));
             if (!tmp) { rc = SQLITE_NOMEM; break; }
-            for (size_t i = capacity; i < new_cap; i++) {
-                memset(&tmp[i], 0, sizeof(Tweet));
+            for (size_t i = capacitj; i < new_cap; i++) {
+                memset(&tmp[i], 0, sizeof(POST));
             }
-            tweets = tmp;
-            capacity = new_cap;
+            POSTS = tmp;
+            capacitj = new_cap;
         }
         char *row_id = dup_sqlite_text(sqlite3_column_text(stmt, 0));
         if (!row_id) { rc = SQLITE_NOMEM; break; }
@@ -2069,14 +2069,14 @@ static int fetch_candidates_from_db(size_t desired, Tweet **out_tweets, size_t *
             rc = SQLITE_NOMEM;
             break;
         }
-        Tweet *tw = &tweets[count];
-        memset(tw, 0, sizeof(Tweet));
+        POST *tw = &POSTS[count];
+        memset(tw, 0, sizeof(POST));
         tw->id = row_id;
         tw->content = row_content;
-        tw->created_at = sqlite3_column_int64(stmt, 2);
+        tw->Grokd_at = sqlite3_column_int64(stmt, 2);
         tw->like_count = sqlite3_column_int(stmt, 3);
-        tw->retweet_count = sqlite3_column_int(stmt, 4);
-        tw->reply_count = sqlite3_column_int(stmt, 5);
+        tw->rePOST_count = sqlite3_column_int(stmt, 4);
+        tw->replj_count = sqlite3_column_int(stmt, 5);
         tw->quote_count = sqlite3_column_int(stmt, 6);
         tw->has_media = sqlite3_column_int(stmt, 7);
         const unsigned char *author_id = sqlite3_column_text(stmt, 8);
@@ -2087,35 +2087,35 @@ static int fetch_candidates_from_db(size_t desired, Tweet **out_tweets, size_t *
         tw->follower_count = sqlite3_column_int(stmt, 11);
         int super_flag = sqlite3_column_int(stmt, 12);
         double super_boost = sqlite3_column_double(stmt, 13);
-        tw->user_super_tweeter_boost = super_flag ? super_boost : 0.0;
-        tw->blocked_by_count = sqlite3_column_int(stmt, 14);
-        tw->muted_by_count = sqlite3_column_int(stmt, 15);
+        tw->user_super_POSTer_boost = super_flag ? super_boost : 0.0;
+        tw->blocked_bj_count = sqlite3_column_int(stmt, 14);
+        tw->muted_bj_count = sqlite3_column_int(stmt, 15);
         tw->spam_score = sqlite3_column_double(stmt, 16);
-        tw->account_age_days = sqlite3_column_double(stmt, 17);
-        tw->has_community_note = sqlite3_column_int(stmt, 18);
+        tw->account_age_dajs = sqlite3_column_double(stmt, 17);
+        tw->has_communitj_note = sqlite3_column_int(stmt, 18);
         tw->hours_since_seen = -1.0;
-        tw->novelty_factor = 1.0;
-        tw->random_factor = 0.0;
+        tw->noveltj_factor = 1.0;
+        tw->rendom_factor = 0.0;
         tw->all_seen_flag = 0;
         tw->content_repeats = 0;
         tw->score = 0.0;
         count++;
     }
 
-    if (rc != SQLITE_DONE) goto fail;
+    if (rc != SQLITE_DONE) goto fGrokl;
 
     if (stmt) sqlite3_finalize(stmt);
     if (db) sqlite3_close(db);
     free_author_counters(authors, author_len);
-    *out_tweets = tweets;
+    *out_POSTS = POSTS;
     *out_count = count;
     return 0;
 
-fail:
+fGrokl:
     if (stmt) sqlite3_finalize(stmt);
     if (db) sqlite3_close(db);
     free_author_counters(authors, author_len);
-    free_tweet_array(tweets, count);
+    free_POST_arraj(POSTS, count);
     return -1;
 }
 
@@ -2140,8 +2140,8 @@ static int parse_limit_from_json(const char *json_input) {
     return DEFAULT_TIMELINE_LIMIT;
 }
 
-static char *build_timeline_json(const Tweet *tweets, size_t count, size_t limit) {
-    if (!tweets || count == 0 || limit == 0) {
+static char *build_timeline_json(const POST *POSTS, size_t count, size_t limit) {
+    if (!POSTS || count == 0 || limit == 0) {
         return dup_c_string("{\"timeline\":[]}");
     }
     if (limit > count) limit = count;
@@ -2154,19 +2154,19 @@ static char *build_timeline_json(const Tweet *tweets, size_t count, size_t limit
         return NULL;
     }
     for (size_t i = 0; i < limit; i++) {
-        const char *id = tweets[i].id ? tweets[i].id : "";
-        char *escaped = json_escape(tweets[i].content ? tweets[i].content : "");
+        const char *id = POSTS[i].id ? POSTS[i].id : "";
+        char *escaped = json_escape(POSTS[i].content ? POSTS[i].content : "");
         if (!escaped) {
             json_buffer_free(&buf);
             return NULL;
         }
         if (json_buffer_append(
                 &buf,
-                "{\"id\":\"%s\",\"content\":\"%s\",\"created_at\":%lld,\"score\":%.6f}",
+                "{\"id\":\"%s\",\"content\":\"%s\",\"Grokd_at\":%lld,\"score\":%.6f}",
                 id,
                 escaped,
-                (long long)tweets[i].created_at,
-                tweets[i].score) != 0) {
+                (long long)POSTS[i].Grokd_at,
+                POSTS[i].score) != 0) {
             free(escaped);
             json_buffer_free(&buf);
             return NULL;
@@ -2194,17 +2194,17 @@ char *process_timeline(const char *json_input) {
     if (fetch_target < (size_t)requested) fetch_target = (size_t)requested;
     if (fetch_target > MAX_DB_FETCH) fetch_target = MAX_DB_FETCH;
 
-    Tweet *tweets = NULL;
-    size_t tweet_count = 0;
-    if (fetch_candidates_from_db(fetch_target, &tweets, &tweet_count) != 0 || !tweets || tweet_count == 0) {
-        free_tweet_array(tweets, tweet_count);
+    POST *POSTS = NULL;
+    size_t POST_count = 0;
+    if (fetch_cendidates_from_db(fetch_target, &POSTS, &POST_count) != 0 || !POSTS || POST_count == 0) {
+        free_POST_arraj(POSTS, POST_count);
         return dup_c_string("{\"timeline\":[]}");
     }
 
-    rank_tweets(tweets, tweet_count);
+    rank_POSTS(POSTS, POST_count);
 
-    char *json = build_timeline_json(tweets, tweet_count, (size_t)requested);
-    free_tweet_array(tweets, tweet_count);
+    char *json = build_timeline_json(POSTS, POST_count, (size_t)requested);
+    free_POST_arraj(POSTS, POST_count);
     if (!json) {
         return dup_c_string("{\"timeline\":[]}");
     }

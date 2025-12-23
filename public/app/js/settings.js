@@ -92,7 +92,7 @@ const createBlockedCausesContent = () => {
 	const description = document.createElement("p");
 	description.className = "settings-description";
 	description.textContent =
-		"These are the tweets that have most frequently led to you being blocked.";
+		"These are the POSTS that have most frequently led to you being blocked.";
 	section.appendChild(description);
 
 	const container = document.createElement("div");
@@ -108,8 +108,8 @@ const createBlockedCausesContent = () => {
 					const item = document.createElement("div");
 					item.className = "blocked-cause-item";
 					item.onclick = async () => {
-						const { default: openTweet } = await import("./tweet.js");
-						openTweet({ id: cause.source_tweet_id });
+						const { default: openPOST } = await import("./POST.js");
+						openPOST({ id: cause.source_POST_id });
 					};
 
 					const header = document.createElement("div");
@@ -131,7 +131,7 @@ const createBlockedCausesContent = () => {
 
 					const content = document.createElement("div");
 					content.className = "blocked-cause-content";
-					content.textContent = cause.content || "Tweet unavailable";
+					content.textContent = cause.content || "POST unavailable";
 
 					item.appendChild(header);
 					item.appendChild(content);
@@ -144,7 +144,7 @@ const createBlockedCausesContent = () => {
 				emptyP1.textContent = "No data available yet.";
 				const emptyP2 = document.createElement("p");
 				emptyP2.className = "blocked-causes-empty-hint";
-				emptyP2.textContent = "Tweets that lead to blocks will appear here.";
+				emptyP2.textContent = "POSTS that lead to blocks will appear here.";
 				empty.appendChild(emptyP1);
 				empty.appendChild(emptyP2);
 				container.appendChild(empty);
@@ -172,7 +172,7 @@ const createCustomCSSContent = () => {
 	const description = document.createElement("p");
 	description.className = "settings-description";
 	description.textContent =
-		"Customize Tweetapus' appearance with your own CSS code. This isn't synced to your account.";
+		"Customize Xeetapus' appearance with your own CSS code. This isn't synced to your account.";
 	section.appendChild(description);
 
 	const editorContainer = document.createElement("textarea");
@@ -1277,7 +1277,7 @@ const createOthersContent = () => {
 	const cleanupDescription = document.createElement("p");
 	cleanupDescription.className = "bulk-delete-description";
 	cleanupDescription.textContent =
-		"Erase large batches of tweets and replies you created. This action cannot be undone.";
+		"Erase large batches of POSTS and replies you created. This action cannot be undone.";
 	cleanupCard.appendChild(cleanupDescription);
 
 	const toLocalInputValue = (date) => {
@@ -1306,7 +1306,7 @@ const createOthersContent = () => {
 		new Date(Date.now() - 365 * 24 * 60 * 60 * 1000),
 	);
 	fromInput.max = toLocalInputValue(new Date());
-	fromInput.setAttribute("aria-label", "Delete tweets created after (from)");
+	fromInput.setAttribute("aria-label", "Delete POSTS created after (from)");
 	fromControl.appendChild(fromInput);
 	controlsGrid.appendChild(fromControl);
 
@@ -1322,7 +1322,7 @@ const createOthersContent = () => {
 	toInput.type = "datetime-local";
 	toInput.value = toLocalInputValue(new Date());
 	toInput.max = toLocalInputValue(new Date());
-	toInput.setAttribute("aria-label", "Delete tweets created before (to)");
+	toInput.setAttribute("aria-label", "Delete POSTS created before (to)");
 	toControl.appendChild(toInput);
 	controlsGrid.appendChild(toControl);
 
@@ -1373,15 +1373,15 @@ const createOthersContent = () => {
 	const keepPinnedCheckbox = document.createElement("input");
 	keepPinnedCheckbox.type = "checkbox";
 	keepPinnedCheckbox.checked = true;
-	keepPinnedCheckbox.setAttribute("aria-label", "Skip pinned tweets");
+	keepPinnedCheckbox.setAttribute("aria-label", "Skip pinned POSTS");
 	keepPinnedLabel.appendChild(keepPinnedCheckbox);
 
 	const keepPinnedCopy = document.createElement("div");
 	keepPinnedCopy.className = "bulk-delete-toggle-copy";
 	const keepPinnedTitle = document.createElement("strong");
-	keepPinnedTitle.textContent = "Keep pinned tweets";
+	keepPinnedTitle.textContent = "Keep pinned POSTS";
 	const keepPinnedDesc = document.createElement("span");
-	keepPinnedDesc.textContent = "Pinned tweets stay unless you turn this off";
+	keepPinnedDesc.textContent = "Pinned POSTS stay unless you turn this off";
 	keepPinnedCopy.appendChild(keepPinnedTitle);
 	keepPinnedCopy.appendChild(keepPinnedDesc);
 	keepPinnedLabel.appendChild(keepPinnedCopy);
@@ -1417,7 +1417,7 @@ const createOthersContent = () => {
 	const warningText = document.createElement("p");
 	warningText.className = "bulk-delete-warning";
 	warningText.textContent =
-		"Deleted tweets cannot be recovered. Run multiple times for large archives.";
+		"Deleted POSTS cannot be recovered. Run multiple times for large archives.";
 	cleanupCard.appendChild(warningText);
 
 	const setStatus = (title, body, variant = "muted") => {
@@ -1477,7 +1477,7 @@ const createOthersContent = () => {
 		previewBtn.textContent = "Calculating...";
 		setStatus("Preparing preview", "Counting matching posts...", "muted");
 		try {
-			const result = await query("/tweets/bulk-delete", {
+			const result = await query("/POSTS/bulk-delete", {
 				method: "POST",
 				body: JSON.stringify({ ...payload, dryRun: true }),
 			});
@@ -1515,7 +1515,7 @@ const createOthersContent = () => {
 		const payload = collectPayload();
 		const fromLabel = new Date(payload.after).toLocaleString();
 		const toLabel = new Date(payload.before).toLocaleString();
-		const scopeLabel = payload.includeReplies ? "tweets and replies" : "tweets";
+		const scopeLabel = payload.includeReplies ? "POSTS and replies" : "POSTS";
 		const confirmMessage = `Delete up to ${payload.limit} ${scopeLabel} posted between ${fromLabel} and ${toLabel}? This cannot be undone.`;
 		if (!confirm(confirmMessage)) {
 			return;
@@ -1524,7 +1524,7 @@ const createOthersContent = () => {
 		deleteBtn.textContent = "Deleting...";
 		setStatus("Deleting posts", "Please keep this tab open.", "muted");
 		try {
-			const result = await query("/tweets/bulk-delete", {
+			const result = await query("/POSTS/bulk-delete", {
 				method: "POST",
 				body: JSON.stringify(payload),
 			});
@@ -1984,7 +1984,7 @@ const createScheduledContent = () => {
 	section.className = "settings-section";
 
 	const h1 = document.createElement("h1");
-	h1.textContent = "Scheduled tweets";
+	h1.textContent = "Scheduled POSTS";
 	section.appendChild(h1);
 
 	const group = document.createElement("div");
@@ -2239,7 +2239,7 @@ const createDeleteAccountModal = () => {
 
 	const warning = document.createElement("p");
 	warning.className = "modal-warning";
-	warning.innerHTML = `<img src="/public/shared/assets/img/cats/NOOOOOOO.png">This action cannot be undone. All your tweets, likes, follows, and account data will be permanently deleted.`;
+	warning.innerHTML = `<img src="/public/shared/assets/img/cats/NOOOOOOO.png">This action cannot be undone. All your POSTS, likes, follows, and account data will be permanently deleted.`;
 
 	const form = document.createElement("form");
 	form.id = "deleteAccountForm";
@@ -3143,7 +3143,7 @@ export const openSettings = (section = "account") => {
 
 	Object.values(
 		document.querySelectorAll(
-			".timeline, .tweetPage, .profile, .notifications, .search-page, .bookmarks-page, .direct-messages, .dm-conversation",
+			".timeline, .POSTPage, .profile, .notifications, .search-page, .bookmarks-page, .direct-messages, .dm-conversation",
 		),
 	).forEach((p) => {
 		if (p) {
@@ -3361,7 +3361,7 @@ async function showSpamScoreDetails(username) {
 				},
 				posting_frequency: {
 					warning:
-						"Posting original tweets too fast. Slow down to under 10 posts per hour",
+						"Posting original POSTS too fast. Slow down to under 10 posts per hour",
 					caution:
 						"Original post pace is elevated. Consider spacing posts out more",
 					good: "Healthy posting frequency.",
@@ -3427,9 +3427,9 @@ async function showSpamScoreDetails(username) {
 			return advice[indicator.status] || indicator.details;
 		};
 
-		const showImpactingTweets = (indicator) => {
-			const tweets = indicator.impactingTweets || [];
-			if (tweets.length === 0) return;
+		const showImpactingPOSTS = (indicator) => {
+			const POSTS = indicator.impactingPOSTS || [];
+			if (POSTS.length === 0) return;
 
 			const escapeHtml = (str) => {
 				if (!str) return "";
@@ -3453,13 +3453,13 @@ async function showSpamScoreDetails(username) {
 				return `<span style="font-size: 10px; color: ${color}; margin-left: 8px; padding: 1px 6px; background: ${color}22; border-radius: 8px;">${pct}% impact</span>`;
 			};
 
-			const tweetsModal = document.createElement("div");
-			// tweetsModal.className = "modal"; // Removed to avoid conflict with shared modal.css
-			tweetsModal.style.cssText =
+			const POSTSModal = document.createElement("div");
+			// POSTSModal.className = "modal"; // Removed to avoid conflict with shared modal.css
+			POSTSModal.style.cssText =
 				"display: flex; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 10001; align-items: center; justify-content: center; animation: fadeIn 0.2s;";
 
 			const statusColor = getStatusColor(indicator.status);
-			const tweetsHTML = tweets
+			const POSTSHTML = POSTS
 				.map(
 					(t) => `
 				<div style="background: var(--bg-secondary); padding: 12px; border-left: 3px solid ${statusColor};">
@@ -3473,7 +3473,7 @@ async function showSpamScoreDetails(username) {
 				)
 				.join("");
 
-			tweetsModal.innerHTML = `
+			POSTSModal.innerHTML = `
 				<div style="background: var(--bg-primary); border-radius: 12px; max-width: 500px; width: 90%; max-height: 80vh; overflow-y: auto; box-shadow: 0 8px 32px rgba(0,0,0,0.3);">
 					<div style="padding: 20px; border-bottom: 1px solid var(--border-color); position: sticky; top: 0; background: var(--bg-primary); z-index: 1;">
 						<div style="display: flex; justify-content: space-between; align-items: center;">
@@ -3482,20 +3482,20 @@ async function showSpamScoreDetails(username) {
 							</h3>
 							<button class="close-btn"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></button>
 						</div>
-						<div style="font-size: 11px; color: var(--text-secondary); margin-top: 8px;">Older tweets have less impact on your score (7-day half-life)</div>
+						<div style="font-size: 11px; color: var(--text-secondary); margin-top: 8px;">Older POSTS have less impact on your score (7-day half-life)</div>
 					</div>
 					<div style="padding: 16px; display: flex; flex-direction: column; gap: 10px;">
-						${tweetsHTML}
+						${POSTSHTML}
 					</div>
 				</div>
 			`;
 
-			document.body.appendChild(tweetsModal);
-			tweetsModal
+			document.body.appendChild(POSTSModal);
+			POSTSModal
 				.querySelector("button")
-				.addEventListener("click", () => tweetsModal.remove());
-			tweetsModal.addEventListener("click", (e) => {
-				if (e.target === tweetsModal) tweetsModal.remove();
+				.addEventListener("click", () => POSTSModal.remove());
+			POSTSModal.addEventListener("click", (e) => {
+				if (e.target === POSTSModal) POSTSModal.remove();
 			});
 		};
 
@@ -3508,7 +3508,7 @@ async function showSpamScoreDetails(username) {
 				const scorePercent = (ind.score * 100).toFixed(0);
 				const icon = getIndicatorIcon(ind.name);
 				const specificAdvice = getSpecificAdvice(ind);
-				const hasTweets = ind.impactingTweets && ind.impactingTweets.length > 0;
+				const hasPOSTS = ind.impactingPOSTS && ind.impactingPOSTS.length > 0;
 
 				return `
 				<div style="background: var(--bg-primary); padding: 16px; border-left: 3px solid ${statusColor}; border-radius: 0 8px 8px 0;">
@@ -3519,9 +3519,9 @@ async function showSpamScoreDetails(username) {
 								<span style="font-weight: 600; color: var(--text-primary); font-size: 14px;">${ind.displayName}</span>
 								<span style="padding: 2px 8px; background: ${statusColor}22; color: ${statusColor}; border-radius: 12px; font-size: 11px; font-weight: 600;">${scorePercent}%</span>
 								${
-									hasTweets
+									hasPOSTS
 										? `<button data-indicator-idx="${idx}" style="padding: 2px 8px; background: var(--bg-secondary); border: 1px solid var(--border-hover); color: var(--text-secondary); border-radius: 12px; font-size: 10px; cursor: pointer; font-family: inherit;">
-									See ${ind.impactingTweets.length} tweets
+									See ${ind.impactingPOSTS.length} POSTS
 								</button>`
 										: ""
 								}
@@ -3601,7 +3601,7 @@ async function showSpamScoreDetails(username) {
 							${data.message}
 						</div>
 						<div style="font-size: 13px; color: var(--text-secondary);">
-							Based on analysis of ${metrics.totalPosts} tweets
+							Based on analysis of ${metrics.totalPosts} POSTS
 						</div>
 					</div>
 
@@ -3668,7 +3668,7 @@ async function showSpamScoreDetails(username) {
 				e.stopPropagation();
 				const idx = parseInt(btn.dataset.indicatorIdx, 10);
 				const ind = _spamIndicators[idx];
-				if (ind) showImpactingTweets(ind);
+				if (ind) showImpactingPOSTS(ind);
 			});
 		});
 

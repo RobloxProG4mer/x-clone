@@ -48,7 +48,7 @@ const insertArticle = db.prepare(`
     reply_to,
     source,
     poll_id,
-    quote_tweet_id,
+    quote_POST_id,
     reply_restriction,
     scheduled_post_id,
     article_id,

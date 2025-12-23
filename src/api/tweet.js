@@ -56,13 +56,13 @@ const checkReplyPermission = async (replier, originalAuthor, restriction) => {
 	}
 };
 
-const getTweetById = db.query(`
+const getPOSTById = db.query(`
   SELECT *
   FROM posts 
   WHERE posts.id = ?
 `);
 
-const countBulkDeletableTweets = db.query(`
+const countBulkDeletablePOSTS = db.query(`
 	SELECT COUNT(*) as total
 	FROM posts
 	WHERE user_id = ?
@@ -72,7 +72,7 @@ const countBulkDeletableTweets = db.query(`
 		AND (? = 0 OR pinned = 0)
 `);
 
-const getBulkDeletableTweetIds = db.query(`
+const getBulkDeletablePOSTIds = db.query(`
 	SELECT id
 	FROM posts
 	WHERE user_id = ?
@@ -120,7 +120,7 @@ const getUserById = db.query(
 	"SELECT id, username, name, avatar, verified, gold, gray, avatar_radius, affiliate, affiliate_with, selected_community_tag, checkmark_outline, avatar_outline FROM users WHERE id = ?",
 );
 
-const getTweetWithThread = db.query(`
+const getPOSTWithThread = db.query(`
   WITH RECURSIVE thread_posts AS (
     SELECT *, 0 AS level
     FROM posts
@@ -138,8 +138,8 @@ FROM thread_posts
 ORDER BY level DESC, created_at ASC;
 `);
 
-const createTweet = db.query(`
-	INSERT INTO posts (id, user_id, content, reply_to, source, poll_id, quote_tweet_id, reply_restriction, article_id, community_id, community_only, outline) 
+const createPOST = db.query(`
+	INSERT INTO posts (id, user_id, content, reply_to, source, poll_id, quote_POST_id, reply_restriction, article_id, community_id, community_only, outline) 
   VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
 	RETURNING *
 `);
@@ -158,7 +158,7 @@ const updateQuoteCount = db.query(`
   UPDATE posts SET quote_count = quote_count + ? WHERE id = ?
 `);
 
-const getQuotedTweet = db.query(`
+const getQuotedPOST = db.query(`
   SELECT posts.*, users.username, users.name, users.avatar, users.verified, users.gold, users.gray, users.avatar_radius, users.affiliate, users.affiliate_with, users.checkmark_outline, users.avatar_outline, users.label_type
   FROM posts
   JOIN users ON posts.user_id = users.id
@@ -211,8 +211,8 @@ const getPollVoters = db.query(`
   LIMIT 10
 `);
 
-const getPollDataForTweet = (tweetId, userId) => {
-	const poll = getPollByPostId.get(tweetId);
+const getPollDataForPOST = (POSTId, userId) => {
+	const poll = getPollByPostId.get(POSTId);
 	if (!poll) return null;
 
 	const options = getPollOptions.all(poll.id);
@@ -235,8 +235,8 @@ const getPollDataForTweet = (tweetId, userId) => {
 	};
 };
 
-const getTweetAttachments = (tweetId) => {
-	return getAttachmentsByPostId.all(tweetId);
+const getPOSTAttachments = (POSTId) => {
+	return getAttachmentsByPostId.all(POSTId);
 };
 
 const getFactCheckForPost = db.query(`
@@ -270,44 +270,44 @@ const summarizeArticle = (article) => {
 	return `${stripped.slice(0, 257)}…`;
 };
 
-const getQuotedTweetData = (quoteTweetId, userId) => {
-	if (!quoteTweetId) return null;
+const getQuotedPOSTData = (quotePOSTId, userId) => {
+	if (!quotePOSTId) return null;
 
-	const quotedTweet = getQuotedTweet.get(quoteTweetId);
-	if (!quotedTweet) return null;
+	const quotedPOST = getQuotedPOST.get(quotePOSTId);
+	if (!quotedPOST) return null;
 
-	const authorSuspended = isUserSuspendedById(quotedTweet.user_id);
-	const authorShadowbanned = isUserShadowbannedById(quotedTweet.user_id);
+	const authorSuspended = isUserSuspendedById(quotedPOST.user_id);
+	const authorShadowbanned = isUserShadowbannedById(quotedPOST.user_id);
 	if (authorSuspended) {
 		return {
-			id: quotedTweet.id,
+			id: quotedPOST.id,
 			unavailable_reason: "suspended",
-			created_at: quotedTweet.created_at,
+			created_at: quotedPOST.created_at,
 		};
 	}
 	if (authorShadowbanned) {
 		const viewer = userId ? getUserById.get(userId) : null;
-		if (!(viewer && (viewer.id === quotedTweet.user_id || viewer.admin))) {
+		if (!(viewer && (viewer.id === quotedPOST.user_id || viewer.admin))) {
 			return {
-				id: quotedTweet.id,
+				id: quotedPOST.id,
 				unavailable_reason: "shadowbanned",
-				created_at: quotedTweet.created_at,
+				created_at: quotedPOST.created_at,
 			};
 		}
 	}
 
 	const author = {
-		username: quotedTweet.username,
-		name: quotedTweet.name,
-		avatar: quotedTweet.avatar,
-		verified: quotedTweet.verified || false,
-		gold: quotedTweet.gold || false,
-		gray: quotedTweet.gray || false,
-		avatar_radius: quotedTweet.avatar_radius || null,
-		checkmark_outline: quotedTweet.checkmark_outline || null,
-		avatar_outline: quotedTweet.avatar_outline || null,
-		affiliate: quotedTweet.affiliate || false,
-		affiliate_with: quotedTweet.affiliate_with || null,
+		username: quotedPOST.username,
+		name: quotedPOST.name,
+		avatar: quotedPOST.avatar,
+		verified: quotedPOST.verified || false,
+		gold: quotedPOST.gold || false,
+		gray: quotedPOST.gray || false,
+		avatar_radius: quotedPOST.avatar_radius || null,
+		checkmark_outline: quotedPOST.checkmark_outline || null,
+		avatar_outline: quotedPOST.avatar_outline || null,
+		affiliate: quotedPOST.affiliate || false,
+		affiliate_with: quotedPOST.affiliate_with || null,
 	};
 
 	if (author.affiliate && author.affiliate_with) {
@@ -318,11 +318,11 @@ const getQuotedTweetData = (quoteTweetId, userId) => {
 	}
 
 	return {
-		...quotedTweet,
+		...quotedPOST,
 		author,
-		poll: getPollDataForTweet(quotedTweet.id, userId),
-		attachments: getTweetAttachments(quotedTweet.id),
-		interactive_card: getCardDataForTweet(quotedTweet.id),
+		poll: getPollDataForPOST(quotedPOST.id, userId),
+		attachments: getPOSTAttachments(quotedPOST.id),
+		interactive_card: getCardDataForPOST(quotedPOST.id),
 	};
 };
 
@@ -346,23 +346,23 @@ const updateLikeCount = db.query(`
   UPDATE posts SET like_count = like_count + ? WHERE id = ?
 `);
 
-const checkRetweetExists = db.query(`
-  SELECT id FROM retweets WHERE user_id = ? AND post_id = ?
+const checkrePOSTExists = db.query(`
+  SELECT id FROM rePOSTS WHERE user_id = ? AND post_id = ?
 `);
 
-const addRetweet = db.query(`
-  INSERT INTO retweets (id, user_id, post_id) VALUES (?, ?, ?)
+const addrePOST = db.query(`
+  INSERT INTO rePOSTS (id, user_id, post_id) VALUES (?, ?, ?)
 `);
 
-const removeRetweet = db.query(`
-  DELETE FROM retweets WHERE user_id = ? AND post_id = ?
+const removerePOST = db.query(`
+  DELETE FROM rePOSTS WHERE user_id = ? AND post_id = ?
 `);
 
-const updateRetweetCount = db.query(`
-  UPDATE posts SET retweet_count = retweet_count + ? WHERE id = ?
+const updaterePOSTCount = db.query(`
+  UPDATE posts SET rePOST_count = rePOST_count + ? WHERE id = ?
 `);
 
-const getTweetLikers = db.query(`
+const getPOSTLikers = db.query(`
   SELECT u.id, u.username, u.name, u.avatar, u.verified, l.created_at as liked_at
   FROM likes l
   JOIN users u ON l.user_id = u.id
@@ -371,20 +371,20 @@ const getTweetLikers = db.query(`
   LIMIT ?
 `);
 
-const getTweetRetweeters = db.query(`
-  SELECT u.id, u.username, u.name, u.avatar, u.verified, r.created_at as retweeted_at
-  FROM retweets r
+const getPOSTrePOSTers = db.query(`
+  SELECT u.id, u.username, u.name, u.avatar, u.verified, r.created_at as rePOSTed_at
+  FROM rePOSTS r
   JOIN users u ON r.user_id = u.id
   WHERE r.post_id = ?
   ORDER BY r.created_at DESC
   LIMIT ?
 `);
 
-const getTweetQuoters = db.query(`
-  SELECT u.id, u.username, u.name, u.avatar, u.verified, p.created_at as quoted_at, p.id as quote_tweet_id, p.content as quote_content
+const getPOSTQuoters = db.query(`
+  SELECT u.id, u.username, u.name, u.avatar, u.verified, p.created_at as quoted_at, p.id as quote_POST_id, p.content as quote_content
   FROM posts p
   JOIN users u ON p.user_id = u.id
-  WHERE p.quote_tweet_id = ?
+  WHERE p.quote_POST_id = ?
   ORDER BY p.created_at DESC
   LIMIT ?
 `);
@@ -430,7 +430,7 @@ const createInteractiveCard = db.query(`
 `);
 
 const createCardOption = db.query(`
-  INSERT INTO interactive_card_options (id, card_id, description, tweet_text, option_order)
+  INSERT INTO interactive_card_options (id, card_id, description, POST_text, option_order)
   VALUES (?, ?, ?, ?, ?)
   RETURNING *
 `);
@@ -443,8 +443,8 @@ const getCardOptions = db.query(`
   SELECT * FROM interactive_card_options WHERE card_id = ? ORDER BY option_order ASC
 `);
 
-const getCardDataForTweet = (tweetId) => {
-	const card = getCardByPostId.get(tweetId);
+const getCardDataForPOST = (POSTId) => {
+	const card = getCardByPostId.get(POSTId);
 	if (!card) return null;
 
 	const options = getCardOptions.all(card.id);
@@ -462,7 +462,7 @@ const getLinkPreviewsByPostIds = (postIds) => {
 		.all(...postIds);
 };
 
-export default new Elysia({ prefix: "/tweets", tags: ["Tweets"] })
+export default new Elysia({ prefix: "/POSTS", tags: ["POSTS"] })
 	.use(jwt({ name: "jwt", secret: JWT_SECRET }))
 	.use(
 		rateLimit({
@@ -524,7 +524,7 @@ export default new Elysia({ prefix: "/tweets", tags: ["Tweets"] })
 				reply_to,
 				source,
 				poll,
-				quote_tweet_id,
+				quote_POST_id,
 				files,
 				reply_restriction,
 				gif_url,
@@ -539,8 +539,8 @@ export default new Elysia({ prefix: "/tweets", tags: ["Tweets"] })
 				emoji_kitchen_url,
 				outline,
 			} = body;
-			const tweetContent = typeof content === "string" ? content : "";
-			const trimmedContent = tweetContent.trim();
+			const POSTContent = typeof content === "string" ? content : "";
+			const trimmedContent = POSTContent.trim();
 			const hasAttachments = Array.isArray(files) && files.length > 0;
 			const hasBody = trimmedContent.length > 0;
 			const targetArticleId = article_id ? String(article_id) : null;
@@ -579,9 +579,9 @@ export default new Elysia({ prefix: "/tweets", tags: ["Tweets"] })
 					return { error: "Card must have 2-4 options" };
 				}
 				for (const option of interactive_card.options) {
-					if (!option.description || !option.tweet_text) {
+					if (!option.description || !option.POST_text) {
 						return {
-							error: "Each option must have description and tweet text",
+							error: "Each option must have description and POST text",
 						};
 					}
 					if (option.description.length > 100) {
@@ -589,9 +589,9 @@ export default new Elysia({ prefix: "/tweets", tags: ["Tweets"] })
 							error: "Option description must be 100 characters or less",
 						};
 					}
-					if (option.tweet_text.length > 280) {
+					if (option.POST_text.length > 280) {
 						return {
-							error: "Option tweet text must be 280 characters or less",
+							error: "Option POST text must be 280 characters or less",
 						};
 					}
 				}
@@ -625,7 +625,7 @@ export default new Elysia({ prefix: "/tweets", tags: ["Tweets"] })
 				!hasUnsplashImages &&
 				!emoji_kitchen_url
 			) {
-				return { error: "Tweet content is required" };
+				return { error: "POST content is required" };
 			}
 
 			let referencedArticle = null;
@@ -636,9 +636,9 @@ export default new Elysia({ prefix: "/tweets", tags: ["Tweets"] })
 				}
 			}
 
-			let maxTweetLength = user.character_limit || 400;
+			let maxPOSTLength = user.character_limit || 400;
 			if (!user.character_limit) {
-				maxTweetLength = user.gray
+				maxPOSTLength = user.gray
 					? 37500
 					: user.gold
 						? 16500
@@ -646,9 +646,9 @@ export default new Elysia({ prefix: "/tweets", tags: ["Tweets"] })
 							? 5500
 							: 400;
 			}
-			if (trimmedContent.length > maxTweetLength) {
+			if (trimmedContent.length > maxPOSTLength) {
 				return {
-					error: `Tweet content must be ${maxTweetLength} characters or less`,
+					error: `POST content must be ${maxPOSTLength} characters or less`,
 				};
 			}
 
@@ -704,17 +704,17 @@ export default new Elysia({ prefix: "/tweets", tags: ["Tweets"] })
 			}
 
 			if (reply_to) {
-				const originalTweet = getTweetById.get(reply_to);
-				if (!originalTweet) {
-					return { error: "Original tweet not found" };
+				const originalPOST = getPOSTById.get(reply_to);
+				if (!originalPOST) {
+					return { error: "Original POST not found" };
 				}
-				// If the original tweet's author is suspended, do not allow replies.
-				if (isUserSuspendedById(originalTweet.user_id)) {
-					return { error: "Tweet not found" };
+				// If the original POST's author is suspended, do not allow replies.
+				if (isUserSuspendedById(originalPOST.user_id)) {
+					return { error: "POST not found" };
 				}
 				const originalAuthor = db
 					.query("SELECT id, username, verified, gold FROM users WHERE id = ?")
-					.get(originalTweet.user_id);
+					.get(originalPOST.user_id);
 
 				const isBlocked = db
 					.query(
@@ -723,28 +723,28 @@ export default new Elysia({ prefix: "/tweets", tags: ["Tweets"] })
 					.get(user.id, originalAuthor.id, originalAuthor.id, user.id);
 
 				if (isBlocked) {
-					return { error: "You cannot reply to this tweet" };
+					return { error: "You cannot reply to this POST" };
 				}
 
 				if (
-					originalTweet.reply_restriction &&
-					originalTweet.reply_restriction !== "everyone"
+					originalPOST.reply_restriction &&
+					originalPOST.reply_restriction !== "everyone"
 				) {
 					// Check if user can reply based on restriction
 					const canReply = await checkReplyPermission(
 						user,
 						originalAuthor,
-						originalTweet.reply_restriction,
+						originalPOST.reply_restriction,
 					);
 					if (!canReply) {
 						return {
-							error: "You don't have permission to reply to this tweet",
+							error: "You don't have permission to reply to this POST",
 						};
 					}
 				}
 			}
 
-			const tweetId = Bun.randomUUIDv7().split("-").pop();
+			const POSTId = Bun.randomUUIDv7().split("-").pop();
 			let pollId = null;
 
 			if (poll) {
@@ -753,7 +753,7 @@ export default new Elysia({ prefix: "/tweets", tags: ["Tweets"] })
 					Date.now() + poll.duration * 60 * 1000,
 				).toISOString();
 
-				createPoll.run(pollId, tweetId, expiresAt);
+				createPoll.run(pollId, POSTId, expiresAt);
 
 				poll.options.forEach((option, index) => {
 					const optionId = Bun.randomUUIDv7();
@@ -761,48 +761,48 @@ export default new Elysia({ prefix: "/tweets", tags: ["Tweets"] })
 				});
 			}
 
-			const tweetOutline = user.gray && outline ? outline : null;
+			const POSTOutline = user.gray && outline ? outline : null;
 
-			const tweet = createTweet.get(
-				tweetId,
+			const POST = createPOST.get(
+				POSTId,
 				effectiveUserId,
 				trimmedContent,
 				reply_to || null,
 				source || null,
 				pollId,
-				quote_tweet_id || null,
+				quote_POST_id || null,
 				replyRestriction,
 				targetArticleId,
 				community_id || null,
 				community_only || false,
-				tweetOutline,
+				POSTOutline,
 			);
 
 			if (reply_to) {
 				updatePostCounts.run(reply_to);
-				const originalTweet = getTweetById.get(reply_to);
-				if (originalTweet && originalTweet.user_id !== user.id) {
+				const originalPOST = getPOSTById.get(reply_to);
+				if (originalPOST && originalPOST.user_id !== user.id) {
 					addNotification(
-						originalTweet.user_id,
+						originalPOST.user_id,
 						"reply",
-						`${user.name || user.username} replied to your tweet`,
-						tweetId,
+						`${user.name || user.username} replied to your POST`,
+						POSTId,
 						user.id,
 						user.username,
 						user.name || user.username,
 					);
 				}
 			}
-			if (quote_tweet_id) {
-				const quotedTweet = getTweetById.get(quote_tweet_id);
-				if (quotedTweet && !isUserSuspendedById(quotedTweet.user_id)) {
-					updateQuoteCount.run(1, quote_tweet_id);
-					if (quotedTweet.user_id !== user.id) {
+			if (quote_POST_id) {
+				const quotedPOST = getPOSTById.get(quote_POST_id);
+				if (quotedPOST && !isUserSuspendedById(quotedPOST.user_id)) {
+					updateQuoteCount.run(1, quote_POST_id);
+					if (quotedPOST.user_id !== user.id) {
 						addNotification(
-							quotedTweet.user_id,
+							quotedPOST.user_id,
 							"quote",
-							`${user.name || user.username} quoted your tweet`,
-							tweetId,
+							`${user.name || user.username} quoted your POST`,
+							POSTId,
 							user.id,
 							user.username,
 							user.name || user.username,
@@ -813,13 +813,13 @@ export default new Elysia({ prefix: "/tweets", tags: ["Tweets"] })
 
 			const mentionRegex = /@(\w+)/g;
 			const mentions = new Set();
-			if (tweetContent && typeof tweetContent === "string") {
+			if (POSTContent && typeof POSTContent === "string") {
 				let match;
 				mentionRegex.lastIndex = 0;
-				match = mentionRegex.exec(tweetContent);
+				match = mentionRegex.exec(POSTContent);
 				while (match !== null) {
 					mentions.add(match[1]);
-					match = mentionRegex.exec(tweetContent);
+					match = mentionRegex.exec(POSTContent);
 				}
 			}
 
@@ -832,8 +832,8 @@ export default new Elysia({ prefix: "/tweets", tags: ["Tweets"] })
 					addNotification(
 						mentionedUser.id,
 						"mention",
-						`${user.name || user.username} mentioned you in a tweet`,
-						tweetId,
+						`${user.name || user.username} mentioned you in a POST`,
+						POSTId,
 						user.id,
 						user.username,
 						user.name || user.username,
@@ -847,7 +847,7 @@ export default new Elysia({ prefix: "/tweets", tags: ["Tweets"] })
 			if (!shouldTriggerAI && reply_to) {
 				const aiUser = getUserByUsername.get("h");
 				if (aiUser) {
-					const threadPosts = getTweetWithThread.all(reply_to);
+					const threadPosts = getPOSTWithThread.all(reply_to);
 					isReplyToAIThread = threadPosts.some(
 						(post) => post.user_id === aiUser.id,
 					);
@@ -861,18 +861,18 @@ export default new Elysia({ prefix: "/tweets", tags: ["Tweets"] })
 						try {
 							const vibe = ai_vibe || "normal";
 							const aiResponse = await generateAIResponse(
-								tweetId,
+								POSTId,
 								trimmedContent,
 								db,
 								vibe,
 							);
 							if (aiResponse) {
-								const aiTweetId = Bun.randomUUIDv7().split("-").pop();
-								createTweet.get(
-									aiTweetId,
+								const aiPOSTId = Bun.randomUUIDv7().split("-").pop();
+								createPOST.get(
+									aiPOSTId,
 									aiUser.id,
 									aiResponse,
-									tweetId,
+									POSTId,
 									null,
 									null,
 									null,
@@ -882,12 +882,12 @@ export default new Elysia({ prefix: "/tweets", tags: ["Tweets"] })
 									false,
 									null,
 								);
-								updatePostCounts.run(tweetId);
+								updatePostCounts.run(POSTId);
 								addNotification(
 									user.id,
 									"reply",
-									`${aiUser.name || aiUser.username} replied to your tweet`,
-									aiTweetId,
+									`${aiUser.name || aiUser.username} replied to your POST`,
+									aiPOSTId,
 									aiUser.id,
 									aiUser.username,
 									aiUser.name || aiUser.username,
@@ -908,7 +908,7 @@ export default new Elysia({ prefix: "/tweets", tags: ["Tweets"] })
 						Array.isArray(spoiler_flags) && spoiler_flags.includes(index);
 					const attachment = saveAttachment.get(
 						attachmentId,
-						tweetId,
+						POSTId,
 						file.hash,
 						file.name,
 						file.type,
@@ -924,7 +924,7 @@ export default new Elysia({ prefix: "/tweets", tags: ["Tweets"] })
 				const attachmentId = Bun.randomUUIDv7();
 				const attachment = saveAttachment.get(
 					attachmentId,
-					tweetId,
+					POSTId,
 					null,
 					"tenor.gif",
 					"image/gif",
@@ -946,7 +946,7 @@ export default new Elysia({ prefix: "/tweets", tags: ["Tweets"] })
 
 				const attachment = saveAttachment.get(
 					attachmentId,
-					tweetId,
+					POSTId,
 					attributionData,
 					"unsplash.jpg",
 					"image/jpeg",
@@ -979,7 +979,7 @@ export default new Elysia({ prefix: "/tweets", tags: ["Tweets"] })
 
 					const attachment = saveAttachment.get(
 						attachmentId,
-						tweetId,
+						POSTId,
 						attributionData,
 						"unsplash.jpg",
 						"image/jpeg",
@@ -1005,7 +1005,7 @@ export default new Elysia({ prefix: "/tweets", tags: ["Tweets"] })
 				const attachmentId = Bun.randomUUIDv7();
 				const attachment = saveAttachment.get(
 					attachmentId,
-					tweetId,
+					POSTId,
 					null,
 					"emoji_kitchen.webp",
 					"image/webp",
@@ -1023,7 +1023,7 @@ export default new Elysia({ prefix: "/tweets", tags: ["Tweets"] })
 				}
 				if (referencedArticle) {
 					const articleAuthor = getUserById.get(referencedArticle.user_id);
-					const articleAttachments = getTweetAttachments(referencedArticle.id);
+					const articleAttachments = getPOSTAttachments(referencedArticle.id);
 					articlePreview = {
 						...referencedArticle,
 						author: articleAuthor || null,
@@ -1042,7 +1042,7 @@ export default new Elysia({ prefix: "/tweets", tags: ["Tweets"] })
 				const cardId = Bun.randomUUIDv7();
 				const card = createInteractiveCard.get(
 					cardId,
-					tweetId,
+					POSTId,
 					interactive_card.media_type,
 					interactive_card.media_url,
 				);
@@ -1054,7 +1054,7 @@ export default new Elysia({ prefix: "/tweets", tags: ["Tweets"] })
 						optionId,
 						cardId,
 						option.description.trim(),
-						option.tweet_text.trim(),
+						option.POST_text.trim(),
 						index,
 					);
 					cardOptions.push(savedOption);
@@ -1068,7 +1068,7 @@ export default new Elysia({ prefix: "/tweets", tags: ["Tweets"] })
 
 			let linkPreview = null;
 			if (
-				!quote_tweet_id &&
+				!quote_POST_id &&
 				attachments.length === 0 &&
 				!interactive_card &&
 				!targetArticleId
@@ -1082,7 +1082,7 @@ export default new Elysia({ prefix: "/tweets", tags: ["Tweets"] })
 				);
 
 				if (externalUrls.length > 0) {
-					linkPreview = await getOrFetchLinkPreview(externalUrls[0], tweetId);
+					linkPreview = await getOrFetchLinkPreview(externalUrls[0], POSTId);
 				}
 			}
 
@@ -1121,16 +1121,16 @@ export default new Elysia({ prefix: "/tweets", tags: ["Tweets"] })
 
 			return {
 				success: true,
-				tweet: {
-					...tweet,
+				POST: {
+					...POST,
 					author: {
 						...effectiveUser,
 						affiliate_with_profile: affiliateWithProfile,
 						community_tag: communityTag,
 					},
 					liked_by_user: false,
-					retweeted_by_user: false,
-					poll: getPollDataForTweet(tweet.id, user.id),
+					rePOSTed_by_user: false,
+					poll: getPollDataForPOST(POST.id, user.id),
 					attachments: attachments,
 					article_preview: articlePreview,
 					interactive_card: cardData,
@@ -1138,8 +1138,8 @@ export default new Elysia({ prefix: "/tweets", tags: ["Tweets"] })
 				},
 			};
 		} catch (error) {
-			console.error("Tweet creation error:", error);
-			return { error: "Failed to create tweet" };
+			console.error("POST creation error:", error);
+			return { error: "Failed to create POST" };
 		}
 	})
 	.post("/:id/reaction", async ({ jwt, headers, params, body }) => {
@@ -1153,32 +1153,32 @@ export default new Elysia({ prefix: "/tweets", tags: ["Tweets"] })
 			const user = getUserByUsername.get(payload.username);
 			if (!user) return { error: "User not found" };
 
-			const { id: tweetId } = params;
+			const { id: POSTId } = params;
 			const { emoji } = body || {};
 			if (!emoji || typeof emoji !== "string")
 				return { error: "Emoji is required" };
 
-			const tweet = getTweetById.get(tweetId);
-			if (!tweet) return { error: "Tweet not found" };
-			if (isUserSuspendedById(tweet.user_id)) {
-				return { error: "Tweet not found" };
+			const POST = getPOSTById.get(POSTId);
+			if (!POST) return { error: "POST not found" };
+			if (isUserSuspendedById(POST.user_id)) {
+				return { error: "POST not found" };
 			}
 
 			const blockCheck = db
 				.query(
 					"SELECT 1 FROM blocks WHERE (blocker_id = ? AND blocked_id = ?) OR (blocker_id = ? AND blocked_id = ?) ",
 				)
-				.get(user.id, tweet.user_id, tweet.user_id, user.id);
+				.get(user.id, POST.user_id, POST.user_id, user.id);
 			if (blockCheck) {
 				return { error: "You cannot interact with this user" };
 			}
 
-			const existing = checkReactionExists.get(user.id, tweetId, emoji);
+			const existing = checkReactionExists.get(user.id, POSTId, emoji);
 
 			if (existing) {
-				removeReaction.run(user.id, tweetId, emoji);
-				const total = countReactionsForPost.get(tweetId)?.total || 0;
-				const topReactions = getTopReactionsForPost.all(tweetId);
+				removeReaction.run(user.id, POSTId, emoji);
+				const total = countReactionsForPost.get(POSTId)?.total || 0;
+				const topReactions = getTopReactionsForPost.all(POSTId);
 				return {
 					success: true,
 					reacted: false,
@@ -1187,16 +1187,16 @@ export default new Elysia({ prefix: "/tweets", tags: ["Tweets"] })
 				};
 			} else {
 				const reactionId = Bun.randomUUIDv7();
-				addReaction.run(reactionId, tweetId, user.id, emoji);
-				const total = countReactionsForPost.get(tweetId)?.total || 0;
-				const topReactions = getTopReactionsForPost.all(tweetId);
+				addReaction.run(reactionId, POSTId, user.id, emoji);
+				const total = countReactionsForPost.get(POSTId)?.total || 0;
+				const topReactions = getTopReactionsForPost.all(POSTId);
 
-				if (tweet.user_id !== user.id) {
+				if (POST.user_id !== user.id) {
 					addNotification(
-						tweet.user_id,
+						POST.user_id,
 						"reaction",
-						`${user.name || user.username} reacted to your tweet`,
-						tweetId,
+						`${user.name || user.username} reacted to your POST`,
+						POSTId,
 						user.id,
 						user.username,
 						user.name || user.username,
@@ -1229,8 +1229,8 @@ export default new Elysia({ prefix: "/tweets", tags: ["Tweets"] })
 			const { id } = params;
 			const { limit = 50 } = query;
 
-			const tweet = getTweetById.get(id);
-			if (!tweet) return { error: "Tweet not found" };
+			const POST = getPOSTById.get(id);
+			if (!POST) return { error: "POST not found" };
 
 			const reactions = listReactionsForPost.all(id, parseInt(limit, 10));
 			const total = countReactionsForPost.get(id)?.total || 0;
@@ -1264,13 +1264,13 @@ export default new Elysia({ prefix: "/tweets", tags: ["Tweets"] })
 			return { error: "Invalid token" };
 		}
 
-		const tweet = getTweetById.get(id);
-		if (!tweet) {
-			return { error: "Tweet not found" };
+		const POST = getPOSTById.get(id);
+		if (!POST) {
+			return { error: "POST not found" };
 		}
 
-		if (isUserSuspendedById(tweet.user_id)) {
-			return { error: "Tweet not found" };
+		if (isUserSuspendedById(POST.user_id)) {
+			return { error: "POST not found" };
 		}
 
 		if (currentUser) {
@@ -1281,14 +1281,14 @@ export default new Elysia({ prefix: "/tweets", tags: ["Tweets"] })
 			}, 100);
 		}
 
-		const threadPosts = getTweetWithThread.all(id);
+		const threadPosts = getPOSTWithThread.all(id);
 		let replies = limit
 			? db
 					.query(`
 		SELECT posts.*,
 			CASE WHEN posts.user_id = ? THEN 0 ELSE 1 END as is_not_author,
 			CASE WHEN EXISTS(SELECT 1 FROM follows WHERE follows.follower_id = ? AND follows.following_id = posts.user_id) THEN 0 ELSE 1 END as is_not_following,
-			(posts.like_count + posts.reply_count + posts.retweet_count) as engagement
+			(posts.like_count + posts.reply_count + posts.rePOST_count) as engagement
 		FROM posts
 		JOIN users ON posts.user_id = users.id
 		WHERE reply_to = ?
@@ -1298,7 +1298,7 @@ export default new Elysia({ prefix: "/tweets", tags: ["Tweets"] })
 		LIMIT ? OFFSET ?
 	`)
 					.all(
-						tweet.user_id,
+						POST.user_id,
 						currentUser?.id || "0",
 						id,
 						currentUser?.id || "0",
@@ -1316,28 +1316,28 @@ export default new Elysia({ prefix: "/tweets", tags: ["Tweets"] })
 		const getUserLikesQuery = db.query(
 			`SELECT post_id FROM likes WHERE user_id = ? AND post_id IN (${postPlaceholders})`,
 		);
-		const getUserRetweetsQuery = db.query(
-			`SELECT post_id FROM retweets WHERE user_id = ? AND post_id IN (${postPlaceholders})`,
+		const getUserRePOSTSQuery = db.query(
+			`SELECT post_id FROM rePOSTS WHERE user_id = ? AND post_id IN (${postPlaceholders})`,
 		);
 
 		const userLikes = currentUser
 			? getUserLikesQuery.all(currentUser.id, ...allPostIds)
 			: [];
-		const userRetweets = currentUser
-			? getUserRetweetsQuery.all(currentUser.id, ...allPostIds)
+		const userRePOSTS = currentUser
+			? getUserRePOSTSQuery.all(currentUser.id, ...allPostIds)
 			: [];
 
 		const likedPosts = new Set(userLikes.map((like) => like.post_id));
-		const retweetedPosts = new Set(
-			userRetweets.map((retweet) => retweet.post_id),
+		const rePOSTedPosts = new Set(
+			userRePOSTS.map((rePOST) => rePOST.post_id),
 		);
 
-		tweet.liked_by_user = likedPosts.has(tweet.id);
-		tweet.retweeted_by_user = retweetedPosts.has(tweet.id);
+		POST.liked_by_user = likedPosts.has(POST.id);
+		POST.rePOSTed_by_user = rePOSTedPosts.has(POST.id);
 
 		const allUserIds = [
 			...new Set([
-				tweet.user_id,
+				POST.user_id,
 				...threadPosts.map((p) => p.user_id),
 				...replies.map((r) => r.user_id),
 			]),
@@ -1377,7 +1377,7 @@ export default new Elysia({ prefix: "/tweets", tags: ["Tweets"] })
 		const userMap = new Map(users.map((user) => [user.id, user]));
 
 		if (
-			!(currentUser && (currentUser.admin || currentUser.id === tweet.user_id))
+			!(currentUser && (currentUser.admin || currentUser.id === POST.user_id))
 		) {
 			replies = replies.filter((p) => {
 				const u = userMap.get(p.user_id);
@@ -1385,14 +1385,14 @@ export default new Elysia({ prefix: "/tweets", tags: ["Tweets"] })
 			});
 		}
 
-		const allTweetIds = [tweet.id, ...allPostIds];
-		const tweetIdsPlaceholders = allTweetIds.map(() => "?").join(",");
+		const allPOSTIds = [POST.id, ...allPostIds];
+		const POSTIdsPlaceholders = allPOSTIds.map(() => "?").join(",");
 
 		const allAttachments = db
 			.query(
-				`SELECT * FROM attachments WHERE post_id IN (${tweetIdsPlaceholders})`,
+				`SELECT * FROM attachments WHERE post_id IN (${POSTIdsPlaceholders})`,
 			)
-			.all(...allTweetIds);
+			.all(...allPOSTIds);
 		const attachmentMap = new Map();
 		allAttachments.forEach((att) => {
 			if (!attachmentMap.has(att.post_id)) {
@@ -1401,7 +1401,7 @@ export default new Elysia({ prefix: "/tweets", tags: ["Tweets"] })
 			attachmentMap.get(att.post_id).push(att);
 		});
 
-		const allLinkPreviews = getLinkPreviewsByPostIds(allTweetIds);
+		const allLinkPreviews = getLinkPreviewsByPostIds(allPOSTIds);
 		const linkPreviewMap = new Map(
 			allLinkPreviews.map((lp) => [lp.post_id, lp]),
 		);
@@ -1411,16 +1411,16 @@ export default new Elysia({ prefix: "/tweets", tags: ["Tweets"] })
 				`SELECT fc.*, u.username as admin_username, u.name as admin_name
 				FROM fact_checks fc
 				JOIN users u ON fc.created_by = u.id
-				WHERE fc.post_id IN (${tweetIdsPlaceholders})`,
+				WHERE fc.post_id IN (${POSTIdsPlaceholders})`,
 			)
-			.all(...allTweetIds);
+			.all(...allPOSTIds);
 		const factCheckMap = new Map(allFactChecks.map((fc) => [fc.post_id, fc]));
 
 		const allInteractiveCards = db
 			.query(
-				`SELECT * FROM interactive_cards WHERE post_id IN (${tweetIdsPlaceholders})`,
+				`SELECT * FROM interactive_cards WHERE post_id IN (${POSTIdsPlaceholders})`,
 			)
-			.all(...allTweetIds);
+			.all(...allPOSTIds);
 		const cardMap = new Map(allInteractiveCards.map((c) => [c.post_id, c]));
 		const cardIds = allInteractiveCards.map((c) => c.id);
 		const cardOptionsMap = new Map();
@@ -1440,8 +1440,8 @@ export default new Elysia({ prefix: "/tweets", tags: ["Tweets"] })
 		}
 
 		const articleIds = new Set();
-		if (tweet.article_id) {
-			articleIds.add(tweet.article_id);
+		if (POST.article_id) {
+			articleIds.add(POST.article_id);
 		}
 		threadPosts.forEach((post) => {
 			if (post.article_id) {
@@ -1520,11 +1520,11 @@ export default new Elysia({ prefix: "/tweets", tags: ["Tweets"] })
 				return {
 					...post,
 					liked_by_user: likedPosts.has(post.id),
-					retweeted_by_user: retweetedPosts.has(post.id),
+					rePOSTed_by_user: rePOSTedPosts.has(post.id),
 					author: userMap.get(post.user_id),
-					poll: getPollDataForTweet(post.id, currentUser?.id || "0"),
-					quoted_tweet: getQuotedTweetData(
-						post.quote_tweet_id,
+					poll: getPollDataForPOST(post.id, currentUser?.id || "0"),
+					quoted_POST: getQuotedPOSTData(
+						post.quote_POST_id,
 						currentUser?.id || "0",
 					),
 					attachments: attachmentMap.get(post.id) || [],
@@ -1557,11 +1557,11 @@ export default new Elysia({ prefix: "/tweets", tags: ["Tweets"] })
 				return {
 					...reply,
 					liked_by_user: likedPosts.has(reply.id),
-					retweeted_by_user: retweetedPosts.has(reply.id),
+					rePOSTed_by_user: rePOSTedPosts.has(reply.id),
 					author: userMap.get(reply.user_id),
-					poll: getPollDataForTweet(reply.id, currentUser?.id || "0"),
-					quoted_tweet: getQuotedTweetData(
-						reply.quote_tweet_id,
+					poll: getPollDataForPOST(reply.id, currentUser?.id || "0"),
+					quoted_POST: getQuotedPOSTData(
+						reply.quote_POST_id,
 						currentUser?.id || "0",
 					),
 					attachments: attachmentMap.get(reply.id) || [],
@@ -1578,30 +1578,30 @@ export default new Elysia({ prefix: "/tweets", tags: ["Tweets"] })
 
 		const hasMoreReplies = processedReplies.length >= parseInt(limit, 10);
 
-		const tweetReactionCount = countReactionsForPost.get(tweet.id)?.total || 0;
-		const tweetTopReactions = getTopReactionsForPost.all(tweet.id);
-		const tweetCard = cardMap.get(tweet.id);
+		const POSTReactionCount = countReactionsForPost.get(POST.id)?.total || 0;
+		const POSTTopReactions = getTopReactionsForPost.all(POST.id);
+		const POSTCard = cardMap.get(POST.id);
 
 		return {
-			tweet: {
-				...tweet,
-				author: userMap.get(tweet.user_id),
-				poll: getPollDataForTweet(tweet.id, currentUser?.id || "0"),
-				quoted_tweet: getQuotedTweetData(
-					tweet.quote_tweet_id,
+			POST: {
+				...POST,
+				author: userMap.get(POST.user_id),
+				poll: getPollDataForPOST(POST.id, currentUser?.id || "0"),
+				quoted_POST: getQuotedPOSTData(
+					POST.quote_POST_id,
 					currentUser?.id || "0",
 				),
-				attachments: attachmentMap.get(tweet.id) || [],
-				article_preview: tweet.article_id
-					? articleMap.get(tweet.article_id) || null
+				attachments: attachmentMap.get(POST.id) || [],
+				article_preview: POST.article_id
+					? articleMap.get(POST.article_id) || null
 					: null,
-				reaction_count: tweetReactionCount,
-				top_reactions: tweetTopReactions,
-				fact_check: factCheckMap.get(tweet.id) || null,
-				interactive_card: tweetCard
-					? { ...tweetCard, options: cardOptionsMap.get(tweetCard.id) || [] }
+				reaction_count: POSTReactionCount,
+				top_reactions: POSTTopReactions,
+				fact_check: factCheckMap.get(POST.id) || null,
+				interactive_card: POSTCard
+					? { ...POSTCard, options: cardOptionsMap.get(POSTCard.id) || [] }
 					: null,
-				link_preview: linkPreviewMap.get(tweet.id) || null,
+				link_preview: linkPreviewMap.get(POST.id) || null,
 			},
 			threadPosts: processedThreadPosts,
 			replies: processedReplies,
@@ -1637,18 +1637,18 @@ export default new Elysia({ prefix: "/tweets", tags: ["Tweets"] })
 			if (!user) return { error: "User not found" };
 
 			const { id } = params;
-			const tweet = getTweetById.get(id);
-			if (!tweet) return { error: "Tweet not found" };
+			const POST = getPOSTById.get(id);
+			if (!POST) return { error: "POST not found" };
 
-			if (isUserSuspendedById(tweet.user_id)) {
-				return { error: "Tweet not found" };
+			if (isUserSuspendedById(POST.user_id)) {
+				return { error: "POST not found" };
 			}
 
 			const blockCheck = db
 				.query(
 					"SELECT 1 FROM blocks WHERE (blocker_id = ? AND blocked_id = ?) OR (blocker_id = ? AND blocked_id = ?) ",
 				)
-				.get(user.id, tweet.user_id, tweet.user_id, user.id);
+				.get(user.id, POST.user_id, POST.user_id, user.id);
 			if (blockCheck) {
 				return { error: "You cannot interact with this user" };
 			}
@@ -1664,12 +1664,12 @@ export default new Elysia({ prefix: "/tweets", tags: ["Tweets"] })
 				addLike.run(likeId, user.id, id);
 				updateLikeCount.run(1, id);
 
-				const tweet = getTweetById.get(id);
-				if (tweet && tweet.user_id !== user.id) {
+				const POST = getPOSTById.get(id);
+				if (POST && POST.user_id !== user.id) {
 					addNotification(
-						tweet.user_id,
+						POST.user_id,
 						"like",
-						`${user.name || user.username} liked your tweet`,
+						`${user.name || user.username} liked your POST`,
 						id,
 						user.id,
 						user.username,
@@ -1684,18 +1684,18 @@ export default new Elysia({ prefix: "/tweets", tags: ["Tweets"] })
 			return { error: "Failed to toggle like" };
 		}
 	})
-	.post("/:id/retweet", async ({ jwt, headers, params, set }) => {
+	.post("/:id/rePOST", async ({ jwt, headers, params, set }) => {
 		const authorization = headers.authorization;
 		if (!authorization) return { error: "Authentication required" };
 
 		const identifier = getIdentifier(headers);
 		const rateCheck = checkMultipleRateLimits(identifier, [
-			"retweet",
-			"rapid_retweet",
+			"rePOST",
+			"rapid_rePOST",
 		]);
 		if (rateCheck.isLimited) {
 			set.status = 429;
-			if (rateCheck.limitType === "rapid_retweet") {
+			if (rateCheck.limitType === "rapid_rePOST") {
 				return {
 					error: "Please solve the captcha to continue",
 					captcha_required: true,
@@ -1713,38 +1713,38 @@ export default new Elysia({ prefix: "/tweets", tags: ["Tweets"] })
 			if (!user) return { error: "User not found" };
 
 			const { id } = params;
-			const tweet = getTweetById.get(id);
-			if (!tweet) return { error: "Tweet not found" };
+			const POST = getPOSTById.get(id);
+			if (!POST) return { error: "POST not found" };
 
-			if (isUserSuspendedById(tweet.user_id)) {
-				return { error: "Tweet not found" };
+			if (isUserSuspendedById(POST.user_id)) {
+				return { error: "POST not found" };
 			}
 
 			const blockCheck = db
 				.query(
 					"SELECT 1 FROM blocks WHERE (blocker_id = ? AND blocked_id = ?) OR (blocker_id = ? AND blocked_id = ?) ",
 				)
-				.get(user.id, tweet.user_id, tweet.user_id, user.id);
+				.get(user.id, POST.user_id, POST.user_id, user.id);
 			if (blockCheck) {
 				return { error: "You cannot interact with this user" };
 			}
 
-			const existingRetweet = checkRetweetExists.get(user.id, id);
+			const existingrePOST = checkrePOSTExists.get(user.id, id);
 
-			if (existingRetweet) {
-				removeRetweet.run(user.id, id);
-				updateRetweetCount.run(-1, id);
-				return { success: true, retweeted: false };
+			if (existingrePOST) {
+				removerePOST.run(user.id, id);
+				updaterePOSTCount.run(-1, id);
+				return { success: true, rePOSTed: false };
 			} else {
-				const retweetId = Bun.randomUUIDv7();
-				addRetweet.run(retweetId, user.id, id);
-				updateRetweetCount.run(1, id);
+				const rePOSTId = Bun.randomUUIDv7();
+				addrePOST.run(rePOSTId, user.id, id);
+				updaterePOSTCount.run(1, id);
 
-				if (tweet.user_id !== user.id) {
+				if (POST.user_id !== user.id) {
 					addNotification(
-						tweet.user_id,
-						"retweet",
-						`${user.name || user.username} retweeted your tweet`,
+						POST.user_id,
+						"rePOST",
+						`${user.name || user.username} rePOSTed your POST`,
 						id,
 						user.id,
 						user.username,
@@ -1752,11 +1752,11 @@ export default new Elysia({ prefix: "/tweets", tags: ["Tweets"] })
 					);
 				}
 
-				return { success: true, retweeted: true };
+				return { success: true, rePOSTed: true };
 			}
 		} catch (error) {
-			console.error("Retweet toggle error:", error);
-			return { error: "Failed to toggle retweet" };
+			console.error("rePOST toggle error:", error);
+			return { error: "Failed to toggle rePOST" };
 		}
 	})
 	.post("/:id/poll/vote", async ({ jwt, headers, params, body }) => {
@@ -1770,28 +1770,28 @@ export default new Elysia({ prefix: "/tweets", tags: ["Tweets"] })
 			const user = getUserByUsername.get(payload.username);
 			if (!user) return { error: "User not found" };
 
-			const { id: tweetId } = params;
+			const { id: POSTId } = params;
 			const { optionId } = body;
 
 			if (!optionId) {
 				return { error: "Option ID is required" };
 			}
 
-			const poll = getPollByPostId.get(tweetId);
+			const poll = getPollByPostId.get(POSTId);
 			if (!poll) {
 				return { error: "Poll not found" };
 			}
 
-			const tweet = getTweetById.get(tweetId);
-			if (!tweet) return { error: "Tweet not found" };
-			if (isUserSuspendedById(tweet.user_id)) {
-				return { error: "Tweet not found" };
+			const POST = getPOSTById.get(POSTId);
+			if (!POST) return { error: "POST not found" };
+			if (isUserSuspendedById(POST.user_id)) {
+				return { error: "POST not found" };
 			}
 			const blockCheck = db
 				.query(
 					"SELECT 1 FROM blocks WHERE (blocker_id = ? AND blocked_id = ?) OR (blocker_id = ? AND blocked_id = ?) ",
 				)
-				.get(user.id, tweet.user_id, tweet.user_id, user.id);
+				.get(user.id, POST.user_id, POST.user_id, user.id);
 			if (blockCheck) {
 				return { error: "You cannot interact with this user" };
 			}
@@ -1849,14 +1849,14 @@ export default new Elysia({ prefix: "/tweets", tags: ["Tweets"] })
 			const { id } = params;
 			const { limit = 20 } = query;
 
-			const tweet = getTweetById.get(id);
-			if (!tweet) return { error: "Tweet not found" };
+			const POST = getPOSTById.get(id);
+			if (!POST) return { error: "POST not found" };
 
-			if (isUserSuspendedById(tweet.user_id)) {
-				return { canReply: false, error: "Tweet not found" };
+			if (isUserSuspendedById(POST.user_id)) {
+				return { canReply: false, error: "POST not found" };
 			}
 
-			const likers = getTweetLikers.all(id, parseInt(limit, 10));
+			const likers = getPOSTLikers.all(id, parseInt(limit, 10));
 
 			return {
 				success: true,
@@ -1868,7 +1868,7 @@ export default new Elysia({ prefix: "/tweets", tags: ["Tweets"] })
 			return { error: "Failed to get likers" };
 		}
 	})
-	.get("/:id/retweets", async ({ jwt, headers, params, query }) => {
+	.get("/:id/rePOSTS", async ({ jwt, headers, params, query }) => {
 		const authorization = headers.authorization;
 		if (!authorization) return { error: "Authentication required" };
 
@@ -1882,19 +1882,19 @@ export default new Elysia({ prefix: "/tweets", tags: ["Tweets"] })
 			const { id } = params;
 			const { limit = 20 } = query;
 
-			const tweet = getTweetById.get(id);
-			if (!tweet) return { error: "Tweet not found" };
+			const POST = getPOSTById.get(id);
+			if (!POST) return { error: "POST not found" };
 
-			const retweeters = getTweetRetweeters.all(id, parseInt(limit, 10));
+			const rePOSTers = getPOSTrePOSTers.all(id, parseInt(limit, 10));
 
 			return {
 				success: true,
-				users: retweeters,
-				type: "retweets",
+				users: rePOSTers,
+				type: "rePOSTS",
 			};
 		} catch (error) {
-			console.error("Get retweeters error:", error);
-			return { error: "Failed to get retweeters" };
+			console.error("Get rePOSTers error:", error);
+			return { error: "Failed to get rePOSTers" };
 		}
 	})
 	.get("/:id/quotes", async ({ jwt, headers, params, query }) => {
@@ -1911,58 +1911,58 @@ export default new Elysia({ prefix: "/tweets", tags: ["Tweets"] })
 			const { id } = params;
 			const { limit = 20 } = query;
 
-			const tweet = getTweetById.get(id);
-			if (!tweet) return { error: "Tweet not found" };
+			const POST = getPOSTById.get(id);
+			if (!POST) return { error: "POST not found" };
 
-			const quoters = getTweetQuoters.all(id, parseInt(limit, 10));
+			const quoters = getPOSTQuoters.all(id, parseInt(limit, 10));
 
-			const quoteTweets = quoters
+			const quotePOSTS = quoters
 				.map((quoter) => {
-					const quoteTweet = getTweetById.get(quoter.quote_tweet_id);
-					if (!quoteTweet) return null;
+					const quotePOST = getPOSTById.get(quoter.quote_POST_id);
+					if (!quotePOST) return null;
 
 					const author = db
 						.query(
 							"SELECT id, username, name, avatar, verified FROM users WHERE id = ?",
 						)
-						.get(quoteTweet.user_id);
+						.get(quotePOST.user_id);
 					const attachments = db
 						.query("SELECT * FROM attachments WHERE post_id = ?")
-						.all(quoteTweet.id);
+						.all(quotePOST.id);
 					const liked = db
 						.query("SELECT * FROM likes WHERE user_id = ? AND post_id = ?")
-						.get(user.id, quoteTweet.id);
-					const retweeted = db
-						.query("SELECT * FROM retweets WHERE user_id = ? AND post_id = ?")
-						.get(user.id, quoteTweet.id);
+						.get(user.id, quotePOST.id);
+					const rePOSTed = db
+						.query("SELECT * FROM rePOSTS WHERE user_id = ? AND post_id = ?")
+						.get(user.id, quotePOST.id);
 					const bookmarked = db
 						.query("SELECT * FROM bookmarks WHERE user_id = ? AND post_id = ?")
-						.get(user.id, quoteTweet.id);
+						.get(user.id, quotePOST.id);
 
 					return {
-						id: quoteTweet.id,
-						content: quoteTweet.content,
-						created_at: quoteTweet.created_at,
+						id: quotePOST.id,
+						content: quotePOST.content,
+						created_at: quotePOST.created_at,
 						author,
-						like_count: quoteTweet.like_count || 0,
-						retweet_count: quoteTweet.retweet_count || 0,
-						reply_count: quoteTweet.reply_count || 0,
-						quote_count: quoteTweet.quote_count || 0,
+						like_count: quotePOST.like_count || 0,
+						rePOST_count: quotePOST.rePOST_count || 0,
+						reply_count: quotePOST.reply_count || 0,
+						quote_count: quotePOST.quote_count || 0,
 						liked_by_user: !!liked,
-						retweeted_by_user: !!retweeted,
+						rePOSTed_by_user: !!rePOSTed,
 						bookmarked_by_user: !!bookmarked,
 						attachments: attachments || [],
-						source: quoteTweet.source,
-						reply_to: quoteTweet.reply_to,
-						quote_tweet_id: quoteTweet.quote_tweet_id,
-						pinned: quoteTweet.pinned || 0,
+						source: quotePOST.source,
+						reply_to: quotePOST.reply_to,
+						quote_POST_id: quotePOST.quote_POST_id,
+						pinned: quotePOST.pinned || 0,
 					};
 				})
-				.filter((tweet) => tweet !== null);
+				.filter((POST) => POST !== null);
 
 			return {
 				success: true,
-				tweets: quoteTweets,
+				POSTS: quotePOSTS,
 				type: "quotes",
 			};
 		} catch (error) {
@@ -1983,24 +1983,24 @@ export default new Elysia({ prefix: "/tweets", tags: ["Tweets"] })
 			if (!user) return { canReply: false, error: "User not found" };
 
 			const { id } = params;
-			const tweet = getTweetById.get(id);
-			if (!tweet) return { canReply: false, error: "Tweet not found" };
+			const POST = getPOSTById.get(id);
+			if (!POST) return { canReply: false, error: "POST not found" };
 
-			const tweetAuthor = db
+			const POSTAuthor = db
 				.query("SELECT id, username, verified, gold FROM users WHERE id = ?")
-				.get(tweet.user_id);
-			if (!tweetAuthor)
-				return { canReply: false, error: "Tweet author not found" };
+				.get(POST.user_id);
+			if (!POSTAuthor)
+				return { canReply: false, error: "POST author not found" };
 
 			const isBlocked = db
 				.query("SELECT 1 FROM blocks WHERE blocker_id = ? AND blocked_id = ?")
-				.get(tweetAuthor.id, user.id);
+				.get(POSTAuthor.id, user.id);
 
 			if (isBlocked) {
 				return { canReply: false, reason: "blocked" };
 			}
 
-			const replyRestriction = tweet.reply_restriction || "everyone";
+			const replyRestriction = POST.reply_restriction || "everyone";
 
 			if (replyRestriction === "everyone") {
 				return { canReply: true };
@@ -2008,7 +2008,7 @@ export default new Elysia({ prefix: "/tweets", tags: ["Tweets"] })
 
 			const canReply = await checkReplyPermission(
 				user,
-				tweetAuthor,
+				POSTAuthor,
 				replyRestriction,
 			);
 
@@ -2081,7 +2081,7 @@ export default new Elysia({ prefix: "/tweets", tags: ["Tweets"] })
 			const includeRepliesFlag = includeReplies ? 1 : 0;
 			const keepPinnedFlag = keepPinned ? 1 : 0;
 
-			const totalRow = countBulkDeletableTweets.get(
+			const totalRow = countBulkDeletablePOSTS.get(
 				user.id,
 				afterIso,
 				beforeIso,
@@ -2107,7 +2107,7 @@ export default new Elysia({ prefix: "/tweets", tags: ["Tweets"] })
 				return { success: true, deleted: 0, remaining: 0 };
 			}
 
-			const batchRows = getBulkDeletableTweetIds.all(
+			const batchRows = getBulkDeletablePOSTIds.all(
 				user.id,
 				afterIso,
 				beforeIso,
@@ -2140,8 +2140,8 @@ export default new Elysia({ prefix: "/tweets", tags: ["Tweets"] })
 				nextBatchAvailable: remaining > 0,
 			};
 		} catch (error) {
-			console.error("Bulk delete tweets error:", error);
-			return { error: "Failed to bulk delete tweets" };
+			console.error("Bulk delete POSTS error:", error);
+			return { error: "Failed to bulk delete POSTS" };
 		}
 	})
 	.delete("/:id", async ({ jwt, headers, params }) => {
@@ -2156,19 +2156,19 @@ export default new Elysia({ prefix: "/tweets", tags: ["Tweets"] })
 			if (!user) return { error: "User not found" };
 
 			const { id } = params;
-			const tweet = getTweetById.get(id);
-			if (!tweet) return { error: "Tweet not found" };
+			const POST = getPOSTById.get(id);
+			if (!POST) return { error: "POST not found" };
 
-			if (tweet.user_id !== user.id && !user.admin) {
-				return { error: "You can only delete your own tweets" };
+			if (POST.user_id !== user.id && !user.admin) {
+				return { error: "You can only delete your own POSTS" };
 			}
 
 			db.query("DELETE FROM posts WHERE id = ?").run(id);
 
 			return { success: true };
 		} catch (error) {
-			console.error("Delete tweet error:", error);
-			return { error: "Failed to delete tweet" };
+			console.error("Delete POST error:", error);
+			return { error: "Failed to delete POST" };
 		}
 	})
 	.patch("/:id/reply-restriction", async ({ jwt, headers, params, body }) => {
@@ -2185,11 +2185,11 @@ export default new Elysia({ prefix: "/tweets", tags: ["Tweets"] })
 			const { id } = params;
 			const { reply_restriction } = body;
 
-			const tweet = getTweetById.get(id);
-			if (!tweet) return { error: "Tweet not found" };
+			const POST = getPOSTById.get(id);
+			if (!POST) return { error: "POST not found" };
 
-			if (tweet.user_id !== user.id) {
-				return { error: "You can only modify your own tweets" };
+			if (POST.user_id !== user.id) {
+				return { error: "You can only modify your own POSTS" };
 			}
 
 			const validRestrictions = [
@@ -2227,15 +2227,15 @@ export default new Elysia({ prefix: "/tweets", tags: ["Tweets"] })
 			const { id } = params;
 			const { content } = body;
 
-			const tweet = getTweetById.get(id);
-			if (!tweet) return { error: "Tweet not found" };
+			const POST = getPOSTById.get(id);
+			if (!POST) return { error: "POST not found" };
 
-			if (tweet.user_id !== user.id) {
-				return { error: "You can only edit your own tweets" };
+			if (POST.user_id !== user.id) {
+				return { error: "You can only edit your own POSTS" };
 			}
 
-			if (tweet.poll_id) {
-				return { error: "Cannot edit tweets with polls" };
+			if (POST.poll_id) {
+				return { error: "Cannot edit POSTS with polls" };
 			}
 
 			if (!content || typeof content !== "string") {
@@ -2244,48 +2244,48 @@ export default new Elysia({ prefix: "/tweets", tags: ["Tweets"] })
 
 			const trimmedContent = content.trim();
 			if (trimmedContent.length === 0) {
-				return { error: "Tweet content cannot be empty" };
+				return { error: "POST content cannot be empty" };
 			}
 
-			let maxTweetLength = user.character_limit || 400;
+			let maxPOSTLength = user.character_limit || 400;
 			if (!user.character_limit) {
-				maxTweetLength = user.gold ? 16500 : user.verified ? 5500 : 400;
+				maxPOSTLength = user.gold ? 16500 : user.verified ? 5500 : 400;
 			}
-			if (trimmedContent.length > maxTweetLength) {
+			if (trimmedContent.length > maxPOSTLength) {
 				return {
-					error: `Tweet content must be ${maxTweetLength} characters or less`,
+					error: `POST content must be ${maxPOSTLength} characters or less`,
 				};
 			}
 
 			const historyId = Bun.randomUUIDv7();
 			db.query(
-				"INSERT INTO tweet_edit_history (id, post_id, content, edited_at) VALUES (?, ?, ?, datetime('now', 'utc'))",
-			).run(historyId, id, tweet.content);
+				"INSERT INTO POST_edit_history (id, post_id, content, edited_at) VALUES (?, ?, ?, datetime('now', 'utc'))",
+			).run(historyId, id, POST.content);
 
 			db.query(
 				"UPDATE posts SET content = ?, edited_at = datetime('now', 'utc') WHERE id = ?",
 			).run(trimmedContent, id);
 
-			const updatedTweet = getTweetById.get(id);
+			const updatedPOST = getPOSTById.get(id);
 
 			return {
 				success: true,
-				tweet: {
-					...updatedTweet,
+				POST: {
+					...updatedPOST,
 					author: user,
-					poll: getPollDataForTweet(updatedTweet.id, user.id),
-					quoted_tweet: getQuotedTweetData(
-						updatedTweet.quote_tweet_id,
+					poll: getPollDataForPOST(updatedPOST.id, user.id),
+					quoted_POST: getQuotedPOSTData(
+						updatedPOST.quote_POST_id,
 						user.id,
 					),
-					attachments: getTweetAttachments(updatedTweet.id),
-					fact_check: getFactCheckForPost.get(updatedTweet.id) || null,
-					interactive_card: getCardDataForTweet(updatedTweet.id),
+					attachments: getPOSTAttachments(updatedPOST.id),
+					fact_check: getFactCheckForPost.get(updatedPOST.id) || null,
+					interactive_card: getCardDataForPOST(updatedPOST.id),
 				},
 			};
 		} catch (error) {
-			console.error("Edit tweet error:", error);
-			return { error: "Failed to edit tweet" };
+			console.error("Edit POST error:", error);
+			return { error: "Failed to edit POST" };
 		}
 	})
 	.patch("/:id/outline", async ({ jwt, headers, params, body }) => {
@@ -2304,11 +2304,11 @@ export default new Elysia({ prefix: "/tweets", tags: ["Tweets"] })
 			}
 
 			const { id } = params;
-			const tweet = getTweetById.get(id);
-			if (!tweet) return { error: "Tweet not found" };
+			const POST = getPOSTById.get(id);
+			if (!POST) return { error: "POST not found" };
 
-			if (tweet.user_id !== user.id) {
-				return { error: "You can only update your own tweets" };
+			if (POST.user_id !== user.id) {
+				return { error: "You can only update your own POSTS" };
 			}
 
 			const outline = body.outline !== undefined ? body.outline || null : null;
@@ -2333,18 +2333,18 @@ export default new Elysia({ prefix: "/tweets", tags: ["Tweets"] })
 
 			const { id } = params;
 
-			const tweet = getTweetById.get(id);
-			if (!tweet) return { error: "Tweet not found" };
+			const POST = getPOSTById.get(id);
+			if (!POST) return { error: "POST not found" };
 
 			const history = db
 				.query(
-					"SELECT content, edited_at FROM tweet_edit_history WHERE post_id = ? ORDER BY edited_at DESC",
+					"SELECT content, edited_at FROM POST_edit_history WHERE post_id = ? ORDER BY edited_at DESC",
 				)
 				.all(id);
 
 			const currentVersion = {
-				content: tweet.content,
-				edited_at: tweet.edited_at || tweet.created_at,
+				content: POST.content,
+				edited_at: POST.edited_at || POST.created_at,
 				is_current: true,
 			};
 

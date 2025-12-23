@@ -122,7 +122,7 @@ const buildSearchPostsQuery = ({
 	}
 	if (onlyOriginal) {
 		where.push(
-			"posts.reply_to IS NULL AND posts.retweet_id IS NULL AND posts.quote_tweet_id IS NULL",
+			"posts.reply_to IS NULL AND posts.rePOST_id IS NULL AND posts.quote_POST_id IS NULL",
 		);
 	}
 
@@ -161,7 +161,7 @@ const buildSearchPostsQuery = ({
 	if (sort === "latest") orderClause = "posts.created_at DESC";
 	else if (sort === "oldest") orderClause = "posts.created_at ASC";
 	else if (sort === "top")
-		orderClause = "(posts.like_count + posts.retweet_count) DESC";
+		orderClause = "(posts.like_count + posts.rePOST_count) DESC";
 
 	const finalQuery = `
 		SELECT posts.* FROM posts
@@ -209,7 +209,7 @@ const getAttachmentsByPostId = db.query(`
   SELECT * FROM attachments WHERE post_id = ?
 `);
 
-const getQuotedTweet = db.query(`
+const getQuotedPOST = db.query(`
   SELECT posts.*, users.username, users.name, users.avatar, users.verified, users.gold, users.avatar_radius, users.affiliate, users.affiliate_with
   FROM posts
   JOIN users ON posts.user_id = users.id
@@ -221,12 +221,12 @@ const getTopReply = db.query(`
   FROM posts
   JOIN users ON posts.user_id = users.id
   WHERE posts.reply_to = ?
-  ORDER BY posts.like_count DESC, posts.retweet_count DESC, posts.created_at ASC
+  ORDER BY posts.like_count DESC, posts.rePOST_count DESC, posts.created_at ASC
   LIMIT 1
 `);
 
-const getPollDataForTweet = (tweetId, userId) => {
-	const poll = getPollByPostId.get(tweetId);
+const getPollDataForPOST = (POSTId, userId) => {
+	const poll = getPollByPostId.get(POSTId);
 	if (!poll) return null;
 
 	const options = getPollOptions.all(poll.id);
@@ -249,8 +249,8 @@ const getPollDataForTweet = (tweetId, userId) => {
 	};
 };
 
-const getTweetAttachments = (tweetId) => {
-	return getAttachmentsByPostId.all(tweetId);
+const getPOSTAttachments = (POSTId) => {
+	return getAttachmentsByPostId.all(POSTId);
 };
 
 const getCardByPostId = db.query(`
@@ -261,8 +261,8 @@ const getCardOptions = db.query(`
   SELECT * FROM interactive_card_options WHERE card_id = ? ORDER BY option_order ASC
 `);
 
-const getCardDataForTweet = (tweetId) => {
-	const card = getCardByPostId.get(tweetId);
+const getCardDataForPOST = (POSTId) => {
+	const card = getCardByPostId.get(POSTId);
 	if (!card) return null;
 
 	const options = getCardOptions.all(card.id);
@@ -272,21 +272,21 @@ const getCardDataForTweet = (tweetId) => {
 	};
 };
 
-const getQuotedTweetData = (quoteTweetId, userId) => {
-	if (!quoteTweetId) return null;
+const getQuotedPOSTData = (quotePOSTId, userId) => {
+	if (!quotePOSTId) return null;
 
-	const quotedTweet = getQuotedTweet.get(quoteTweetId);
-	if (!quotedTweet) return null;
+	const quotedPOST = getQuotedPOST.get(quotePOSTId);
+	if (!quotedPOST) return null;
 
 	const author = {
-		username: quotedTweet.username,
-		name: quotedTweet.name,
-		avatar: quotedTweet.avatar,
-		verified: quotedTweet.verified || false,
-		gold: quotedTweet.gold || false,
-		avatar_radius: quotedTweet.avatar_radius || null,
-		affiliate: quotedTweet.affiliate || false,
-		affiliate_with: quotedTweet.affiliate_with || null,
+		username: quotedPOST.username,
+		name: quotedPOST.name,
+		avatar: quotedPOST.avatar,
+		verified: quotedPOST.verified || false,
+		gold: quotedPOST.gold || false,
+		avatar_radius: quotedPOST.avatar_radius || null,
+		affiliate: quotedPOST.affiliate || false,
+		affiliate_with: quotedPOST.affiliate_with || null,
 	};
 
 	if (author.affiliate && author.affiliate_with) {
@@ -301,16 +301,16 @@ const getQuotedTweetData = (quoteTweetId, userId) => {
 	}
 
 	return {
-		...quotedTweet,
+		...quotedPOST,
 		author,
-		poll: getPollDataForTweet(quotedTweet.id, userId),
-		attachments: getTweetAttachments(quotedTweet.id),
-		interactive_card: getCardDataForTweet(quotedTweet.id),
+		poll: getPollDataForPOST(quotedPOST.id, userId),
+		attachments: getPOSTAttachments(quotedPOST.id),
+		interactive_card: getCardDataForPOST(quotedPOST.id),
 	};
 };
 
-const getTopReplyData = (tweetId, userId) => {
-	const topReply = getTopReply.get(tweetId);
+const getTopReplyData = (POSTId, userId) => {
+	const topReply = getTopReply.get(POSTId);
 	if (!topReply) return null;
 
 	const author = {
@@ -338,10 +338,10 @@ const getTopReplyData = (tweetId, userId) => {
 	return {
 		...topReply,
 		author,
-		poll: getPollDataForTweet(topReply.id, userId),
-		quoted_tweet: getQuotedTweetData(topReply.quote_tweet_id, userId),
-		attachments: getTweetAttachments(topReply.id),
-		interactive_card: getCardDataForTweet(topReply.id),
+		poll: getPollDataForPOST(topReply.id, userId),
+		quoted_POST: getQuotedPOSTData(topReply.quote_POST_id, userId),
+		attachments: getPOSTAttachments(topReply.id),
+		interactive_card: getCardDataForPOST(topReply.id),
 	};
 };
 
@@ -552,9 +552,9 @@ export default new Elysia({ prefix: "/search", tags: ["Search"] })
 			const postIds = posts.map((post) => post.id);
 			const likePlaceholders = postIds.map(() => "?").join(",");
 
-			// Only fetch likes/retweets if we have an authenticated user.
+			// Only fetch likes/rePOSTS if we have an authenticated user.
 			let userLikedPosts = new Set();
-			let userRetweetedPosts = new Set();
+			let userrePOSTedPosts = new Set();
 
 			if (user?.id) {
 				const getUserLikesQuery = db.query(
@@ -564,13 +564,13 @@ export default new Elysia({ prefix: "/search", tags: ["Search"] })
 				const userLikes = getUserLikesQuery.all(user.id, ...postIds);
 				userLikedPosts = new Set(userLikes.map((like) => like.post_id));
 
-				const getUserRetweetsQuery = db.query(
-					`SELECT post_id FROM retweets WHERE user_id = ? AND post_id IN (${likePlaceholders})`,
+				const getUserRePOSTSQuery = db.query(
+					`SELECT post_id FROM rePOSTS WHERE user_id = ? AND post_id IN (${likePlaceholders})`,
 				);
 
-				const userRetweets = getUserRetweetsQuery.all(user.id, ...postIds);
-				userRetweetedPosts = new Set(
-					userRetweets.map((retweet) => retweet.post_id),
+				const userRePOSTS = getUserRePOSTSQuery.all(user.id, ...postIds);
+				userrePOSTedPosts = new Set(
+					userRePOSTS.map((rePOST) => rePOST.post_id),
 				);
 			}
 
@@ -583,7 +583,7 @@ export default new Elysia({ prefix: "/search", tags: ["Search"] })
 
 				if (topReply) {
 					topReply.liked_by_user = userLikedPosts.has(topReply.id);
-					topReply.retweeted_by_user = userRetweetedPosts.has(topReply.id);
+					topReply.rePOSTed_by_user = userrePOSTedPosts.has(topReply.id);
 				}
 
 				return {
@@ -609,15 +609,15 @@ export default new Elysia({ prefix: "/search", tags: ["Search"] })
 					})(),
 					author: userMap[post.user_id],
 					liked_by_user: userLikedPosts.has(post.id),
-					retweeted_by_user: userRetweetedPosts.has(post.id),
-					poll: getPollDataForTweet(post.id, user ? user.id : null),
-					quoted_tweet: getQuotedTweetData(
-						post.quote_tweet_id,
+					rePOSTed_by_user: userrePOSTedPosts.has(post.id),
+					poll: getPollDataForPOST(post.id, user ? user.id : null),
+					quoted_POST: getQuotedPOSTData(
+						post.quote_POST_id,
 						user ? user.id : null,
 					),
 					top_reply: shouldShowTopReply ? topReply : null,
-					attachments: getTweetAttachments(post.id),
-					interactive_card: getCardDataForTweet(post.id),
+					attachments: getPOSTAttachments(post.id),
+					interactive_card: getCardDataForPOST(post.id),
 				};
 			});
 

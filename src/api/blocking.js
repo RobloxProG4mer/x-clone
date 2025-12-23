@@ -53,7 +53,7 @@ const getMyUserIps = db.prepare(
 );
 
 const addBlock = db.prepare(
-	"INSERT INTO blocks (id, blocker_id, blocked_id, source_tweet_id) VALUES (?, ?, ?, ?)",
+	"INSERT INTO blocks (id, blocker_id, blocked_id, source_POST_id) VALUES (?, ?, ?, ?)",
 );
 const removeBlock = db.prepare(
 	"DELETE FROM blocks WHERE blocker_id = ? AND blocked_id = ?",
@@ -177,7 +177,7 @@ export default new Elysia({ prefix: "/blocking", tags: ["Blocking"] })
 					Bun.randomUUIDv7(),
 					user.id,
 					userId,
-					body.sourceTweetId || null,
+					body.sourcePOSTId || null,
 				);
 				removeFollows.run(user.id, userId, userId, user.id);
 				removeFollowRequests.run(user.id, userId, userId, user.id);
@@ -230,7 +230,7 @@ export default new Elysia({ prefix: "/blocking", tags: ["Blocking"] })
 			},
 			body: t.Object({
 				userId: t.String(),
-				sourceTweetId: t.Optional(t.String()),
+				sourcePOSTId: t.Optional(t.String()),
 				capToken: t.Optional(t.String()),
 			}),
 			response: t.Object({
@@ -547,14 +547,14 @@ export default new Elysia({ prefix: "/blocking", tags: ["Blocking"] })
 					.query(
 						`
 					SELECT 
-						b.source_tweet_id, 
+						b.source_POST_id, 
 						COUNT(*) as count,
 						p.content,
 						p.created_at
 					FROM blocks b
-					LEFT JOIN posts p ON b.source_tweet_id = p.id
-					WHERE b.blocked_id = ? AND b.source_tweet_id IS NOT NULL
-					GROUP BY b.source_tweet_id
+					LEFT JOIN posts p ON b.source_POST_id = p.id
+					WHERE b.blocked_id = ? AND b.source_POST_id IS NOT NULL
+					GROUP BY b.source_POST_id
 					ORDER BY count DESC
 					LIMIT 50
 				`,
@@ -572,7 +572,7 @@ export default new Elysia({ prefix: "/blocking", tags: ["Blocking"] })
 		},
 		{
 			detail: {
-				description: "Gets tweets that caused the user to be blocked",
+				description: "Gets POSTS that caused the user to be blocked",
 			},
 			response: t.Object({
 				success: t.Optional(t.Boolean()),

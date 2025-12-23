@@ -1,6 +1,6 @@
 import {
 	createListSkeleton,
-	createTweetSkeleton,
+	createPOSTSkeleton,
 	removeSkeletons,
 	showSkeletons,
 } from "../../shared/skeleton-utils.js";
@@ -9,11 +9,11 @@ import toastQueue from "../../shared/toasts.js";
 import { createConfirmModal, createModal } from "../../shared/ui-utils.js";
 import query from "./api.js";
 import switchPage from "./pages.js";
-import { createTweetElement } from "./tweets.js";
+import { createPOSTElement } from "./POSTS.js";
 
-let currentTweets = [];
+let currentPOSTS = [];
 let currentMembers = [];
-let isLoadingTweets = false;
+let isLoadingPOSTS = false;
 
 const escapeHTML = (str) =>
 	str ? str.replace(/</g, "&lt;").replace(/>/g, "&gt;") : "";
@@ -141,19 +141,19 @@ async function loadListDetail(listId) {
 	const titleEl = document.getElementById("listDetailTitle");
 	const ownerEl = document.getElementById("listDetailOwner");
 	const infoEl = document.getElementById("listDetailInfo");
-	const tweetsContainer = document.getElementById("listTweetsContent");
+	const POSTSContainer = document.getElementById("listPOSTSContent");
 	const membersContainer = document.getElementById("listMembersContent");
 
 	titleEl.textContent = "Loading...";
 	ownerEl.textContent = "";
 	infoEl.innerHTML = "";
-	tweetsContainer.innerHTML = "";
+	POSTSContainer.innerHTML = "";
 	membersContainer.innerHTML = "";
 
 	currentList = null;
-	currentTweets = [];
+	currentPOSTS = [];
 	currentMembers = [];
-	hasMoreTweets = true;
+	hasMorePOSTS = true;
 
 	try {
 		const data = await query(`/lists/${listId}`);
@@ -243,7 +243,7 @@ async function loadListDetail(listId) {
 			infoEl.appendChild(actionsRow);
 		}
 
-		await loadListTweets(listId);
+		await loadListPOSTS(listId);
 
 		currentMembers.forEach((member) => {
 			membersContainer.appendChild(
@@ -271,22 +271,22 @@ async function loadListDetail(listId) {
 	}
 }
 
-async function loadListTweets(listId, append = false) {
-	if (isLoadingTweets || (!append && currentTweets.length > 0)) return;
+async function loadListPOSTS(listId, append = false) {
+	if (isLoadingPOSTS || (!append && currentPOSTS.length > 0)) return;
 
-	isLoadingTweets = true;
-	const container = document.getElementById("listTweetsContent");
+	isLoadingPOSTS = true;
+	const container = document.getElementById("listPOSTSContent");
 
 	let skeletons = [];
 	if (!append) {
-		skeletons = showSkeletons(container, createTweetSkeleton, 3);
+		skeletons = showSkeletons(container, createPOSTSkeleton, 3);
 	}
 
 	try {
-		let url = `/lists/${listId}/tweets?limit=20`;
-		if (append && currentTweets.length > 0) {
-			const lastTweet = currentTweets[currentTweets.length - 1];
-			url += `&before=${lastTweet.id}`;
+		let url = `/lists/${listId}/POSTS?limit=20`;
+		if (append && currentPOSTS.length > 0) {
+			const lastPOST = currentPOSTS[currentPOSTS.length - 1];
+			url += `&before=${lastPOST.id}`;
 		}
 
 		const data = await query(url);
@@ -300,38 +300,38 @@ async function loadListTweets(listId, append = false) {
 				errorDiv.textContent = data.error;
 				container.appendChild(errorDiv);
 			}
-			hasMoreTweets = false;
+			hasMorePOSTS = false;
 			return;
 		}
 
-		if (!data.tweets || data.tweets.length === 0) {
-			if (!append && currentTweets.length === 0) {
+		if (!data.POSTS || data.POSTS.length === 0) {
+			if (!append && currentPOSTS.length === 0) {
 				const emptyDiv = document.createElement("div");
 				emptyDiv.className = "lists-empty";
 				const emptyTitle = document.createElement("h3");
-				emptyTitle.textContent = "No tweets";
+				emptyTitle.textContent = "No POSTS";
 				emptyDiv.appendChild(emptyTitle);
 				const emptyText = document.createElement("p");
-				emptyText.textContent = "Tweets from list members will appear here.";
+				emptyText.textContent = "POSTS from list members will appear here.";
 				emptyDiv.appendChild(emptyText);
 				container.appendChild(emptyDiv);
 			}
-			hasMoreTweets = false;
+			hasMorePOSTS = false;
 			return;
 		}
 
-		currentTweets = append ? [...currentTweets, ...data.tweets] : data.tweets;
-		hasMoreTweets = data.hasMore;
+		currentPOSTS = append ? [...currentPOSTS, ...data.POSTS] : data.POSTS;
+		hasMorePOSTS = data.hasMore;
 
-		data.tweets.forEach((tweet) => {
-			const tweetEl = createTweetElement(tweet, { clickToOpen: true });
-			container.appendChild(tweetEl);
+		data.POSTS.forEach((POST) => {
+			const POSTEl = createPOSTElement(POST, { clickToOpen: true });
+			container.appendChild(POSTEl);
 		});
 	} catch (err) {
 		removeSkeletons(skeletons);
-		console.error("Error loading list tweets:", err);
+		console.error("Error loading list POSTS:", err);
 	} finally {
-		isLoadingTweets = false;
+		isLoadingPOSTS = false;
 	}
 }
 
@@ -398,7 +398,7 @@ function createMemberItem(member, isOwner, listId) {
 
 function setupListDetailTabs() {
 	const tabNav = document.querySelector(".list-detail-tabs");
-	const tweetsContent = document.getElementById("listTweetsContent");
+	const POSTSContent = document.getElementById("listPOSTSContent");
 	const membersContent = document.getElementById("listMembersContent");
 
 	tabNav.querySelectorAll(".list-detail-tab").forEach((tab) => {
@@ -410,11 +410,11 @@ function setupListDetailTabs() {
 			updateTabIndicator(tabNav, tab);
 
 			const tabName = tab.dataset.tab;
-			if (tabName === "tweets") {
-				tweetsContent.classList.remove("hidden");
+			if (tabName === "POSTS") {
+				POSTSContent.classList.remove("hidden");
 				membersContent.classList.add("hidden");
 			} else {
-				tweetsContent.classList.add("hidden");
+				POSTSContent.classList.add("hidden");
 				membersContent.classList.remove("hidden");
 			}
 		});

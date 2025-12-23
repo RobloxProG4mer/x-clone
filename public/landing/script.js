@@ -110,11 +110,11 @@ const linkifyText = (text) => {
 
 	let processedHtml = html.replace(
 		/<span data-mention="([^"]+)">@\1<\/span>/g,
-		'<a href="javascript:" class="tweet-mention" data-username="$1">@$1</a>',
+		'<a href="javascript:" class="POST-mention" data-username="$1">@$1</a>',
 	);
 	processedHtml = processedHtml.replace(
 		/<span data-hashtag="([^"]+)">#\1<\/span>/g,
-		'<a href="javascript:" class="tweet-hashtag" data-hashtag="$1">#$1</a>',
+		'<a href="javascript:" class="POST-hashtag" data-hashtag="$1">#$1</a>',
 	);
 
 	processedHtml = processCustomMarkdown(processedHtml);
@@ -141,65 +141,65 @@ const linkifyText = (text) => {
 	return el.innerHTML;
 };
 
-const createSimpleTweetElement = (tweet) => {
-	if (!tweet || !tweet.author) {
+const createSimplePOSTElement = (POST) => {
+	if (!POST || !POST.author) {
 		return document.createElement("div");
 	}
 
-	const tweetEl = document.createElement("div");
-	tweetEl.className = "tweet clickable";
+	const POSTEl = document.createElement("div");
+	POSTEl.className = "POST clickable";
 
-	const tweetHeaderEl = document.createElement("div");
-	tweetHeaderEl.className = "tweet-header";
+	const POSTHeaderEl = document.createElement("div");
+	POSTHeaderEl.className = "POST-header";
 
 	const avatarEl = document.createElement("img");
 	avatarEl.src =
-		tweet.author.avatar || `/public/shared/assets/default-avatar.svg`;
-	avatarEl.alt = tweet.author.name || tweet.author.username;
-	avatarEl.classList.add("tweet-header-avatar");
+		POST.author.avatar || `/public/shared/assets/default-avatar.svg`;
+	avatarEl.alt = POST.author.name || POST.author.username;
+	avatarEl.classList.add("POST-header-avatar");
 	avatarEl.setAttribute("loading", "lazy");
 
 	if (
-		tweet.author.avatar_radius !== null &&
-		tweet.author.avatar_radius !== undefined
+		POST.author.avatar_radius !== null &&
+		POST.author.avatar_radius !== undefined
 	) {
-		const pct = (tweet.author.avatar_radius / 100) * 100;
+		const pct = (POST.author.avatar_radius / 100) * 100;
 		avatarEl.style.borderRadius = `${Math.min(100, Math.max(0, pct))}%`;
-	} else if (tweet.author.gold) {
+	} else if (POST.author.gold) {
 		avatarEl.style.borderRadius = "4px";
 	} else {
 		avatarEl.style.borderRadius = "50%";
 	}
 
-	tweetHeaderEl.appendChild(avatarEl);
+	POSTHeaderEl.appendChild(avatarEl);
 
 	const infoEl = document.createElement("div");
-	infoEl.className = "tweet-header-info";
+	infoEl.className = "POST-header-info";
 
 	const nameEl = document.createElement("p");
 	nameEl.className = "name";
-	nameEl.textContent = tweet.author.name || tweet.author.username;
+	nameEl.textContent = POST.author.name || POST.author.username;
 
-	if (tweet.author.username !== tweet.author.name) {
+	if (POST.author.username !== POST.author.name) {
 		const usernameSpan = document.createElement("span");
-		usernameSpan.className = "tweet-header-username-span";
-		usernameSpan.textContent = `@${tweet.author.username}`;
+		usernameSpan.className = "POST-header-username-span";
+		usernameSpan.textContent = `@${POST.author.username}`;
 		nameEl.appendChild(usernameSpan);
 	}
 
 	const timeEl = document.createElement("p");
 	timeEl.className = "username";
-	timeEl.textContent = timeAgo(tweet.created_at);
+	timeEl.textContent = timeAgo(POST.created_at);
 
 	infoEl.appendChild(nameEl);
 	infoEl.appendChild(timeEl);
-	tweetHeaderEl.appendChild(infoEl);
-	tweetEl.appendChild(tweetHeaderEl);
+	POSTHeaderEl.appendChild(infoEl);
+	POSTEl.appendChild(POSTHeaderEl);
 
 	const contentEl = document.createElement("div");
-	contentEl.className = "tweet-content";
+	contentEl.className = "POST-content";
 
-	const contentText = tweet.content || "";
+	const contentText = POST.content || "";
 	const contentWithoutLinks = contentText.split(/https?:\/\/[^\s]+/g).join("");
 	const shouldTrim = contentWithoutLinks.length > 300;
 
@@ -218,7 +218,7 @@ const createSimpleTweetElement = (tweet) => {
 		applyLinkified(trimmed);
 
 		const ellipsis = document.createElement("span");
-		ellipsis.className = "tweet-ellipsis";
+		ellipsis.className = "POST-ellipsis";
 		ellipsis.innerText = "Show more…";
 		ellipsis.title = "Show more";
 		ellipsis.setAttribute("role", "button");
@@ -229,7 +229,7 @@ const createSimpleTweetElement = (tweet) => {
 			ellipsis.remove();
 
 			const collapse = document.createElement("span");
-			collapse.className = "tweet-ellipsis";
+			collapse.className = "POST-ellipsis";
 			collapse.innerText = "Show less";
 			collapse.addEventListener("click", (ev) => {
 				ev.preventDefault();
@@ -259,17 +259,17 @@ const createSimpleTweetElement = (tweet) => {
 		applyLinkified(contentWithoutLinks);
 	}
 
-	tweetEl.appendChild(contentEl);
+	POSTEl.appendChild(contentEl);
 
-	if (Array.isArray(tweet.attachments) && tweet.attachments.length > 0) {
+	if (Array.isArray(POST.attachments) && POST.attachments.length > 0) {
 		const attachmentsEl = document.createElement("div");
-		attachmentsEl.className = "tweet-attachments";
+		attachmentsEl.className = "POST-attachments";
 
-		tweet.attachments.slice(0, 4).forEach((attachment) => {
+		POST.attachments.slice(0, 4).forEach((attachment) => {
 			if (attachment.file_type?.startsWith("image/")) {
 				const img = document.createElement("img");
 				img.src = attachment.file_url;
-				img.alt = attachment.file_name || "Tweet image";
+				img.alt = attachment.file_name || "POST image";
 				img.setAttribute("loading", "lazy");
 				attachmentsEl.appendChild(img);
 			} else if (attachment.file_type?.startsWith("video/")) {
@@ -282,7 +282,7 @@ const createSimpleTweetElement = (tweet) => {
 		});
 
 		if (attachmentsEl.children.length > 0) {
-			tweetEl.appendChild(attachmentsEl);
+			POSTEl.appendChild(attachmentsEl);
 		}
 	}
 
@@ -299,12 +299,12 @@ const createSimpleTweetElement = (tweet) => {
 		return num;
 	}
 
-	const tweetInteractionsEl = document.createElement("div");
-	tweetInteractionsEl.className = "tweet-interactions";
+	const POSTInteractionsEl = document.createElement("div");
+	POSTInteractionsEl.className = "POST-interactions";
 
-	const tweetInteractionsReplyEl = document.createElement("button");
-	tweetInteractionsReplyEl.className = "engagement";
-	tweetInteractionsReplyEl.innerHTML = `<svg
+	const POSTInteractionsReplyEl = document.createElement("button");
+	POSTInteractionsReplyEl.className = "engagement";
+	POSTInteractionsReplyEl.innerHTML = `<svg
           width="19"
           height="19"
           viewBox="0 0 20 20"
@@ -318,11 +318,11 @@ const createSimpleTweetElement = (tweet) => {
             stroke-linecap="round"
             stroke-linejoin="round"
           />
-        </svg> ${tweet.reply_count ? formatNumber(tweet.reply_count) : ""}`;
+        </svg> ${POST.reply_count ? formatNumber(POST.reply_count) : ""}`;
 
-	const tweetInteractionsRetweetEl = document.createElement("button");
-	tweetInteractionsRetweetEl.className = "engagement";
-	tweetInteractionsRetweetEl.innerHTML = `<svg
+	const POSTInteractionsrePOSTEl = document.createElement("button");
+	POSTInteractionsrePOSTEl.className = "engagement";
+	POSTInteractionsrePOSTEl.innerHTML = `<svg
               width="19"
               height="19"
               viewBox="0 0 20 20"
@@ -336,11 +336,11 @@ const createSimpleTweetElement = (tweet) => {
                 stroke-linecap="round"
                 stroke-linejoin="round"
               />
-            </svg> ${tweet.retweet_count ? formatNumber(tweet.retweet_count) : ""}`;
+            </svg> ${POST.rePOST_count ? formatNumber(POST.rePOST_count) : ""}`;
 
-	const tweetInteractionsLikeEl = document.createElement("button");
-	tweetInteractionsLikeEl.className = "engagement";
-	tweetInteractionsLikeEl.innerHTML = `<svg
+	const POSTInteractionsLikeEl = document.createElement("button");
+	POSTInteractionsLikeEl.className = "engagement";
+	POSTInteractionsLikeEl.innerHTML = `<svg
           width="19"
           height="19"
           viewBox="0 0 20 20"
@@ -354,20 +354,20 @@ const createSimpleTweetElement = (tweet) => {
             stroke-linecap="round"
             stroke-linejoin="round"
           />
-        </svg> ${tweet.like_count ? formatNumber(tweet.like_count) : ""}`;
+        </svg> ${POST.like_count ? formatNumber(POST.like_count) : ""}`;
 
-	const tweetInteractionsOptionsEl = document.createElement("button");
-	tweetInteractionsOptionsEl.className = "engagement";
-	tweetInteractionsOptionsEl.innerHTML = `<svg width="19" height="19" viewBox="0 0 20 20" fill="currentColor" xmlns="http://www.w3.org/2000/svg" class="icon"><path d="M15.498 8.50159C16.3254 8.50159 16.9959 9.17228 16.9961 9.99963C16.9961 10.8271 16.3256 11.4987 15.498 11.4987C14.6705 11.4987 14 10.8271 14 9.99963C14.0002 9.17228 14.6706 8.50159 15.498 8.50159Z"></path><path d="M4.49805 8.50159C5.32544 8.50159 5.99689 9.17228 5.99707 9.99963C5.99707 10.8271 5.32555 11.4987 4.49805 11.4987C3.67069 11.4985 3 10.827 3 9.99963C3.00018 9.17239 3.6708 8.50176 4.49805 8.50159Z"></path><path d="M10.0003 8.50159C10.8276 8.50176 11.4982 9.17239 11.4984 9.99963C11.4984 10.827 10.8277 11.4985 10.0003 11.4987C9.17283 11.4987 8.50131 10.8271 8.50131 9.99963C8.50149 9.17228 9.17294 8.50159 10.0003 8.50159Z"></path></svg>`;
+	const POSTInteractionsOptionsEl = document.createElement("button");
+	POSTInteractionsOptionsEl.className = "engagement";
+	POSTInteractionsOptionsEl.innerHTML = `<svg width="19" height="19" viewBox="0 0 20 20" fill="currentColor" xmlns="http://www.w3.org/2000/svg" class="icon"><path d="M15.498 8.50159C16.3254 8.50159 16.9959 9.17228 16.9961 9.99963C16.9961 10.8271 16.3256 11.4987 15.498 11.4987C14.6705 11.4987 14 10.8271 14 9.99963C14.0002 9.17228 14.6706 8.50159 15.498 8.50159Z"></path><path d="M4.49805 8.50159C5.32544 8.50159 5.99689 9.17228 5.99707 9.99963C5.99707 10.8271 5.32555 11.4987 4.49805 11.4987C3.67069 11.4985 3 10.827 3 9.99963C3.00018 9.17239 3.6708 8.50176 4.49805 8.50159Z"></path><path d="M10.0003 8.50159C10.8276 8.50176 11.4982 9.17239 11.4984 9.99963C11.4984 10.827 10.8277 11.4985 10.0003 11.4987C9.17283 11.4987 8.50131 10.8271 8.50131 9.99963C8.50149 9.17228 9.17294 8.50159 10.0003 8.50159Z"></path></svg>`;
 
-	tweetInteractionsEl.appendChild(tweetInteractionsReplyEl);
-	tweetInteractionsEl.appendChild(tweetInteractionsRetweetEl);
-	tweetInteractionsEl.appendChild(tweetInteractionsLikeEl);
-	tweetInteractionsEl.appendChild(tweetInteractionsOptionsEl);
+	POSTInteractionsEl.appendChild(POSTInteractionsReplyEl);
+	POSTInteractionsEl.appendChild(POSTInteractionsrePOSTEl);
+	POSTInteractionsEl.appendChild(POSTInteractionsLikeEl);
+	POSTInteractionsEl.appendChild(POSTInteractionsOptionsEl);
 
-	tweetEl.appendChild(tweetInteractionsEl);
+	POSTEl.appendChild(POSTInteractionsEl);
 
-	return tweetEl;
+	return POSTEl;
 };
 
 const timeAgo = (date) => {
@@ -433,20 +433,20 @@ const timeAgo = (date) => {
 	return `${month} ${day}${daySuffix(day)}, ${year}`;
 };
 
-let isLoadingTweets = false;
-let tweetCache = [];
-const MAX_TWEETS_IN_DOM = 50;
+let isLoadingPOSTS = false;
+let POSTCache = [];
+const MAX_POSTS_IN_DOM = 50;
 
-const loadTweets = async () => {
-	if (isLoadingTweets) return;
-	isLoadingTweets = true;
+const loadPOSTS = async () => {
+	if (isLoadingPOSTS) return;
+	isLoadingPOSTS = true;
 
 	try {
-		const res = await fetch(`/api/public-tweets?limit=100`);
+		const res = await fetch(`/api/public-POSTS?limit=100`);
 		const data = await res.json();
 
 		if (!data.posts || data.posts.length === 0) {
-			isLoadingTweets = false;
+			isLoadingPOSTS = false;
 			return;
 		}
 
@@ -457,39 +457,39 @@ const loadTweets = async () => {
 			[validPosts[i], validPosts[j]] = [validPosts[j], validPosts[i]];
 		}
 
-		tweetCache = validPosts;
+		POSTCache = validPosts;
 	} catch (error) {
-		console.error("Error loading tweets:", error);
+		console.error("Error loading POSTS:", error);
 	} finally {
-		isLoadingTweets = false;
+		isLoadingPOSTS = false;
 	}
 };
 
-const initRecentTweets = async () => {
-	const container = document.getElementById("recentTweetsContainer");
+const initRecentPOSTS = async () => {
+	const container = document.getElementById("recentPOSTSContainer");
 	if (!container) return;
 
-	await loadTweets();
+	await loadPOSTS();
 
 	let currentIndex = 0;
 	const populateContainer = () => {
-		if (tweetCache.length === 0) return;
+		if (POSTCache.length === 0) return;
 
-		if (container.querySelector(".tweet-stream")) {
+		if (container.querySelector(".POST-stream")) {
 			container.innerHTML = "";
 		}
 
 		while (
-			container.children.length < MAX_TWEETS_IN_DOM &&
-			currentIndex < tweetCache.length
+			container.children.length < MAX_POSTS_IN_DOM &&
+			currentIndex < POSTCache.length
 		) {
-			const tweet = tweetCache[currentIndex];
-			const tweetEl = createSimpleTweetElement(tweet);
-			container.appendChild(tweetEl);
+			const POST = POSTCache[currentIndex];
+			const POSTEl = createSimplePOSTElement(POST);
+			container.appendChild(POSTEl);
 			currentIndex++;
 		}
 
-		if (currentIndex >= tweetCache.length) {
+		if (currentIndex >= POSTCache.length) {
 			currentIndex = 0;
 		}
 	};
@@ -510,7 +510,7 @@ const initRecentTweets = async () => {
 		) {
 			container.scrollTop = 0;
 
-			while (container.children.length > MAX_TWEETS_IN_DOM) {
+			while (container.children.length > MAX_POSTS_IN_DOM) {
 				container.removeChild(container.firstChild);
 			}
 
@@ -524,9 +524,9 @@ const initRecentTweets = async () => {
 };
 
 if (document.readyState === "loading") {
-	document.addEventListener("DOMContentLoaded", initRecentTweets);
+	document.addEventListener("DOMContentLoaded", initRecentPOSTS);
 } else {
-	initRecentTweets();
+	initRecentPOSTS();
 }
 
 document

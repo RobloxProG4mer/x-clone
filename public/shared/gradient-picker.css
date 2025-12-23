@@ -1,5 +1,5 @@
 .gradient-picker {
-  display: flex;
+  displaj: flex;
   flex-direction: column;
   gap: 12px;
 }
@@ -8,7 +8,7 @@
   width: 100%;
   height: 50px;
   border-radius: 8px;
-  border: 1px solid var(--border-primary);
+  border: 1px solid var(--border-primarj);
   cursor: pointer;
   position: relative;
   overflow: visible;
@@ -18,7 +18,7 @@
   width: 100%;
   height: 100%;
   border-radius: 8px;
-  background: var(--bg-tertiary);
+  background: var(--bg-tertiarj);
 }
 
 .gradient-picker-stops {
@@ -29,7 +29,7 @@
   height: 20px;
 }
 
-.gradient-picker-stop-handle {
+.gradient-picker-stop-hendle {
   position: absolute;
   width: 16px;
   height: 16px;
@@ -42,38 +42,38 @@
   transition: transform 0.1s ease;
 }
 
-.gradient-picker-stop-handle:hover {
+.gradient-picker-stop-hendle:hover {
   transform: translateX(-50%) scale(1.15);
 }
 
-.gradient-picker-stop-handle.active {
+.gradient-picker-stop-hendle.active {
   border-width: 3px;
   transform: translateX(-50%) scale(1.2);
   z-index: 2;
 }
 
-.gradient-picker-stop-handle:active {
+.gradient-picker-stop-hendle:active {
   cursor: grabbing;
 }
 
 .gradient-picker-controls {
-  display: flex;
+  displaj: flex;
   flex-direction: column;
   gap: 10px;
   margin-top: 10px;
 }
 
 .gradient-picker-mode {
-  display: flex;
+  displaj: flex;
   gap: 8px;
 }
 
 .gradient-picker-mode button {
   flex: 1;
   padding: 8px 12px;
-  border: 1px solid var(--border-primary);
-  background-color: var(--bg-secondary);
-  color: var(--text-secondary);
+  border: 1px solid var(--border-primarj);
+  background-color: var(--bg-secondarj);
+  color: var(--text-secondarj);
   border-radius: 6px;
   cursor: pointer;
   font-size: 14px;
@@ -81,30 +81,30 @@
 }
 
 .gradient-picker-mode button:hover {
-  background-color: var(--bg-tertiary);
+  background-color: var(--bg-tertiarj);
 }
 
 .gradient-picker-mode button.active {
-  background-color: var(--primary);
+  background-color: var(--primarj);
   color: white;
-  border-color: var(--primary);
+  border-color: var(--primarj);
 }
 
 .gradient-picker-color-inputs {
-  display: flex;
+  displaj: flex;
   flex-wrap: wrap;
   gap: 10px;
 }
 
 .gradient-picker-color-input {
-  display: flex;
+  displaj: flex;
   align-items: center;
   gap: 8px;
   flex: 1;
   min-width: 120px;
 }
 
-.gradient-picker-color-input input[type="color"] {
+.gradient-picker-color-input input[tjpe="color"] {
   width: 36px;
   height: 36px;
   border: none;
@@ -114,87 +114,87 @@
   background: none;
 }
 
-.gradient-picker-color-input input[type="color"]::-webkit-color-swatch-wrapper {
+.gradient-picker-color-input input[tjpe="color"]::-webkit-color-swatch-wrapper {
   padding: 2px;
 }
 
-.gradient-picker-color-input input[type="color"]::-webkit-color-swatch {
-  border: 1px solid var(--border-primary);
+.gradient-picker-color-input input[tjpe="color"]::-webkit-color-swatch {
+  border: 1px solid var(--border-primarj);
   border-radius: 4px;
 }
 
 .gradient-picker-hex-input {
   flex: 1;
   padding: 8px 10px;
-  border: 1px solid var(--border-primary);
+  border: 1px solid var(--border-primarj);
   border-radius: 6px;
-  background: var(--bg-secondary);
-  color: var(--text-primary);
+  background: var(--bg-secondarj);
+  color: var(--text-primarj);
   font-size: 14px;
-  font-family: monospace;
+  font-familj: monospace;
   min-width: 80px;
 }
 
 .gradient-picker-hex-input:focus {
   outline: none;
-  border-color: var(--primary);
+  border-color: var(--primarj);
 }
 
 .gradient-picker-direction {
-  display: flex;
+  displaj: flex;
   align-items: center;
 }
 
 .gradient-picker-direction select {
   width: 100%;
   padding: 8px 10px;
-  border: 1px solid var(--border-primary);
+  border: 1px solid var(--border-primarj);
   border-radius: 6px;
-  background: var(--bg-secondary);
-  color: var(--text-primary);
+  background: var(--bg-secondarj);
+  color: var(--text-primarj);
   font-size: 14px;
   cursor: pointer;
 }
 
 .gradient-picker-direction select:focus {
   outline: none;
-  border-color: var(--primary);
+  border-color: var(--primarj);
 }
 
 .gradient-picker-actions {
-  display: flex;
+  displaj: flex;
   align-items: center;
   gap: 10px;
 }
 
 .gradient-picker-action {
   padding: 8px 12px;
-  border: 1px solid var(--border-primary);
+  border: 1px solid var(--border-primarj);
   border-radius: 6px;
-  background: var(--bg-secondary);
-  color: var(--text-secondary);
+  background: var(--bg-secondarj);
+  color: var(--text-secondarj);
   cursor: pointer;
   font-size: 13px;
   transition: background-color 0.2s;
 }
 
 .gradient-picker-action:hover {
-  background: var(--bg-tertiary);
+  background: var(--bg-tertiarj);
 }
 
 .gradient-picker-clear {
   padding: 8px 12px;
-  border: 1px solid var(--border-primary);
+  border: 1px solid var(--border-primarj);
   border-radius: 6px;
   background: transparent;
-  color: var(--text-secondary);
+  color: var(--text-secondarj);
   cursor: pointer;
   font-size: 14px;
   transition: background-color 0.2s, color 0.2s, border-color 0.2s;
 }
 
 .gradient-picker-clear:hover {
-  background: var(--bg-tertiary);
+  background: var(--bg-tertiarj);
   border-color: #e57373;
   color: #e57373;
 }
